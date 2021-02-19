@@ -1,31 +1,18 @@
 import React, { useEffect, useState } from "react";
 import { connect, useSelector } from "react-redux";
-import { problemCard } from "./Card";
-import {
-  mapStateToProps,
-  mapDispatchToProps,
-} from "../data/actions/connectors";
-import { unstable_concurrentAct } from "react-dom/test-utils";
-
-export const sortByRating = (a, b) => {
-  if (a.rating < b.rating) return -1;
-  if (a.rating > b.rating) return 1;
-  return 0;
-};
-
-export const sortBySolveCount = (a, b) => {
-  if (a.solvedCount < b.solvedCount) return -1;
-  if (a.solvedCount > b.solvedCount) return 1;
-  return 0;
-};
+import { ProblemCard } from "../util/components/Cards";
+import { sortByRating, sortBySolveCount } from "../util/sortMethods";
 
 export function ProblemList() {
   const state = useSelector((state) => state);
   // console.log(state.problemList);
-  const [unSolvedProblems, setUnsolvedProblems] = useState({ problems: [] });
+  const [unSolvedProblems, setUnsolvedProblems] = useState({
+    problems: [],
+    error: "",
+  });
 
   useEffect(() => {
-    console.log(state);
+   // console.log(state);
     if (state.problemList.problems != undefined) {
       let newState = { problems: [] };
       for (let problem of state.problemList.problems) {
@@ -34,22 +21,23 @@ export function ProblemList() {
           newState.problems.push(problem);
         }
       }
-      console.log("NEW State");
+      //console.log("NEW State");
       setUnsolvedProblems(newState);
     }
   }, [state]);
-  console.log(unSolvedProblems);
+
+ // console.log(unSolvedProblems);
 
   const sortList = (reverse, rating) => {
-    let newUnSolvedProblem ={...unSolvedProblems};
+    let newUnSolvedProblem = { ...unSolvedProblems };
     //newUnSolvedProblem.problems = [...unSolvedProblems.problems];
     if (rating) newUnSolvedProblem.problems.sort(sortByRating);
     else newUnSolvedProblem.problems.sort(sortBySolveCount);
     if (reverse) newUnSolvedProblem.problems.reverse();
-    console.log(newUnSolvedProblem.problems == unSolvedProblems.problems);
-    console.log(reverse + " " + rating);
+    //console.log(newUnSolvedProblem.problems == unSolvedProblems.problems);
+   // console.log(reverse + " " + rating);
     setUnsolvedProblems(newUnSolvedProblem);
-    console.log(unSolvedProblems);
+   // console.log(unSolvedProblems);
   };
 
   return (
@@ -60,8 +48,7 @@ export function ProblemList() {
             <a
               className="nav-link active"
               onClick={() => sortList(false, false)}
-              href="#"
-            >
+              href="#">
               Sort By SolvedCount
             </a>
           </li>
@@ -69,8 +56,7 @@ export function ProblemList() {
             <a
               className="nav-link"
               onClick={() => sortList(false, true)}
-              href="#"
-            >
+              href="#">
               Sort By Rating
             </a>
           </li>
@@ -78,7 +64,7 @@ export function ProblemList() {
       </div>
       <div className="problems">
         {unSolvedProblems.problems.map((problem) => {
-          return problemCard(problem);
+          return ProblemCard(problem);
         })}
       </div>
     </div>

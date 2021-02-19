@@ -1,26 +1,10 @@
-import React, { useEffect, useState } from "react";
-
-export function IndividualProblem(params) {}
-
-function Card(id, name) {
-  const [solveCount, setSolveCount] = useState(0);
-
-  useEffect(() => {}, []);
-
+export function ContestCard(contest) {
   return (
-    <div className="card bg-light" key={id}>
-      <h3 className="text-secondary">
-        {id} , {name} , {solveCount}
-      </h3>
-    </div>
-  );
+		<div></div>
+	);
 }
 
-export function contestCard(contest) {
-  
-}
-
-export function problemCard(problem) {
+export function ProblemCard(problem) {
   return (
     <div className="card bg-dark" key={problem.contestId + problem.index}>
       <div className="card-header d-flex justify-content-between text-light">
@@ -35,5 +19,3 @@ export function problemCard(problem) {
     </div>
   );
 }
-
-export default Card;
