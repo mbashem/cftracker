@@ -1,5 +1,11 @@
+import { act } from "react-dom/test-utils";
+import { sortByContestId } from "../../util/sortMethods";
 import {
   ERROR_FETCHING,
+  ERROR_FETCHING_CONTEST_LIST,
+  ERROR_FETCHING_PROBLEMS,
+  ERROR_FETCHING_USER_SUBMISSIONS,
+  FETCH_CONTEST_LIST,
   FETCH_POSTS,
   FETCH_PROBLEM_LIST,
   FETCH_USER_SUBMISSIONS,
@@ -13,75 +19,100 @@ import store from "../store";
 const submissionsInitialStore = {
   solvedProblems: new Set(),
   attemptedProblems: new Set(),
+  error: "",
 };
 
-export function userSubmissionsReducer(
+export const userSubmissionsReducer = (
   initState = submissionsInitialStore,
   action
-) {
-  // console.log(action);
+) => {
   let currentState = {
     solvedProblems: new Set(),
     attemptedProblems: new Set(),
   };
-  if (action.type === FETCH_USER_SUBMISSIONS) {
-    action.payload.forEach((element) => {
-      let contestId = element.problem.contestId.toString();
-      let verdict = element.verdict;
-      let problemIndex = element.problem.index;
-      if (verdict == "OK") {
-        currentState.solvedProblems.add(contestId + problemIndex);
-      } else {
-        currentState.attemptedProblems.add(contestId + problemIndex);
+  switch (action.type) {
+    case FETCH_USER_SUBMISSIONS:
+      action.payload.forEach((element) => {
+        let contestId = element.problem.contestId.toString();
+        let verdict = element.verdict;
+        let problemIndex = element.problem.index;
+        if (verdict === "OK") {
+          currentState.solvedProblems.add(contestId + problemIndex);
+        } else {
+          currentState.attemptedProblems.add(contestId + problemIndex);
+        }
+      });
+
+      for (let item of currentState.solvedProblems) {
+        currentState.attemptedProblems.delete(item);
       }
 
-      // if (!(contestId in currentState)) currentState[contestId] = {};
-      // if (!(problemIndex in currentState[contestId]))
-      //   currentState[contestId][problemIndex] = {};
-      // if (!(verdict in currentState[contestId][problemIndex]))
-      //   currentState[contestId][problemIndex][verdict] = [];
-      // let submissionId = element.id;
-
-      // currentState[contestId][problemIndex][verdict].push(submissionId);
-    });
-
-    for (let item of currentState.solvedProblems) {
-      currentState.attemptedProblems.delete(item);
-    }
-
-    // return { ...initState, problems: currentState };
-    return currentState;
+      // return { ...initState, problems: currentState };
+      return {
+        ...submissionsInitialStore,
+        ...currentState,
+      };
+    case ERROR_FETCHING_USER_SUBMISSIONS:
+      return {
+        ...submissionsInitialStore,
+        error: "Error Fetching Submissions",
+      };
+    default:
+      return initState;
   }
-  // console.log("CurrentState:");
-  //console.log(currentState);
+};
 
-  return initState;
-}
+const problemList = { problems: [], error: "", tags: new Set() };
 
-const problemList = { problems: [] };
-
-export function problemListReducer(initState = problemList, action) {
+export const problemListReducer = (initState = problemList, action) => {
   // console.log(action);
   // console.log(problemList);
-  if (action.type === FETCH_PROBLEM_LIST) {
-    return {
-      problems: action.payload,
-    };
-  }
+  switch (action.type) {
+    case FETCH_PROBLEM_LIST:
+      action.payload.sort(sortByContestId);
+      let tags = new Set();
+      for (let problem of action.payload) {
+        for (let tag of problem.tags) tags.add(tag);
+      }
 
-  return initState;
-}
-
-export function errorReducer(initState = "", action) {
-  // console.log(action);
-  //console.log(initState);
-  if (action.type == ERROR_FETCHING) {
-    initState = action.payload;
-  } else if (action.type == LOADING) {
-    initState = action.payload;
+      return {
+        ...problemList,
+        problems: action.payload,
+        error: "",
+        tags: tags,
+      };
+    case ERROR_FETCHING_PROBLEMS:
+      return { ...problemList, error: action.payload };
+    default:
+      return initState;
   }
-  return initState;
-}
+};
+
+export const errorReducer = (initState = "", action) => {
+  switch (action.type) {
+    case ERROR_FETCHING:
+      return action.payload;
+
+    case LOADING:
+      return action.payload;
+
+    default:
+      return "";
+  }
+};
+
+const contestList = { contests: [], error: "" };
+
+export const contestReducer = (initState = contestList, action) => {
+  switch (action.type) {
+    case FETCH_CONTEST_LIST:
+      return { contests: action.payload, error: "" };
+    case ERROR_FETCHING_CONTEST_LIST:
+      return { ...contestList, error: action.payload };
+    default:
+      return initState;
+  }
+};
 
 // export function unsolvedProblemsReducer(initState = {}, action) {
 //   let unsolvedProblems = {problems:[]};

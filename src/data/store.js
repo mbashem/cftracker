@@ -6,6 +6,7 @@ import {
   problemListReducer,
   errorReducer,
   unsolvedProblemsReducer,
+  contestReducer,
 } from "./reducers/fetchReducers";
 
 export const contestList = {
@@ -41,7 +42,7 @@ const problem = {
   },
 };
 
-const z = {
+const submissions = {
   status: "OK",
   result: [
     {
@@ -75,15 +76,33 @@ const z = {
   ],
 };
 
-
 const middlewre = [thunk, logger];
 
 const combinedReducers = combineReducers({
-  userSubmissions:userSubmissionsReducer,
+  userSubmissions: userSubmissionsReducer,
   problemList: problemListReducer,
-  errorReducer,
+  contestList: contestReducer,
 });
 
-const store = createStore(combinedReducers, {}, applyMiddleware(...middlewre));
+const newCombinedReducers = (state, action) => {
+  const intermediateReducer = combinedReducers(state, action);
+  //console.log(intermediateReducer.problemList);
+
+  return {
+    userSubmissions: intermediateReducer.userSubmissions,
+    problemList: {
+      problems: intermediateReducer.problemList.problems,
+      error: intermediateReducer.problemList.error,
+      tags: intermediateReducer.problemList.tags,
+    },
+    contestList: intermediateReducer.contestList,
+  };
+};
+
+const store = createStore(
+  newCombinedReducers,
+  {},
+  applyMiddleware(...middlewre)
+);
 
 export default store;
