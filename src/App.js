@@ -16,7 +16,9 @@ import ContestList from "./components/ContestList";
 function App(props) {
   const dispatch = useDispatch();
 
-  useEffect(() => {}, []);
+  useEffect(() => {
+    document.title = "BashForces";
+  }, []);
   //console.log(contestList);
   // const props = useSelector(state => state);
   const activateLasers = () => {

@@ -36,7 +36,7 @@ export const userSubmissionsReducer = (
         let contestId = element.problem.contestId.toString();
         let verdict = element.verdict;
         let problemIndex = element.problem.index;
-        if (verdict == "OK") {
+        if (verdict === "OK") {
           currentState.solvedProblems.add(contestId + problemIndex);
         } else {
           currentState.attemptedProblems.add(contestId + problemIndex);
@@ -62,7 +62,7 @@ export const userSubmissionsReducer = (
   }
 };
 
-const problemList = { problems: [], error: "" };
+const problemList = { problems: [], error: "", tags: new Set() };
 
 export const problemListReducer = (initState = problemList, action) => {
   // console.log(action);
@@ -70,10 +70,16 @@ export const problemListReducer = (initState = problemList, action) => {
   switch (action.type) {
     case FETCH_PROBLEM_LIST:
       action.payload.sort(sortByContestId);
+      let tags = new Set();
+      for (let problem of action.payload) {
+        for (let tag of problem.tags) tags.add(tag);
+      }
+
       return {
         ...problemList,
         problems: action.payload,
         error: "",
+        tags: tags,
       };
     case ERROR_FETCHING_PROBLEMS:
       return { ...problemList, error: action.payload };

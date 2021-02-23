@@ -42,7 +42,7 @@ export const fetchUserSubmissions = (dispatch) => {
     .then((res) => res.json())
     .then(
       (result) => {
-        if (result.status != "OK")
+        if (result.status !== "OK")
           return errorFecthing(
             ERROR_FETCHING_USER_SUBMISSIONS,
             "Status Failed"
@@ -84,20 +84,21 @@ export const fetchProblemList = (dispatch) => {
     .then((res) => res.json())
     .then(
       (result) => {
-        if (result.status != "OK")
+        if (result.status !== "OK")
           return dispatch(
             errorFecthing(ERROR_FETCHING_PROBLEMS, "Problem Status Failed")
           );
         //   console.log(result);
         let problems = result.result.problems;
+        problems = problems.filter((problem) => ("contestId" in problem));
         console.log(result.result);
         for (let i = 0; i < result.result.problemStatistics.length; i++) {
           if (!("rating" in problems[i])) problems[i]["rating"] = -1;
           problems[i]["solvedCount"] =
             result.result.problemStatistics[i].solvedCount;
+          problems[i]["id"] = problems[i].contestId.toString()+problems[i].index;
         }
 
-        problems = problems.filter((problem) => ("contestId" in problem));
 
         return dispatch({
           type: FETCH_PROBLEM_LIST,
@@ -125,7 +126,7 @@ export const fetchContestList = (dispatch) => {
     .then((res) => res.json())
     .then(
       (result) => {
-        if (result.status != "OK")
+        if (result.status !== "OK")
           return dispatch(
             errorFecthing(
               ERROR_FETCHING_CONTEST_LIST,
@@ -133,7 +134,7 @@ export const fetchContestList = (dispatch) => {
             )
           );
         //   console.log(result);
-        let res = result.result.filter((contest) => contest.phase == FINISHED);
+        let res = result.result.filter((contest) => contest.phase === FINISHED);
 
         return dispatch({
           type: FETCH_CONTEST_LIST,

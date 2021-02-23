@@ -3,13 +3,17 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@popperjs/core": "^2.7.1",
     "@testing-library/jest-dom": "^5.11.9",
     "@testing-library/react": "^11.2.3",
     "@testing-library/user-event": "^12.6.2",
-    "bootstrap": "^5.0.0-beta1",
+    "bootstrap": "^5.0.0-beta2",
+    "fuse.js": "^6.4.6",
+    "localforage": "^1.9.0",
     "lodash": "^4.17.20",
     "react": "^17.0.1",
     "react-dom": "^17.0.1",
+    "react-paginate": "^7.1.0",
     "react-redux": "^7.2.2",
     "react-router": "^5.2.0",
     "react-router-dom": "^5.2.0",
@@ -17,6 +21,7 @@
     "redux": "^4.0.5",
     "redux-logger": "^3.0.6",
     "redux-thunk": "^2.3.0",
+    "store": "^2.0.12",
     "web-vitals": "^0.2.4"
   },
   "scripts": {

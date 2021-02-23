@@ -1,3 +1,5 @@
+import store from "store";
+
 export const formateDate = (time) => {
   const date = new Date(time * 1000);
   //console.log(date);
@@ -14,10 +16,29 @@ export const formateDate = (time) => {
   );
 };
 
-export const createProblemUrl = (contestId, index) => {
-  return "https://codeforces.com/contest/" + contestId + "/problem/" + index;
+export const getContestUrl = (contestId) => {
+  return "https://codeforces.com/contest/" + contestId;
+};
+
+export const getProblemUrl = (contestId, index) => {
+  return getContestUrl(contestId) + "/problem/" + index;
 };
 
 export const charInc = (c, number) => {
   return String.fromCharCode(c.charCodeAt() + number);
+};
+
+export const getRandomInteger = (min, max) => {
+  return Math.floor(Math.random() * (max - min)) + min;
+};
+
+export const getLocalStorage = (name) => {
+  let data = store.get(name);
+
+  if (data) return data;
+  return null;
+};
+
+export const setLocalStorage = (name, value) => {
+  store.set(name, value);
 };

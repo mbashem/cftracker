@@ -22,10 +22,10 @@ export function contestCard(contest) {
 
 export function problemCard(problem) {
   return (
-    <div className="card bg-dark" key={problem.contestId + problem.index}>
+    <div className="card bg-dark" key={problem.id}>
       <div className="card-header d-flex justify-content-between text-light">
         <div className="id font-weight-bold">
-          {problem.contestId + problem.index}
+          {problem.id}
         </div>
         <div className="name">{problem.name}</div>
         <div className="rating">{problem.rating}</div>

@@ -93,6 +93,7 @@ const newCombinedReducers = (state, action) => {
     problemList: {
       problems: intermediateReducer.problemList.problems,
       error: intermediateReducer.problemList.error,
+      tags: intermediateReducer.problemList.tags,
     },
     contestList: intermediateReducer.contestList,
   };
