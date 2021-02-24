@@ -108,7 +108,7 @@ const ContestList = () => {
         arr.push(res);
       }
       return (
-        <div className="inside" key={contestId + index}>
+        <div className="inside p-0" key={contestId + index}>
           {arr.map((element) => element)}
         </div>
       );
@@ -126,14 +126,14 @@ const ContestList = () => {
     let id = problemList.problems[ans].id;
     if (name.length > 15) name = name.substring(0, 14) + "...";
 
-    let className = solved ? "bg-success" : attempted ? "bg-danger" : "";
+    let className = (solved ? "bg-success" : attempted ? "bg-danger" : "") + " p-1";
     if (index.length === 1)
       return (
         <td className={className} key={id}>
           <div>
             <a
               className="text-light text-decoration-none"
-              target="_blank"
+              target="_blank" rel="noreferrer"
               tabIndex="0"
               data-bs-toggle="tooltip"
               title={problemList.problems[ans].name}
@@ -145,10 +145,10 @@ const ContestList = () => {
         </td>
       );
     return (
-      <div>
+      <div className={className}>
         <a
           className="text-light text-decoration-none"
-          target="_blank"
+          target="_blank" rel="noreferrer"
           tabIndex="0"
           data-bs-toggle="tooltip"
           title={problemList.problems[ans].name}
@@ -184,7 +184,7 @@ const ContestList = () => {
           <div className="name">
             <a
               className="text-light text-decoration-none"
-              target="_blank"
+              target="_blank" rel="noreferrer"
               href={getContestUrl(contest.id)}>
               {contest.name}
             </a>
