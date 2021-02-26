@@ -94,8 +94,14 @@ const newCombinedReducers = (state, action) => {
       problems: intermediateReducer.problemList.problems,
       error: intermediateReducer.problemList.error,
       tags: intermediateReducer.problemList.tags,
+      loading: intermediateReducer.problemList.loading,
     },
-    contestList: intermediateReducer.contestList,
+    contestList: {
+      contests: intermediateReducer.contestList.contests,
+      error: intermediateReducer.contestList.error,
+      loading: intermediateReducer.contestList.loading,
+      problems: intermediateReducer.problemList.problems,
+    },
   };
 };
 

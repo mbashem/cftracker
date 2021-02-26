@@ -1,5 +1,3 @@
-import store from "store";
-
 export const formateDate = (time) => {
   const date = new Date(time * 1000);
   //console.log(date);
@@ -30,15 +28,4 @@ export const charInc = (c, number) => {
 
 export const getRandomInteger = (min, max) => {
   return Math.floor(Math.random() * (max - min)) + min;
-};
-
-export const getLocalStorage = (name) => {
-  let data = store.get(name);
-
-  if (data) return data;
-  return null;
-};
-
-export const setLocalStorage = (name, value) => {
-  store.set(name, value);
 };
