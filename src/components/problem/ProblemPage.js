@@ -5,13 +5,17 @@ import {
   getProblemUrl,
   getLocalStorage,
   setLocalStorage,
-} from "../util/bashforces";
-import { ProblemCard } from "../util/components/Cards";
+} from "../../util/bashforces";
 import Fuse from "fuse.js";
-import { sortByRating, sortBySolveCount } from "../util/sortMethods";
-import { PROBLEM_FILTER } from "../util/constants";
+import { sortByRating, sortBySolveCount } from "../../util/sortMethods";
+import {
+  ATTEMPTED_PROBLEMS,
+  SOLVED_PROBLEMS,
+} from "../../data/reducers/fetchReducers";
+import Pagination from "../Pagination";
+import ProblemList from "./ProblemList";
 
-export function ProblemList() {
+const ProblemPage = () => {
   const state = useSelector((state) => state);
 
   const SOLVED = 1,
@@ -28,17 +32,13 @@ export function ProblemList() {
     search: "",
     sortyBy: SORT_BY_SOLVE,
     order: DESCENDING,
+    perPage: 100,
   };
 
   const [problemList, setProblemList] = useState({ problems: [], error: "" });
   const [tagList, setTagList] = useState({ tags: [] });
   const [randomProblem, setRandomProblem] = useState(-1);
-  const [reload, setReload] = useState(false);
-  // const [filterState, setFilterState] = useState(
-  //   getLocalStorage(PROBLEM_FILTER) !== null
-  //     ? { ...initFilterState, ...getLocalStorage(PROBLEM_FILTER) }
-  //     : initFilterState
-  // );
+  const [selected, setSelected] = useState(0);
 
   const [filterState, setFilterState] = useState(initFilterState);
 
@@ -57,19 +57,11 @@ export function ProblemList() {
       problem.rating >= filterState.rating.min_rating;
     let solveStatus = filterState.solveStatus.includes(getState(problem));
 
-    let searchInside = true;
-    // filterState.search.trim().length !== 0
-    //   ? new Fuse([problem], { keys: ["name", "id"], distance: 2 }).search(
-    //       filterState.search
-    //     ).length !== 0
-    //   : true;
-
-    return solveStatus && ratingInside && containTags && searchInside;
+    return solveStatus && ratingInside && containTags;
   };
 
   useEffect(() => {
     console.log(filterState);
-    //setLocalStorage(PROBLEM_FILTER, filterState);
     if (state.problemList.problems !== undefined) {
       let newState = { problems: [] };
       if (filterState.search.trim().length !== 0) {
@@ -96,10 +88,11 @@ export function ProblemList() {
       console.log(state.problemList);
       for (let tag of state.problemList.tags) tags.push(tag);
       setTagList({ tags });
+      console.log(tags);
       setProblemList({ ...problemList, problems: newState.problems });
     }
     setRandomProblem(-1);
-  }, [state, reload]);
+  }, [state, filterState]);
 
   const sortList = (sortBy) => {
     if (filterState.sortyBy === sortBy)
@@ -112,47 +105,17 @@ export function ProblemList() {
           sortyBy: sortBy,
         },
       });
-    setReload(reload ^ true);
   };
 
   const getState = (problem) => {
-    if (state.userSubmissions.solvedProblems.has(problem.id)) return SOLVED;
-    if (state.userSubmissions.attemptedProblems.has(problem.id))
+    if (state.userSubmissions[SOLVED_PROBLEMS].has(problem.id)) return SOLVED;
+    if (state.userSubmissions[ATTEMPTED_PROBLEMS].has(problem.id))
       return ATTEMPTED;
     return UNSOLVED;
   };
 
-  const filterBySolveState = (solveStatus) => {
-    setFilterState({ ...filterState, solveStatus });
-  };
-
   const searchData = (e) => {
-    // e.preventDefault();
     setFilterState({ ...filterState, search: e.target.value });
-    //console.log(problemList);
-  };
-
-  const ProblemCard = (problem) => {
-    let classes = "bg-dark";
-    let problemState = getState(problem);
-    if (problemState === 1) classes = "bg-success";
-    else if (problemState === 0) classes = "bg-danger";
-    return (
-      <tr key={problem.id}>
-        <td className={"id font-weight-bold " + classes}>{problem.id}</td>
-        <td className={"name " + classes}>
-          <a
-            className="text-light text-decoration-none"
-            target="_blank"
-            href={getProblemUrl(problem.contestId, problem.index)}>
-            {problem.name}
-          </a>
-        </td>
-        <td className={"rating " + classes}>{problem.rating}</td>
-
-        <td className={"solvedCount " + classes}>{problem.solvedCount}</td>
-      </tr>
-    );
   };
 
   const chooseRandom = () => {
@@ -160,51 +123,32 @@ export function ProblemList() {
     setRandomProblem(getRandomInteger(0, problemList.problems.length - 1));
   };
 
-  console.log(tagList);
+  const paginate = () => {
+    let lo = selected * filterState.perPage;
+    let high = Math.min(
+      problemList.problems.length - 1,
+      lo + filterState.perPage - 1
+    );
+
+    if (lo > high) return [];
+    return problemList.problems.slice(lo, high);
+  };
 
   return (
     <div>
       <div className="menu">
         <ul className="nav nav-tabs">
-          {/* <!-- Example single danger button --> */}
-
-          <div className="btn-group m-2">
-            <button
-              type="button"
-              className="btn btn-secondary dropdown-toggle"
-              data-bs-toggle="dropdown"
-              aria-expanded="false">
-              Solve State
-            </button>
-            <ul className="dropdown-menu">
-              <li>
-                <a
-                  className="dropdown-item"
-                  onClick={() => filterBySolveState([ATTEMPTED, UNSOLVED])}
-                  href="#">
-                  Unsolved
-                </a>
-              </li>
-              <li>
-                <a
-                  className="dropdown-item"
-                  onClick={() => filterBySolveState([UNSOLVED])}
-                  href="#">
-                  Never Attempted
-                </a>
-              </li>
-              <li>
-                <a
-                  className="dropdown-item"
-                  onClick={() =>
-                    filterBySolveState([SOLVED, ATTEMPTED, UNSOLVED])
-                  }
-                  href="#">
-                  All
-                </a>
-              </li>
-            </ul>
-          </div>
+          <form
+            className="form-inline d-flex my-2 my-lg-0"
+            onSubmit={(e) => e.preventDefault()}>
+            <input
+              className="form-control mr-sm-2"
+              type="number"
+              aria-label="Search"
+              value={filterState.perPage}
+              onChange={searchData}
+            />
+          </form>
 
           <li className="nav-item">
             <a className="nav-link" onClick={chooseRandom} href="#">
@@ -214,37 +158,35 @@ export function ProblemList() {
           <li className="nav-item">
             <button
               type="button"
-              class="btn btn-primary"
+              className="btn btn-primary"
               data-bs-toggle="modal"
               data-bs-target="#exampleModal">
               Filter
             </button>
             <div
-              class="modal"
+              className="modal"
               id="exampleModal"
               tabIndex="-1"
               aria-labelledby="exampleModalLabel"
               aria-hidden="true">
-              <div class="modal-dialog">
-                <div class="modal-content">
-                  <form
-                    className=""
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      setReload(reload ^ 1);
-                    }}
-                    id="form1">
-                    <div class="modal-header">
-                      <h5 class="modal-title" id="exampleModalLabel">
-                        Modal title
-                      </h5>
-                      <button
-                        type="button"
-                        class="btn-close"
-                        data-bs-dismiss="modal"
-                        aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
+              <div className="modal-dialog">
+                <div className="modal-content">
+                  <div className="modal-header">
+                    <h5 className="modal-title" id="exampleModalLabel">
+                      Modal title
+                    </h5>
+                    <button
+                      type="button"
+                      className="btn-close"
+                      data-bs-dismiss="modal"
+                      aria-label="Close"></button>
+                  </div>
+                  <div className="modal-body">
+                    <form
+                      className=""
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                      }}>
                       <div className="d-flex">
                         <input
                           className="form-control mr-sm-2"
@@ -278,40 +220,62 @@ export function ProblemList() {
                           }
                         />
                       </div>
-                      <div
-                        class="btn-group me-2 d-flex flex-wrap"
-                        role="group"
-                        aria-label="First group">
-                        {tagList.tags.map((tag) => (
-                          <button
-                            className={
+                    </form>
+                    <div
+                      className="btn-group me-2 d-flex flex-wrap"
+                      role="group"
+                      aria-label="First group">
+                      {tagList.tags.map((tag) => (
+                        <button
+                          className={ (
                               (filterState.tags.has(tag)
                                 ? "btn bg-success"
                                 : "btn bg-dark") + " h-6 m-1 p-1 text-light"
+                            )}
+                          key={tag}
+                          onClick={() => {
+                            let myFilterState = filterState;
+                            if (filterState.tags.has(tag))
+                              myFilterState.tags.delete(tag);
+                            else myFilterState.tags.add(tag);
+                            console.log(myFilterState);
+                            setFilterState(myFilterState);
+                          }}>
+                          {tag}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div
+                        className="btn-group me-2 d-flex flex-wrap"
+                        role="group"
+                        aria-label="First group">
+                        {initFilterState.solveStatus.map((solved) => (
+                          <button
+                            className={
+                              (filterState.solveStatus.includes(solved)
+                                ? "btn bg-success"
+                                : "btn bg-dark") + " h-6 m-1 p-1 text-light"
                             }
-                            key={tag}
+                            key={solved}
                             onClick={() => {
                               let myFilterState = filterState;
-                              if (filterState.tags.has(tag))
-                                myFilterState.tags.delete(tag);
-                              else myFilterState.tags.add(tag);
+                              let ind = filterState.solveStatus.indexOf(solved);
+                              if (ind != -1)
+                                myFilterState.solveStatus.splice(ind, 1);
+                              else myFilterState.solveStatus.push(solved);
                               setFilterState(myFilterState);
+                              console.log(filterState);
                             }}>
-                            {tag}
+                            {solved == SOLVED
+                              ? "Solved"
+                              : solved == ATTEMPTED
+                              ? "Attempted"
+                              : "Unsolved"}
                           </button>
                         ))}
                       </div>
-                    </div>
-                    <div class="modal-footer">
-                      <button
-                        type="submit"
-                        form="form1"
-                        class="btn btn-secondary"
-                        data-bs-dismiss="modal">
-                        Close
-                      </button>
-                    </div>
-                  </form>
+                  </div>
                 </div>
               </div>
             </div>
@@ -327,13 +291,20 @@ export function ProblemList() {
                 placeholder="Problem Name or Id"
                 aria-label="Search"
                 value={filterState.search}
-                onChange={searchData}
+                onChange={(e) =>
+                  setFilterState({ ...filterState, search: e.target.value })
+                }
               />
             </form>
           </li>
         </ul>
       </div>
-      <div className="problems"></div>
+      <Pagination
+        totalCount={problemList.problems.length}
+        perPage={filterState.perPage}
+        selected={selected}
+        pageSelected={(e) => setSelected(e)}
+      />
       <table className="table table-bordered table-dark">
         <thead className="thead-dark">
           <tr>
@@ -354,16 +325,21 @@ export function ProblemList() {
           </tr>
         </thead>
         <tbody>
-          {randomProblem === -1
-            ? problemList.problems.map((problem) => {
-                return ProblemCard(problem);
-              })
-            : ProblemCard(problemList.problems[randomProblem])}
+          {randomProblem === -1 ? (
+            <ProblemList problems={paginate()} />
+          ) : (
+            <ProblemList problems={[problemList.problems[randomProblem]]} />
+          )}
         </tbody>
       </table>
+      <Pagination
+        totalCount={problemList.problems.length}
+        perPage={filterState.perPage}
+        selected={selected}
+        pageSelected={(e) => setSelected(e)}
+      />
     </div>
   );
-}
+};
 
-//export default connect(mapStateToProps, mapDispatchToProps)(ProblemList);
-export default ProblemList;
+export default ProblemPage;

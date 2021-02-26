@@ -9,6 +9,9 @@ import {
   FETCH_PROBLEM_LIST,
   FETCH_USER_SUBMISSIONS,
   FINISHED,
+  LOADING_CONTEST_LIST,
+  LOADING_PROBLEM_LIST,
+  LOADING_USER_SUBMISSIONS,
 } from "./types";
 import store from "../store";
 
@@ -34,10 +37,12 @@ const errorFecthing = (type, message) => {
   };
 };
 
-export const fetchUserSubmissions = (dispatch) => {
-  //  const dispatch = useDispatch();
+const load = (type) => {
+  return {type: type}
+};
 
-  // console.log("fetchUSerSubmissions");
+export const fetchUserSubmissions = (dispatch) => {
+  dispatch(load(LOADING_USER_SUBMISSIONS));
   fetch(userStatus)
     .then((res) => res.json())
     .then(
@@ -77,9 +82,7 @@ export const fetchUserSubmissions = (dispatch) => {
 };
 
 export const fetchProblemList = (dispatch) => {
-  //const dispatch = useDispatch();
-  //console.log("FetchProblemList");
-  //return (dispatch) => {
+  dispatch(load(LOADING_PROBLEM_LIST));
   fetch(problemSet)
     .then((res) => res.json())
     .then(
@@ -122,6 +125,7 @@ export const fetchProblemList = (dispatch) => {
 };
 
 export const fetchContestList = (dispatch) => {
+  dispatch(load(LOADING_CONTEST_LIST));
   fetch(allContest)
     .then((res) => res.json())
     .then(
@@ -133,7 +137,6 @@ export const fetchContestList = (dispatch) => {
               "FAiled to fethc contestList"
             )
           );
-        //   console.log(result);
         let res = result.result.filter((contest) => contest.phase === FINISHED);
 
         return dispatch({

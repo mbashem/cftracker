@@ -9,9 +9,9 @@ import {
   fetchUserSubmissions,
 } from "./data/actions/fetchActions";
 
-import { ProblemList } from "./components/ProblemList";
 import Menu, { CONTEST, PROBLEMS } from "./components/Menu";
-import ContestList from "./components/ContestList";
+import ProblemPage from "./components/problem/ProblemPage";
+import ContestPage from "./components/contest/ContestPage";
 
 function App(props) {
   const dispatch = useDispatch();
@@ -38,11 +38,13 @@ function App(props) {
       <button onClick={activateLasers}>Activate Lasers</button>
 
       <Switch>
-        <Route path={PROBLEMS} component={ProblemList} />
-        <Route strict path={CONTEST}>
-          <ContestList />
-        </Route>
+        <Route path={PROBLEMS} component={ProblemPage} />
+        <Route strict path={CONTEST} component={ContestPage}/>
+
       </Switch>
+      <footer>
+        All rights reserved by @Bashem
+      </footer>
     </div>
   );
 }
