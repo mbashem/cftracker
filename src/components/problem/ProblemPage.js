@@ -61,7 +61,6 @@ const ProblemPage = () => {
   };
 
   useEffect(() => {
-    console.log(filterState);
     if (state.problemList.problems !== undefined) {
       let newState = { problems: [] };
       if (filterState.search.trim().length !== 0) {
@@ -85,13 +84,12 @@ const ProblemPage = () => {
       if (filterState.order == DESCENDING) newState.problems.reverse();
 
       let tags = [];
-      console.log(state.problemList);
       for (let tag of state.problemList.tags) tags.push(tag);
       setTagList({ tags });
-      console.log(tags);
       setProblemList({ ...problemList, problems: newState.problems });
     }
     setRandomProblem(-1);
+    setSelected(0);
   }, [state, filterState]);
 
   const sortList = (sortBy) => {
@@ -182,6 +180,35 @@ const ProblemPage = () => {
                       aria-label="Close"></button>
                   </div>
                   <div className="modal-body">
+                    <div
+                      className="btn-group me-2 d-flex flex-wrap"
+                      role="group"
+                      aria-label="First group">
+                      {initFilterState.solveStatus.map((solved) => (
+                        <button
+                          className={
+                            (filterState.solveStatus.includes(solved)
+                              ? "btn bg-success"
+                              : "btn bg-dark") + " h-6 m-1 p-1 text-light"
+                          }
+                          key={solved}
+                          onClick={() => {
+                            let myFilterState = { ...filterState };
+                            let ind = filterState.solveStatus.indexOf(solved);
+                            if (ind != -1)
+                              myFilterState.solveStatus.splice(ind, 1);
+                            else myFilterState.solveStatus.push(solved);
+                            setFilterState(myFilterState);
+                            console.log(filterState);
+                          }}>
+                          {solved == SOLVED
+                            ? "Solved"
+                            : solved == ATTEMPTED
+                            ? "Attempted"
+                            : "Unsolved"}
+                        </button>
+                      ))}
+                    </div>
                     <form
                       className=""
                       onSubmit={(e) => {
@@ -227,14 +254,14 @@ const ProblemPage = () => {
                       aria-label="First group">
                       {tagList.tags.map((tag) => (
                         <button
-                          className={ (
-                              (filterState.tags.has(tag)
-                                ? "btn bg-success"
-                                : "btn bg-dark") + " h-6 m-1 p-1 text-light"
-                            )}
+                          className={
+                            (filterState.tags.has(tag)
+                              ? "btn bg-success"
+                              : "btn bg-dark") + " h-6 m-1 p-1 text-light"
+                          }
                           key={tag}
                           onClick={() => {
-                            let myFilterState = filterState;
+                            let myFilterState = { ...filterState };
                             if (filterState.tags.has(tag))
                               myFilterState.tags.delete(tag);
                             else myFilterState.tags.add(tag);
@@ -245,36 +272,6 @@ const ProblemPage = () => {
                         </button>
                       ))}
                     </div>
-
-                    <div
-                        className="btn-group me-2 d-flex flex-wrap"
-                        role="group"
-                        aria-label="First group">
-                        {initFilterState.solveStatus.map((solved) => (
-                          <button
-                            className={
-                              (filterState.solveStatus.includes(solved)
-                                ? "btn bg-success"
-                                : "btn bg-dark") + " h-6 m-1 p-1 text-light"
-                            }
-                            key={solved}
-                            onClick={() => {
-                              let myFilterState = filterState;
-                              let ind = filterState.solveStatus.indexOf(solved);
-                              if (ind != -1)
-                                myFilterState.solveStatus.splice(ind, 1);
-                              else myFilterState.solveStatus.push(solved);
-                              setFilterState(myFilterState);
-                              console.log(filterState);
-                            }}>
-                            {solved == SOLVED
-                              ? "Solved"
-                              : solved == ATTEMPTED
-                              ? "Attempted"
-                              : "Unsolved"}
-                          </button>
-                        ))}
-                      </div>
                   </div>
                 </div>
               </div>
