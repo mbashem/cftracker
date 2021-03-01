@@ -1,19 +1,21 @@
 import React, { useEffect, useState } from "react";
-import { connect, useSelector } from "react-redux";
-import {
-  getRandomInteger,
-  getProblemUrl,
-  getLocalStorage,
-  setLocalStorage,
-} from "../../util/bashforces";
+import { useSelector } from "react-redux";
+import { getRandomInteger } from "../../util/bashforces";
 import Fuse from "fuse.js";
 import { sortByRating, sortBySolveCount } from "../../util/sortMethods";
-import {
-  ATTEMPTED_PROBLEMS,
-  SOLVED_PROBLEMS,
-} from "../../data/reducers/fetchReducers";
+import { ATTEMPTED_PROBLEMS, SOLVED_PROBLEMS } from "../../util/constants";
 import Pagination from "../Pagination";
 import ProblemList from "./ProblemList";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faFilter,
+  faRandom,
+  faSort,
+  faSortDown,
+  faSortUp,
+  faRedo,
+  faRedoAlt,
+} from "@fortawesome/free-solid-svg-icons";
 
 const ProblemPage = () => {
   const state = useSelector((state) => state);
@@ -30,7 +32,7 @@ const ProblemPage = () => {
     rating: { min_rating: -1, max_rating: 4000 },
     tags: new Set(),
     search: "",
-    sortyBy: SORT_BY_SOLVE,
+    sortBy: SORT_BY_SOLVE,
     order: DESCENDING,
     perPage: 100,
   };
@@ -61,6 +63,8 @@ const ProblemPage = () => {
   };
 
   useEffect(() => {
+    console.log(filterState);
+
     if (state.problemList.problems !== undefined) {
       let newState = { problems: [] };
       if (filterState.search.trim().length !== 0) {
@@ -78,7 +82,7 @@ const ProblemPage = () => {
         filterProblem(problem)
       );
 
-      if (filterState.sortyBy === SORT_BY_RATING)
+      if (filterState.sortBy === SORT_BY_RATING)
         newState.problems.sort(sortByRating);
       else newState.problems.sort(sortBySolveCount);
       if (filterState.order == DESCENDING) newState.problems.reverse();
@@ -93,14 +97,16 @@ const ProblemPage = () => {
   }, [state, filterState]);
 
   const sortList = (sortBy) => {
-    if (filterState.sortyBy === sortBy)
+    console.log("BEFFORE:");
+    console.log(filterState);
+    if (filterState.sortBy === sortBy)
       setFilterState({ ...filterState, order: filterState.order ^ 1 });
     else
       setFilterState({
         ...filterState,
         ...{
           order: sortBy === SORT_BY_RATING ? ASCENDING : DESCENDING,
-          sortyBy: sortBy,
+          sortBy: sortBy,
         },
       });
   };
@@ -125,33 +131,70 @@ const ProblemPage = () => {
     let lo = selected * filterState.perPage;
     let high = Math.min(
       problemList.problems.length - 1,
-      lo + filterState.perPage - 1
+      lo + filterState.perPage
     );
 
     if (lo > high) return [];
     return problemList.problems.slice(lo, high);
   };
 
+  const nuetral = () => {
+    return <FontAwesomeIcon icon={faSort} />;
+  };
+
+  const less = () => {
+    console.log("LESS");
+    return <FontAwesomeIcon icon={faSortDown} />;
+  };
+
+  const greater = () => {
+    return <FontAwesomeIcon icon={faSortUp} />;
+  };
+
   return (
     <div>
       <div className="menu">
-        <ul className="nav nav-tabs">
-          <form
-            className="form-inline d-flex my-2 my-lg-0"
-            onSubmit={(e) => e.preventDefault()}>
-            <input
-              className="form-control mr-sm-2"
-              type="number"
-              aria-label="Search"
-              value={filterState.perPage}
-              onChange={searchData}
-            />
-          </form>
+        <ul className="nav nav-tabs d-flex justify-content-between container border-0 mt-3">
+          <li className="nav-item col-4">
+            <form
+              className="form-inline d-flex my-2 my-lg-0"
+              onSubmit={(e) => e.preventDefault()}>
+              <input
+                className="form-control mr-sm-2 bg-dark text-light"
+                type="text"
+                placeholder="Problem Name or Id"
+                aria-label="Search"
+                value={filterState.search}
+                onChange={(e) =>
+                  setFilterState({ ...filterState, search: e.target.value })
+                }
+              />
+            </form>
+          </li>
+          
+          <li className="nav-item text-secondary h-6">
+            Showing {paginate().length} of {problemList.problems.length}
+          </li>
 
           <li className="nav-item">
-            <a className="nav-link" onClick={chooseRandom} href="#">
-              Random
-            </a>
+            <div className="btn-group" role="group" aria-label="Basic example">
+              <button
+                type="button"
+                className="btn btn-dark nav-link"
+                onClick={chooseRandom}
+                title="Find Random Contest"
+                href="#">
+                <FontAwesomeIcon icon={faRandom} />
+              </button>
+              <button
+                type="button"
+                className="btn btn-dark nav-link"
+                title="Cancel Random"
+                onClick={() => setRandomProblem(-1)}
+                href="#">
+                <FontAwesomeIcon icon={faRedo} />
+              </button>
+            </div>
           </li>
           <li className="nav-item">
             <button
@@ -159,7 +202,7 @@ const ProblemPage = () => {
               className="btn btn-primary"
               data-bs-toggle="modal"
               data-bs-target="#exampleModal">
-              Filter
+              {<FontAwesomeIcon icon={faFilter} />}
             </button>
             <div
               className="modal"
@@ -180,6 +223,43 @@ const ProblemPage = () => {
                       aria-label="Close"></button>
                   </div>
                   <div className="modal-body">
+                    <div className="group">
+                      <form
+                        className="form-inline d-flex justify-content-between my-2 my-lg-0"
+                        onSubmit={(e) => e.preventDefault()}>
+                        <div className="d-flex justify-content-between w-100">
+                          <div className="input-group">
+                            <span
+                              className="input-group-text"
+                              id="perpage-input">
+                              Per Page
+                            </span>
+                            <input
+                              className="form-control mr-sm-2"
+                              type="number"
+                              aria-label="perpage"
+                              aria-describedby="perpage-input"
+                              value={filterState.perPage}
+                              onChange={(e) =>
+                                setFilterState({
+                                  ...filterState,
+                                  perPage: e.target.value,
+                                })
+                              }
+                            />
+                          </div>
+                          <div className="input-group d-flex justify-content-end">
+                            <button
+                              className="btn btn-light nav-link h-6"
+                              onClick={() => setFilterState(initFilterState)}
+                              title="Reset To Default State"
+                              href="#">
+                              <FontAwesomeIcon icon={faRedoAlt} />
+                            </button>
+                          </div>
+                        </div>
+                      </form>
+                    </div>
                     <div
                       className="btn-group me-2 d-flex flex-wrap"
                       role="group"
@@ -215,37 +295,47 @@ const ProblemPage = () => {
                         e.preventDefault();
                       }}>
                       <div className="d-flex">
-                        <input
-                          className="form-control mr-sm-2"
-                          type="text"
-                          placeholder="Min Rating"
-                          value={filterState.rating.min_rating}
-                          onChange={(e) =>
-                            setFilterState({
-                              ...filterState,
-                              rating: {
-                                ...filterState.rating,
-                                min_rating: e.target.value,
-                              },
-                            })
-                          }
-                        />
-                        <input
-                          className="form-control mr-sm-2"
-                          type="text"
-                          placeholder="Max Rating"
-                          value={filterState.rating.max_rating}
-                          onChange={searchData}
-                          onChange={(e) =>
-                            setFilterState({
-                              ...filterState,
-                              rating: {
-                                ...filterState.rating,
-                                max_rating: e.target.value,
-                              },
-                            })
-                          }
-                        />
+                        <div className="input-group pe-1">
+                          <span className="input-group-text" id="perpage-input">
+                            Min Rating
+                          </span>
+                          <input
+                            className="form-control mr-sm-2"
+                            type="text"
+                            placeholder="Min Rating"
+                            value={filterState.rating.min_rating}
+                            onChange={(e) =>
+                              setFilterState({
+                                ...filterState,
+                                rating: {
+                                  ...filterState.rating,
+                                  min_rating: e.target.value,
+                                },
+                              })
+                            }
+                          />
+                        </div>
+                        <div className="input-group ps-1">
+                          <span className="input-group-text" id="perpage-input">
+                            Max Rating
+                          </span>
+                          <input
+                            className="form-control mr-sm-2"
+                            type="text"
+                            placeholder="Max Rating"
+                            value={filterState.rating.max_rating}
+                            onChange={searchData}
+                            onChange={(e) =>
+                              setFilterState({
+                                ...filterState,
+                                rating: {
+                                  ...filterState.rating,
+                                  max_rating: e.target.value,
+                                },
+                              })
+                            }
+                          />
+                        </div>
                       </div>
                     </form>
                     <div
@@ -277,47 +367,50 @@ const ProblemPage = () => {
               </div>
             </div>
           </li>
-          <li className="nav-item"></li>
-          <li className="nav-item">
-            <form
-              className="form-inline d-flex my-2 my-lg-0"
-              onSubmit={(e) => e.preventDefault()}>
-              <input
-                className="form-control mr-sm-2"
-                type="text"
-                placeholder="Problem Name or Id"
-                aria-label="Search"
-                value={filterState.search}
-                onChange={(e) =>
-                  setFilterState({ ...filterState, search: e.target.value })
-                }
-              />
-            </form>
-          </li>
         </ul>
       </div>
-      <Pagination
-        totalCount={problemList.problems.length}
-        perPage={filterState.perPage}
-        selected={selected}
-        pageSelected={(e) => setSelected(e)}
-      />
-      <table className="table table-bordered table-dark">
+      <div className="p-2">
+        <Pagination
+          totalCount={problemList.problems.length}
+          perPage={filterState.perPage}
+          selected={selected}
+          pageSelected={(e) => setSelected(e)}
+        />
+      </div>
+      <table className="table table-bordered table-dark container">
         <thead className="thead-dark">
           <tr>
-            <th scope="col">Problem Id</th>
+            <th scope="col">#</th>
             <th scope="col">Name</th>
             <th
               scope="col"
               role="button"
               onClick={() => sortList(SORT_BY_RATING)}>
-              Rating
+              <div className="d-flex justify-content-between">
+                <div>Rating</div>
+                <div>
+                  {filterState.sortBy === SORT_BY_RATING
+                    ? filterState.order === ASCENDING
+                      ? less()
+                      : greater()
+                    : nuetral()}
+                </div>
+              </div>
             </th>
             <th
               scope="col"
               role="button"
               onClick={() => sortList(SORT_BY_SOLVE)}>
-              Solve Count
+              <div className="d-flex justify-content-between">
+                <div>Solve Count</div>
+                <div>
+                  {filterState.sortBy === SORT_BY_SOLVE
+                    ? filterState.order === ASCENDING
+                      ? less()
+                      : greater()
+                    : nuetral()}
+                </div>
+              </div>
             </th>
           </tr>
         </thead>

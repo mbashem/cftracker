@@ -2,12 +2,10 @@ import { applyMiddleware, combineReducers, createStore } from "redux";
 import logger from "redux-logger";
 import thunk from "redux-thunk";
 import {
-  userSubmissionsReducer,
   problemListReducer,
-  errorReducer,
-  unsolvedProblemsReducer,
   contestReducer,
 } from "./reducers/fetchReducers";
+import { userSubmissionsReducer,userReducer } from "./reducers/userReducers";
 
 export const contestList = {
   status: "OK",
@@ -82,6 +80,7 @@ const combinedReducers = combineReducers({
   userSubmissions: userSubmissionsReducer,
   problemList: problemListReducer,
   contestList: contestReducer,
+  userList: userReducer,
 });
 
 const newCombinedReducers = (state, action) => {
@@ -102,6 +101,7 @@ const newCombinedReducers = (state, action) => {
       loading: intermediateReducer.contestList.loading,
       problems: intermediateReducer.problemList.problems,
     },
+    userList: intermediateReducer.userList,
   };
 };
 
