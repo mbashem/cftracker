@@ -17,32 +17,22 @@ function App(props) {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    document.title = "BashForces";
+    // fetchProblemList(dispatch);
+    // fetchContestList(dispatch);
   }, []);
-  //console.log(contestList);
-  // const props = useSelector(state => state);
-  const activateLasers = () => {
-    fetchProblemList(dispatch);
-    fetchUserSubmissions(dispatch);
-    fetchContestList(dispatch);
-    //console.log(state);
-  };
-  console.log(props);
 
   return (
     <div className="App container-fluid bg-dark">
       <div className="menu">
         <Menu />
       </div>
-      <header className="App-header text-light">{}</header>
-      <button onClick={activateLasers}>Activate Lasers</button>
 
       <Switch>
         <Route path={PROBLEMS} component={ProblemPage} />
         <Route strict path={CONTEST} component={ContestPage}/>
 
       </Switch>
-      <footer>
+      <footer className="text-light d-flex justify-content-center p-3">
         All rights reserved by @Bashem
       </footer>
     </div>

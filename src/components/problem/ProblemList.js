@@ -4,7 +4,7 @@ import { getProblemUrl } from "../../util/bashforces";
 import {
   ATTEMPTED_PROBLEMS,
   SOLVED_PROBLEMS,
-} from "../../data/reducers/fetchReducers";
+} from "../../util/constants";
 
 const ProblemList = (props) => {
   const state = useSelector((state) => state);
@@ -29,6 +29,7 @@ const ProblemList = (props) => {
           <a
             className="text-light text-decoration-none"
             target="_blank"
+            title={problem.tags}
             href={getProblemUrl(problem.contestId, problem.index)}>
             {problem.name}
           </a>

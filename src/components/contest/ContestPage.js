@@ -15,8 +15,16 @@ import {
   ATTEMPTED_PROBLEMS,
   SOLVED_CONTESTS,
   SOLVED_PROBLEMS,
-} from "../../data/reducers/fetchReducers";
+} from "../../util/constants";
 import Pagination from "../Pagination";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faFilter,
+  faRandom,
+  faRedo,
+  faRedoAlt,
+} from "@fortawesome/free-solid-svg-icons";
+import { far } from "@fortawesome/free-regular-svg-icons";
 
 const ContestPage = () => {
   const state = useSelector((state) => state);
@@ -31,22 +39,24 @@ const ContestPage = () => {
   const initFilterState = {
     solveStatus: [SOLVED, ATTEMPTED, UNSOLVED],
     search: "",
-    showDate: false,
+    showDate: 0,
     perPage: 100,
   };
 
   const [filterState, setFilterState] = useState(initFilterState);
   const [selected, setSelected] = useState(0);
-  
-  const contestStatus = (contest) => {
-    if (state.userSubmissions[SOLVED_CONTESTS].has(contest.id)) return SOLVED;
-    if (state.userSubmissions[ATTEMPTED_CONTESTS].has(contest.id))
+
+  const contestStatus = (contestId) => {
+    if (state.userSubmissions[SOLVED_CONTESTS].has(contestId)) return SOLVED;
+    if (state.userSubmissions[ATTEMPTED_CONTESTS].has(contestId))
       return ATTEMPTED;
     return UNSOLVED;
   };
 
   const filterContest = (contest) => {
-    let solveStatus = filterState.solveStatus.includes(contestStatus(contest));
+    let solveStatus = filterState.solveStatus.includes(
+      contestStatus(contest.id.toString())
+    );
     return solveStatus;
   };
 
@@ -64,15 +74,13 @@ const ContestPage = () => {
         .map((element) => element.item);
     }
 
+    console.log(filterState);
+
     const newContestList = contests.filter((contest) => filterContest(contest));
 
     setContestList({ ...contestList, contests: newContestList });
     setRandomContest(-1);
   }, [state, filterState]);
-
-  const showContest = (solveStatus) => {
-    setFilterState({ ...filterState, solveStatus });
-  };
 
   const chooseRandom = () => {
     if (contestList.contests.length === 0) return;
@@ -83,7 +91,7 @@ const ContestPage = () => {
     let lo = selected * filterState.perPage;
     let high = Math.min(
       contestList.contests.length - 1,
-      lo + filterState.perPage - 1
+      lo + filterState.perPage
     );
 
     if (lo > high) return [];
@@ -93,63 +101,171 @@ const ContestPage = () => {
   return (
     <div className="div">
       <div className="menu">
-        <nav className="navbar navbar-expand-lg navbar-dark bg-dark p-2">
+        <nav className="navbar navbar-expand-lg navbar-dark container bg-dark p-2">
           <div
             className="collapse navbar-collapse d-flex justify-content-between"
             id="navbarTogglerDemo03">
-            <ul className="navbar navbar-dark bg-dark list-unstyled">
-              <li className="nav-item">
-                <button
-                  className="btn btn-secondary nav-link m-2"
-                  onClick={() => showContest([SOLVED, ATTEMPTED, UNSOLVED])}
-                  href="#">
-                  All Contests
-                </button>
+            <ul className="navbar w-100 navbar-dark d-flex justify-content-between bg-dark list-unstyled">
+              <li className="nav-item col-6">
+                <form
+                  className="form-inline d-flex my-2 my-lg-0"
+                  onSubmit={(e) => e.preventDefault()}>
+                  <input
+                    className="form-control bg-dark text-light mr-sm-2"
+                    type="text"
+                    placeholder="Search by Contest Name or Id"
+                    aria-label="Search"
+                    value={filterState.search}
+                    onChange={(e) =>
+                      setFilterState({ ...filterState, search: e.target.value })
+                    }
+                  />
+                </form>
               </li>
-              <li className="nav-item active">
-                <button
-                  className="btn btn-secondary nav-link m-2"
-                  onClick={() => showContest([ATTEMPTED, UNSOLVED])}
-                  href="#">
-                  Unsolved Contests
-                </button>
-              </li>
-              <li className="nav-item">
-                <button
-                  className="btn btn-secondary nav-link m-2"
-                  onClick={() => showContest([UNSOLVED])}
-                  href="#">
-                  Never Attempted Contests
-                </button>
+              <li className="nav-item text-secondary">
+                Showing {paginate().length} of {contestList.contests.length}
               </li>
               <li className="nav-item">
-                <button className="nav-link" onClick={chooseRandom} href="#">
-                  Choose Random
-                </button>
+                <div
+                  className="btn-group"
+                  role="group"
+                  aria-label="Basic example">
+                  <button
+                    type="button"
+                    className="btn btn-dark nav-link"
+                    onClick={chooseRandom}
+                    title="Find Random Contest"
+                    href="#">
+                    <FontAwesomeIcon icon={faRandom} />
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-dark nav-link"
+                    title="Cancel Random"
+                    onClick={() => setRandomContest(-1)}
+                    href="#">
+                    <FontAwesomeIcon icon={faRedo} />
+                  </button>
+                </div>
               </li>
-              <form
-                className="form-inline d-flex my-2 my-lg-0"
-                onSubmit={(e) => e.preventDefault()}>
-                <input
-                  className="form-control mr-sm-2"
-                  type="text"
-                  placeholder="Problem Name or Id"
-                  aria-label="Search"
-                  value={filterState.search}
-                  onChange={(e) =>
-                    setFilterState({ ...filterState, search: e.target.value })
-                  }
-                />
-                <input
-                  className="form-control mr-sm-2"
-                  type="number"
-                  aria-label="Search"
-                  value={filterState.perPage}
-                  onChange={(e) =>
-                    setFilterState({ ...filterState, perPage: e.target.value })
-                  }
-                />
-              </form>
+              <li className="nav-item">
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  data-bs-toggle="modal"
+                  data-bs-target="#exampleModal">
+                  {<FontAwesomeIcon icon={faFilter} />}
+                </button>
+                <div
+                  className="modal"
+                  id="exampleModal"
+                  tabIndex="-1"
+                  aria-labelledby="exampleModalLabel"
+                  aria-hidden="true">
+                  <div className="modal-dialog">
+                    <div className="modal-content">
+                      <div className="modal-header">
+                        <h5 className="modal-title" id="exampleModalLabel">
+                          Filter
+                        </h5>
+                        <button
+                          type="button"
+                          className="btn-close"
+                          data-bs-dismiss="modal"
+                          aria-label="Close"></button>
+                      </div>
+                      <div className="modal-body">
+                        <div className="group">
+                          <form
+                            className="form-inline d-flex justify-content-between my-2 my-lg-0"
+                            onSubmit={(e) => e.preventDefault()}>
+                            <div className="d-flex justify-content-between w-100">
+                              <div className="input-group">
+                                <span
+                                  className="input-group-text"
+                                  id="perpage-input">
+                                  Per Page:
+                                </span>
+                                <input
+                                  className="form-control mr-sm-2"
+                                  type="number"
+                                  aria-label="perpage"
+                                  aria-describedby="perpage-input"
+                                  value={filterState.perPage}
+                                  onChange={(e) =>
+                                    setFilterState({
+                                      ...filterState,
+                                      perPage: e.target.value,
+                                    })
+                                  }
+                                />
+                              </div>
+                              <div className="input-group d-flex justify-content-end">
+                                <span
+                                  className="input-group-text"
+                                  id="perpage-input">
+                                  Show Date
+                                </span>
+                                <div className="input-group-text">
+                                  <input
+                                    className="form-check-input mt-0"
+                                    type="checkbox"
+                                    defaultChecked={filterState.showDate}
+                                    onChange={() =>
+                                      setFilterState({
+                                        ...filterState,
+                                        showDate: filterState.showDate ^ 1,
+                                      })
+                                    }
+                                  />
+                                </div>
+                              </div>
+                              <button
+                                className="btn btn-secondary nav-link m-2 h-6"
+                                onClick={() => setFilterState(initFilterState)}
+                                title="Reset To Default State"
+                                href="#">
+                                <FontAwesomeIcon icon={faRedoAlt} />
+                              </button>
+                            </div>
+                          </form>
+                        </div>
+                        <div
+                          className="btn-group d-flex flex-wrap justify-content-between"
+                          role="group"
+                          aria-label="First group">
+                          {initFilterState.solveStatus.map((solved) => (
+                            <button
+                              className={
+                                (filterState.solveStatus.includes(solved)
+                                  ? "btn bg-success"
+                                  : "btn bg-dark") + " h-6 m-1 p-1 text-light"
+                              }
+                              key={solved}
+                              onClick={() => {
+                                let myFilterState = { ...filterState };
+                                let ind = filterState.solveStatus.indexOf(
+                                  solved
+                                );
+                                if (ind != -1)
+                                  myFilterState.solveStatus.splice(ind, 1);
+                                else myFilterState.solveStatus.push(solved);
+                                setFilterState(myFilterState);
+                                console.log(filterState);
+                              }}>
+                              {solved == SOLVED
+                                ? "Solved"
+                                : solved == ATTEMPTED
+                                ? "Attempted"
+                                : "Unsolved"}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </li>
             </ul>
           </div>
         </nav>
@@ -166,7 +282,7 @@ const ContestPage = () => {
       <table className="table table-bordered table-dark">
         <thead className="thead-dark">
           <tr>
-            <th scope="col">Contest ID</th>
+            <th scope="col">#</th>
             <th scope="col">Contest Name</th>
             <th scope="col">A</th>
             <th scope="col">B</th>
@@ -188,6 +304,12 @@ const ContestPage = () => {
           />
         </tbody>
       </table>
+      <Pagination
+        pageSelected={(e) => setSelected(e)}
+        perPage={filterState.perPage}
+        selected={selected}
+        totalCount={contestList.contests.length}
+      />
     </div>
   );
 };

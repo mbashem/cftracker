@@ -11,21 +11,10 @@ import {
   ATTEMPTED_PROBLEMS,
   SOLVED_CONTESTS,
   SOLVED_PROBLEMS,
-} from "../../data/reducers/fetchReducers";
+} from "../../util/constants";
 
 const ContestList = (props) => {
   const state = useSelector((state) => state);
-
-  const SOLVED = 1,
-    ATTEMPTED = 0,
-    UNSOLVED = 2;
-
-  const contestStatus = (contest) => {
-    if (state.userSubmissions[SOLVED_CONTESTS].has(contest.id)) return SOLVED;
-    if (state.userSubmissions[ATTEMPTED_CONTESTS].has(contest.id))
-      return ATTEMPTED;
-    return UNSOLVED;
-  };
 
   const getInfo = (contestId, index) => {
     let l = 0,
@@ -42,7 +31,7 @@ const ContestList = (props) => {
       }
 
       if (
-       state. problemList.problems[mid].contestId > contestId ||
+        state.problemList.problems[mid].contestId > contestId ||
         (state.problemList.problems[mid].contestId === contestId &&
           state.problemList.problems[mid].index > index)
       ) {
@@ -51,6 +40,7 @@ const ContestList = (props) => {
     }
 
     const EMPTY = "EMPTY bg-dark";
+
     if (ans === -1 && index.length !== 1) return <td className={EMPTY}></td>;
 
     if (ans === -1 && index.length === 1) {
@@ -61,10 +51,20 @@ const ContestList = (props) => {
         arr.push(res);
       }
 
+      if(arr.length == 0){
+        return (<td className={EMPTY}></td>)
+      }
+
       if (arr.length < 3)
         return (
-          <td className="inside p-0" key={contestId + index}>
-            {arr.map((element) => element)}
+          <td className="bg-success p-0">
+            <table key={contestId + index.charAt(0)}>
+              <tbody>
+                <td className="inside p-0" key={contestId + index}>
+                  {arr.map((element) => element)}
+                </td>
+              </tbody>
+            </table>
           </td>
         );
       else
@@ -82,7 +82,7 @@ const ContestList = (props) => {
 
     let name = state.problemList.problems[ans].name;
     let id = state.problemList.problems[ans].id;
-    if (name.length > 15) name = name.substring(0, 14) + "...";
+    if (name.length > 10) name = name.substring(0, 9) + "...";
 
     let className =
       (solved ? "bg-success" : attempted ? "bg-danger" : "") + " p-1";
@@ -115,7 +115,7 @@ const ContestList = (props) => {
         <td>
           <div className="name">
             <a
-              className="text-light text-decoration-none"
+              className="text-light text-decoration-none wrap"
               target="_blank"
               rel="noreferrer"
               title={formateDate(contest.startTimeSeconds)}
@@ -136,13 +136,11 @@ const ContestList = (props) => {
     );
   };
 
-	console.log(props.contestlist);
-
   return (
     <React.Fragment>
       {props.contestlist.map((contest) => {
         return contestCard(contest);
-      })} 
+      })}
     </React.Fragment>
   );
 };
