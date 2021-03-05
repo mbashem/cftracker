@@ -1,15 +1,11 @@
 import { sortByContestId } from "../../util/sortMethods";
 import {
-  ERROR_FETCHING,
   ERROR_FETCHING_CONTEST_LIST,
   ERROR_FETCHING_PROBLEMS,
-  ERROR_FETCHING_USER_SUBMISSIONS,
   FETCH_CONTEST_LIST,
   FETCH_PROBLEM_LIST,
-  FETCH_USER_SUBMISSIONS,
   LOADING_CONTEST_LIST,
   LOADING_PROBLEM_LIST,
-  LOADING_USER_SUBMISSIONS,
 } from "../actions/types";
 
 const problemListInitialState = {

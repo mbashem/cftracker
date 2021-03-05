@@ -4,7 +4,7 @@ import { getRandomInteger } from "../../util/bashforces";
 import Fuse from "fuse.js";
 import { sortByRating, sortBySolveCount } from "../../util/sortMethods";
 import { ATTEMPTED_PROBLEMS, SOLVED_PROBLEMS } from "../../util/constants";
-import Pagination from "../Pagination";
+import Pagination from "../../util/Pagination";
 import ProblemList from "./ProblemList";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {

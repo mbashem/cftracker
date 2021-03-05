@@ -1,22 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import {
-  getProblemUrl,
-  formateDate,
-  charInc,
   getRandomInteger,
-  getContestUrl,
 } from "../../util/bashforces";
 import Fuse from "fuse.js";
-import ReactPaginate from "react-paginate";
 import ContestList from "./ContestList";
 import {
   ATTEMPTED_CONTESTS,
-  ATTEMPTED_PROBLEMS,
   SOLVED_CONTESTS,
-  SOLVED_PROBLEMS,
 } from "../../util/constants";
-import Pagination from "../Pagination";
+import Pagination from "../../util/Pagination";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faFilter,
@@ -24,7 +17,6 @@ import {
   faRedo,
   faRedoAlt,
 } from "@fortawesome/free-solid-svg-icons";
-import { far } from "@fortawesome/free-regular-svg-icons";
 
 const ContestPage = () => {
   const state = useSelector((state) => state);

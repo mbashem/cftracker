@@ -1,13 +1,13 @@
 import { faSync } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { useEffect, useState } from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import {
   fetchContestList,
   fetchProblemList,
-  fetchUserSubmissions,
 } from "../data/actions/fetchActions";
+import { fetchUserSubmissions, fetchUsers } from "../data/actions/userActions";
 
 export const PROBLEMS = "/problems";
 export const CONTEST = "/contests";
@@ -15,10 +15,19 @@ export const CONTEST = "/contests";
 const Menu = () => {
   const dispatch = useDispatch();
 
+  const [handle, setHandle] = useState("");
+  const state = useSelector((state) => state);
+
   const sync = () => {
     fetchProblemList(dispatch);
-    fetchUserSubmissions(dispatch);
+    fetchUserSubmissions(dispatch, state.userList.handles);
     fetchContestList(dispatch);
+  };
+
+  const submitUser = () => {
+    fetchUsers(dispatch, handle).then(() => {
+      fetchUserSubmissions(dispatch, state.userList.handles);
+    });
   };
 
   return (
@@ -47,7 +56,8 @@ const Menu = () => {
               onClick={(e) => {
                 e.preventDefault();
                 sync();
-              }} href="#">
+              }}
+              href="#">
               <FontAwesomeIcon icon={faSync} />
             </a>
           </li>
@@ -62,12 +72,19 @@ const Menu = () => {
             </Link>
           </li>
         </ul>
-        <form className="form-inline d-flex my-2 my-lg-0">
+        <form
+          className="form-inline d-flex my-2 my-lg-0"
+          onSubmit={(e) => {
+            e.preventDefault();
+            submitUser();
+          }}>
           <input
             className="form-control mr-sm-2"
             type="search"
             placeholder="Handle"
             aria-label="Search"
+            value={handle}
+            onChange={(e) => setHandle(e.target.value)}
           />
           <button
             className="btn btn-outline-success my-2 my-sm-0"
