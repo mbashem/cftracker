@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { useSelector } from "react-redux";
 import {
   getProblemUrl,
@@ -7,9 +7,7 @@ import {
   getContestUrl,
 } from "../../util/bashforces";
 import {
-  ATTEMPTED_CONTESTS,
   ATTEMPTED_PROBLEMS,
-  SOLVED_CONTESTS,
   SOLVED_PROBLEMS,
 } from "../../util/constants";
 

@@ -1,11 +1,8 @@
 import { applyMiddleware, combineReducers, createStore } from "redux";
 import logger from "redux-logger";
 import thunk from "redux-thunk";
-import {
-  problemListReducer,
-  contestReducer,
-} from "./reducers/fetchReducers";
-import { userSubmissionsReducer,userReducer } from "./reducers/userReducers";
+import { problemListReducer, contestReducer } from "./reducers/fetchReducers";
+import { userSubmissionsReducer, userReducer } from "./reducers/userReducers";
 
 export const contestList = {
   status: "OK",
@@ -72,6 +69,11 @@ const submissions = {
       memoryConsumedBytes: 1638400,
     },
   ],
+};
+
+const failedUserFethc = {
+  status: "FAILED",
+  comment: "handles: User with handle b not found",
 };
 
 const middlewre = [thunk, logger];

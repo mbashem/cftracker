@@ -1,84 +1,25 @@
-// import { FETCH_POSTS, NEW_POST } from './types';
-
 import {
-  ERROR_FETCHING,
   ERROR_FETCHING_CONTEST_LIST,
   ERROR_FETCHING_PROBLEMS,
-  ERROR_FETCHING_USER_SUBMISSIONS,
   FETCH_CONTEST_LIST,
   FETCH_PROBLEM_LIST,
-  FETCH_USER_SUBMISSIONS,
   FINISHED,
   LOADING_CONTEST_LIST,
   LOADING_PROBLEM_LIST,
-  LOADING_USER_SUBMISSIONS,
 } from "./types";
-import store from "../store";
-
-import { useDispatch } from "react-redux";
 
 const allContest = "https://codeforces.com/api/contest.list";
-let id = 5,
-  user = "h";
-const individualContestURL =
-  "https://codeforces.com/api/contest.status?contestId=" +
-  id +
-  "&handle=" +
-  user;
-let contestId = 5;
-const path = "https://codeforces.com/contest/" + contestId;
 const problemSet = "https://codeforces.com/api/problemset.problems";
-const userStatus = "https://codeforces.com/api/user.status?handle=bashem";
 
-const errorFecthing = (type, message) => {
+export const errorFecthing = (type, message) => {
   return {
     type: type,
     payload: message,
   };
 };
 
-const load = (type) => {
+export const load = (type) => {
   return {type: type}
-};
-
-export const fetchUserSubmissions = (dispatch) => {
-  dispatch(load(LOADING_USER_SUBMISSIONS));
-  fetch(userStatus)
-    .then((res) => res.json())
-    .then(
-      (result) => {
-        if (result.status !== "OK")
-          return errorFecthing(
-            ERROR_FETCHING_USER_SUBMISSIONS,
-            "Status Failed"
-          );
-        console.log(result);
-        return dispatch({
-          type: FETCH_USER_SUBMISSIONS,
-          payload: result.result,
-        });
-      },
-      // Note: it's important to handle errors here
-      // instead of a catch() block so that we don't swallow
-      // exceptions from actual bugs in components.
-      (error) => {
-        return dispatch(
-          errorFecthing(
-            ERROR_FETCHING_USER_SUBMISSIONS,
-            "ERROR in User Submission" + error
-          )
-        );
-      }
-    )
-    .catch((e) => {
-      // console.log(e);
-      return dispatch(
-        errorFecthing(
-          ERROR_FETCHING_USER_SUBMISSIONS,
-          "ERROR in User Submission" + e
-        )
-      );
-    });
 };
 
 export const fetchProblemList = (dispatch) => {
