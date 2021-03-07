@@ -1,14 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import {
-  getRandomInteger,
-} from "../../util/bashforces";
-import Fuse from "fuse.js";
+import { getRandomInteger } from "../../util/bashforces";
 import ContestList from "./ContestList";
-import {
-  ATTEMPTED_CONTESTS,
-  SOLVED_CONTESTS,
-} from "../../util/constants";
+import { ATTEMPTED_CONTESTS, SOLVED_CONTESTS } from "../../util/constants";
 import Pagination from "../../util/Pagination";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -49,24 +43,21 @@ const ContestPage = () => {
     let solveStatus = filterState.solveStatus.includes(
       contestStatus(contest.id.toString())
     );
-    return solveStatus;
+
+    let searchIncluded = true;
+
+    let text = filterState.search.toLowerCase().trim();
+
+    if (text.length)
+      searchIncluded =
+        contest.name.toLowerCase().includes(text) ||
+        contest.id.toString().includes(text);
+
+    return solveStatus && searchIncluded;
   };
 
   useEffect(() => {
     let contests = state.contestList.contests;
-
-    if (filterState.search.trim().length !== 0) {
-      contests = new Fuse(contests, {
-        keys: ["name", "id"],
-        ignoreLocation: true,
-        threshold: 0.1,
-        shouldSort: false,
-      })
-        .search(filterState.search)
-        .map((element) => element.item);
-    }
-
-    console.log(filterState);
 
     const newContestList = contests.filter((contest) => filterContest(contest));
 
@@ -81,10 +72,7 @@ const ContestPage = () => {
 
   const paginate = () => {
     let lo = selected * filterState.perPage;
-    let high = Math.min(
-      contestList.contests.length - 1,
-      lo + filterState.perPage
-    );
+    let high = Math.min(contestList.contests.length, lo + filterState.perPage);
 
     if (lo > high) return [];
     return contestList.contests.slice(lo, high);
@@ -187,7 +175,9 @@ const ContestPage = () => {
                                   onChange={(e) =>
                                     setFilterState({
                                       ...filterState,
-                                      perPage: e.target.value,
+                                      perPage: e.target.value
+                                        .toLowerCase()
+                                        .trim(),
                                     })
                                   }
                                 />
@@ -243,7 +233,6 @@ const ContestPage = () => {
                                   myFilterState.solveStatus.splice(ind, 1);
                                 else myFilterState.solveStatus.push(solved);
                                 setFilterState(myFilterState);
-                                console.log(filterState);
                               }}>
                               {solved == SOLVED
                                 ? "Solved"
