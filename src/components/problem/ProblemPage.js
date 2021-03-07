@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { getRandomInteger } from "../../util/bashforces";
-import Fuse from "fuse.js";
 import { sortByRating, sortBySolveCount } from "../../util/sortMethods";
 import { ATTEMPTED_PROBLEMS, SOLVED_PROBLEMS } from "../../util/constants";
 import Pagination from "../../util/Pagination";
@@ -59,24 +58,21 @@ const ProblemPage = () => {
       problem.rating >= filterState.rating.min_rating;
     let solveStatus = filterState.solveStatus.includes(getState(problem));
 
-    return solveStatus && ratingInside && containTags;
+    let searchIncluded = true;
+    let text = filterState.search.toLowerCase().trim();
+    if (text.length)
+      searchIncluded =
+        problem.name.toLowerCase().includes(text) ||
+        problem.id.toLowerCase().includes(text);
+
+    return solveStatus && ratingInside && containTags && searchIncluded;
   };
 
   useEffect(() => {
-    console.log(filterState);
 
     if (state.problemList.problems !== undefined) {
       let newState = { problems: [] };
-      if (filterState.search.trim().length !== 0) {
-        newState.problems = new Fuse(state.problemList.problems, {
-          keys: ["name", "id"],
-          distance: 1,
-          ignoreLocation: true,
-          threshold: 0.3,
-          shouldSort: false,
-        }).search(filterState.search);
-        newState.problems = newState.problems.map((element) => element.item);
-      } else newState.problems = state.problemList.problems;
+      newState.problems = state.problemList.problems;
 
       newState.problems = newState.problems.filter((problem) =>
         filterProblem(problem)
@@ -97,8 +93,6 @@ const ProblemPage = () => {
   }, [state, filterState]);
 
   const sortList = (sortBy) => {
-    console.log("BEFFORE:");
-    console.log(filterState);
     if (filterState.sortBy === sortBy)
       setFilterState({ ...filterState, order: filterState.order ^ 1 });
     else
@@ -129,10 +123,7 @@ const ProblemPage = () => {
 
   const paginate = () => {
     let lo = selected * filterState.perPage;
-    let high = Math.min(
-      problemList.problems.length - 1,
-      lo + filterState.perPage
-    );
+    let high = Math.min(problemList.problems.length, lo + filterState.perPage);
 
     if (lo > high) return [];
     return problemList.problems.slice(lo, high);
@@ -143,7 +134,6 @@ const ProblemPage = () => {
   };
 
   const less = () => {
-    console.log("LESS");
     return <FontAwesomeIcon icon={faSortDown} />;
   };
 
@@ -166,12 +156,15 @@ const ProblemPage = () => {
                 aria-label="Search"
                 value={filterState.search}
                 onChange={(e) =>
-                  setFilterState({ ...filterState, search: e.target.value })
+                  setFilterState({
+                    ...filterState,
+                    search: e.target.value,
+                  })
                 }
               />
             </form>
           </li>
-          
+
           <li className="nav-item text-secondary h-6">
             Showing {paginate().length} of {problemList.problems.length}
           </li>
@@ -279,7 +272,6 @@ const ProblemPage = () => {
                               myFilterState.solveStatus.splice(ind, 1);
                             else myFilterState.solveStatus.push(solved);
                             setFilterState(myFilterState);
-                            console.log(filterState);
                           }}>
                           {solved == SOLVED
                             ? "Solved"
@@ -355,7 +347,6 @@ const ProblemPage = () => {
                             if (filterState.tags.has(tag))
                               myFilterState.tags.delete(tag);
                             else myFilterState.tags.add(tag);
-                            console.log(myFilterState);
                             setFilterState(myFilterState);
                           }}>
                           {tag}
