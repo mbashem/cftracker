@@ -69,7 +69,6 @@ const ProblemPage = () => {
   };
 
   useEffect(() => {
-
     if (state.problemList.problems !== undefined) {
       let newState = { problems: [] };
       newState.problems = state.problemList.problems;

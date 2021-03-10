@@ -6,10 +6,7 @@ import {
   charInc,
   getContestUrl,
 } from "../../util/bashforces";
-import {
-  ATTEMPTED_PROBLEMS,
-  SOLVED_PROBLEMS,
-} from "../../util/constants";
+import { ATTEMPTED_PROBLEMS, SOLVED_PROBLEMS } from "../../util/constants";
 
 const ContestList = (props) => {
   const state = useSelector((state) => state);
@@ -39,7 +36,8 @@ const ContestList = (props) => {
 
     const EMPTY = "EMPTY bg-dark";
 
-    if (ans === -1 && index.length !== 1) return <td className={EMPTY}></td>;
+    if (ans === -1 && index.length !== 1)
+      return <td key={contestId + index} className={EMPTY}></td>;
 
     if (ans === -1 && index.length === 1) {
       let arr = [];
@@ -49,18 +47,20 @@ const ContestList = (props) => {
         arr.push(res);
       }
 
-      if(arr.length == 0){
-        return (<td className={EMPTY}></td>)
+      if (arr.length == 0) {
+        return <td key={contestId + index} className={EMPTY}></td>;
       }
 
       if (arr.length < 3)
         return (
-          <td className="bg-success p-0">
-            <table key={contestId + index.charAt(0)}>
+          <td className="p-0" key={contestId + index.charAt(0)}>
+            <table>
               <tbody>
-                <td className="inside p-0" key={contestId + index}>
-                  {arr.map((element) => element)}
-                </td>
+                <tr>
+                  <td className="inside p-0" key={contestId + index}>
+                    {arr.map((element) => element)}
+                  </td>
+                </tr>
               </tbody>
             </table>
           </td>
@@ -73,7 +73,9 @@ const ContestList = (props) => {
         );
     }
 
-    let solved = state.userSubmissions[SOLVED_PROBLEMS].has(contestId + index);
+    let solved = state.userSubmissions[SOLVED_PROBLEMS].has(
+      contestId.toString() + index
+    );
     let attempted = state.userSubmissions[ATTEMPTED_PROBLEMS].has(
       contestId + index
     );
@@ -105,6 +107,8 @@ const ContestList = (props) => {
       </td>
     );
   };
+
+  const renderProblem = () => {};
 
   const contestCard = (contest) => {
     return (

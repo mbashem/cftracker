@@ -16,7 +16,6 @@ import {
   SOLVED_CONTESTS,
   ATTEMPTED_CONTESTS,
 } from "../../util/constants";
-import { act } from "react-dom/test-utils";
 
 const userInitialState = {
   handles: [],
@@ -66,13 +65,13 @@ const submissionsInitialState = {
   [ATTEMPTED_CONTESTS]: new Set(),
   error: "",
   loading: false,
+  id: 0,
 };
 
 export const userSubmissionsReducer = (
   initState = submissionsInitialState,
   action
 ) => {
-  let currentState = submissionsInitialState;
   switch (action.type) {
     case CLEAR_USERS_SUBMISSIONS:
       return {
@@ -82,8 +81,23 @@ export const userSubmissionsReducer = (
         [ATTEMPTED_CONTESTS]: new Set(),
         error: "",
         loading: false,
+        id: 0,
       };
     case FETCH_USER_SUBMISSIONS:
+      let currentState;
+      if (action.payload.id === initState.id) currentState = { ...initState };
+      else if (action.payload.id > initState.id)
+        currentState = {
+          [SOLVED_PROBLEMS]: new Set(),
+          [ATTEMPTED_PROBLEMS]: new Set(),
+          [SOLVED_CONTESTS]: new Set(),
+          [ATTEMPTED_CONTESTS]: new Set(),
+          error: "",
+          loading: false,
+          id: action.payload.id,
+        };
+      else return initState;
+
       action.payload.result.forEach((element) => {
         let contestId = element.problem.contestId.toString();
         let verdict = element.verdict;
@@ -104,18 +118,15 @@ export const userSubmissionsReducer = (
       for (let contestId of currentState[SOLVED_CONTESTS])
         currentState[ATTEMPTED_CONTESTS].delete(contestId);
 
-      return {
-        ...initState,
-        ...currentState,
-      };
+      return currentState;
     case ERROR_FETCHING_USER_SUBMISSIONS:
       return {
         ...initState,
-        error: "Error Fetching Submissions",
+        ...{ error: "Error Fetching Submissions", loading: false },
       };
     case LOADING_USER_SUBMISSIONS:
       return {
-        ...initState,
+        ...submissionsInitialState,
         loading: true,
       };
     default:

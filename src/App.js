@@ -13,25 +13,25 @@ import ProblemPage from "./components/problem/ProblemPage";
 import ContestPage from "./components/contest/ContestPage";
 
 function App(props) {
-  const dispatch = useDispatch();
-
   useEffect(() => {
     // fetchProblemList(dispatch);
     // fetchContestList(dispatch);
+    document.body.classList.add("bg-dark");
   }, []);
 
   return (
-    <div className="App container-fluid bg-dark">
-      <div className="menu">
-        <Menu />
+    <div className="App container-fluid bg-dark min-vh-100 d-flex justify-content-between  flex-column">
+      <div className="top">
+        <div className="menu w-100">
+          <Menu />
+        </div>
+
+        <Switch>
+          <Route path={PROBLEMS} component={ProblemPage} />
+          <Route strict path={CONTEST} component={ContestPage} />
+        </Switch>
       </div>
-
-      <Switch>
-        <Route path={PROBLEMS} component={ProblemPage} />
-        <Route strict path={CONTEST} component={ContestPage}/>
-
-      </Switch>
-      <footer className="text-light d-flex justify-content-center p-3">
+      <footer className="text-light text-center justify-content-center p-3 w-100 align-self-end">
         All rights reserved by @Bashem
       </footer>
     </div>

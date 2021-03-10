@@ -57,6 +57,7 @@ const ContestPage = () => {
   };
 
   useEffect(() => {
+
     let contests = state.contestList.contests;
 
     const newContestList = contests.filter((contest) => filterContest(contest));
