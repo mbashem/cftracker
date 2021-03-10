@@ -18,6 +18,12 @@ const Menu = () => {
   const [handle, setHandle] = useState("");
   const state = useSelector((state) => state);
 
+  useEffect(()=>{
+    console.log(state)
+    
+    fetchUserSubmissions(dispatch, state.userList.handles);
+  },[state.userList])
+
   const sync = () => {
     fetchProblemList(dispatch);
     fetchUserSubmissions(dispatch, state.userList.handles);
@@ -25,9 +31,7 @@ const Menu = () => {
   };
 
   const submitUser = () => {
-    fetchUsers(dispatch, handle).then(() => {
-      fetchUserSubmissions(dispatch, state.userList.handles);
-    });
+    fetchUsers(dispatch, handle)
   };
 
   return (

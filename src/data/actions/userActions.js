@@ -1,4 +1,4 @@
-import { getUserInfo, getUserSubmissions } from "../../util/bashforces";
+import { getUserInfoURL, getUserSubmissionsURL } from "../../util/bashforces";
 import { load, errorFecthing } from "./fetchActions";
 import {
   ADD_USER,
@@ -19,46 +19,51 @@ export const clearUsers = (dispatch) =>
     resolve();
   });
 
-export const fetchUsers = (dispatch, handle) =>
-  new Promise((resolve, reject) => {
-    dispatch(load(LOADING_USERS));
-    clearUsers(dispatch).then(() => {
-      fetch(getUserInfo(handle))
-        .then((res) => res.json())
-        .then(
-          (result) => {
-            if (result.status !== "OK")
-              dispatch(errorFecthing(ERROR_FETCHING_USER, result.comment));
-            else {
-              result.result.map((user) =>
-                dispatch({ type: ADD_USER, payload: user })
-              );
-            }
-          },
-          // Note: it's important to handle errors here
-          // instead of a catch() block so that we don't swallow
-          // exceptions from actual bugs in components.
-          (error) => {
-            dispatch(errorFecthing(ERROR_FETCHING_USER, "ERROR FETCHING USER"));
+export const fetchUsers = (dispatch, handle) => {
+  dispatch(load(LOADING_USERS));
+  clearUsers(dispatch).then(() => {
+    fetch(getUserInfoURL(handle))
+      .then((res) => res.json())
+      .then(
+        (result) => {
+          if (result.status !== "OK")
+            dispatch(errorFecthing(ERROR_FETCHING_USER, result.comment));
+          else {
+            result.result.map((user) =>
+              dispatch({ type: ADD_USER, payload: user })
+            );
           }
-        )
-        .catch((e) => {
-          //  console.log(e);
-          dispatch(errorFecthing(ERROR_FETCHING_USER, "ERROR FETCHING USER"));
-        });
+        },
+        // Note: it's important to handle errors here
+        // instead of a catch() block so that we don't swallow
+        // exceptions from actual bugs in components.
+        (error) => {
+          dispatch(errorFecthing(ERROR_FETCHING_USER, "ERROR FETCHING USER"+error));
+        }
+      )
+      .catch((e) => {
+        //  console.log(e);
+        dispatch(errorFecthing(ERROR_FETCHING_USER, "ERROR FETCHING USER"));
+      });
+  });
+};
+
+export const clearUsersSubmissions = (dispatch) =>
+  new Promise((resolve, reject) => {
+    dispatch({
+      type: CLEAR_USERS_SUBMISSIONS,
     });
     resolve();
   });
 
-const userStatus = "https://codeforces.com/api/user.status?handle=bashem";
-
 export const fetchUserSubmissions = (dispatch, handles) => {
-  dispatch({ type: CLEAR_USERS_SUBMISSIONS });
+  let currentId = Date.now();
+  // clearUsersSubmissions(dispatch).then(() => {
   console.log(handles);
   for (let handle of handles) {
     dispatch(load(LOADING_USER_SUBMISSIONS));
-    console.log(getUserSubmissions(handle));
-    fetch(getUserSubmissions(handle))
+    console.log(getUserSubmissionsURL(handle));
+    fetch(getUserSubmissionsURL(handle))
       .then((res) => res.json())
       .then(
         (result) => {
@@ -70,7 +75,7 @@ export const fetchUserSubmissions = (dispatch, handles) => {
           console.log(result);
           return dispatch({
             type: FETCH_USER_SUBMISSIONS,
-            payload: { result: result.result, handle },
+            payload: { result: result.result, id: currentId },
           });
         },
         // Note: it's important to handle errors here
@@ -95,4 +100,5 @@ export const fetchUserSubmissions = (dispatch, handles) => {
         );
       });
   }
+  // });
 };

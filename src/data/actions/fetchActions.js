@@ -19,7 +19,7 @@ export const errorFecthing = (type, message) => {
 };
 
 export const load = (type) => {
-  return {type: type}
+  return { type: type };
 };
 
 export const fetchProblemList = (dispatch) => {
@@ -34,15 +34,15 @@ export const fetchProblemList = (dispatch) => {
           );
         //   console.log(result);
         let problems = result.result.problems;
-        problems = problems.filter((problem) => ("contestId" in problem));
+        problems = problems.filter((problem) => "contestId" in problem);
         console.log(result.result);
         for (let i = 0; i < result.result.problemStatistics.length; i++) {
           if (!("rating" in problems[i])) problems[i]["rating"] = -1;
           problems[i]["solvedCount"] =
             result.result.problemStatistics[i].solvedCount;
-          problems[i]["id"] = problems[i].contestId.toString()+problems[i].index;
+          problems[i]["id"] =
+            problems[i].contestId.toString() + problems[i].index;
         }
-
 
         return dispatch({
           type: FETCH_PROBLEM_LIST,
@@ -54,7 +54,12 @@ export const fetchProblemList = (dispatch) => {
       // instead of a catch() block so that we don't swallow
       // exceptions from actual bugs in components.
       (error) => {
-        console.log(error);
+        return dispatch(
+          errorFecthing(
+            ERROR_FETCHING_PROBLEMS,
+            "ERROR in PROBLEM LIST " + error
+          )
+        );
       }
     )
     .catch((e) => {
@@ -90,7 +95,12 @@ export const fetchContestList = (dispatch) => {
       // instead of a catch() block so that we don't swallow
       // exceptions from actual bugs in components.
       (error) => {
-        console.log(error);
+        return dispatch(
+          errorFecthing(
+            ERROR_FETCHING_CONTEST_LIST,
+            "FAiled to fethc contestList " + error
+          )
+        );
       }
     )
     .catch((e) => {

@@ -22,11 +22,11 @@ export const getProblemUrl = (contestId, index) => {
   return getContestUrl(contestId) + "/problem/" + index;
 };
 
-export const getUserSubmissions = (handle) => {
+export const getUserSubmissionsURL = (handle) => {
   return "https://codeforces.com/api/user.status?handle=" + handle;
 };
 
-export const getUserInfo = (handle) => {
+export const getUserInfoURL = (handle) => {
   handle = handle.trim().replace(/,/g, ";");
   return "https://codeforces.com/api/user.info?handles=" + handle;
 };
