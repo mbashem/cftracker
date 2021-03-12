@@ -80,7 +80,7 @@ const ProblemPage = () => {
       if (filterState.sortBy === SORT_BY_RATING)
         newState.problems.sort(sortByRating);
       else newState.problems.sort(sortBySolveCount);
-      if (filterState.order == DESCENDING) newState.problems.reverse();
+      if (filterState.order === DESCENDING) newState.problems.reverse();
 
       let tags = [];
       for (let tag of state.problemList.tags) tags.push(tag);
@@ -133,11 +133,11 @@ const ProblemPage = () => {
   };
 
   const less = () => {
-    return <FontAwesomeIcon icon={faSortDown} />;
+    return <FontAwesomeIcon icon={faSortUp} />;
   };
 
   const greater = () => {
-    return <FontAwesomeIcon icon={faSortUp} />;
+    return <FontAwesomeIcon icon={faSortDown} />;
   };
 
   return (
@@ -272,9 +272,9 @@ const ProblemPage = () => {
                             else myFilterState.solveStatus.push(solved);
                             setFilterState(myFilterState);
                           }}>
-                          {solved == SOLVED
+                          {solved === SOLVED
                             ? "Solved"
-                            : solved == ATTEMPTED
+                            : solved === ATTEMPTED
                             ? "Attempted"
                             : "Unsolved"}
                         </button>

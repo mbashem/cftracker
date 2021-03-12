@@ -26,9 +26,10 @@ export const fetchUsers = (dispatch, handle) => {
       .then((res) => res.json())
       .then(
         (result) => {
-          if (result.status !== "OK")
+          if (result.status !== "OK") {
             dispatch(errorFecthing(ERROR_FETCHING_USER, result.comment));
-          else {
+            clearUsersSubmissions(dispatch);
+          } else {
             result.result.map((user) =>
               dispatch({ type: ADD_USER, payload: user })
             );
@@ -38,27 +39,28 @@ export const fetchUsers = (dispatch, handle) => {
         // instead of a catch() block so that we don't swallow
         // exceptions from actual bugs in components.
         (error) => {
-          dispatch(errorFecthing(ERROR_FETCHING_USER, "ERROR FETCHING USER"+error));
+          dispatch(
+            errorFecthing(ERROR_FETCHING_USER, "ERROR FETCHING USER" + error)
+          );
+          clearUsersSubmissions(dispatch);
         }
       )
       .catch((e) => {
         //  console.log(e);
         dispatch(errorFecthing(ERROR_FETCHING_USER, "ERROR FETCHING USER"));
+        clearUsersSubmissions(dispatch);
       });
   });
 };
 
-export const clearUsersSubmissions = (dispatch) =>
-  new Promise((resolve, reject) => {
-    dispatch({
-      type: CLEAR_USERS_SUBMISSIONS,
-    });
-    resolve();
+export const clearUsersSubmissions = (dispatch) => {
+  dispatch({
+    type: CLEAR_USERS_SUBMISSIONS,
   });
+};
 
 export const fetchUserSubmissions = (dispatch, handles) => {
   let currentId = Date.now();
-  // clearUsersSubmissions(dispatch).then(() => {
   console.log(handles);
   for (let handle of handles) {
     dispatch(load(LOADING_USER_SUBMISSIONS));
@@ -100,5 +102,4 @@ export const fetchUserSubmissions = (dispatch, handles) => {
         );
       });
   }
-  // });
 };

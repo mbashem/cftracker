@@ -57,7 +57,6 @@ const ContestPage = () => {
   };
 
   useEffect(() => {
-
     let contests = state.contestList.contests;
 
     const newContestList = contests.filter((contest) => filterContest(contest));
@@ -235,9 +234,9 @@ const ContestPage = () => {
                                 else myFilterState.solveStatus.push(solved);
                                 setFilterState(myFilterState);
                               }}>
-                              {solved == SOLVED
+                              {solved === SOLVED
                                 ? "Solved"
-                                : solved == ATTEMPTED
+                                : solved === ATTEMPTED
                                 ? "Attempted"
                                 : "Unsolved"}
                             </button>
