@@ -8,15 +8,17 @@ import {
   fetchUserSubmissions,
 } from "./data/actions/fetchActions";
 
-import Menu, { CONTEST, PROBLEMS } from "./components/Menu";
+import Menu from "./components/Menu";
 import ProblemPage from "./components/problem/ProblemPage";
 import ContestPage from "./components/contest/ContestPage";
+import { PROBLEMS, CONTESTS } from "./util/constants";
 
 function App(props) {
   useEffect(() => {
     // fetchProblemList(dispatch);
     // fetchContestList(dispatch);
     document.body.classList.add("bg-dark");
+    document.title = "BashForces";
   }, []);
 
   return (
@@ -28,7 +30,7 @@ function App(props) {
 
         <Switch>
           <Route path={PROBLEMS} component={ProblemPage} />
-          <Route strict path={CONTEST} component={ContestPage} />
+          <Route strict path={CONTESTS} component={ContestPage} />
         </Switch>
       </div>
       <footer className="text-light text-center justify-content-center p-3 w-100 align-self-end">

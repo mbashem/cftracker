@@ -1,8 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { getRandomInteger } from "../../util/bashforces";
+import { getRandomInteger, parseQuery } from "../../util/bashforces";
 import ContestList from "./ContestList";
-import { ATTEMPTED_CONTESTS, SOLVED_CONTESTS } from "../../util/constants";
+import {
+  ATTEMPTED_CONTESTS,
+  CONTESTS,
+  SEARCH,
+  SOLVED_CONTESTS,
+} from "../../util/constants";
 import Pagination from "../../util/Pagination";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -11,20 +16,27 @@ import {
   faRedo,
   faRedoAlt,
 } from "@fortawesome/free-solid-svg-icons";
+import { useHistory } from "react-router";
 
 const ContestPage = () => {
   const state = useSelector((state) => state);
 
+  const history = useHistory();
+
   const [contestList, setContestList] = useState({ contests: [], error: "" });
   const [randomContest, setRandomContest] = useState(-1);
+
+  console.log(parseQuery(history.location.search));
 
   const SOLVED = 1,
     ATTEMPTED = 0,
     UNSOLVED = 2;
 
+  const query = parseQuery(history.location.search.trim());
+
   const initFilterState = {
     solveStatus: [SOLVED, ATTEMPTED, UNSOLVED],
-    search: "",
+    search: SEARCH in query ? query[SEARCH] : "",
     showDate: 0,
     perPage: 100,
   };
@@ -57,6 +69,15 @@ const ContestPage = () => {
   };
 
   useEffect(() => {
+    if (filterState.search.trim().length)
+      history.push({
+        pathname: CONTESTS,
+        search: "?" + SEARCH + "=" + filterState.search.trim(),
+      });
+    else
+      history.push({
+        pathname: CONTESTS,
+      });
     let contests = state.contestList.contests;
 
     const newContestList = contests.filter((contest) => filterContest(contest));
@@ -96,9 +117,12 @@ const ContestPage = () => {
                     placeholder="Search by Contest Name or Id"
                     aria-label="Search"
                     value={filterState.search}
-                    onChange={(e) =>
-                      setFilterState({ ...filterState, search: e.target.value })
-                    }
+                    onChange={(e) => {
+                      setFilterState({
+                        ...filterState,
+                        search: e.target.value,
+                      });
+                    }}
                   />
                 </form>
               </li>
@@ -172,14 +196,14 @@ const ContestPage = () => {
                                   aria-label="perpage"
                                   aria-describedby="perpage-input"
                                   value={filterState.perPage}
-                                  onChange={(e) =>
+                                  onChange={(e) => {
                                     setFilterState({
                                       ...filterState,
                                       perPage: e.target.value
                                         .toLowerCase()
                                         .trim(),
-                                    })
-                                  }
+                                    });
+                                  }}
                                 />
                               </div>
                               <div className="input-group d-flex justify-content-end">

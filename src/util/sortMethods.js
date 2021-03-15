@@ -17,3 +17,10 @@ export const sortByContestId = (a, b) => {
   if (a.index < b.index) return -1;
   return 1;
 };
+
+export const sortById = (a, b) => {
+  if (a.id < b.id) return -1;
+  if (a.id > b.id) return 1;
+
+  return 1;
+};

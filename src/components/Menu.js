@@ -2,36 +2,39 @@ import { faSync } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Link } from "react-router-dom";
+import { Link, useHistory } from "react-router-dom";
 import {
   fetchContestList,
   fetchProblemList,
+  fetchSharedProblemList,
 } from "../data/actions/fetchActions";
 import { fetchUserSubmissions, fetchUsers } from "../data/actions/userActions";
-
-export const PROBLEMS = "/problems";
-export const CONTEST = "/contests";
+import { PROBLEMS, CONTESTS } from "../util/constants";
 
 const Menu = () => {
   const dispatch = useDispatch();
 
+  let history = useHistory();
+  console.log(history);
+
   const [handle, setHandle] = useState("");
   const state = useSelector((state) => state);
 
-  useEffect(()=>{
-    console.log(state)
-    
+  useEffect(() => {
+    console.log(state);
+
     fetchUserSubmissions(dispatch, state.userList.handles);
-  },[state.userList])
+  }, [state.userList]);
 
   const sync = () => {
     fetchProblemList(dispatch);
     fetchUserSubmissions(dispatch, state.userList.handles);
     fetchContestList(dispatch);
+    fetchSharedProblemList(dispatch);
   };
 
   const submitUser = () => {
-    fetchUsers(dispatch, handle)
+    fetchUsers(dispatch, handle);
   };
 
   return (
@@ -71,7 +74,7 @@ const Menu = () => {
             </Link>
           </li>
           <li className="nav-item">
-            <Link to={CONTEST} className="nav-link" href="#">
+            <Link to={CONTESTS} className="nav-link" href="#">
               Contest
             </Link>
           </li>
@@ -90,11 +93,6 @@ const Menu = () => {
             value={handle}
             onChange={(e) => setHandle(e.target.value)}
           />
-          <button
-            className="btn btn-outline-success my-2 my-sm-0"
-            type="submit">
-            Enter
-          </button>
         </form>
       </div>
     </nav>

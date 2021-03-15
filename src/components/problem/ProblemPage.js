@@ -1,8 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { getRandomInteger } from "../../util/bashforces";
+import { getRandomInteger, parseQuery } from "../../util/bashforces";
 import { sortByRating, sortBySolveCount } from "../../util/sortMethods";
-import { ATTEMPTED_PROBLEMS, SOLVED_PROBLEMS } from "../../util/constants";
+import {
+  ATTEMPTED_PROBLEMS,
+  SOLVED_PROBLEMS,
+  SEARCH,
+  PROBLEMS,
+} from "../../util/constants";
 import Pagination from "../../util/Pagination";
 import ProblemList from "./ProblemList";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -15,9 +20,11 @@ import {
   faRedo,
   faRedoAlt,
 } from "@fortawesome/free-solid-svg-icons";
+import { useHistory } from "react-router";
 
 const ProblemPage = () => {
   const state = useSelector((state) => state);
+  const history = useHistory();
 
   const SOLVED = 1,
     ATTEMPTED = 0,
@@ -26,11 +33,14 @@ const ProblemPage = () => {
     SORT_BY_SOLVE = 2,
     ASCENDING = 0,
     DESCENDING = 1;
+
+  const query = parseQuery(history.location.search.trim());
+
   const initFilterState = {
     solveStatus: [SOLVED, ATTEMPTED, UNSOLVED],
     rating: { min_rating: -1, max_rating: 4000 },
     tags: new Set(),
-    search: "",
+    search: SEARCH in query ? query[SEARCH] : "",
     sortBy: SORT_BY_SOLVE,
     order: DESCENDING,
     perPage: 100,
@@ -69,6 +79,15 @@ const ProblemPage = () => {
   };
 
   useEffect(() => {
+    if (filterState.search.trim().length)
+      history.push({
+        pathname: PROBLEMS,
+        search: "?" + SEARCH + "=" + filterState.search.trim(),
+      });
+    else
+      history.push({
+        pathname: PROBLEMS,
+      });
     if (state.problemList.problems !== undefined) {
       let newState = { problems: [] };
       newState.problems = state.problemList.problems;
@@ -154,12 +173,12 @@ const ProblemPage = () => {
                 placeholder="Problem Name or Id"
                 aria-label="Search"
                 value={filterState.search}
-                onChange={(e) =>
+                onChange={(e) => {
                   setFilterState({
                     ...filterState,
                     search: e.target.value,
-                  })
-                }
+                  });
+                }}
               />
             </form>
           </li>
