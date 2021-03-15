@@ -14,25 +14,34 @@ const ContestList = (props) => {
 
   const related = [
     {
+      id: "1464A",
       contestId: 1464,
       index: "A",
       shared: [
-        { contestId: 1411, index: "C" },
-        { contestId: 1465, index: "C" },
+        { id: "1411C", contestId: 1411, index: "C" },
+        { id: "1465C", contestId: 1465, index: "C" },
       ],
     },
     {
+      id: "1465C",
       contestId: 1465,
       index: "C",
       shared: [
-        { contestId: 1411, index: "C" },
-        { contestId: 1464, index: "A" },
+        { id: "1411C", contestId: 1411, index: "C" },
+        { id: "1464A", contestId: 1464, index: "A" },
       ],
     },
     {
+      id: "1495A",
+      contestId: 1495,
+      index: "A",
+      shared: [{ id: "1496C", contestId: 1496, index: "C" }],
+    },
+    {
+      id: "1496C",
       contestId: 1496,
       index: "C",
-      shared: [{ contestId: 1495, index: "A" }],
+      shared: [{ id: "1495A", contestId: 1495, index: "A" }],
     },
   ];
 
@@ -59,9 +68,33 @@ const ContestList = (props) => {
     return -1;
   };
 
+  const getStatus = (contestId, index, id, solveStatus) => {
+    let res = state.userSubmissions[solveStatus].has(id);
+    if (!res) {
+      let sharedIndex = getSharedIndex(contestId, index);
+      if (sharedIndex != -1) {
+        for (let problem of related[sharedIndex].shared) {
+          res |= state.userSubmissions[solveStatus].has(problem.id);
+        }
+      }
+    }
+    //if(contestId == 1495)
+    return res;
+  };
+
   const renderProblem = (problem) => {
-    let solved = state.userSubmissions[SOLVED_PROBLEMS].has(problem.id);
-    let attempted = state.userSubmissions[ATTEMPTED_PROBLEMS].has(problem.id);
+    let solved = getStatus(
+      problem.contestId,
+      problem.index,
+      problem.id,
+      SOLVED_PROBLEMS
+    );
+    let attempted = getStatus(
+      problem.contestId,
+      problem.index,
+      problem.id,
+      ATTEMPTED_PROBLEMS
+    );
 
     let name = problem.name;
     let id = problem.id;

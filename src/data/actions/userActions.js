@@ -1,5 +1,5 @@
 import { getUserInfoURL, getUserSubmissionsURL } from "../../util/bashforces";
-import { load, errorFecthing } from "./fetchActions";
+import { load, createDispatch } from "./fetchActions";
 import {
   ADD_USER,
   CLEAR_USERS,
@@ -27,8 +27,8 @@ export const fetchUsers = (dispatch, handle) => {
       .then(
         (result) => {
           if (result.status !== "OK") {
-            dispatch(errorFecthing(ERROR_FETCHING_USER, result.comment));
-            clearUsersSubmissions(dispatch);
+            dispatch(createDispatch(ERROR_FETCHING_USER, result.comment));
+          //  clearUsersSubmissions(dispatch);
           } else {
             result.result.map((user) =>
               dispatch({ type: ADD_USER, payload: user })
@@ -40,15 +40,15 @@ export const fetchUsers = (dispatch, handle) => {
         // exceptions from actual bugs in components.
         (error) => {
           dispatch(
-            errorFecthing(ERROR_FETCHING_USER, "ERROR FETCHING USER" + error)
+            createDispatch(ERROR_FETCHING_USER, "ERROR FETCHING USER" + error)
           );
-          clearUsersSubmissions(dispatch);
+         // clearUsersSubmissions(dispatch);
         }
       )
       .catch((e) => {
         //  console.log(e);
-        dispatch(errorFecthing(ERROR_FETCHING_USER, "ERROR FETCHING USER"));
-        clearUsersSubmissions(dispatch);
+        dispatch(createDispatch(ERROR_FETCHING_USER, "ERROR FETCHING USER"));
+      //  clearUsersSubmissions(dispatch);
       });
   });
 };
@@ -61,7 +61,7 @@ export const clearUsersSubmissions = (dispatch) => {
 
 export const fetchUserSubmissions = (dispatch, handles) => {
   let currentId = Date.now();
-  console.log(handles);
+  if(handles.length == 0) clearUsersSubmissions(dispatch);
   for (let handle of handles) {
     dispatch(load(LOADING_USER_SUBMISSIONS));
     console.log(getUserSubmissionsURL(handle));
@@ -70,7 +70,7 @@ export const fetchUserSubmissions = (dispatch, handles) => {
       .then(
         (result) => {
           if (result.status !== "OK")
-            return errorFecthing(
+            return createDispatch(
               ERROR_FETCHING_USER_SUBMISSIONS,
               "Status Failed"
             );
@@ -85,7 +85,7 @@ export const fetchUserSubmissions = (dispatch, handles) => {
         // exceptions from actual bugs in components.
         (error) => {
           return dispatch(
-            errorFecthing(
+            createDispatch(
               ERROR_FETCHING_USER_SUBMISSIONS,
               "ERROR in User Submission" + error
             )
@@ -95,7 +95,7 @@ export const fetchUserSubmissions = (dispatch, handles) => {
       .catch((e) => {
         // console.log(e);
         return dispatch(
-          errorFecthing(
+          createDispatch(
             ERROR_FETCHING_USER_SUBMISSIONS,
             "ERROR in User Submission" + e
           )

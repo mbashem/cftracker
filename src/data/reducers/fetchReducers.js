@@ -2,10 +2,13 @@ import { sortByContestId } from "../../util/sortMethods";
 import {
   ERROR_FETCHING_CONTEST_LIST,
   ERROR_FETCHING_PROBLEMS,
+  ERROR_FETCHING_SHARED_PROBLEMS,
   FETCH_CONTEST_LIST,
   FETCH_PROBLEM_LIST,
+  FETCH_SHARED_PROBLEMS,
   LOADING_CONTEST_LIST,
   LOADING_PROBLEM_LIST,
+  LOADING_SHARED_PROBLEMS,
 } from "../actions/types";
 
 const problemListInitialState = {
@@ -33,10 +36,38 @@ export const problemListReducer = (
         error: "",
         tags: tags,
       };
+
     case ERROR_FETCHING_PROBLEMS:
       return { ...problemListInitialState, error: action.payload };
+
     case LOADING_PROBLEM_LIST:
       return { ...problemListInitialState, loading: true };
+    default:
+      return initState;
+  }
+};
+
+const sharedProblemsInitialState = {
+  sharedProblems: [],
+  error: "",
+  loading: false,
+};
+
+export const sharedProblemsReducer = (
+  initState = sharedProblemsInitialState,
+  action
+) => {
+  switch (action.type) {
+    case FETCH_SHARED_PROBLEMS:
+      action.payload.sort(sortByContestId);
+      return {
+        ...sharedProblemsInitialState,
+        sharedProblems: action.payload,
+      };
+    case ERROR_FETCHING_SHARED_PROBLEMS:
+      return { ...initState, error: action.payload };
+    case LOADING_SHARED_PROBLEMS:
+      return { ...initState, loading: true };
     default:
       return initState;
   }
