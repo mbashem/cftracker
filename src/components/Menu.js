@@ -2,7 +2,7 @@ import { faSync } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Link, useHistory } from "react-router-dom";
+import { Link } from "react-router-dom";
 import {
   fetchContestList,
   fetchProblemList,
@@ -18,7 +18,6 @@ const Menu = () => {
   const state = useSelector((state) => state);
 
   useEffect(() => {
-    sync();
     //fetchUserSubmissions(dispatch, state.userList.handles);
   }, [state.userList]);
 
@@ -31,6 +30,7 @@ const Menu = () => {
 
   const submitUser = () => {
     fetchUsers(dispatch, handle);
+    fetchUserSubmissions(dispatch, state.userList.handles);
   };
 
   return (

@@ -3,8 +3,6 @@ import { useSelector } from "react-redux";
 import { getRandomInteger, parseQuery } from "../../util/bashforces";
 import { sortByRating, sortBySolveCount } from "../../util/sortMethods";
 import {
-  ATTEMPTED_PROBLEMS,
-  SOLVED_PROBLEMS,
   SEARCH,
   PROBLEMS,
 } from "../../util/constants";
