@@ -40,6 +40,7 @@ export const getRandomInteger = (min, max) => {
 };
 
 export const parseQuery = (queryString) => {
+  queryString = queryString.trim();
   var query = {};
   var pairs = (queryString[0] === "?"
     ? queryString.substr(1)

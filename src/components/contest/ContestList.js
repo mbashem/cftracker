@@ -12,38 +12,7 @@ import { ATTEMPTED_PROBLEMS, SOLVED_PROBLEMS } from "../../util/constants";
 const ContestList = (props) => {
   const state = useSelector((state) => state);
 
-  const related = [
-    {
-      id: "1464A",
-      contestId: 1464,
-      index: "A",
-      shared: [
-        { id: "1411C", contestId: 1411, index: "C" },
-        { id: "1465C", contestId: 1465, index: "C" },
-      ],
-    },
-    {
-      id: "1465C",
-      contestId: 1465,
-      index: "C",
-      shared: [
-        { id: "1411C", contestId: 1411, index: "C" },
-        { id: "1464A", contestId: 1464, index: "A" },
-      ],
-    },
-    {
-      id: "1495A",
-      contestId: 1495,
-      index: "A",
-      shared: [{ id: "1496C", contestId: 1496, index: "C" }],
-    },
-    {
-      id: "1496C",
-      contestId: 1496,
-      index: "C",
-      shared: [{ id: "1495A", contestId: 1495, index: "A" }],
-    },
-  ];
+  const related = state.sharedProblems.problems;
 
   const getProblem = (contestId, index) => {
     let l = 0,

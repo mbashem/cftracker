@@ -11,6 +11,7 @@ import {
 import Menu from "./components/Menu";
 import ProblemPage from "./components/problem/ProblemPage";
 import ContestPage from "./components/contest/ContestPage";
+import HomePage from "./components/home/HomePage";
 import { PROBLEMS, CONTESTS } from "./util/constants";
 
 function App(props) {
@@ -29,6 +30,7 @@ function App(props) {
         </div>
 
         <Switch>
+          <Route exact path="/" component={HomePage} />
           <Route path={PROBLEMS} component={ProblemPage} />
           <Route strict path={CONTESTS} component={ContestPage} />
         </Switch>

@@ -26,8 +26,6 @@ const ContestPage = () => {
   const [contestList, setContestList] = useState({ contests: [], error: "" });
   const [randomContest, setRandomContest] = useState(-1);
 
-  console.log(parseQuery(history.location.search));
-
   const SOLVED = 1,
     ATTEMPTED = 0,
     UNSOLVED = 2;

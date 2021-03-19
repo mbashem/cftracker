@@ -7,6 +7,12 @@ import {
   sharedProblemsReducer,
 } from "./reducers/fetchReducers";
 import { userSubmissionsReducer, userReducer } from "./reducers/userReducers";
+import {
+  SOLVED_PROBLEMS,
+  ATTEMPTED_PROBLEMS,
+  SOLVED_CONTESTS,
+  ATTEMPTED_CONTESTS,
+} from "../util/constants";
 
 export const contestList = {
   status: "OK",
@@ -93,6 +99,36 @@ const combinedReducers = combineReducers({
 const newCombinedReducers = (state, action) => {
   const intermediateReducer = combinedReducers(state, action);
   //console.log(intermediateReducer.problemList);
+
+  // const submissionsInitialState = {
+  //   [SOLVED_PROBLEMS]: new Set(),
+  //   [ATTEMPTED_PROBLEMS]: new Set(),
+  //   [SOLVED_CONTESTS]: new Set(),
+  //   [ATTEMPTED_CONTESTS]: new Set(),
+  //   error: "",
+  //   loading: false,
+  //   id: intermediateReducer.userSubmissions.id,
+  // };
+
+  // const related = intermediateReducer.sharedProblems.problems;
+  // const getSharedIndex = (contestId, index) => {
+  //   let l = 0,
+  //     r = related.length - 1;
+
+  //   while (l <= r) {
+  //     let mid = l + ((r - l) >> 2);
+  //     if (related[mid].contestId === contestId && related[mid].index === index)
+  //       return mid;
+  //     if (
+  //       related[mid].contestId > contestId ||
+  //       (related[mid].contestId === contestId && related[mid].index > index)
+  //     )
+  //       r = mid - 1;
+  //     else l = mid + 1;
+  //   }
+
+  //   return -1;
+  // };
 
   return {
     userSubmissions: intermediateReducer.userSubmissions,

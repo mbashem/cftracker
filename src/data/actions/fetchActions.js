@@ -10,7 +10,7 @@ import {
   LOADING_PROBLEM_LIST,
 } from "./types";
 
-import jsonData from "../jsons/related.json";
+import { jsonData } from "../jsons/related";
 import { result } from "lodash";
 
 const allContestURL = "https://codeforces.com/api/contest.list";
@@ -42,7 +42,6 @@ export const fetchProblemList = (dispatch) => {
         //   console.log(result);
         let problems = result.result.problems;
         problems = problems.filter((problem) => "contestId" in problem);
-        console.log(result.result);
         for (let i = 0; i < result.result.problemStatistics.length; i++) {
           if (!("rating" in problems[i])) problems[i]["rating"] = -1;
           problems[i]["solvedCount"] =
@@ -90,7 +89,6 @@ export const fetchSharedProblemList = (dispatch) => {
           "Error fetching shared problems"
         )
       );
-    console.log(result);
     return dispatch(createDispatch(FETCH_SHARED_PROBLEMS, result.result));
     //	console.log(result.result.length)
   } else

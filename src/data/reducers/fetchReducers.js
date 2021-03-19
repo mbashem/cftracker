@@ -48,7 +48,7 @@ export const problemListReducer = (
 };
 
 const sharedProblemsInitialState = {
-  sharedProblems: [],
+  problems: [],
   error: "",
   loading: false,
 };
@@ -62,7 +62,7 @@ export const sharedProblemsReducer = (
       action.payload.sort(sortByContestId);
       return {
         ...sharedProblemsInitialState,
-        sharedProblems: action.payload,
+        problems: action.payload,
       };
     case ERROR_FETCHING_SHARED_PROBLEMS:
       return { ...initState, error: action.payload };
