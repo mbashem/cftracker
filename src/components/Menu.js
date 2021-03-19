@@ -18,7 +18,7 @@ const Menu = () => {
   const state = useSelector((state) => state);
 
   useEffect(() => {
-    //fetchUserSubmissions(dispatch, state.userList.handles);
+    fetchUserSubmissions(dispatch, state.userList.handles);
   }, [state.userList]);
 
   const sync = () => {
@@ -30,7 +30,6 @@ const Menu = () => {
 
   const submitUser = () => {
     fetchUsers(dispatch, handle);
-    fetchUserSubmissions(dispatch, state.userList.handles);
   };
 
   return (
