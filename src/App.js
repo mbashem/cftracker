@@ -1,12 +1,16 @@
 import "./App.css";
-import React, { useEffect, useState } from "react";
-import { BrowserRouter as Router, Switch, Route, Link } from "react-router-dom";
-import { useDispatch } from "react-redux";
+import React, { useEffect } from "react";
+import {  Switch, Route } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
 import {
   fetchContestList,
   fetchProblemList,
-  fetchUserSubmissions,
+  fetchSharedProblemList,
 } from "./data/actions/fetchActions";
+
+import {
+  fetchUserSubmissions
+} from "./data/actions/userActions";
 
 import Menu from "./components/Menu";
 import ProblemPage from "./components/problem/ProblemPage";
@@ -15,9 +19,14 @@ import HomePage from "./components/home/HomePage";
 import { PROBLEMS, CONTESTS } from "./util/constants";
 
 function App(props) {
+  const dispatch = useDispatch();
+  const state = useSelector(state=>state);
+
   useEffect(() => {
-    // fetchProblemList(dispatch);
-    // fetchContestList(dispatch);
+    fetchProblemList(dispatch);
+    fetchUserSubmissions(dispatch, state.userList.handles);
+    fetchContestList(dispatch);
+    fetchSharedProblemList(dispatch);
     document.body.classList.add("bg-dark");
     document.title = "BashForces";
   }, []);
