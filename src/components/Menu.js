@@ -14,16 +14,12 @@ import { PROBLEMS, CONTESTS } from "../util/constants";
 const Menu = () => {
   const dispatch = useDispatch();
 
-  let history = useHistory();
-  console.log(history);
-
   const [handle, setHandle] = useState("");
   const state = useSelector((state) => state);
 
   useEffect(() => {
-    console.log(state);
-
-    fetchUserSubmissions(dispatch, state.userList.handles);
+    sync();
+    //fetchUserSubmissions(dispatch, state.userList.handles);
   }, [state.userList]);
 
   const sync = () => {

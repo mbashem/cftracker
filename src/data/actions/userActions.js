@@ -28,7 +28,6 @@ export const fetchUsers = (dispatch, handle) => {
         (result) => {
           if (result.status !== "OK") {
             dispatch(createDispatch(ERROR_FETCHING_USER, result.comment));
-          //  clearUsersSubmissions(dispatch);
           } else {
             result.result.map((user) =>
               dispatch({ type: ADD_USER, payload: user })
@@ -42,13 +41,11 @@ export const fetchUsers = (dispatch, handle) => {
           dispatch(
             createDispatch(ERROR_FETCHING_USER, "ERROR FETCHING USER" + error)
           );
-         // clearUsersSubmissions(dispatch);
         }
       )
       .catch((e) => {
         //  console.log(e);
         dispatch(createDispatch(ERROR_FETCHING_USER, "ERROR FETCHING USER"));
-      //  clearUsersSubmissions(dispatch);
       });
   });
 };
@@ -61,10 +58,9 @@ export const clearUsersSubmissions = (dispatch) => {
 
 export const fetchUserSubmissions = (dispatch, handles) => {
   let currentId = Date.now();
-  if(handles.length == 0) clearUsersSubmissions(dispatch);
+  if(handles.length === 0) clearUsersSubmissions(dispatch);
   for (let handle of handles) {
     dispatch(load(LOADING_USER_SUBMISSIONS));
-    console.log(getUserSubmissionsURL(handle));
     fetch(getUserSubmissionsURL(handle))
       .then((res) => res.json())
       .then(
@@ -74,7 +70,6 @@ export const fetchUserSubmissions = (dispatch, handles) => {
               ERROR_FETCHING_USER_SUBMISSIONS,
               "Status Failed"
             );
-          console.log(result);
           return dispatch({
             type: FETCH_USER_SUBMISSIONS,
             payload: { result: result.result, id: currentId },

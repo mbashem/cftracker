@@ -8,23 +8,20 @@ import {
   SEARCH,
   PROBLEMS,
 } from "../../util/constants";
-import Pagination from "../../util/Pagination";
-import ProblemList from "./ProblemList";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faFilter,
   faRandom,
-  faSort,
-  faSortDown,
-  faSortUp,
   faRedo,
   faRedoAlt,
 } from "@fortawesome/free-solid-svg-icons";
 import { useHistory } from "react-router";
 
-const ProblemPage = () => {
+const Filter = (props) => {
   const state = useSelector((state) => state);
   const history = useHistory();
+
+	let query = props.query;
 
   const SOLVED = 1,
     ATTEMPTED = 0,
@@ -53,30 +50,6 @@ const ProblemPage = () => {
 
   const [filterState, setFilterState] = useState(initFilterState);
 
-  const filterProblem = (problem) => {
-    let containTags = false;
-
-    if (filterState.tags.size === 0) containTags = true;
-    else
-      for (let tag of problem.tags)
-        if (filterState.tags.has(tag)) {
-          containTags = true;
-          break;
-        }
-    let ratingInside =
-      problem.rating <= filterState.rating.max_rating &&
-      problem.rating >= filterState.rating.min_rating;
-    let solveStatus = filterState.solveStatus.includes(getState(problem));
-
-    let searchIncluded = true;
-    let text = filterState.search.toLowerCase().trim();
-    if (text.length)
-      searchIncluded =
-        problem.name.toLowerCase().includes(text) ||
-        problem.id.toLowerCase().includes(text);
-
-    return solveStatus && ratingInside && containTags && searchIncluded;
-  };
 
   useEffect(() => {
     if (filterState.search.trim().length)
@@ -110,26 +83,6 @@ const ProblemPage = () => {
     setSelected(0);
   }, [state, filterState]);
 
-  const sortList = (sortBy) => {
-    if (filterState.sortBy === sortBy)
-      setFilterState({ ...filterState, order: filterState.order ^ 1 });
-    else
-      setFilterState({
-        ...filterState,
-        ...{
-          order: sortBy === SORT_BY_RATING ? ASCENDING : DESCENDING,
-          sortBy: sortBy,
-        },
-      });
-  };
-
-  const getState = (problem) => {
-    if (state.userSubmissions[SOLVED_PROBLEMS].has(problem.id)) return SOLVED;
-    if (state.userSubmissions[ATTEMPTED_PROBLEMS].has(problem.id))
-      return ATTEMPTED;
-    return UNSOLVED;
-  };
-
   const searchData = (e) => {
     setFilterState({ ...filterState, search: e.target.value });
   };
@@ -137,26 +90,6 @@ const ProblemPage = () => {
   const chooseRandom = () => {
     if (problemList.problems.length === 0) return;
     setRandomProblem(getRandomInteger(0, problemList.problems.length - 1));
-  };
-
-  const paginate = () => {
-    let lo = selected * filterState.perPage;
-    let high = Math.min(problemList.problems.length, lo + filterState.perPage);
-
-    if (lo > high) return [];
-    return problemList.problems.slice(lo, high);
-  };
-
-  const nuetral = () => {
-    return <FontAwesomeIcon icon={faSort} />;
-  };
-
-  const less = () => {
-    return <FontAwesomeIcon icon={faSortUp} />;
-  };
-
-  const greater = () => {
-    return <FontAwesomeIcon icon={faSortDown} />;
   };
 
   return (
@@ -225,7 +158,7 @@ const ProblemPage = () => {
                 <div className="modal-content">
                   <div className="modal-header">
                     <h5 className="modal-title" id="exampleModalLabel">
-                      Modal title
+                      Filter
                     </h5>
                     <button
                       type="button"
@@ -378,67 +311,8 @@ const ProblemPage = () => {
           </li>
         </ul>
       </div>
-      <div className="p-2">
-        <Pagination
-          totalCount={problemList.problems.length}
-          perPage={filterState.perPage}
-          selected={selected}
-          pageSelected={(e) => setSelected(e)}
-        />
-      </div>
-      <table className="table table-bordered table-dark container">
-        <thead className="thead-dark">
-          <tr>
-            <th scope="col">#</th>
-            <th scope="col">Name</th>
-            <th
-              scope="col"
-              role="button"
-              onClick={() => sortList(SORT_BY_RATING)}>
-              <div className="d-flex justify-content-between">
-                <div>Rating</div>
-                <div>
-                  {filterState.sortBy === SORT_BY_RATING
-                    ? filterState.order === ASCENDING
-                      ? less()
-                      : greater()
-                    : nuetral()}
-                </div>
-              </div>
-            </th>
-            <th
-              scope="col"
-              role="button"
-              onClick={() => sortList(SORT_BY_SOLVE)}>
-              <div className="d-flex justify-content-between">
-                <div>Solve Count</div>
-                <div>
-                  {filterState.sortBy === SORT_BY_SOLVE
-                    ? filterState.order === ASCENDING
-                      ? less()
-                      : greater()
-                    : nuetral()}
-                </div>
-              </div>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {randomProblem === -1 ? (
-            <ProblemList problems={paginate()} />
-          ) : (
-            <ProblemList problems={[problemList.problems[randomProblem]]} />
-          )}
-        </tbody>
-      </table>
-      <Pagination
-        totalCount={problemList.problems.length}
-        perPage={filterState.perPage}
-        selected={selected}
-        pageSelected={(e) => setSelected(e)}
-      />
     </div>
   );
 };
 
-export default ProblemPage;
+export default Filter;

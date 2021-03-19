@@ -63,6 +63,7 @@ const submissionsInitialState = {
   [ATTEMPTED_PROBLEMS]: new Set(),
   [SOLVED_CONTESTS]: new Set(),
   [ATTEMPTED_CONTESTS]: new Set(),
+  submissions: [],
   error: "",
   loading: false,
   id: 0,
@@ -79,6 +80,7 @@ export const userSubmissionsReducer = (
         [ATTEMPTED_PROBLEMS]: new Set(),
         [SOLVED_CONTESTS]: new Set(),
         [ATTEMPTED_CONTESTS]: new Set(),
+        submissions: [],
         error: "",
         loading: false,
         id: 0,
@@ -92,6 +94,7 @@ export const userSubmissionsReducer = (
           [ATTEMPTED_PROBLEMS]: new Set(),
           [SOLVED_CONTESTS]: new Set(),
           [ATTEMPTED_CONTESTS]: new Set(),
+          submissions: [],
           error: "",
           loading: false,
           id: action.payload.id,
@@ -99,6 +102,7 @@ export const userSubmissionsReducer = (
       else return initState;
 
       action.payload.result.forEach((element) => {
+        currentState.submissions.push(element);
         let contestId = element.problem.contestId.toString();
         let verdict = element.verdict;
         let problemIndex = element.problem.index;

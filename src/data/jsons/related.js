@@ -1,4 +1,4 @@
-{
+export const jsonData = {
   "status": "OK",
   "result": [
     {
@@ -34,6 +34,18 @@
       "contestId": 1496,
       "index": "C",
       "shared": [{ "id": "1495A", "contestId": 1495, "index": "A" }]
+    },
+    {
+      "id": "1396A",
+      "contestId": 1396,
+      "index": "A",
+      "shared": [{ "id": "1397C", "contestId": 1397, "index": "C" }]
+    },
+    {
+      "id": "1397C",
+      "contestId": 1397,
+      "index": "C",
+      "shared": [{ "id": "1396A", "contestId": 1396, "index": "A" }]
     }
   ]
 }
