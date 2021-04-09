@@ -22,13 +22,17 @@ export const getProblemUrl = (contestId, index) => {
   return getContestUrl(contestId) + "/problem/" + index;
 };
 
-export const getUserSubmissionsURL = (handle) => {
-  return "https://codeforces.com/api/user.status?handle=" + handle;
+export const getUserSubmissionsURL = (handle:string,limit?:number) => {
+  return "https://codeforces.com/api/user.status?handle=" + handle + (limit ? "&&from=1&count="+limit : "");
 };
 
 export const getUserInfoURL = (handle) => {
   handle = handle.trim().replace(/,/g, ";");
   return "https://codeforces.com/api/user.info?handles=" + handle;
+};
+
+export const stringToArray = (s: string,separator:string): string[] => {
+  return s.trim().split(separator);
 };
 
 export const charInc = (c, number) => {
@@ -51,4 +55,4 @@ export const parseQuery = (queryString) => {
     query[decodeURIComponent(pair[0])] = decodeURIComponent(pair[1] || "");
   }
   return query;
-}
+};

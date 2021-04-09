@@ -136,16 +136,14 @@ const ContestPage = () => {
                     type="button"
                     className="btn btn-dark nav-link"
                     onClick={chooseRandom}
-                    title="Find Random Contest"
-                    href="#">
+                    title="Find Random Contest">
                     <FontAwesomeIcon icon={faRandom} />
                   </button>
                   <button
                     type="button"
                     className="btn btn-dark nav-link"
                     title="Cancel Random"
-                    onClick={() => setRandomContest(-1)}
-                    href="#">
+                    onClick={() => setRandomContest(-1)}>
                     <FontAwesomeIcon icon={faRedo} />
                   </button>
                 </div>
@@ -161,7 +159,7 @@ const ContestPage = () => {
                 <div
                   className="modal"
                   id="exampleModal"
-                  tabIndex="-1"
+                  tabIndex={-1}
                   aria-labelledby="exampleModalLabel"
                   aria-hidden="true">
                   <div className="modal-dialog">
@@ -197,9 +195,9 @@ const ContestPage = () => {
                                   onChange={(e) => {
                                     setFilterState({
                                       ...filterState,
-                                      perPage: e.target.value
-                                        .toLowerCase()
-                                        .trim(),
+                                      perPage: parseInt(
+                                        e.target.value.toLowerCase().trim()
+                                      ),
                                     });
                                   }}
                                 />
@@ -214,7 +212,7 @@ const ContestPage = () => {
                                   <input
                                     className="form-check-input mt-0"
                                     type="checkbox"
-                                    defaultChecked={filterState.showDate}
+                                    defaultChecked={filterState.showDate == 1}
                                     onChange={() =>
                                       setFilterState({
                                         ...filterState,
@@ -227,8 +225,7 @@ const ContestPage = () => {
                               <button
                                 className="btn btn-secondary nav-link m-2 h-6"
                                 onClick={() => setFilterState(initFilterState)}
-                                title="Reset To Default State"
-                                href="#">
+                                title="Reset To Default State">
                                 <FontAwesomeIcon icon={faRedoAlt} />
                               </button>
                             </div>

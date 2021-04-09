@@ -1,15 +1,17 @@
 import React from "react";
 import { useSelector } from "react-redux";
 import { getProblemUrl } from "../../util/bashforces";
-import {
-  ATTEMPTED_PROBLEMS,
-  SOLVED_PROBLEMS,
-} from "../../util/constants";
+import { ATTEMPTED_PROBLEMS, SOLVED_PROBLEMS } from "../../util/constants";
+import Problem from "../../util/DataTypes/Problem";
 
-const ProblemList = (props) => {
+interface ProblemListProps {
+  problems: Problem[];
+}
+
+const ProblemList = ({ problems }: ProblemListProps): JSX.Element => {
   const state = useSelector((state) => state);
 
-  const getState = (problem) => {
+  const getState = (problem: Problem) => {
     if (state.userSubmissions[SOLVED_PROBLEMS].has(problem.id))
       return SOLVED_PROBLEMS;
     if (state.userSubmissions[ATTEMPTED_PROBLEMS].has(problem.id))
@@ -17,7 +19,7 @@ const ProblemList = (props) => {
     return "UNSOLVED";
   };
 
-  const ProblemCard = (problem) => {
+  const ProblemCard = (problem: Problem) => {
     let classes = "bg-dark";
     let problemState = getState(problem);
     if (problemState === SOLVED_PROBLEMS) classes = "bg-success";
@@ -29,12 +31,14 @@ const ProblemList = (props) => {
           <a
             className="text-light text-decoration-none"
             target="_blank"
-            title={problem.tags}
+            title={problem.tags.toString()}
             href={getProblemUrl(problem.contestId, problem.index)}>
             {problem.name}
           </a>
         </td>
-        <td className={"rating " + classes}>{problem.rating}</td>
+        <td className={"rating " + classes}>
+          {problem.rating != -1 ? problem.rating : "Not Rated"}
+        </td>
 
         <td className={"solvedCount " + classes}>{problem.solvedCount}</td>
       </tr>
@@ -43,7 +47,7 @@ const ProblemList = (props) => {
 
   return (
     <React.Fragment>
-      {props.problems.map((problem) => {
+      {problems.map((problem: Problem) => {
         return ProblemCard(problem);
       })}
     </React.Fragment>

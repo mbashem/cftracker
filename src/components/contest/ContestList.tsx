@@ -77,7 +77,7 @@ const ContestList = (props) => {
           className="text-light text-decoration-none"
           target="_blank"
           rel="noreferrer"
-          tabIndex="0"
+          tabIndex={0}
           data-bs-toggle="tooltip"
           title={problem.name + ", Rating:" + problem.rating}
           href={getProblemUrl(problem.contestId, problem.index)}>
@@ -138,8 +138,8 @@ const ContestList = (props) => {
         }
       } else {
         problems.push(problem1);
-        for (let c = "2"; c <= "3"; c++) {
-          problem1 = getProblem(contestId, index + c);
+        for (let c:number = 2; c <=3; c++) {
+          problem1 = getProblem(contestId, index + c.toString());
           if (problem1 === -1) break;
           problems.push(problem1);
         }

@@ -3,19 +3,22 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
+import { toast } from "react-toastify";
+import { Notification } from "rsuite";
 import {
   fetchContestList,
   fetchProblemList,
   fetchSharedProblemList,
 } from "../data/actions/fetchActions";
 import { fetchUserSubmissions, fetchUsers } from "../data/actions/userActions";
+import { RootState } from "../data/store";
 import { PROBLEMS, CONTESTS } from "../util/constants";
 
-const Menu = () => {
+const Menu = (): JSX.Element => {
   const dispatch = useDispatch();
 
   const [handle, setHandle] = useState("");
-  const state = useSelector((state) => state);
+  const state: RootState = useSelector((state) => state);
 
   useEffect(() => {
     fetchUserSubmissions(dispatch, state.userList.handles);
@@ -29,6 +32,20 @@ const Menu = () => {
   };
 
   const submitUser = () => {
+    // Notification.info({
+    //   title: "User submitted!",
+    //   duration: 200,
+    //   description: "hh",
+    // });
+    // toast.error("🦄 Wow so easy!", {
+    //   position: "bottom-right",
+    //   autoClose: 2001,
+    //   hideProgressBar: false,
+    //   closeOnClick: true,
+    //   pauseOnHover: true,
+    //   draggable: true,
+    //   progress: undefined,
+    // });
     fetchUsers(dispatch, handle);
   };
 
@@ -81,6 +98,7 @@ const Menu = () => {
             submitUser();
           }}>
           <input
+            name="handle"
             className="form-control mr-sm-2"
             type="search"
             placeholder="Handle"

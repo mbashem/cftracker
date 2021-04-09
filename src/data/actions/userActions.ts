@@ -1,4 +1,9 @@
-import { getUserInfoURL, getUserSubmissionsURL } from "../../util/bashforces";
+import {
+  getUserInfoURL,
+  getUserSubmissionsURL,
+  stringToArray,
+} from "../../util/bashforces";
+import { AppDispatch } from "../store";
 import { load, createDispatch } from "./fetchActions";
 import {
   ADD_USER,
@@ -12,41 +17,22 @@ import {
 } from "./types";
 
 export const clearUsers = (dispatch) =>
-  new Promise((resolve, reject) => {
+  new Promise<void>((resolve, reject) => {
     dispatch({
       type: CLEAR_USERS,
     });
     resolve();
   });
 
-export const fetchUsers = (dispatch, handle) => {
+export const fetchUsers = (dispatch, handle: string) => {
   dispatch(load(LOADING_USERS));
+
   clearUsers(dispatch).then(() => {
-    fetch(getUserInfoURL(handle))
-      .then((res) => res.json())
-      .then(
-        (result) => {
-          if (result.status !== "OK") {
-            dispatch(createDispatch(ERROR_FETCHING_USER, result.comment));
-          } else {
-            result.result.map((user) =>
-              dispatch({ type: ADD_USER, payload: user })
-            );
-          }
-        },
-        // Note: it's important to handle errors here
-        // instead of a catch() block so that we don't swallow
-        // exceptions from actual bugs in components.
-        (error) => {
-          dispatch(
-            createDispatch(ERROR_FETCHING_USER, "ERROR FETCHING USER" + error)
-          );
-        }
-      )
-      .catch((e) => {
-        //  console.log(e);
-        dispatch(createDispatch(ERROR_FETCHING_USER, "ERROR FETCHING USER"));
-      });
+    let handleArray: string[] = stringToArray(handle, ",");
+    for (let handle of handleArray) {
+      if(handle.length === 0) continue;
+      dispatch({ type: ADD_USER, payload: { handle } });
+    }
   });
 };
 
@@ -56,19 +42,26 @@ export const clearUsersSubmissions = (dispatch) => {
   });
 };
 
-export const fetchUserSubmissions = (dispatch, handles) => {
+export const fetchUserSubmissions = (
+  dispatch: AppDispatch,
+  handles: string[],
+  limit ?: number
+) => {
   let currentId = Date.now();
-  if(handles.length === 0) clearUsersSubmissions(dispatch);
+  if (handles.length === 0) clearUsersSubmissions(dispatch);
+
   for (let handle of handles) {
     dispatch(load(LOADING_USER_SUBMISSIONS));
-    fetch(getUserSubmissionsURL(handle))
+    fetch(getUserSubmissionsURL(handle,limit))
       .then((res) => res.json())
       .then(
         (result) => {
           if (result.status !== "OK")
-            return createDispatch(
-              ERROR_FETCHING_USER_SUBMISSIONS,
-              "Status Failed"
+            return dispatch(
+              createDispatch(
+                ERROR_FETCHING_USER_SUBMISSIONS,
+                "Failed To fetch Submissions for User with handle " + handle
+              )
             );
           return dispatch({
             type: FETCH_USER_SUBMISSIONS,
@@ -82,7 +75,7 @@ export const fetchUserSubmissions = (dispatch, handles) => {
           return dispatch(
             createDispatch(
               ERROR_FETCHING_USER_SUBMISSIONS,
-              "ERROR in User Submission" + error
+              "Failed To fetch Submissions for User" + handle
             )
           );
         }
@@ -92,7 +85,7 @@ export const fetchUserSubmissions = (dispatch, handles) => {
         return dispatch(
           createDispatch(
             ERROR_FETCHING_USER_SUBMISSIONS,
-            "ERROR in User Submission" + e
+            "Failed To fetch Submissions for User" + handle
           )
         );
       });

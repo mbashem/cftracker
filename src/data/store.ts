@@ -96,6 +96,10 @@ const combinedReducers = combineReducers({
   sharedProblems: sharedProblemsReducer,
 });
 
+interface RootReducersType {
+  
+}
+
 const newCombinedReducers = (state, action) => {
   const intermediateReducer = combinedReducers(state, action);
   //console.log(intermediateReducer.problemList);
@@ -154,5 +158,10 @@ const store = createStore(
   {},
   applyMiddleware(...middlewre)
 );
+
+// Infer the `RootState` and `AppDispatch` types from the store itself
+export type RootState = ReturnType<typeof store.getState>
+// Inferred type: {posts: PostsState, comments: CommentsState, users: UsersState}
+export type AppDispatch = typeof store.dispatch
 
 export default store;

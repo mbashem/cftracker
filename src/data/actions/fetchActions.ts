@@ -12,12 +12,15 @@ import {
 
 import { jsonData } from "../jsons/related";
 import { result } from "lodash";
+import Problem, { ProblemStatistics } from "../../util/DataTypes/Problem";
+import { AppDispatch } from "../store";
+import { Contest } from "../../util/DataTypes/Contest";
 
 const allContestURL = "https://codeforces.com/api/contest.list";
 const problemSetURL = "https://codeforces.com/api/problemset.problems";
 const sharedProblemsURL = "../jsons/related.json";
 
-export const createDispatch = (type, message) => {
+export const createDispatch = (type: any, message: any) => {
   return {
     type: type,
     payload: message,
@@ -28,7 +31,7 @@ export const load = (type) => {
   return { type: type };
 };
 
-export const fetchProblemList = (dispatch) => {
+export const fetchProblemList = (dispatch: AppDispatch) => {
   dispatch(load(LOADING_PROBLEM_LIST));
   //fetchSharedProblemList(dispatch);
   fetch(problemSetURL)
@@ -40,14 +43,22 @@ export const fetchProblemList = (dispatch) => {
             createDispatch(ERROR_FETCHING_PROBLEMS, "Problem Status Failed")
           );
         //   console.log(result);
-        let problems = result.result.problems;
-        problems = problems.filter((problem) => "contestId" in problem);
-        for (let i = 0; i < result.result.problemStatistics.length; i++) {
-          if (!("rating" in problems[i])) problems[i]["rating"] = -1;
-          problems[i]["solvedCount"] =
-            result.result.problemStatistics[i].solvedCount;
-          problems[i]["id"] =
-            problems[i].contestId.toString() + problems[i].index;
+        let problems: Problem[] = result.result.problems;
+        let problemStatistics: ProblemStatistics[] =
+          result.result.problemStatistics;
+
+        problems = problems.filter((problem) =>
+          problem.contestId ? true : false
+        );
+
+        problemStatistics = problemStatistics.filter((problem) =>
+          problem.contestId ? true : false
+        );
+
+        for (let i = 0; i < problems.length; i++) {
+          problems[i].rating = problems[i].rating ?? -1;
+          problems[i].solvedCount = problemStatistics[i].solvedCount;
+          problems[i].id = problems[i].contestId.toString() + problems[i].index;
         }
 
         return dispatch(createDispatch(FETCH_PROBLEM_LIST, problems));
@@ -113,19 +124,21 @@ export const fetchSharedProblemList = (dispatch) => {
   //});
 };
 
-export const fetchContestList = (dispatch) => {
+export const fetchContestList = (dispatch: AppDispatch) => {
   dispatch(load(LOADING_CONTEST_LIST));
   fetch(allContestURL)
     .then((res) => res.json())
     .then(
       (result) => {
         if (result.status !== "OK")
-          return dispatch(createDispatch(ERROR_FETCHING_CONTEST_LIST));
-        let res = result.result.filter((contest) => contest.phase === FINISHED);
+          return dispatch(createDispatch(ERROR_FETCHING_CONTEST_LIST, "Eroor"));
+        let contests: Contest[] = result.result;
+
+        contests = contests.filter((contest) => contest.phase == FINISHED);
 
         return dispatch({
           type: FETCH_CONTEST_LIST,
-          payload: res,
+          payload: contests,
         });
         //	console.log(result.result.length)
       },
