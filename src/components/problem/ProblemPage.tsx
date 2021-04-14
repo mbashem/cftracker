@@ -237,32 +237,38 @@ const ProblemPage = () => {
                         className="form-inline d-flex justify-content-between my-2 my-lg-0"
                         onSubmit={(e) => e.preventDefault()}>
                         <div className="d-flex justify-content-between w-100">
-                          <div className="input-group">
-                            <span
-                              className="input-group-text"
-                              id="perpage-input">
-                              Per Page
-                            </span>
-                            <input
-                              className="form-control mr-sm-2"
-                              type="number"
-                              aria-label="perpage"
-                              aria-describedby="perpage-input"
+                          <div className="input-group mb-3">
+                            <div className="input-group-prepend">
+                              <label
+                                className="input-group-text"
+                                htmlFor="inputGroupSelect01">
+                                Per Page
+                              </label>
+                            </div>
+                            <select
+                              className="custom-select"
+                              id="inputGroupSelect01"
                               value={filterState.perPage}
-                              onChange={(e) =>
+                              onChange={(e) => {
+                                let num: number = parseInt(e.target.value);
                                 setFilterState({
                                   ...filterState,
-                                  perPage: parseInt(e.target.value),
-                                })
-                              }
-                            />
+                                  perPage: num,
+                                });
+                              }}>
+                              <option value="20">20</option>
+                              <option value="50">50</option>
+                              <option value="100">100</option>
+                              <option value={problemList.problems.length}>
+                                All
+                              </option>
+                            </select>
                           </div>
                           <div className="input-group d-flex justify-content-end">
                             <button
                               className="btn btn-light nav-link h-6"
                               onClick={() => setFilterState(initFilterState)}
-                              title="Reset To Default State"
-                             >
+                              title="Reset To Default State">
                               <FontAwesomeIcon icon={faRedoAlt} />
                             </button>
                           </div>
@@ -312,6 +318,7 @@ const ProblemPage = () => {
                             type="text"
                             placeholder="Min Rating"
                             value={filterState.rating.min_rating}
+                            name={"minRating"}
                             onChange={(e) =>
                               setFilterState({
                                 ...filterState,
@@ -332,6 +339,7 @@ const ProblemPage = () => {
                             type="text"
                             placeholder="Max Rating"
                             value={filterState.rating.max_rating}
+                            name={"maxRating"}
                             onChange={(e) =>
                               setFilterState({
                                 ...filterState,
@@ -386,6 +394,7 @@ const ProblemPage = () => {
       <table className="table table-bordered table-dark container">
         <thead className="thead-dark">
           <tr>
+            <th scope="col">SL</th>
             <th scope="col">#</th>
             <th scope="col">Name</th>
             <th

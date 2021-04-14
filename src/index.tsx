@@ -4,7 +4,6 @@ import App from "./App";
 import store from "./data/store";
 // import "bootstrap/dist/css/bootstrap.min.css";
 // import 'bootstrap/dist/js/bootstrap.bundle';
-import "react-toastify/dist/ReactToastify.css";
 import { Provider } from "react-redux";
 import { BrowserRouter as Router } from "react-router-dom";
 

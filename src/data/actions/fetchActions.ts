@@ -14,7 +14,7 @@ import { jsonData } from "../jsons/related";
 import { result } from "lodash";
 import Problem, { ProblemStatistics } from "../../util/DataTypes/Problem";
 import { AppDispatch } from "../store";
-import { Contest } from "../../util/DataTypes/Contest";
+import Contest from "../../util/DataTypes/Contest";
 
 const allContestURL = "https://codeforces.com/api/contest.list";
 const problemSetURL = "https://codeforces.com/api/problemset.problems";

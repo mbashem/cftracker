@@ -7,6 +7,7 @@ import {
   getContestUrl,
 } from "../../util/bashforces";
 import { ATTEMPTED_PROBLEMS, SOLVED_PROBLEMS } from "../../util/constants";
+import Contest from "../../util/DataTypes/Contest";
 
 const ContestList = (props) => {
   const state = useSelector((state) => state);
@@ -138,7 +139,7 @@ const ContestList = (props) => {
         }
       } else {
         problems.push(problem1);
-        for (let c:number = 2; c <=3; c++) {
+        for (let c: number = 2; c <= 3; c++) {
           problem1 = getProblem(contestId, index + c.toString());
           if (problem1 === -1) break;
           problems.push(problem1);
@@ -183,9 +184,10 @@ const ContestList = (props) => {
     );
   };
 
-  const contestCard = (contest) => {
+  const contestCard = (contest, index) => {
     return (
       <tr key={contest.id}>
+        <th scope="row sticky-col">{index + 1}</th>
         <th scope="row">{contest.id}</th>
         <td>
           <div className="name">
@@ -204,7 +206,7 @@ const ContestList = (props) => {
             ""
           )}
         </td>
-        {[...Array(7)].map((x, i) => {
+        {[...Array(10)].map((x, i) => {
           return getInfo(contest.id, charInc("A", i));
         })}
       </tr>
@@ -213,8 +215,8 @@ const ContestList = (props) => {
 
   return (
     <React.Fragment>
-      {props.contestlist.map((contest) => {
-        return contestCard(contest);
+      {props.contestlist.map((contest: Contest, index: number) => {
+        return contestCard(contest, index);
       })}
     </React.Fragment>
   );

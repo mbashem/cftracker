@@ -1,4 +1,4 @@
-import { Contest } from "../../util/DataTypes/Contest";
+import  Contest  from "../../util/DataTypes/Contest";
 import Problem from "../../util/DataTypes/Problem";
 import { sortByContestId } from "../../util/sortMethods";
 

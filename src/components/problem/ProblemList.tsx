@@ -19,13 +19,14 @@ const ProblemList = ({ problems }: ProblemListProps): JSX.Element => {
     return "UNSOLVED";
   };
 
-  const ProblemCard = (problem: Problem) => {
+  const ProblemCard = (problem: Problem, index: number) => {
     let classes = "bg-dark";
     let problemState = getState(problem);
     if (problemState === SOLVED_PROBLEMS) classes = "bg-success";
     else if (problemState === ATTEMPTED_PROBLEMS) classes = "bg-danger";
     return (
       <tr key={problem.id}>
+        <td className={"id font-weight-bold " + classes}>{index}</td>
         <td className={"id font-weight-bold " + classes}>{problem.id}</td>
         <td className={"name " + classes}>
           <a
@@ -47,8 +48,8 @@ const ProblemList = ({ problems }: ProblemListProps): JSX.Element => {
 
   return (
     <React.Fragment>
-      {problems.map((problem: Problem) => {
-        return ProblemCard(problem);
+      {problems.map((problem: Problem, index: number) => {
+        return ProblemCard(problem, index);
       })}
     </React.Fragment>
   );

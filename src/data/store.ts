@@ -13,39 +13,9 @@ import {
   SOLVED_CONTESTS,
   ATTEMPTED_CONTESTS,
 } from "../util/constants";
-
-export const contestList = {
-  status: "OK",
-  result: [
-    {
-      id: 1476,
-      name: "Educational Codeforces Round 103 (Rated for Div. 2)",
-      type: "ICPC",
-      phase: "FINISHED",
-      frozen: false,
-      durationSeconds: 7200,
-      startTimeSeconds: 1611930900,
-      relativeTimeSeconds: 418636,
-    },
-  ],
-};
-
-const problem = {
-  status: "OK",
-  result: {
-    problems: [
-      {
-        contestId: 1478,
-        index: "C",
-        name: "Nezzar and Symmetric Array",
-        type: "PROGRAMMING",
-        points: 1500,
-        rating: 1700,
-        tags: ["implementation", "math", "sortings"],
-      },
-    ],
-  },
-};
+import { AppReducer, AppStateInterfac } from "./reducers/appReducers";
+import Contest from "../util/DataTypes/Contest";
+import Problem from "../util/DataTypes/Problem";
 
 const submissions = {
   status: "OK",
@@ -81,11 +51,6 @@ const submissions = {
   ],
 };
 
-const failedUserFethc = {
-  status: "FAILED",
-  comment: "handles: User with handle b not found",
-};
-
 const middlewre = [thunk, logger];
 
 const combinedReducers = combineReducers({
@@ -94,45 +59,31 @@ const combinedReducers = combineReducers({
   contestList: contestReducer,
   userList: userReducer,
   sharedProblems: sharedProblemsReducer,
+  appState: AppReducer,
 });
 
-interface RootReducersType {
-  
+export interface RootStateType {
+  userSubmissions: any;
+  problemList: {
+    problems: Problem[];
+    error: string;
+    tags: Set<string>;
+    loading: boolean;
+  };
+  contestList: {
+    contests: Contest[];
+    error: string;
+    loading: boolean;
+    problems: Problem[];
+  };
+
+  userList: any;
+  sharedProblems: any;
+  appState: AppStateInterfac;
 }
 
-const newCombinedReducers = (state, action) => {
+const newCombinedReducers = (state:any, action:any): RootStateType => {
   const intermediateReducer = combinedReducers(state, action);
-  //console.log(intermediateReducer.problemList);
-
-  // const submissionsInitialState = {
-  //   [SOLVED_PROBLEMS]: new Set(),
-  //   [ATTEMPTED_PROBLEMS]: new Set(),
-  //   [SOLVED_CONTESTS]: new Set(),
-  //   [ATTEMPTED_CONTESTS]: new Set(),
-  //   error: "",
-  //   loading: false,
-  //   id: intermediateReducer.userSubmissions.id,
-  // };
-
-  // const related = intermediateReducer.sharedProblems.problems;
-  // const getSharedIndex = (contestId, index) => {
-  //   let l = 0,
-  //     r = related.length - 1;
-
-  //   while (l <= r) {
-  //     let mid = l + ((r - l) >> 2);
-  //     if (related[mid].contestId === contestId && related[mid].index === index)
-  //       return mid;
-  //     if (
-  //       related[mid].contestId > contestId ||
-  //       (related[mid].contestId === contestId && related[mid].index > index)
-  //     )
-  //       r = mid - 1;
-  //     else l = mid + 1;
-  //   }
-
-  //   return -1;
-  // };
 
   return {
     userSubmissions: intermediateReducer.userSubmissions,
@@ -150,6 +101,7 @@ const newCombinedReducers = (state, action) => {
     },
     userList: intermediateReducer.userList,
     sharedProblems: intermediateReducer.sharedProblems,
+    appState: intermediateReducer.appState,
   };
 };
 
@@ -160,8 +112,8 @@ const store = createStore(
 );
 
 // Infer the `RootState` and `AppDispatch` types from the store itself
-export type RootState = ReturnType<typeof store.getState>
+export type RootState = ReturnType<typeof store.getState>;
 // Inferred type: {posts: PostsState, comments: CommentsState, users: UsersState}
-export type AppDispatch = typeof store.dispatch
+export type AppDispatch = typeof store.dispatch;
 
 export default store;

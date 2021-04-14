@@ -3,8 +3,6 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
-import { toast } from "react-toastify";
-import { Notification } from "rsuite";
 import {
   fetchContestList,
   fetchProblemList,
@@ -19,6 +17,10 @@ const Menu = (): JSX.Element => {
 
   const [handle, setHandle] = useState("");
   const state: RootState = useSelector((state) => state);
+
+  useEffect(() => {
+    sync();
+  }, []);
 
   useEffect(() => {
     fetchUserSubmissions(dispatch, state.userList.handles);
