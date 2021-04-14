@@ -26,7 +26,7 @@ const ProblemList = ({ problems }: ProblemListProps): JSX.Element => {
     else if (problemState === ATTEMPTED_PROBLEMS) classes = "bg-danger";
     return (
       <tr key={problem.id}>
-        <td className={"id font-weight-bold " + classes}>{index}</td>
+        <td className={"id font-weight-bold " + classes}>{index+1}</td>
         <td className={"id font-weight-bold " + classes}>{problem.id}</td>
         <td className={"name " + classes}>
           <a
