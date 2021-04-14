@@ -1,4 +1,7 @@
+import  Contest  from "../../util/DataTypes/Contest";
+import Problem from "../../util/DataTypes/Problem";
 import { sortByContestId } from "../../util/sortMethods";
+
 import {
   ERROR_FETCHING_CONTEST_LIST,
   ERROR_FETCHING_PROBLEMS,
@@ -11,10 +14,17 @@ import {
   LOADING_SHARED_PROBLEMS,
 } from "../actions/types";
 
-const problemListInitialState = {
+export interface ProblemListInitialStateInterface {
+  problems: Problem[];
+  error: string;
+  tags: Set<string>;
+  loading: boolean;
+}
+
+const problemListInitialState: ProblemListInitialStateInterface = {
   problems: [],
   error: "",
-  tags: new Set(),
+  tags: new Set<string>(),
   loading: false,
 };
 
@@ -25,20 +35,20 @@ export const problemListReducer = (
   switch (action.type) {
     case FETCH_PROBLEM_LIST:
       action.payload.sort(sortByContestId);
-      let tags = new Set();
+      let tags = new Set<string>();
 
       for (let problem of action.payload)
         for (let tag of problem.tags) tags.add(tag);
 
       return {
         ...problemListInitialState,
-        problems: action.payload,
+        problems: action.payload as Problem[],
         error: "",
         tags: tags,
       };
 
     case ERROR_FETCHING_PROBLEMS:
-      return { ...problemListInitialState, error: action.payload };
+      return { ...problemListInitialState, error: action.payload as string };
 
     case LOADING_PROBLEM_LIST:
       return { ...problemListInitialState, loading: true };
@@ -73,17 +83,27 @@ export const sharedProblemsReducer = (
   }
 };
 
-const contestListInitialState = { contests: [], error: "", loading: false };
+export interface ContestListInitialStateInterface {
+  contests: Contest[];
+  error: string;
+  loading: boolean;
+}
+
+const contestListInitialState: ContestListInitialStateInterface = {
+  contests: [],
+  error: "",
+  loading: false,
+};
 
 export const contestReducer = (initState = contestListInitialState, action) => {
   switch (action.type) {
     case FETCH_CONTEST_LIST:
       return {
         ...contestListInitialState,
-        ...{ contests: action.payload, error: "" },
+        ...{ contests: action.payload as Contest[], error: "" },
       };
     case ERROR_FETCHING_CONTEST_LIST:
-      return { ...contestListInitialState, error: action.payload };
+      return { ...contestListInitialState, error: action.payload as string };
     case LOADING_CONTEST_LIST:
       return { ...contestListInitialState, loading: true };
     default:

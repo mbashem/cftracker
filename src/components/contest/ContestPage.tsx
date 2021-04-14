@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { getRandomInteger, parseQuery } from "../../util/bashforces";
+import { charInc, getRandomInteger, parseQuery } from "../../util/bashforces";
 import ContestList from "./ContestList";
 import {
   ATTEMPTED_CONTESTS,
@@ -136,16 +136,14 @@ const ContestPage = () => {
                     type="button"
                     className="btn btn-dark nav-link"
                     onClick={chooseRandom}
-                    title="Find Random Contest"
-                    href="#">
+                    title="Find Random Contest">
                     <FontAwesomeIcon icon={faRandom} />
                   </button>
                   <button
                     type="button"
                     className="btn btn-dark nav-link"
                     title="Cancel Random"
-                    onClick={() => setRandomContest(-1)}
-                    href="#">
+                    onClick={() => setRandomContest(-1)}>
                     <FontAwesomeIcon icon={faRedo} />
                   </button>
                 </div>
@@ -161,7 +159,7 @@ const ContestPage = () => {
                 <div
                   className="modal"
                   id="exampleModal"
-                  tabIndex="-1"
+                  tabIndex={-1}
                   aria-labelledby="exampleModalLabel"
                   aria-hidden="true">
                   <div className="modal-dialog">
@@ -182,27 +180,33 @@ const ContestPage = () => {
                             className="form-inline d-flex justify-content-between my-2 my-lg-0"
                             onSubmit={(e) => e.preventDefault()}>
                             <div className="d-flex justify-content-between w-100">
-                              <div className="input-group">
-                                <span
-                                  className="input-group-text"
-                                  id="perpage-input">
-                                  Per Page:
-                                </span>
-                                <input
-                                  className="form-control mr-sm-2"
-                                  type="number"
-                                  aria-label="perpage"
-                                  aria-describedby="perpage-input"
+                              <div className="input-group mb-3">
+                                <div className="input-group-prepend">
+                                  <label
+                                    className="input-group-text"
+                                    htmlFor="inputGroupSelect01">
+                                    Per Page
+                                  </label>
+                                </div>
+                                <select
+                                  className="custom-select"
+                                  id="inputGroupSelect01"
                                   value={filterState.perPage}
                                   onChange={(e) => {
+                                    let num: number = parseInt(e.target.value);
+
                                     setFilterState({
                                       ...filterState,
-                                      perPage: e.target.value
-                                        .toLowerCase()
-                                        .trim(),
+                                      perPage: num,
                                     });
-                                  }}
-                                />
+                                  }}>
+                                  <option value="20">20</option>
+                                  <option value="50">50</option>
+                                  <option value="100">100</option>
+                                  <option value={contestList.contests.length}>
+                                    All
+                                  </option>
+                                </select>
                               </div>
                               <div className="input-group d-flex justify-content-end">
                                 <span
@@ -214,7 +218,7 @@ const ContestPage = () => {
                                   <input
                                     className="form-check-input mt-0"
                                     type="checkbox"
-                                    defaultChecked={filterState.showDate}
+                                    defaultChecked={filterState.showDate == 1}
                                     onChange={() =>
                                       setFilterState({
                                         ...filterState,
@@ -227,8 +231,7 @@ const ContestPage = () => {
                               <button
                                 className="btn btn-secondary nav-link m-2 h-6"
                                 onClick={() => setFilterState(initFilterState)}
-                                title="Reset To Default State"
-                                href="#">
+                                title="Reset To Default State">
                                 <FontAwesomeIcon icon={faRedoAlt} />
                               </button>
                             </div>
@@ -281,38 +284,36 @@ const ContestPage = () => {
         selected={selected}
         totalCount={contestList.contests.length}
       />
-
-      <table className="table table-bordered table-dark">
-        <thead className="thead-dark">
-          <tr>
-            <th scope="col">#</th>
-            <th scope="col">Contest Name</th>
-            <th scope="col">A</th>
-            <th scope="col">B</th>
-            <th scope="col">C</th>
-            <th scope="col">D</th>
-            <th scope="col">E</th>
-            <th scope="col">F</th>
-            <th scope="col">G</th>
-          </tr>
-        </thead>
-        <tbody>
-          <ContestList
-            contestlist={
-              randomContest === -1
-                ? paginate()
-                : [contestList.contests[randomContest]]
-            }
-            filterState={filterState}
-          />
-        </tbody>
-      </table>
-      <Pagination
-        pageSelected={(e) => setSelected(e)}
-        perPage={filterState.perPage}
-        selected={selected}
-        totalCount={contestList.contests.length}
-      />
+      <div className="table-responsive">
+        <table className="table table-bordered table-dark overflow-auto">
+          <thead className="thead-dark">
+            <tr>
+              <th scope="col" className="sticky-col">SL</th>
+              <th scope="col">#</th>
+              <th scope="col">Contest Name</th>
+              {[...Array(10)].map((x, i) => {
+                return <th scope="col">{charInc("A", i)}</th>;
+              })}
+            </tr>
+          </thead>
+          <tbody>
+            <ContestList
+              contestlist={
+                randomContest === -1
+                  ? paginate()
+                  : [contestList.contests[randomContest]]
+              }
+              filterState={filterState}
+            />
+          </tbody>
+        </table>
+        <Pagination
+          pageSelected={(e) => setSelected(e)}
+          perPage={filterState.perPage}
+          selected={selected}
+          totalCount={contestList.contests.length}
+        />
+      </div>
     </div>
   );
 };

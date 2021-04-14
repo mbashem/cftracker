@@ -19,7 +19,6 @@ import {
 
 const userInitialState = {
   handles: [],
-  userInfo: new Map(),
   error: "",
   loading: false,
 };
@@ -31,25 +30,21 @@ export const userReducer = (initState = userInitialState, action) => {
       return { ...userInitialState, loading: true };
     case ADD_USER:
       newState.handles.push(action.payload.handle);
-      newState.userInfo.set(action.payload.handle, action.payload);
       return newState;
     case REMOVE_USER:
-      newState.handle = initState.handles.filter(
+      newState.handles = initState.handles.filter(
         (handle) => handle !== action.payload.handle
       );
-      newState.userInfo.delete(action.payload.handle);
       return newState;
     case ERROR_FETCHING_USER:
       return {
         handles: [],
-        userInfo: new Map(),
         error: "",
         loading: false,
       };
     case CLEAR_USERS:
       return {
         handles: [],
-        userInfo: new Map(),
         error: "",
         loading: false,
       };

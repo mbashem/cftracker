@@ -1,15 +1,21 @@
 import ReactPaginate from "react-paginate";
-import PropTypes from "prop-types";
 
-const Pagination = (props) => {
+interface PaginationProps {
+  perPage: number;
+  selected: number;
+  pageSelected(selected: number): void;
+  totalCount: number;
+}
+
+const Pagination = (props: PaginationProps) => {
   let linkClassName = "page-link text-light bg-dark";
   let linkWrapperClassName = "page-item";
 
   let pageCount =
     props.perPage > 0
       ? Math.floor(
-          (parseInt(props.totalCount) + parseInt(props.perPage) - 1) /
-            parseInt(props.perPage)
+          (Math.floor(props.totalCount) + Math.floor(props.perPage) - 1) /
+            Math.floor(props.perPage)
         )
       : 0;
 
@@ -38,13 +44,6 @@ const Pagination = (props) => {
       />
     </nav>
   );
-};
-
-Pagination.propTypes = {
-  perPage: PropTypes.number.isRequired,
-  selected: PropTypes.number.isRequired,
-  pageSelected: PropTypes.func,
-  totalCount: PropTypes.number.isRequired,
 };
 
 export default Pagination;
