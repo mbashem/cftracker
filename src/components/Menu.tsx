@@ -9,17 +9,21 @@ import {
   fetchSharedProblemList,
 } from "../data/actions/fetchActions";
 import { fetchUserSubmissions, fetchUsers } from "../data/actions/userActions";
-import { RootState } from "../data/store";
+import { RootState, RootStateType } from "../data/store";
 import { PROBLEMS, CONTESTS } from "../util/constants";
+import { Verdict } from "../util/DataTypes/Submission";
 
 const Menu = (): JSX.Element => {
   const dispatch = useDispatch();
 
-  const [handle, setHandle] = useState("");
-  const state: RootState = useSelector((state) => state);
+  const state: RootStateType = useSelector((state) => state);
 
+  const [handle, setHandle] = useState(
+    state.userList.handles.length ? state.userList.handles.toString() : ""
+  );
+  console.log(state.userList.handles.toString());
   useEffect(() => {
-    sync();
+     sync();
   }, []);
 
   useEffect(() => {

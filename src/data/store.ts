@@ -5,8 +5,14 @@ import {
   problemListReducer,
   contestReducer,
   sharedProblemsReducer,
+  ContestListStateInterface,
+  ProblemListStateInterface,
 } from "./reducers/fetchReducers";
-import { userSubmissionsReducer, userReducer } from "./reducers/userReducers";
+import {
+  userSubmissionsReducer,
+  userReducer,
+  SubmissionStateType,
+} from "./reducers/userReducers";
 import {
   SOLVED_PROBLEMS,
   ATTEMPTED_PROBLEMS,
@@ -63,53 +69,70 @@ const combinedReducers = combineReducers({
 });
 
 export interface RootStateType {
-  userSubmissions: any;
-  problemList: {
-    problems: Problem[];
-    error: string;
-    tags: Set<string>;
-    loading: boolean;
-  };
-  contestList: {
-    contests: Contest[];
-    error: string;
-    loading: boolean;
-    problems: Problem[];
-  };
-
+  userSubmissions: SubmissionStateType;
+  problemList: ProblemListStateInterface;
+  contestList: ContestListStateInterface;
   userList: any;
   sharedProblems: any;
   appState: AppStateInterfac;
 }
 
-const newCombinedReducers = (state:any, action:any): RootStateType => {
+export class RootStateForSave {
+  userSubmissions: SubmissionStateType;
+  problemList: ProblemListStateInterface;
+  contestList: ContestListStateInterface;
+  userList: any;
+  sharedProblems: any;
+  appState: AppStateInterfac;
+}
+
+const newCombinedReducers = (state: any, action: any): RootStateType => {
   const intermediateReducer = combinedReducers(state, action);
 
   return {
     userSubmissions: intermediateReducer.userSubmissions,
-    problemList: {
-      problems: intermediateReducer.problemList.problems,
-      error: intermediateReducer.problemList.error,
-      tags: intermediateReducer.problemList.tags,
-      loading: intermediateReducer.problemList.loading,
-    },
-    contestList: {
-      contests: intermediateReducer.contestList.contests,
-      error: intermediateReducer.contestList.error,
-      loading: intermediateReducer.contestList.loading,
-      problems: intermediateReducer.problemList.problems,
-    },
+    problemList: intermediateReducer.problemList,
+    contestList: intermediateReducer.contestList,
     userList: intermediateReducer.userList,
     sharedProblems: intermediateReducer.sharedProblems,
     appState: intermediateReducer.appState,
   };
 };
 
+const saveToLocalStorage = (state: RootStateType) => {
+  try {
+    const newState = {
+      userList: state.userList,
+      appState: state.appState,
+    };
+    const serializedState: string = JSON.stringify(newState);
+    localStorage.setItem("state", serializedState);
+  } catch (e) {
+    console.log(e);
+  }
+};
+
+const loadFromLocalStorage = (): any => {
+  try {
+    const serialLizedState = localStorage.getItem("state");
+    console.log(serialLizedState);
+    if (serialLizedState == null) return {};
+    const persedData = JSON.parse(serialLizedState);
+    console.log(persedData);
+    return persedData;
+  } catch (e) {
+    console.log(e);
+    return {};
+  }
+};
+
 const store = createStore(
   newCombinedReducers,
-  {},
+  loadFromLocalStorage(),
   applyMiddleware(...middlewre)
 );
+
+store.subscribe(() => saveToLocalStorage(store.getState()));
 
 // Infer the `RootState` and `AppDispatch` types from the store itself
 export type RootState = ReturnType<typeof store.getState>;

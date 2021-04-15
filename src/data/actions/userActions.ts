@@ -3,6 +3,7 @@ import {
   getUserSubmissionsURL,
   stringToArray,
 } from "../../util/bashforces";
+import Submission from "../../util/DataTypes/Submission";
 import { AppDispatch } from "../store";
 import { load, createDispatch } from "./fetchActions";
 import {
@@ -30,7 +31,7 @@ export const fetchUsers = (dispatch, handle: string) => {
   clearUsers(dispatch).then(() => {
     let handleArray: string[] = stringToArray(handle, ",");
     for (let handle of handleArray) {
-      if(handle.length === 0) continue;
+      if (handle.length === 0) continue;
       dispatch({ type: ADD_USER, payload: { handle } });
     }
   });
@@ -45,14 +46,14 @@ export const clearUsersSubmissions = (dispatch) => {
 export const fetchUserSubmissions = (
   dispatch: AppDispatch,
   handles: string[],
-  limit ?: number
+  limit?: number
 ) => {
   let currentId = Date.now();
   if (handles.length === 0) clearUsersSubmissions(dispatch);
 
   for (let handle of handles) {
     dispatch(load(LOADING_USER_SUBMISSIONS));
-    fetch(getUserSubmissionsURL(handle,limit))
+    fetch(getUserSubmissionsURL(handle, limit))
       .then((res) => res.json())
       .then(
         (result) => {
@@ -63,9 +64,14 @@ export const fetchUserSubmissions = (
                 "Failed To fetch Submissions for User with handle " + handle
               )
             );
+
+          let submissions: Submission[] = result.result;
+
+          submissions = submissions.filter((submission) => submission.contestId);
+
           return dispatch({
             type: FETCH_USER_SUBMISSIONS,
-            payload: { result: result.result, id: currentId },
+            payload: { result: submissions, id: currentId },
           });
         },
         // Note: it's important to handle errors here
