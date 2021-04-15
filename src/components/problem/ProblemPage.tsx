@@ -394,8 +394,8 @@ const ProblemPage = () => {
       <table className="table table-bordered table-dark container">
         <thead className="thead-dark">
           <tr>
-            <th scope="col">SL</th>
             <th scope="col">#</th>
+            <th scope="col">ID</th>
             <th scope="col">Name</th>
             <th
               scope="col"

@@ -288,8 +288,8 @@ const ContestPage = () => {
         <table className="table table-bordered table-dark overflow-auto">
           <thead className="thead-dark">
             <tr>
-              <th scope="col" className="sticky-col">SL</th>
-              <th scope="col">#</th>
+              <th scope="col" className="sticky-col">#</th>
+              <th scope="col">ID</th>
               <th scope="col">Contest Name</th>
               {[...Array(10)].map((x, i) => {
                 return <th scope="col">{charInc("A", i)}</th>;

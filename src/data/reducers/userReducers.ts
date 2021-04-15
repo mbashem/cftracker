@@ -10,6 +10,8 @@ import {
   REMOVE_USER,
 } from "../actions/types";
 
+import { Verdict } from "../../util/DataTypes/Submission";
+
 import {
   SOLVED_PROBLEMS,
   ATTEMPTED_PROBLEMS,
@@ -53,15 +55,76 @@ export const userReducer = (initState = userInitialState, action) => {
   }
 };
 
-const submissionsInitialState = {
-  [SOLVED_PROBLEMS]: new Set(),
-  [ATTEMPTED_PROBLEMS]: new Set(),
-  [SOLVED_CONTESTS]: new Set(),
-  [ATTEMPTED_CONTESTS]: new Set(),
-  error: "",
-  loading: false,
-  id: 0,
-};
+export class SubmissionStateForSave {
+  [Verdict.OK]: {
+    problems: Array<string>;
+    contests: Array<number>;
+  };
+  [Verdict.WRONG_ANSWER]: {
+    problems: Array<string>;
+    contests: Array<number>;
+  };
+  error: string;
+  loading: boolean;
+  id: number;
+}
+
+export class SubmissionStateType {
+  [SOLVED_PROBLEMS]: Set<string>;
+  [ATTEMPTED_PROBLEMS]: Set<string>;
+  [SOLVED_CONTESTS]: Set<number>;
+  [ATTEMPTED_CONTESTS]: Set<number>;
+  error: string;
+  loading: boolean;
+  id: number;
+
+  constructor() {
+    this[SOLVED_PROBLEMS] = new Set<string>();
+    this[ATTEMPTED_PROBLEMS] = new Set<string>();
+    this[SOLVED_CONTESTS] = new Set<number>();
+    this[ATTEMPTED_CONTESTS] = new Set<number>();
+    this.error = "";
+    this.loading = false;
+    this.id = 0;
+  }
+
+  clone = (): SubmissionStateType => {
+    const cloned: SubmissionStateType = new SubmissionStateType();
+    // cloned[SOLVED_PROBLEMS] = this[SOLVED_PROBLEMS];
+    // cloned[ATTEMPTED_PROBLEMS] = this[ATTEMPTED_PROBLEMS];
+    // cloned[SOLVED_CONTESTS] = this[SOLVED_CONTESTS];
+    // cloned[ATTEMPTED_CONTESTS] = this[ATTEMPTED_CONTESTS];
+    // cloned.error = this.error;
+    // cloned.loading = this.loading;
+    // cloned.id = this.id;
+
+    return cloned;
+  };
+
+  problemStatus = (problemId: string) => {
+    if (this[SOLVED_PROBLEMS].has(problemId)) return Verdict.OK;
+    if (this[ATTEMPTED_PROBLEMS].has(problemId)) return Verdict.WRONG_ANSWER;
+    return Verdict.NOT_FOUND;
+  };
+
+  contestStatus = (contestId: number) => {
+    if (this[SOLVED_CONTESTS].has(contestId)) return Verdict.OK;
+    if (this[ATTEMPTED_CONTESTS].has(contestId)) return Verdict.WRONG_ANSWER;
+    return Verdict.NOT_FOUND;
+  };
+}
+
+const submissionsInitialState: SubmissionStateType = new SubmissionStateType();
+
+// const submissionsInitialState = {
+//   [SOLVED_PROBLEMS]: new Set(),
+//   [ATTEMPTED_PROBLEMS]: new Set(),
+//   [SOLVED_CONTESTS]: new Set(),
+//   [ATTEMPTED_CONTESTS]: new Set(),
+//   error: "",
+//   loading: false,
+//   id: 0,
+// };
 
 export const userSubmissionsReducer = (
   initState = submissionsInitialState,

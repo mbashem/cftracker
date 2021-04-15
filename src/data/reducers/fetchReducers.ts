@@ -14,14 +14,14 @@ import {
   LOADING_SHARED_PROBLEMS,
 } from "../actions/types";
 
-export interface ProblemListInitialStateInterface {
+export interface ProblemListStateInterface {
   problems: Problem[];
   error: string;
   tags: Set<string>;
   loading: boolean;
 }
 
-const problemListInitialState: ProblemListInitialStateInterface = {
+const problemListState: ProblemListStateInterface = {
   problems: [],
   error: "",
   tags: new Set<string>(),
@@ -29,7 +29,7 @@ const problemListInitialState: ProblemListInitialStateInterface = {
 };
 
 export const problemListReducer = (
-  initState = problemListInitialState,
+  initState = problemListState,
   action
 ) => {
   switch (action.type) {
@@ -41,37 +41,37 @@ export const problemListReducer = (
         for (let tag of problem.tags) tags.add(tag);
 
       return {
-        ...problemListInitialState,
+        ...problemListState,
         problems: action.payload as Problem[],
         error: "",
         tags: tags,
       };
 
     case ERROR_FETCHING_PROBLEMS:
-      return { ...problemListInitialState, error: action.payload as string };
+      return { ...problemListState, error: action.payload as string };
 
     case LOADING_PROBLEM_LIST:
-      return { ...problemListInitialState, loading: true };
+      return { ...problemListState, loading: true };
     default:
       return initState;
   }
 };
 
-const sharedProblemsInitialState = {
+const sharedProblemsState = {
   problems: [],
   error: "",
   loading: false,
 };
 
 export const sharedProblemsReducer = (
-  initState = sharedProblemsInitialState,
+  initState = sharedProblemsState,
   action
 ) => {
   switch (action.type) {
     case FETCH_SHARED_PROBLEMS:
       action.payload.sort(sortByContestId);
       return {
-        ...sharedProblemsInitialState,
+        ...sharedProblemsState,
         problems: action.payload,
       };
     case ERROR_FETCHING_SHARED_PROBLEMS:
@@ -83,13 +83,13 @@ export const sharedProblemsReducer = (
   }
 };
 
-export interface ContestListInitialStateInterface {
+export interface ContestListStateInterface {
   contests: Contest[];
   error: string;
   loading: boolean;
 }
 
-const contestListInitialState: ContestListInitialStateInterface = {
+const contestListInitialState: ContestListStateInterface = {
   contests: [],
   error: "",
   loading: false,
