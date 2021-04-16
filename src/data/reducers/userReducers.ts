@@ -90,13 +90,13 @@ export class SubmissionStateType {
 
   clone = (): SubmissionStateType => {
     const cloned: SubmissionStateType = new SubmissionStateType();
-    // cloned[SOLVED_PROBLEMS] = this[SOLVED_PROBLEMS];
-    // cloned[ATTEMPTED_PROBLEMS] = this[ATTEMPTED_PROBLEMS];
-    // cloned[SOLVED_CONTESTS] = this[SOLVED_CONTESTS];
-    // cloned[ATTEMPTED_CONTESTS] = this[ATTEMPTED_CONTESTS];
-    // cloned.error = this.error;
-    // cloned.loading = this.loading;
-    // cloned.id = this.id;
+    cloned[SOLVED_PROBLEMS] = this[SOLVED_PROBLEMS];
+    cloned[ATTEMPTED_PROBLEMS] = this[ATTEMPTED_PROBLEMS];
+    cloned[SOLVED_CONTESTS] = this[SOLVED_CONTESTS];
+    cloned[ATTEMPTED_CONTESTS] = this[ATTEMPTED_CONTESTS];
+    cloned.error = this.error;
+    cloned.loading = this.loading;
+    cloned.id = this.id;
 
     return cloned;
   };
@@ -116,45 +116,20 @@ export class SubmissionStateType {
 
 const submissionsInitialState: SubmissionStateType = new SubmissionStateType();
 
-// const submissionsInitialState = {
-//   [SOLVED_PROBLEMS]: new Set(),
-//   [ATTEMPTED_PROBLEMS]: new Set(),
-//   [SOLVED_CONTESTS]: new Set(),
-//   [ATTEMPTED_CONTESTS]: new Set(),
-//   error: "",
-//   loading: false,
-//   id: 0,
-// };
-
 export const userSubmissionsReducer = (
   initState = submissionsInitialState,
   action
 ) => {
   switch (action.type) {
     case CLEAR_USERS_SUBMISSIONS:
-      return {
-        [SOLVED_PROBLEMS]: new Set(),
-        [ATTEMPTED_PROBLEMS]: new Set(),
-        [SOLVED_CONTESTS]: new Set(),
-        [ATTEMPTED_CONTESTS]: new Set(),
-        error: "",
-        loading: false,
-        id: 0,
-      };
+      return new SubmissionStateType();
     case FETCH_USER_SUBMISSIONS:
-      let currentState;
-      if (action.payload.id === initState.id) currentState = { ...initState };
-      else if (action.payload.id > initState.id)
-        currentState = {
-          [SOLVED_PROBLEMS]: new Set(),
-          [ATTEMPTED_PROBLEMS]: new Set(),
-          [SOLVED_CONTESTS]: new Set(),
-          [ATTEMPTED_CONTESTS]: new Set(),
-          error: "",
-          loading: false,
-          id: action.payload.id,
-        };
-      else return initState;
+      let currentState: SubmissionStateType;
+      if (action.payload.id === initState.id) currentState = initState.clone();
+      else if (action.payload.id > initState.id) {
+        currentState = new SubmissionStateType();
+        currentState.id = action.payload.id;
+      } else return initState;
 
       action.payload.result.forEach((element) => {
         let contestId = element.problem.contestId.toString();
@@ -169,11 +144,11 @@ export const userSubmissionsReducer = (
         }
       });
 
-      for (let id of currentState[SOLVED_PROBLEMS]) {
+      for (let id of Array.from(currentState[SOLVED_PROBLEMS].values())) {
         currentState[ATTEMPTED_PROBLEMS].delete(id);
       }
 
-      for (let contestId of currentState[SOLVED_CONTESTS])
+      for (let contestId of Array.from(currentState[SOLVED_CONTESTS].values()))
         currentState[ATTEMPTED_CONTESTS].delete(contestId);
 
       return currentState;

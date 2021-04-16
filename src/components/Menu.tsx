@@ -11,6 +11,7 @@ import {
 import { fetchUserSubmissions, fetchUsers } from "../data/actions/userActions";
 import { RootState, RootStateType } from "../data/store";
 import { PROBLEMS, CONTESTS } from "../util/constants";
+import { ProblemShared } from "../util/DataTypes/Problem";
 import { Verdict } from "../util/DataTypes/Submission";
 
 const Menu = (): JSX.Element => {

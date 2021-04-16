@@ -1,5 +1,5 @@
 import  Contest  from "../../util/DataTypes/Contest";
-import Problem from "../../util/DataTypes/Problem";
+import Problem, { ProblemShared } from "../../util/DataTypes/Problem";
 import { sortByContestId } from "../../util/sortMethods";
 
 import {
@@ -57,22 +57,29 @@ export const problemListReducer = (
   }
 };
 
-const sharedProblemsState = {
+export interface SharedProblemInterface {
+  problems: ProblemShared[];
+  error: string;
+  loading: boolean;
+}
+
+const sharedProblemsState : SharedProblemInterface = {
   problems: [],
   error: "",
   loading: false,
 };
 
 export const sharedProblemsReducer = (
-  initState = sharedProblemsState,
+  initState :SharedProblemInterface = sharedProblemsState,
   action
 ) => {
   switch (action.type) {
     case FETCH_SHARED_PROBLEMS:
+
       action.payload.sort(sortByContestId);
       return {
         ...sharedProblemsState,
-        problems: action.payload,
+        problems: action.payload as ProblemShared[],
       };
     case ERROR_FETCHING_SHARED_PROBLEMS:
       return { ...initState, error: action.payload };

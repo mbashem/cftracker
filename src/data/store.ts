@@ -7,6 +7,7 @@ import {
   sharedProblemsReducer,
   ContestListStateInterface,
   ProblemListStateInterface,
+  SharedProblemInterface,
 } from "./reducers/fetchReducers";
 import {
   userSubmissionsReducer,
@@ -21,41 +22,9 @@ import {
 } from "../util/constants";
 import { AppReducer, AppStateInterfac } from "./reducers/appReducers";
 import Contest from "../util/DataTypes/Contest";
-import Problem from "../util/DataTypes/Problem";
-
-const submissions = {
-  status: "OK",
-  result: [
-    {
-      id: 105129023,
-      contestId: 1368,
-      creationTimeSeconds: 1611387508,
-      relativeTimeSeconds: 2147483647,
-      problem: {
-        contestId: 1368,
-        index: "D",
-        name: "AND, OR and square sum",
-        type: "PROGRAMMING",
-        points: 1750,
-        rating: 1700,
-        tags: ["bitmasks", "greedy", "math"],
-      },
-      author: {
-        contestId: 1368,
-        members: [{ handle: "bashem" }],
-        participantType: "PRACTICE",
-        ghost: false,
-        startTimeSeconds: 1592491500,
-      },
-      programmingLanguage: "GNU C++14",
-      verdict: "OK",
-      testset: "TESTS",
-      passedTestCount: 17,
-      timeConsumedMillis: 109,
-      memoryConsumedBytes: 1638400,
-    },
-  ],
-};
+import Problem, { ProblemLite, ProblemShared } from "../util/DataTypes/Problem";
+import { sortByCompare } from "../util/sortMethods";
+import lowerBound from "../util/lowerBound";
 
 const middlewre = [thunk, logger];
 
@@ -82,12 +51,96 @@ export class RootStateForSave {
   problemList: ProblemListStateInterface;
   contestList: ContestListStateInterface;
   userList: any;
-  sharedProblems: any;
+  sharedProblems: SharedProblemInterface;
   appState: AppStateInterfac;
 }
 
+const addSharedToProblems = (
+  problemList: Problem[],
+  sharedProblems: ProblemShared[]
+): Problem[] => {
+  const addProblems: Problem[] = new Array<Problem>();
+  const added: Set<string> = new Set<string>();
+
+  for (let problem of sharedProblems) {
+    let currentProblem: ProblemShared = new ProblemShared(
+      problem.contestId,
+      problem.index,
+      problem.shared
+    );
+    let lb: number = lowerBound(problemList, currentProblem as ProblemLite);
+    if (lb != problemList.length && currentProblem.equal(problemList[lb])) {
+      for (let sharedProblem of problem.shared) {
+        lb = lowerBound(problemList, sharedProblem as ProblemLite);
+        if (
+          lb == problemList.length ||
+          !sharedProblem.equal(problemList[lb]) ||
+          added.has(problemList[lb].getId())
+        )
+          continue;
+        const newProblem: Problem = new Problem(
+          sharedProblem.contestId,
+          sharedProblem.index,
+          problemList[lb].name,
+          problemList[lb].type,
+          problemList[lb].rating
+        );
+
+        newProblem.setTags(problemList[lb].getTags());
+        addProblems.push(newProblem);
+        added.add(newProblem.getId());
+      }
+    }
+  }
+
+  return problemList.concat(addProblems).sort(sortByCompare);
+};
+
+const addSharedToSubmissions = (
+  userSubmissions: SubmissionStateType,
+  sharedProblems: ProblemShared[]
+): SubmissionStateType => {
+  for (let problem of sharedProblems) {
+    let currentProblem: ProblemShared = new ProblemShared(
+      problem.contestId,
+      problem.index,
+      problem.shared
+    );
+
+    if (userSubmissions.solvedProblems.has(currentProblem.getId())) {
+      for (let sharedProblem of problem.shared) {
+        let sharedObject: ProblemShared = new ProblemShared(
+          sharedProblem.contestId,
+          sharedProblem.index
+        );
+        userSubmissions.solvedProblems.add(sharedObject.getId());
+      }
+    } else if (userSubmissions.attemptedProblems.has(currentProblem.getId())) {
+      for (let sharedProblem of problem.shared) {
+        let sharedObject: ProblemShared = new ProblemShared(
+          sharedProblem.contestId,
+          sharedProblem.index
+        );
+
+        userSubmissions.attemptedProblems.add(sharedObject.getId());
+      }
+    }
+  }
+  return userSubmissions;
+};
+
 const newCombinedReducers = (state: any, action: any): RootStateType => {
   const intermediateReducer = combinedReducers(state, action);
+
+  intermediateReducer.userSubmissions = addSharedToSubmissions(
+    intermediateReducer.userSubmissions,
+    intermediateReducer.sharedProblems.problems
+  );
+
+  intermediateReducer.problemList.problems = addSharedToProblems(
+    intermediateReducer.problemList.problems,
+    intermediateReducer.sharedProblems.problems
+  );
 
   return {
     userSubmissions: intermediateReducer.userSubmissions,
