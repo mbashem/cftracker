@@ -1,10 +1,24 @@
-// const lowerBound = <T extends any>(list:T[], val:T) : number => {
-// 	if(Object(T) == T){
+import Comparator, { Compared } from "./Comparator";
 
-// 	}
-// 	if(T instanceof Comparator<T>)
-// }	
+const lowerBound = <T extends Comparator<T>>(list: T[], val: T): number => {
+  let l: number = 0,
+    r: number = list.length - 1,
+    ans: number = list.length;
 
-// export default lowerBound;
+  while (l <= r) {
+    let mid = Math.floor(l + (r - l) / 2);
 
-export {};
+    if (val.compareTo(list[mid]) === Compared.LESS) l = mid + 1;
+    else if (
+      val.compareTo(list[mid]) === Compared.GREATER ||
+      val.compareTo(list[mid]) === Compared.EQUAL
+    ) {
+      ans = mid;
+      r = mid - 1;
+    }
+  }
+
+  return ans;
+};
+
+export default lowerBound;

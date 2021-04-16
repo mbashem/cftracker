@@ -164,11 +164,13 @@ const ContestList = (props) => {
     }
 
     if (problems.length === 2) {
+      let cnt : number = 0;
+
       return (
         <td className="p-0" key={contestId + index.charAt(0)}>
           <table>
             <tbody>
-              <tr className="inside p-0" key={contestId + index}>
+              <tr className="inside p-0" key={contestId + index + cnt++}>
                 {problems.map((element) => renderProblem(element))}
               </tr>
             </tbody>

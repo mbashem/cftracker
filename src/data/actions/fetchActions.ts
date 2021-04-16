@@ -12,7 +12,10 @@ import {
 
 import { jsonData } from "../jsons/related";
 import { result } from "lodash";
-import Problem, { ProblemStatistics } from "../../util/DataTypes/Problem";
+import Problem, {
+  ProblemShared,
+  ProblemStatistics,
+} from "../../util/DataTypes/Problem";
 import { AppDispatch } from "../store";
 import Contest from "../../util/DataTypes/Contest";
 
@@ -61,7 +64,21 @@ export const fetchProblemList = (dispatch: AppDispatch) => {
           problems[i].id = problems[i].contestId.toString() + problems[i].index;
         }
 
-        return dispatch(createDispatch(FETCH_PROBLEM_LIST, problems));
+        const finalProblemArray: Problem[] = [];
+        for (let problem of problems) {
+          finalProblemArray.push(
+            new Problem(
+              problem.contestId,
+              problem.index,
+              problem.name,
+              problem.type,
+              problem.rating,
+              problem.tags
+            )
+          );
+        }
+
+        return dispatch(createDispatch(FETCH_PROBLEM_LIST, finalProblemArray));
         //	console.log(result.result.length)
       },
       // Note: it's important to handle errors here
@@ -100,7 +117,8 @@ export const fetchSharedProblemList = (dispatch) => {
           "Error fetching shared problems"
         )
       );
-    return dispatch(createDispatch(FETCH_SHARED_PROBLEMS, result.result));
+    const res: ProblemShared[] = result.result as ProblemShared[];
+    return dispatch(createDispatch(FETCH_SHARED_PROBLEMS, res));
     //	console.log(result.result.length)
   } else
     return dispatch(
