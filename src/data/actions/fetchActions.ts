@@ -73,7 +73,8 @@ export const fetchProblemList = (dispatch: AppDispatch) => {
               problem.name,
               problem.type,
               problem.rating,
-              problem.tags
+              problem.tags,
+              problem.solvedCount
             )
           );
         }

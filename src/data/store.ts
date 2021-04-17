@@ -83,10 +83,11 @@ const addSharedToProblems = (
           sharedProblem.index,
           problemList[lb].name,
           problemList[lb].type,
-          problemList[lb].rating
+          problemList[lb].rating,
+          problemList[lb].getTags(),
+          problemList[lb].solvedCount
         );
 
-        newProblem.setTags(problemList[lb].getTags());
         addProblems.push(newProblem);
         added.add(newProblem.getId());
       }

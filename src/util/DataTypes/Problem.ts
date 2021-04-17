@@ -66,7 +66,8 @@ export default class Problem extends ProblemLite {
     name: string,
     type: string,
     rating: number = -1,
-    tags?: string[]
+    tags: string[],
+    solvedCount?:number
   ) {
     super(contestId, index);
     this.contestId = contestId;
@@ -75,6 +76,8 @@ export default class Problem extends ProblemLite {
     this.type = type;
     this.rating = rating;
     this.tags = [...tags];
+    if(solvedCount) this.solvedCount = solvedCount;
+    else this.solvedCount = 0;
   }
 
   setTags = (tags: string[]): void => {
