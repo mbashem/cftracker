@@ -101,6 +101,8 @@ const addSharedToSubmissions = (
   userSubmissions: SubmissionStateType,
   sharedProblems: ProblemShared[]
 ): SubmissionStateType => {
+  let currUserSubmissions = userSubmissions.clone();
+
   for (let problem of sharedProblems) {
     let currentProblem: ProblemShared = new ProblemShared(
       problem.contestId,
@@ -108,26 +110,39 @@ const addSharedToSubmissions = (
       problem.shared
     );
 
-    if (userSubmissions.solvedProblems.has(currentProblem.getId())) {
+    if (userSubmissions[SOLVED_PROBLEMS].has(currentProblem.getId())) {
       for (let sharedProblem of problem.shared) {
         let sharedObject: ProblemShared = new ProblemShared(
           sharedProblem.contestId,
           sharedProblem.index
         );
-        userSubmissions.solvedProblems.add(sharedObject.getId());
+        currUserSubmissions[SOLVED_PROBLEMS].add(sharedObject.getId());
+        if (sharedObject.contestId) {
+          currUserSubmissions[SOLVED_CONTESTS].add(sharedObject.contestId);
+          // if (sharedObject.contestId == 1508){
+          //   console.log(sharedObject.contestId);
+          // }
+        }
       }
-    } else if (userSubmissions.attemptedProblems.has(currentProblem.getId())) {
+    } else if (
+      userSubmissions[ATTEMPTED_PROBLEMS].has(currentProblem.getId())
+    ) {
       for (let sharedProblem of problem.shared) {
         let sharedObject: ProblemShared = new ProblemShared(
           sharedProblem.contestId,
           sharedProblem.index
         );
 
-        userSubmissions.attemptedProblems.add(sharedObject.getId());
+        currUserSubmissions[ATTEMPTED_PROBLEMS].add(sharedObject.getId());
+        if (sharedObject.contestId)
+          currUserSubmissions[ATTEMPTED_CONTESTS].add(sharedObject.contestId);
       }
     }
   }
-  return userSubmissions;
+
+  // console.log("What!");
+
+  return currUserSubmissions;
 };
 
 const newCombinedReducers = (state: any, action: any): RootStateType => {

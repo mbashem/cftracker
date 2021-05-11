@@ -17,16 +17,10 @@ import HomePage from "./components/home/HomePage";
 import { PROBLEMS, CONTESTS } from "./util/constants";
 
 function App() {
-  const dispatch = useDispatch();
-  const state = useSelector((state) => state);
 
   useEffect(() => {
-    // fetchProblemList(dispatch);
-    // fetchUserSubmissions(dispatch, state.userList.handles);
-    // fetchContestList(dispatch);
-    // fetchSharedProblemList(dispatch);
     document.body.classList.add("bg-dark");
-    document.title = "BashForces";
+    document.title = "CFTracker";
   }, []);
 
   return (

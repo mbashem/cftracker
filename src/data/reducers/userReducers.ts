@@ -132,14 +132,18 @@ export const userSubmissionsReducer = (
       } else return initState;
 
       action.payload.result.forEach((element) => {
-        let contestId = element.problem.contestId.toString();
+        let contestId = element.problem.contestId;
         let verdict = element.verdict;
         let problemIndex = element.problem.index;
         if (verdict === "OK") {
-          currentState[SOLVED_PROBLEMS].add(contestId + problemIndex);
+          currentState[SOLVED_PROBLEMS].add(
+            contestId.toString() + problemIndex
+          );
           currentState[SOLVED_CONTESTS].add(contestId);
         } else {
-          currentState[ATTEMPTED_PROBLEMS].add(contestId + problemIndex);
+          currentState[ATTEMPTED_PROBLEMS].add(
+            contestId.toString() + problemIndex
+          );
           currentState[ATTEMPTED_CONTESTS].add(contestId);
         }
       });
