@@ -54,11 +54,6 @@ const ContestPage = () => {
       contestStatus(contest.id)
     );
 
-    if(contest.id == 1508){
-      console.log(solveStatus);
-      console.log(contestStatus(contest.id));
-    }
-
     let searchIncluded = true;
 
     let text = filterState.search.toLowerCase().trim();
