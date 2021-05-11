@@ -24,7 +24,7 @@ const Menu = (): JSX.Element => {
   );
   console.log(state.userList.handles.toString());
   useEffect(() => {
-     sync();
+    sync();
   }, []);
 
   useEffect(() => {
@@ -69,7 +69,7 @@ const Menu = (): JSX.Element => {
         <span className="navbar-toggler-icon"></span>
       </button>
       <Link to="/" className="navbar-brand" href="#">
-        BashForces
+        CFTracker
       </Link>
 
       <div
@@ -108,7 +108,7 @@ const Menu = (): JSX.Element => {
             name="handle"
             className="form-control mr-sm-2"
             type="search"
-            placeholder="Handle"
+            placeholder="handle1,handle2,.."
             aria-label="Search"
             value={handle}
             onChange={(e) => setHandle(e.target.value)}

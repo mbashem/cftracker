@@ -51,8 +51,13 @@ const ContestPage = () => {
 
   const filterContest = (contest) => {
     let solveStatus = filterState.solveStatus.includes(
-      contestStatus(contest.id.toString())
+      contestStatus(contest.id)
     );
+
+    if(contest.id == 1508){
+      console.log(solveStatus);
+      console.log(contestStatus(contest.id));
+    }
 
     let searchIncluded = true;
 
