@@ -23,6 +23,7 @@ const userInitialState = {
   handles: [],
   error: "",
   loading: false,
+  id: 0,
 };
 
 export const userReducer = (initState = userInitialState, action) => {
@@ -31,7 +32,13 @@ export const userReducer = (initState = userInitialState, action) => {
     case LOADING_USERS:
       return { ...userInitialState, loading: true };
     case ADD_USER:
+      if (action.payload.id < initState.id) {
+        return newState;
+      }
+      if (action.payload.id > initState.id)
+        newState.handles = new Array<string>();
       newState.handles.push(action.payload.handle);
+      newState.id = action.payload.id;
       return newState;
     case REMOVE_USER:
       newState.handles = initState.handles.filter(

@@ -1,4 +1,5 @@
 import {
+  delay,
   getUserInfoURL,
   getUserSubmissionsURL,
   stringToArray,
@@ -27,14 +28,15 @@ export const clearUsers = (dispatch) =>
 
 export const fetchUsers = (dispatch, handle: string) => {
   dispatch(load(LOADING_USERS));
+  let currentId = Date.now();
 
-  clearUsers(dispatch).then(() => {
-    let handleArray: string[] = stringToArray(handle, ",");
-    for (let handle of handleArray) {
-      if (handle.length === 0) continue;
-      dispatch({ type: ADD_USER, payload: { handle } });
-    }
-  });
+  let handleArray: string[] = stringToArray(handle, ",");
+  handleArray = handleArray.filter((handle) => handle.length);
+
+  for (let handle of handleArray) {
+    if (handle.length === 0) continue;
+    dispatch({ type: ADD_USER, payload: { handle, id: currentId } });
+  }
 };
 
 export const clearUsersSubmissions = (dispatch) => {
@@ -43,7 +45,7 @@ export const clearUsersSubmissions = (dispatch) => {
   });
 };
 
-export const fetchUserSubmissions = (
+export const fetchUserSubmissions = async (
   dispatch: AppDispatch,
   handles: string[],
   limit?: number
@@ -53,6 +55,9 @@ export const fetchUserSubmissions = (
 
   for (let handle of handles) {
     dispatch(load(LOADING_USER_SUBMISSIONS));
+
+    await delay(300);
+
     fetch(getUserSubmissionsURL(handle, limit))
       .then((res) => res.json())
       .then(
@@ -67,7 +72,9 @@ export const fetchUserSubmissions = (
 
           let submissions: Submission[] = result.result;
 
-          submissions = submissions.filter((submission) => submission.contestId);
+          submissions = submissions.filter(
+            (submission) => submission.contestId
+          );
 
           return dispatch({
             type: FETCH_USER_SUBMISSIONS,

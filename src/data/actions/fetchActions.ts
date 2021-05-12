@@ -103,12 +103,6 @@ export const fetchProblemList = (dispatch: AppDispatch) => {
 };
 
 export const fetchSharedProblemList = (dispatch) => {
-  //console.log(sharedProblemsURL);
-  // fetch(sharedProblemsURL)
-  //   .then((res) => res.json())
-  //   .then(
-  //     (result) => {
-  //       console.log(result);
   if (jsonData != null) {
     const result = jsonData;
     if (result.status !== "OK")
@@ -125,22 +119,6 @@ export const fetchSharedProblemList = (dispatch) => {
     return dispatch(
       createDispatch(ERROR_FETCHING_SHARED_PROBLEMS, "ERROR in PROBLEM LIST")
     );
-  //   },
-  //   // Note: it's important to handle errors here
-  //   // instead of a catch() block so that we don't swallow
-  //   // exceptions from actual bugs in components.
-  //   (error) => {
-  //     return dispatch(
-  //       createDispatch(ERROR_FETCHING_SHARED_PROBLEMS, "ERROR in PROBLEM LIST")
-  //     );
-  //   }
-  // )
-  // .catch((e) => {
-  //     console.log(e);
-  //   return dispatch(
-  //     createDispatch(ERROR_FETCHING_SHARED_PROBLEMS, "ERROR in PROBLEM LIST")
-  //   );
-  //});
 };
 
 export const fetchContestList = (dispatch: AppDispatch) => {

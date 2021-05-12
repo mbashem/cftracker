@@ -24,18 +24,17 @@ const Menu = (): JSX.Element => {
   );
   console.log(state.userList.handles.toString());
   useEffect(() => {
-    sync();
+    fetchProblemList(dispatch);
+    fetchContestList(dispatch);
+    fetchSharedProblemList(dispatch);
   }, []);
 
   useEffect(() => {
-    fetchUserSubmissions(dispatch, state.userList.handles);
+    sync();
   }, [state.userList]);
 
   const sync = () => {
-    fetchProblemList(dispatch);
     fetchUserSubmissions(dispatch, state.userList.handles);
-    fetchContestList(dispatch);
-    fetchSharedProblemList(dispatch);
   };
 
   const submitUser = () => {

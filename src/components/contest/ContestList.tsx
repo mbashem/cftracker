@@ -37,30 +37,17 @@ const ContestList = (props) => {
     return -1;
   };
 
-  const getStatus = (contestId, index, id, solveStatus) => {
+  const getStatus = (id:string, solveStatus:string) => {
     let res = state.userSubmissions[solveStatus].has(id);
-    if (!res) {
-      let sharedIndex = getSharedIndex(contestId, index);
-      if (sharedIndex != -1) {
-        for (let problem of related[sharedIndex].shared) {
-          res |= state.userSubmissions[solveStatus].has(problem.id);
-        }
-      }
-    }
-    //if(contestId == 1495)
     return res;
   };
 
   const renderProblem = (problem) => {
     let solved = getStatus(
-      problem.contestId,
-      problem.index,
       problem.id,
       SOLVED_PROBLEMS
     );
     let attempted = getStatus(
-      problem.contestId,
-      problem.index,
       problem.id,
       ATTEMPTED_PROBLEMS
     );
