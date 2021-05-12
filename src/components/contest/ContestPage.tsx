@@ -319,7 +319,7 @@ const ContestPage = () => {
                   ? paginate()
                   : [contestList.contests[randomContest]]
               }
-              filterState={filterState}
+              filterState={filterState} showDate={showDate}
             />
           </tbody>
         </table>

@@ -37,20 +37,14 @@ const ContestList = (props) => {
     return -1;
   };
 
-  const getStatus = (id:string, solveStatus:string) => {
+  const getStatus = (id: string, solveStatus: string) => {
     let res = state.userSubmissions[solveStatus].has(id);
     return res;
   };
 
   const renderProblem = (problem) => {
-    let solved = getStatus(
-      problem.id,
-      SOLVED_PROBLEMS
-    );
-    let attempted = getStatus(
-      problem.id,
-      ATTEMPTED_PROBLEMS
-    );
+    let solved = getStatus(problem.id, SOLVED_PROBLEMS);
+    let attempted = getStatus(problem.id, ATTEMPTED_PROBLEMS);
 
     let name = problem.name;
     let id = problem.id;
@@ -151,7 +145,7 @@ const ContestList = (props) => {
     }
 
     if (problems.length === 2) {
-      let cnt : number = 0;
+      let cnt: number = 0;
 
       return (
         <td className="p-0" key={contestId + index.charAt(0)}>
@@ -189,7 +183,7 @@ const ContestList = (props) => {
               {contest.name}
             </a>
           </div>
-          {props.filterState.showDate ? (
+          {props.showDate ? (
             <div className="time">{formateDate(contest.startTimeSeconds)}</div>
           ) : (
             ""
