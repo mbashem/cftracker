@@ -84,7 +84,7 @@ export const AppReducer = (
     case AppReducerType.TOGGLE_THEME:
       curr.darkMode = !initState.darkMode;
       return curr;
-    case AppReducerType.TOGGLE_THEME:
+    case AppReducerType.TOGGLE_DATE:
       curr.contestPage.showDate = !initState.contestPage.showDate;
       return curr;
     case AppReducerType.APP_LOADED:
