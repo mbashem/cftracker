@@ -1,4 +1,5 @@
 import {
+  AppReducerType,
   ERROR_FETCHING_CONTEST_LIST,
   ERROR_FETCHING_PROBLEMS,
   ERROR_FETCHING_SHARED_PROBLEMS,
@@ -28,6 +29,30 @@ export const createDispatch = (type: any, message: any) => {
     type: type,
     payload: message,
   };
+};
+
+export interface AppPayloadType {
+  type: AppReducerType;
+  payload: {
+    isContest: boolean;
+    data: string | number;
+  };
+}
+
+export const changeAppState = (
+  dispatch: AppDispatch,
+  type: AppReducerType,
+  data: number,
+  isContest: boolean
+) => {
+  let curr: AppPayloadType = {
+    type: type,
+    payload: {
+      isContest: isContest,
+      data: data,
+    },
+  };
+  dispatch(curr);
 };
 
 export const load = (type) => {

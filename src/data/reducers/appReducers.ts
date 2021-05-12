@@ -1,34 +1,105 @@
+import { AppPayloadType } from "../actions/fetchActions";
 import { AppReducerType, ErrorLog } from "../actions/types";
 
-export class AppStateInterfac {
+export class AppStateType {
   errorLog: string[];
   successLog: string[];
   darkMode: boolean;
   loaded: boolean;
+  contestPage: {
+    perPage: number;
+    showDate: boolean;
+  };
+  problemPage: {
+    perPage: number;
+    minRating: number;
+    maxRating: number;
+    showUnrated: boolean;
+  };
+
+  constructor() {
+    this.errorLog = new Array<string>();
+    this.successLog = new Array<string>();
+    this.darkMode = true;
+
+    this.loaded = false;
+
+    this.contestPage = { perPage: 100, showDate: false };
+    this.problemPage = {
+      perPage: 100,
+      minRating: -1,
+      maxRating: 4000,
+      showUnrated: true,
+    };
+  }
+
+  init = (data?: any) => {
+    if (data.darkMode != undefined) this.darkMode = data.darkMode;
+    if (data.contestPage) {
+      if (data.contestPage.perPage)
+        this.contestPage.perPage = data.contestPage.perPage;
+      if (data.contestPage.showDate != undefined)
+        this.contestPage.showDate = data.contestPage.showDate;
+    }
+
+    if (data.problemPage) {
+      if (data.problemPage.perPage)
+        this.problemPage.perPage = data.problemPage.perPage;
+      if (data.problemPage.minRating)
+        this.problemPage.minRating = data.problemPage.minRating;
+      if (data.problemPage.maxRating)
+        this.problemPage.maxRating = data.problemPage.maxRating;
+      if (data.problemPage.showUnrated != undefined)
+        this.problemPage.showUnrated = data.showUnrated;
+    }
+  };
+
+  clone = (): AppStateType => {
+    const cloned = new AppStateType();
+
+    cloned.errorLog = this.errorLog;
+    cloned.successLog = this.successLog;
+    cloned.darkMode = this.darkMode;
+    cloned.loaded = this.loaded;
+    cloned.contestPage = this.contestPage;
+    cloned.problemPage = this.problemPage;
+
+    return cloned;
+  };
 }
 
-const initAppState: AppStateInterfac = {
-  errorLog: [],
-  successLog: [],
-  darkMode: true,
-  loaded: false,
-};
+const initAppState: AppStateType = new AppStateType();
+
+// dispatch(CHANGE_PER_PAGE,payload: )
 
 export const AppReducer = (
-  initState: AppStateInterfac = initAppState,
-  action: { type: string; message: string }
+  initState: AppStateType = initAppState,
+  action: AppPayloadType
 ) => {
+  let curr = initState.clone();
   switch (action.type) {
-    case AppReducerType.ADD_ERROR_LOG:
-      let newState = { ...initState };
-      newState.errorLog.push(action.message);
-      return newState;
     case AppReducerType.CLEAR_ERROR_LOG:
-      return { ...initState, ErrorLog: new Array<string>() };
+      curr.errorLog = new Array<string>();
+      return curr;
     case AppReducerType.TOGGLE_THEME:
-      return { ...initState, darkMode: !initState.darkMode };
+      curr.darkMode = !initState.darkMode;
+      return curr;
+    case AppReducerType.TOGGLE_THEME:
+      curr.contestPage.showDate = !initState.contestPage.showDate;
+      return curr;
     case AppReducerType.APP_LOADED:
       return { ...initState, loaded: true };
+    case AppReducerType.CHANGE_MAX_RATING:
+      curr.problemPage.maxRating = action.payload.data as number;
+      return curr;
+    case AppReducerType.CHANGE_MIN_RATING:
+      curr.problemPage.minRating = action.payload.data as number;
+      return curr;
+    case AppReducerType.CHANGE_PER_PAGE:
+      if (action.payload.isContest)
+        curr.contestPage.perPage = action.payload.data as number;
+      else curr.problemPage.perPage = action.payload.data as number;
+      return curr;
     default:
       return initState;
   }

@@ -20,11 +20,13 @@ import {
   SOLVED_CONTESTS,
   ATTEMPTED_CONTESTS,
 } from "../util/constants";
-import { AppReducer, AppStateInterfac } from "./reducers/appReducers";
+import { AppReducer, AppStateType } from "./reducers/appReducers";
 import Contest from "../util/DataTypes/Contest";
 import Problem, { ProblemLite, ProblemShared } from "../util/DataTypes/Problem";
 import { sortByCompare } from "../util/sortMethods";
 import lowerBound from "../util/lowerBound";
+import { cursorTo } from "node:readline";
+import { AppReducerType } from "./actions/types";
 
 const middlewre = [thunk, logger];
 
@@ -43,7 +45,7 @@ export interface RootStateType {
   contestList: ContestListStateInterface;
   userList: any;
   sharedProblems: any;
-  appState: AppStateInterfac;
+  appState: AppStateType;
 }
 
 export class RootStateForSave {
@@ -52,7 +54,7 @@ export class RootStateForSave {
   contestList: ContestListStateInterface;
   userList: any;
   sharedProblems: SharedProblemInterface;
-  appState: AppStateInterfac;
+  appState: AppStateType;
 }
 
 const addSharedToProblems = (
@@ -175,7 +177,7 @@ const saveToLocalStorage = (state: RootStateType) => {
       appState: state.appState,
     };
     const serializedState: string = JSON.stringify(newState);
-    localStorage.setItem("state", serializedState);
+    localStorage.setItem("statev2", serializedState);
   } catch (e) {
     console.log(e);
   }
@@ -183,10 +185,16 @@ const saveToLocalStorage = (state: RootStateType) => {
 
 const loadFromLocalStorage = (): any => {
   try {
-    const serialLizedState = localStorage.getItem("state");
+    const serialLizedState = localStorage.getItem("statev2");
     console.log(serialLizedState);
     if (serialLizedState == null) return {};
     const persedData = JSON.parse(serialLizedState);
+
+    let appState = new AppStateType();
+    if (persedData.appState) {
+      appState.init(persedData.appState);
+    }
+    persedData.appState = appState;
     console.log(persedData);
     return persedData;
   } catch (e) {

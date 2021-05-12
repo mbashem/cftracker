@@ -97,6 +97,7 @@ export class SubmissionStateType {
 
   clone = (): SubmissionStateType => {
     const cloned: SubmissionStateType = new SubmissionStateType();
+    
     cloned[SOLVED_PROBLEMS] = this[SOLVED_PROBLEMS];
     cloned[ATTEMPTED_PROBLEMS] = this[ATTEMPTED_PROBLEMS];
     cloned[SOLVED_CONTESTS] = this[SOLVED_CONTESTS];
@@ -127,11 +128,11 @@ export const userSubmissionsReducer = (
   initState = submissionsInitialState,
   action
 ) => {
+  let currentState: SubmissionStateType;
   switch (action.type) {
     case CLEAR_USERS_SUBMISSIONS:
       return new SubmissionStateType();
     case FETCH_USER_SUBMISSIONS:
-      let currentState: SubmissionStateType;
       if (action.payload.id === initState.id) currentState = initState.clone();
       else if (action.payload.id > initState.id) {
         currentState = new SubmissionStateType();
@@ -169,10 +170,9 @@ export const userSubmissionsReducer = (
         ...{ error: "Error Fetching Submissions", loading: false },
       };
     case LOADING_USER_SUBMISSIONS:
-      return {
-        ...submissionsInitialState,
-        loading: true,
-      };
+      currentState = initState.clone();
+      currentState.loading = true;
+      return currentState;
     default:
       return initState;
   }

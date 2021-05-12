@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { charInc, getRandomInteger, parseQuery } from "../../util/bashforces";
 import ContestList from "./ContestList";
 import {
@@ -17,14 +17,20 @@ import {
   faRedoAlt,
 } from "@fortawesome/free-solid-svg-icons";
 import { useHistory } from "react-router";
+import { RootStateType } from "../../data/store";
+import { changeAppState } from "../../data/actions/fetchActions";
+import { AppReducerType } from "../../data/actions/types";
 
 const ContestPage = () => {
-  const state = useSelector((state) => state);
+  const state: RootStateType = useSelector((state) => state);
 
   const history = useHistory();
+  const dispatch = useDispatch();
 
   const [contestList, setContestList] = useState({ contests: [], error: "" });
   const [randomContest, setRandomContest] = useState(-1);
+  const [perPage, setPerPage] = useState(100);
+  const [showDate, setShowDate] = useState(false);
 
   const SOLVED = 1,
     ATTEMPTED = 0,
@@ -35,8 +41,6 @@ const ContestPage = () => {
   const initFilterState = {
     solveStatus: [SOLVED, ATTEMPTED, UNSOLVED],
     search: SEARCH in query ? query[SEARCH] : "",
-    showDate: 0,
-    perPage: 100,
   };
 
   const [filterState, setFilterState] = useState(initFilterState);
@@ -67,6 +71,8 @@ const ContestPage = () => {
   };
 
   useEffect(() => {
+    setPerPage(state.appState.contestPage.perPage);
+    setShowDate(state.appState.contestPage.showDate);
     if (filterState.search.trim().length)
       history.push({
         pathname: CONTESTS,
@@ -90,8 +96,9 @@ const ContestPage = () => {
   };
 
   const paginate = () => {
-    let lo = selected * filterState.perPage;
-    let high = Math.min(contestList.contests.length, lo + filterState.perPage);
+    // let lo = selected * filterState.perPage;
+    let lo = selected * perPage;
+    let high = Math.min(contestList.contests.length, lo + perPage);
 
     if (lo > high) return [];
     return contestList.contests.slice(lo, high);
@@ -191,14 +198,20 @@ const ContestPage = () => {
                                 <select
                                   className="custom-select"
                                   id="inputGroupSelect01"
-                                  value={filterState.perPage}
+                                  value={perPage}
                                   onChange={(e) => {
                                     let num: number = parseInt(e.target.value);
 
-                                    setFilterState({
-                                      ...filterState,
-                                      perPage: num,
-                                    });
+                                    // setFilterState({
+                                    //   ...filterState,
+                                    //   perPage: num,
+                                    // });
+                                    changeAppState(
+                                      dispatch,
+                                      AppReducerType.CHANGE_PER_PAGE,
+                                      num,
+                                      true
+                                    );
                                   }}>
                                   <option value="20">20</option>
                                   <option value="50">50</option>
@@ -218,12 +231,14 @@ const ContestPage = () => {
                                   <input
                                     className="form-check-input mt-0"
                                     type="checkbox"
-                                    defaultChecked={filterState.showDate == 1}
+                                    defaultChecked={showDate}
                                     onChange={() =>
-                                      setFilterState({
-                                        ...filterState,
-                                        showDate: filterState.showDate ^ 1,
-                                      })
+                                      changeAppState(
+                                        dispatch,
+                                        AppReducerType.TOGGLE_DATE,
+                                        +!!!showDate,
+                                        true
+                                      )
                                     }
                                   />
                                 </div>
@@ -251,9 +266,8 @@ const ContestPage = () => {
                               key={solved}
                               onClick={() => {
                                 let myFilterState = { ...filterState };
-                                let ind = filterState.solveStatus.indexOf(
-                                  solved
-                                );
+                                let ind =
+                                  filterState.solveStatus.indexOf(solved);
                                 if (ind != -1)
                                   myFilterState.solveStatus.splice(ind, 1);
                                 else myFilterState.solveStatus.push(solved);
@@ -280,7 +294,7 @@ const ContestPage = () => {
 
       <Pagination
         pageSelected={(e) => setSelected(e)}
-        perPage={filterState.perPage}
+        perPage={perPage}
         selected={selected}
         totalCount={contestList.contests.length}
       />
@@ -288,7 +302,9 @@ const ContestPage = () => {
         <table className="table table-bordered table-dark overflow-auto">
           <thead className="thead-dark">
             <tr>
-              <th scope="col" className="sticky-col">#</th>
+              <th scope="col" className="sticky-col">
+                #
+              </th>
               <th scope="col">ID</th>
               <th scope="col">Contest Name</th>
               {[...Array(10)].map((x, i) => {
@@ -309,7 +325,7 @@ const ContestPage = () => {
         </table>
         <Pagination
           pageSelected={(e) => setSelected(e)}
-          perPage={filterState.perPage}
+          perPage={perPage}
           selected={selected}
           totalCount={contestList.contests.length}
         />
