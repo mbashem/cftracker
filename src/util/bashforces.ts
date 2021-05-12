@@ -56,3 +56,5 @@ export const parseQuery = (queryString) => {
   }
   return query;
 };
+
+export const delay = ms => new Promise(res => setTimeout(res, ms));

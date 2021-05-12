@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { getRandomInteger, parseQuery } from "../../util/bashforces";
 import { sortByRating, sortBySolveCount } from "../../util/sortMethods";
 import {
@@ -21,10 +21,14 @@ import {
   faRedoAlt,
 } from "@fortawesome/free-solid-svg-icons";
 import { useHistory } from "react-router";
+import { RootStateType } from "../../data/store";
+import { changeAppState } from "../../data/actions/fetchActions";
+import { AppReducerType } from "../../data/actions/types";
 
 const ProblemPage = () => {
-  const state = useSelector((state) => state);
+  const state: RootStateType = useSelector((state) => state);
   const history = useHistory();
+  const dispatch = useDispatch();
 
   const SOLVED = 1,
     ATTEMPTED = 0,
@@ -43,13 +47,16 @@ const ProblemPage = () => {
     search: SEARCH in query ? query[SEARCH] : "",
     sortBy: SORT_BY_SOLVE,
     order: DESCENDING,
-    perPage: 100,
   };
 
   const [problemList, setProblemList] = useState({ problems: [], error: "" });
   const [tagList, setTagList] = useState({ tags: [] });
   const [randomProblem, setRandomProblem] = useState(-1);
   const [selected, setSelected] = useState(0);
+  const [perPage, setPerPage] = useState(100);
+  const [minRating, setMinRating] = useState(-1);
+  const [maxRating, setMaxRating] = useState(4000);
+  const [showUnrated, setShowUnrated] = useState(true);
 
   const [filterState, setFilterState] = useState(initFilterState);
 
@@ -64,8 +71,9 @@ const ProblemPage = () => {
           break;
         }
     let ratingInside =
-      problem.rating <= filterState.rating.max_rating &&
-      problem.rating >= filterState.rating.min_rating;
+      problem.rating <= maxRating && problem.rating >= minRating;
+    // if (problem.rating == -1 && showUnrated == false) ratingInside = false;
+    // else if (problem.rating == -1 && showUnrated) ratingInside = true;
     let solveStatus = filterState.solveStatus.includes(getState(problem));
 
     let searchIncluded = true;
@@ -79,6 +87,11 @@ const ProblemPage = () => {
   };
 
   useEffect(() => {
+    setPerPage(state.appState.problemPage.perPage);
+    setMinRating(state.appState.problemPage.minRating);
+    setMaxRating(state.appState.problemPage.maxRating);
+    setShowUnrated(state.appState.problemPage.showUnrated);
+
     if (filterState.search.trim().length)
       history.push({
         pathname: PROBLEMS,
@@ -140,8 +153,8 @@ const ProblemPage = () => {
   };
 
   const paginate = () => {
-    let lo = selected * filterState.perPage;
-    let high = Math.min(problemList.problems.length, lo + filterState.perPage);
+    let lo = selected * perPage;
+    let high = Math.min(problemList.problems.length, lo + perPage);
 
     if (lo > high) return [];
     return problemList.problems.slice(lo, high);
@@ -248,13 +261,15 @@ const ProblemPage = () => {
                             <select
                               className="custom-select"
                               id="inputGroupSelect01"
-                              value={filterState.perPage}
+                              value={perPage}
                               onChange={(e) => {
                                 let num: number = parseInt(e.target.value);
-                                setFilterState({
-                                  ...filterState,
-                                  perPage: num,
-                                });
+                                changeAppState(
+                                  dispatch,
+                                  AppReducerType.CHANGE_PER_PAGE,
+                                  num,
+                                  false
+                                );
                               }}>
                               <option value="20">20</option>
                               <option value="50">50</option>
@@ -309,7 +324,9 @@ const ProblemPage = () => {
                         e.preventDefault();
                       }}>
                       <div className="d-flex">
-                        <div className="input-group pe-1">
+                        <div
+                          className="input-group pe-1"
+                          title="place -1 to show unrated">
                           <span className="input-group-text" id="perpage-input">
                             Min Rating
                           </span>
@@ -317,17 +334,19 @@ const ProblemPage = () => {
                             className="form-control mr-sm-2"
                             type="text"
                             placeholder="Min Rating"
-                            value={filterState.rating.min_rating}
+                            value={minRating}
                             name={"minRating"}
-                            onChange={(e) =>
-                              setFilterState({
-                                ...filterState,
-                                rating: {
-                                  ...filterState.rating,
-                                  min_rating: parseInt(e.target.value),
-                                },
-                              })
-                            }
+                            onChange={(e) => {
+                              let num: number = parseInt(e.target.value);
+
+                              if (num != null && num != undefined)
+                                changeAppState(
+                                  dispatch,
+                                  AppReducerType.CHANGE_MIN_RATING,
+                                  num,
+                                  false
+                                );
+                            }}
                           />
                         </div>
                         <div className="input-group ps-1">
@@ -338,17 +357,19 @@ const ProblemPage = () => {
                             className="form-control mr-sm-2"
                             type="text"
                             placeholder="Max Rating"
-                            value={filterState.rating.max_rating}
+                            value={maxRating}
                             name={"maxRating"}
-                            onChange={(e) =>
-                              setFilterState({
-                                ...filterState,
-                                rating: {
-                                  ...filterState.rating,
-                                  max_rating: parseInt(e.target.value),
-                                },
-                              })
-                            }
+                            onChange={(e) => {
+                              let num: number = parseInt(e.target.value);
+
+                              if (num != null && num != undefined)
+                                changeAppState(
+                                  dispatch,
+                                  AppReducerType.CHANGE_MAX_RATING,
+                                  num,
+                                  false
+                                );
+                            }}
                           />
                         </div>
                       </div>
@@ -386,7 +407,7 @@ const ProblemPage = () => {
       <div className="p-2">
         <Pagination
           totalCount={problemList.problems.length}
-          perPage={filterState.perPage}
+          perPage={perPage}
           selected={selected}
           pageSelected={(e) => setSelected(e)}
         />
@@ -439,7 +460,7 @@ const ProblemPage = () => {
       </table>
       <Pagination
         totalCount={problemList.problems.length}
-        perPage={filterState.perPage}
+        perPage={perPage}
         selected={selected}
         pageSelected={(e) => setSelected(e)}
       />
