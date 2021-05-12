@@ -20,8 +20,8 @@ import Problem, {
 import { AppDispatch } from "../store";
 import Contest from "../../util/DataTypes/Contest";
 
-const allContestURL = "https://codeforces.com/api/contest.list";
-const problemSetURL = "https://codeforces.com/api/problemset.problems";
+const allContestURL = "https://codeforces.com/api/contest.list?lang=en";
+const problemSetURL = "https://codeforces.com/api/problemset.problems?lang=en";
 const sharedProblemsURL = "../jsons/related.json";
 
 export const createDispatch = (type: any, message: any) => {
