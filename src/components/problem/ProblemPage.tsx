@@ -213,7 +213,7 @@ const ProblemPage = () => {
                 type="button"
                 className="btn btn-dark nav-link"
                 onClick={chooseRandom}
-                title="Find Random Contest">
+                title="Find Random Problem">
                 <FontAwesomeIcon icon={faRandom} />
               </button>
               <button
