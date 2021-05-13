@@ -24,6 +24,7 @@ import { useHistory } from "react-router";
 import { RootStateType } from "../../data/store";
 import { changeAppState } from "../../data/actions/fetchActions";
 import { AppReducerType } from "../../data/actions/types";
+import Problem from "../../util/DataTypes/Problem";
 
 const ProblemPage = () => {
   const state: RootStateType = useSelector((state) => state);
@@ -106,9 +107,14 @@ const ProblemPage = () => {
       let newState = { problems: [] };
       newState.problems = state.problemList.problems;
 
-      newState.problems = newState.problems.filter((problem) =>
-        filterProblem(problem)
-      );
+      let used = new Set<string>();
+
+      newState.problems = newState.problems.filter((problem: Problem) => {
+        if (used.has(problem.getId()))
+          return false;
+                
+        return filterProblem(problem);
+      });
 
       if (filterState.sortBy === SORT_BY_RATING)
         newState.problems.sort(sortByRating);
@@ -237,7 +243,7 @@ const ProblemPage = () => {
                 <div className="modal-content">
                   <div className="modal-header">
                     <h5 className="modal-title" id="exampleModalLabel">
-                      Modal title
+                      Filter
                     </h5>
                     <button
                       type="button"

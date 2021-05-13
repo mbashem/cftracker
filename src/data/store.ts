@@ -61,6 +61,7 @@ const addSharedToProblems = (
   problemList: Problem[],
   sharedProblems: ProblemShared[]
 ): Problem[] => {
+  problemList = [...problemList];
   const addProblems: Problem[] = new Array<Problem>();
   const added: Set<string> = new Set<string>();
 

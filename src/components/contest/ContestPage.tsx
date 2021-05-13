@@ -20,6 +20,7 @@ import { useHistory } from "react-router";
 import { RootStateType } from "../../data/store";
 import { changeAppState } from "../../data/actions/fetchActions";
 import { AppReducerType } from "../../data/actions/types";
+import Problem from "../../util/DataTypes/Problem";
 
 const ContestPage = () => {
   const state: RootStateType = useSelector((state) => state);
