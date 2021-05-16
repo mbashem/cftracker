@@ -1,14 +1,7 @@
 import "./App.css";
 import React, { useEffect, useState } from "react";
 import { Switch, Route } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
-import {
-  fetchContestList,
-  fetchProblemList,
-  fetchSharedProblemList,
-} from "./data/actions/fetchActions";
-
-import { fetchUserSubmissions } from "./data/actions/userActions";
+import { useSelector } from "react-redux";
 
 import Menu from "./components/Menu";
 import ProblemPage from "./components/problem/ProblemPage";
