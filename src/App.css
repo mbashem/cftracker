@@ -18,3 +18,11 @@
   position: sticky;
   background-color: white;
 }
+
+.bg-success-light {
+  background-color: #d4edc9 !important;
+}
+
+.bg-danger-light {
+  background-color: #ffe3e3!important;
+}

@@ -35,6 +35,7 @@ export enum AppReducerType {
   CHANGE_MIN_RATING = "CHANGE_MIN_RATING",
   CHANGE_MAX_RATING = "CHANGE_MAX_RATING",
   TOGGLE_DATE = "TOGGLE_DATE",
+  CHANGE_THEME = "CHANGE_THEME"
 }
 
 export enum ErrorLog {

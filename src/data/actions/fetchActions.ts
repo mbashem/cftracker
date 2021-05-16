@@ -19,6 +19,7 @@ import Problem, {
 } from "../../util/DataTypes/Problem";
 import { AppDispatch } from "../store";
 import Contest from "../../util/DataTypes/Contest";
+import { ThemesType } from "../../util/Theme";
 
 const allContestURL = "https://codeforces.com/api/contest.list?lang=en";
 const problemSetURL = "https://codeforces.com/api/problemset.problems?lang=en";
@@ -35,15 +36,15 @@ export interface AppPayloadType {
   type: AppReducerType;
   payload: {
     isContest: boolean;
-    data: string | number;
+    data: string | number | ThemesType;
   };
 }
 
 export const changeAppState = (
   dispatch: AppDispatch,
   type: AppReducerType,
-  data: number,
-  isContest: boolean
+  data: number | ThemesType,
+  isContest: boolean = false
 ) => {
   let curr: AppPayloadType = {
     type: type,

@@ -1,14 +1,16 @@
 import ReactPaginate from "react-paginate";
+import Theme from "./Theme";
 
 interface PaginationProps {
   perPage: number;
   selected: number;
   pageSelected(selected: number): void;
   totalCount: number;
+  theme: Theme;
 }
 
 const Pagination = (props: PaginationProps) => {
-  let linkClassName = "page-link text-light bg-dark";
+  let linkClassName = "page-link "  + props.theme.bgText;
   let linkWrapperClassName = "page-item";
 
   let pageCount =
@@ -38,7 +40,7 @@ const Pagination = (props: PaginationProps) => {
         nextLinkClassName={linkClassName}
         previousLinkClassName={linkClassName}
         onPageChange={(e) => props.pageSelected(e.selected)}
-        containerClassName={"pagination text-light justify-content-center"}
+        containerClassName={"pagination justify-content-center " + props.theme.text}
         subContainerClassName={"pages pagination"}
         activeClassName={"active border-success"}
       />

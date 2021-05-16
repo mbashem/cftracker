@@ -110,9 +110,8 @@ const ProblemPage = () => {
       let used = new Set<string>();
 
       newState.problems = newState.problems.filter((problem: Problem) => {
-        if (used.has(problem.getId()))
-          return false;
-                
+        if (used.has(problem.getId())) return false;
+
         return filterProblem(problem);
       });
 
@@ -188,7 +187,9 @@ const ProblemPage = () => {
               className="form-inline d-flex my-2 my-lg-0"
               onSubmit={(e) => e.preventDefault()}>
               <input
-                className="form-control mr-sm-2 bg-dark text-light"
+                className={
+                  "form-control mr-sm-2 " + state.appState.theme.bgText
+                }
                 type="text"
                 placeholder="Problem Name or Id"
                 aria-label="Search"
@@ -211,14 +212,14 @@ const ProblemPage = () => {
             <div className="btn-group" role="group" aria-label="Basic example">
               <button
                 type="button"
-                className="btn btn-dark nav-link"
+                className={"btn nav-link " + state.appState.theme.btn}
                 onClick={chooseRandom}
                 title="Find Random Problem">
                 <FontAwesomeIcon icon={faRandom} />
               </button>
               <button
                 type="button"
-                className="btn btn-dark nav-link"
+                className={"btn nav-link " + state.appState.theme.btn}
                 title="Cancel Random"
                 onClick={() => setRandomProblem(-1)}>
                 <FontAwesomeIcon icon={faRedo} />
@@ -416,11 +417,15 @@ const ProblemPage = () => {
           totalCount={problemList.problems.length}
           perPage={perPage}
           selected={selected}
+          theme={state.appState.theme}
           pageSelected={(e) => setSelected(e)}
         />
       </div>
-      <table className="table table-bordered table-dark container">
-        <thead className="thead-dark">
+      <table
+        className={
+          "table table-bordered container " + state.appState.theme.table
+        }>
+        <thead className={state.appState.theme.thead}>
           <tr>
             <th scope="col">#</th>
             <th scope="col">ID</th>
@@ -469,6 +474,7 @@ const ProblemPage = () => {
         totalCount={problemList.problems.length}
         perPage={perPage}
         selected={selected}
+        theme={state.appState.theme}
         pageSelected={(e) => setSelected(e)}
       />
     </div>

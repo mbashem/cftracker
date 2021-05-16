@@ -108,17 +108,19 @@ const ContestPage = () => {
   return (
     <div className="div">
       <div className="menu">
-        <nav className="navbar navbar-expand-lg navbar-dark container bg-dark p-2">
+        <nav className="navbar navbar-expand-lg container p-2">
           <div
             className="collapse navbar-collapse d-flex justify-content-between"
             id="navbarTogglerDemo03">
-            <ul className="navbar w-100 navbar-dark d-flex justify-content-between bg-dark list-unstyled">
+            <ul className="navbar w-100 d-flex justify-content-between list-unstyled">
               <li className="nav-item col-6">
                 <form
                   className="form-inline d-flex my-2 my-lg-0"
                   onSubmit={(e) => e.preventDefault()}>
                   <input
-                    className="form-control bg-dark text-light mr-sm-2"
+                    className={
+                      "form-control mr-sm-2 " + state.appState.theme.bgText
+                    }
                     type="text"
                     placeholder="Search by Contest Name or Id"
                     aria-label="Search"
@@ -142,14 +144,14 @@ const ContestPage = () => {
                   aria-label="Basic example">
                   <button
                     type="button"
-                    className="btn btn-dark nav-link"
+                    className={"btn nav-link " + state.appState.theme.btn}
                     onClick={chooseRandom}
                     title="Find Random Contest">
                     <FontAwesomeIcon icon={faRandom} />
                   </button>
                   <button
                     type="button"
-                    className="btn btn-dark nav-link"
+                    className={"btn nav-link " + state.appState.theme.btn}
                     title="Cancel Random"
                     onClick={() => setRandomContest(-1)}>
                     <FontAwesomeIcon icon={faRedo} />
@@ -297,11 +299,15 @@ const ContestPage = () => {
         pageSelected={(e) => setSelected(e)}
         perPage={perPage}
         selected={selected}
+        theme={state.appState.theme}
         totalCount={contestList.contests.length}
       />
-      <div className="table-responsive">
-        <table className="table table-bordered table-dark overflow-auto">
-          <thead className="thead-dark">
+      <div className="table-responsive p-3">
+        <table
+          className={
+            "table table-bordered overflow-auto " + state.appState.theme.table
+          }>
+          <thead className={state.appState.theme.thead}>
             <tr>
               <th scope="col" className="sticky-col">
                 #
@@ -320,7 +326,8 @@ const ContestPage = () => {
                   ? paginate()
                   : [contestList.contests[randomContest]]
               }
-              filterState={filterState} showDate={showDate}
+              filterState={filterState}
+              showDate={showDate}
             />
           </tbody>
         </table>
@@ -328,6 +335,7 @@ const ContestPage = () => {
           pageSelected={(e) => setSelected(e)}
           perPage={perPage}
           selected={selected}
+          theme={state.appState.theme}
           totalCount={contestList.contests.length}
         />
       </div>
