@@ -67,6 +67,7 @@ export class AppStateType {
     cloned.errorLog = this.errorLog;
     cloned.successLog = this.successLog;
     cloned.themeMod = this.themeMod;
+    cloned.theme = this.theme;
     cloned.loaded = this.loaded;
     cloned.contestPage = this.contestPage;
     cloned.problemPage = this.problemPage;
