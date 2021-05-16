@@ -21,12 +21,9 @@ import {
   ATTEMPTED_CONTESTS,
 } from "../util/constants";
 import { AppReducer, AppStateType } from "./reducers/appReducers";
-import Contest from "../util/DataTypes/Contest";
 import Problem, { ProblemLite, ProblemShared } from "../util/DataTypes/Problem";
 import { sortByCompare } from "../util/sortMethods";
 import lowerBound from "../util/lowerBound";
-import { cursorTo } from "node:readline";
-import { AppReducerType } from "./actions/types";
 
 const middlewre = [thunk, logger];
 
@@ -72,11 +69,11 @@ const addSharedToProblems = (
       problem.shared
     );
     let lb: number = lowerBound(problemList, currentProblem as ProblemLite);
-    if (lb != problemList.length && currentProblem.equal(problemList[lb])) {
+    if (lb !== problemList.length && currentProblem.equal(problemList[lb])) {
       for (let sharedProblem of problem.shared) {
         lb = lowerBound(problemList, sharedProblem as ProblemLite);
         if (
-          lb == problemList.length ||
+          lb === problemList.length ||
           !sharedProblem.equal(problemList[lb]) ||
           added.has(problemList[lb].getId())
         )

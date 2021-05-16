@@ -177,8 +177,8 @@ const ContestList = (props) => {
   const contestCard = (contest, index) => {
     return (
       <tr key={contest.id}>
-        <th scope="row sticky-col">{index + 1}</th>
-        <th scope="row">{contest.id}</th>
+        <td scope="row sticky-col">{index + 1}</td>
+        <td scope="row">{contest.id}</td>
         <td>
           <div className="name">
             <a

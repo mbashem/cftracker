@@ -1,6 +1,5 @@
 import {
   delay,
-  getUserInfoURL,
   getUserSubmissionsURL,
   stringToArray,
 } from "../../util/bashforces";
@@ -10,7 +9,6 @@ import { load, createDispatch } from "./fetchActions";
 import {
   ADD_USER,
   CLEAR_USERS,
-  ERROR_FETCHING_USER,
   LOADING_USERS,
   ERROR_FETCHING_USER_SUBMISSIONS,
   FETCH_USER_SUBMISSIONS,

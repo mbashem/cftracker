@@ -1,6 +1,6 @@
 import Theme, { ThemesType } from "../../util/Theme";
 import { AppPayloadType } from "../actions/fetchActions";
-import { AppReducerType, ErrorLog } from "../actions/types";
+import { AppReducerType } from "../actions/types";
 
 export class AppStateType {
   errorLog: string[];
@@ -37,7 +37,7 @@ export class AppStateType {
   }
 
   init = (data?: any) => {
-    if (data.themeMod != undefined) {
+    if (data.themeMod) {
       this.themeMod = data.themeMod as ThemesType;
       this.theme = new Theme(this.themeMod);
     }
@@ -45,7 +45,7 @@ export class AppStateType {
     if (data.contestPage) {
       if (data.contestPage.perPage)
         this.contestPage.perPage = data.contestPage.perPage;
-      if (data.contestPage.showDate != undefined)
+      if (data.contestPage.showDate !== undefined)
         this.contestPage.showDate = data.contestPage.showDate;
     }
 
@@ -56,7 +56,7 @@ export class AppStateType {
         this.problemPage.minRating = data.problemPage.minRating;
       if (data.problemPage.maxRating)
         this.problemPage.maxRating = data.problemPage.maxRating;
-      if (data.problemPage.showUnrated != undefined)
+      if (data.problemPage.showUnrated !== undefined)
         this.problemPage.showUnrated = data.showUnrated;
     }
   };
