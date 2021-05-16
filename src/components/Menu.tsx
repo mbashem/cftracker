@@ -1,18 +1,22 @@
-import { faSync } from "@fortawesome/free-solid-svg-icons";
+import { faMoon } from "@fortawesome/free-regular-svg-icons";
+import { faSun, faSync } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import {
+  changeAppState,
   fetchContestList,
   fetchProblemList,
   fetchSharedProblemList,
 } from "../data/actions/fetchActions";
+import { AppReducerType } from "../data/actions/types";
 import { fetchUserSubmissions, fetchUsers } from "../data/actions/userActions";
 import { RootState, RootStateType } from "../data/store";
 import { PROBLEMS, CONTESTS } from "../util/constants";
 import { ProblemShared } from "../util/DataTypes/Problem";
 import { Verdict } from "../util/DataTypes/Submission";
+import { ThemesType } from "../util/Theme";
 
 const Menu = (): JSX.Element => {
   const dispatch = useDispatch();
@@ -56,7 +60,8 @@ const Menu = (): JSX.Element => {
   };
 
   return (
-    <nav className="navbar navbar-expand-lg navbar-light bg-light p-2">
+    <nav
+      className={"navbar navbar-expand-lg p-2 ps-4 pe-4 " + state.appState.theme.navbar}>
       <button
         className="navbar-toggler"
         type="button"
@@ -76,17 +81,6 @@ const Menu = (): JSX.Element => {
         id="navbarTogglerDemo03">
         <ul className="navbar-nav ml-auto mt-2 mt-lg-0">
           <li className="nav-item active">
-            <a
-              className="nav-link"
-              onClick={(e) => {
-                e.preventDefault();
-                sync();
-              }}
-              href="#">
-              <FontAwesomeIcon icon={faSync} />
-            </a>
-          </li>
-          <li className="nav-item active">
             <Link to={PROBLEMS} className="nav-link" href="#">
               Problem List
             </Link>
@@ -96,23 +90,67 @@ const Menu = (): JSX.Element => {
               Contest
             </Link>
           </li>
+
+          <li className="nav-item">
+            <a
+              className={"btn-transparent border-0 nav-link"}
+              href="#"
+              title="Change Theme"
+              onClick={(e) => {
+                e.preventDefault();
+                if (state.appState.themeMod === ThemesType.DARK)
+                  changeAppState(
+                    dispatch,
+                    AppReducerType.CHANGE_THEME,
+                    ThemesType.LIGHT
+                  );
+                else
+                  changeAppState(
+                    dispatch,
+                    AppReducerType.CHANGE_THEME,
+                    ThemesType.DARK
+                  );
+              }}>
+              <FontAwesomeIcon
+                icon={
+                  state.appState.themeMod === ThemesType.DARK ? faMoon : faSun
+                }
+              />
+            </a>
+          </li>
+
+          <li className="nav-item">
+            <form
+              className="form-inline d-flex my-2 my-lg-0 nav-item"
+              onSubmit={(e) => {
+                e.preventDefault();
+                submitUser();
+              }}>
+              <input
+                name="handle"
+                className="form-control mr-sm-2"
+                type="search"
+                placeholder="handle1,handle2,.."
+                aria-label="Search"
+                value={handle}
+                onChange={(e) => setHandle(e.target.value)}
+              />
+            </form>
+          </li>
+
+          <li className="nav-item">
+            <a
+              className="nav-link"
+              onClick={(e) => {
+                e.preventDefault();
+                sync();
+              }}
+              title="Refresh Submissions"
+              href="#">
+              <FontAwesomeIcon icon={faSync} />
+            </a>
+          </li>
         </ul>
-        <form
-          className="form-inline d-flex my-2 my-lg-0"
-          onSubmit={(e) => {
-            e.preventDefault();
-            submitUser();
-          }}>
-          <input
-            name="handle"
-            className="form-control mr-sm-2"
-            type="search"
-            placeholder="handle1,handle2,.."
-            aria-label="Search"
-            value={handle}
-            onChange={(e) => setHandle(e.target.value)}
-          />
-        </form>
       </div>
     </nav>
   );

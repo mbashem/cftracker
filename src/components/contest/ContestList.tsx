@@ -1,5 +1,6 @@
 import React from "react";
 import { useSelector } from "react-redux";
+import { RootStateType } from "../../data/store";
 import {
   getProblemUrl,
   formateDate,
@@ -10,7 +11,7 @@ import { ATTEMPTED_PROBLEMS, SOLVED_PROBLEMS } from "../../util/constants";
 import Contest from "../../util/DataTypes/Contest";
 
 const ContestList = (props) => {
-  const state = useSelector((state) => state);
+  const state: RootStateType = useSelector((state) => state);
 
   const related = state.sharedProblems.problems;
 
@@ -51,12 +52,18 @@ const ContestList = (props) => {
     if (name.length > 10) name = name.substring(0, 9) + "...";
 
     let className =
-      (solved ? "bg-success" : attempted ? "bg-danger" : "") + " p-1";
+      (solved
+        ? state.appState.theme.bgSuccess
+        : attempted
+        ? state.appState.theme.bgDanger
+        : "") + " p-1";
 
     return (
       <td className={className} key={id}>
         <a
-          className="text-light text-decoration-none"
+          className={
+            "text-decoration-none wrap font-bold " + state.appState.theme.text
+          }
           target="_blank"
           rel="noreferrer"
           tabIndex={0}
@@ -132,7 +139,7 @@ const ContestList = (props) => {
   };
 
   const getInfo = (contestId, index) => {
-    const EMPTY = "EMPTY bg-dark";
+    const EMPTY = "EMPTY " + state.appState.theme.bg;
 
     let problems = getProblemsList(contestId, index);
 
@@ -175,7 +182,10 @@ const ContestList = (props) => {
         <td>
           <div className="name">
             <a
-              className="text-light text-decoration-none wrap"
+              className={
+                "text-decoration-none wrap font-bold " +
+                state.appState.theme.text
+              }
               target="_blank"
               rel="noreferrer"
               title={formateDate(contest.startTimeSeconds)}

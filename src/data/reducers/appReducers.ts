@@ -1,10 +1,12 @@
+import Theme, { ThemesType } from "../../util/Theme";
 import { AppPayloadType } from "../actions/fetchActions";
 import { AppReducerType, ErrorLog } from "../actions/types";
 
 export class AppStateType {
   errorLog: string[];
   successLog: string[];
-  darkMode: boolean;
+  theme: Theme;
+  themeMod: ThemesType;
   loaded: boolean;
   contestPage: {
     perPage: number;
@@ -20,7 +22,8 @@ export class AppStateType {
   constructor() {
     this.errorLog = new Array<string>();
     this.successLog = new Array<string>();
-    this.darkMode = true;
+    this.theme = new Theme();
+    this.themeMod = ThemesType.DARK;
 
     this.loaded = false;
 
@@ -34,7 +37,11 @@ export class AppStateType {
   }
 
   init = (data?: any) => {
-    if (data.darkMode != undefined) this.darkMode = data.darkMode;
+    if (data.themeMod != undefined) {
+      this.themeMod = data.themeMod as ThemesType;
+      this.theme = new Theme(this.themeMod);
+    }
+
     if (data.contestPage) {
       if (data.contestPage.perPage)
         this.contestPage.perPage = data.contestPage.perPage;
@@ -59,7 +66,7 @@ export class AppStateType {
 
     cloned.errorLog = this.errorLog;
     cloned.successLog = this.successLog;
-    cloned.darkMode = this.darkMode;
+    cloned.themeMod = this.themeMod;
     cloned.loaded = this.loaded;
     cloned.contestPage = this.contestPage;
     cloned.problemPage = this.problemPage;
@@ -81,8 +88,9 @@ export const AppReducer = (
     case AppReducerType.CLEAR_ERROR_LOG:
       curr.errorLog = new Array<string>();
       return curr;
-    case AppReducerType.TOGGLE_THEME:
-      curr.darkMode = !initState.darkMode;
+    case AppReducerType.CHANGE_THEME:
+      curr.themeMod = action.payload.data as ThemesType;
+      curr.theme = new Theme(curr.themeMod);
       return curr;
     case AppReducerType.TOGGLE_DATE:
       curr.contestPage.showDate = !initState.contestPage.showDate;
