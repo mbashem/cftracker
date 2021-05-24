@@ -11,6 +11,7 @@ import { RootStateType } from "../../data/store";
 import { changeAppState } from "../../data/actions/fetchActions";
 import { AppReducerType } from "../../data/actions/types";
 import Contest from "../../util/DataTypes/Contest";
+import { ThemesType } from "../../util/Theme";
 
 const ContestPage = () => {
   const state: RootStateType = useSelector((state) => state);
@@ -299,9 +300,15 @@ const ContestPage = () => {
         </nav>
       </div>
       <div className="ps-4 pt-1 pb-2" style={{ height: "calc(100vh - 230px)" }}>
-        <div className="overflow-auto card h-100">
+        <div
+          className={
+            "overflow-auto h-100 m-0 " +
+            (state.appState.themeMod == ThemesType.LIGHT ? " card" : "")
+          }>
           <table
-            className={"table table-bordered m-0 " + state.appState.theme.table}>
+            className={
+              "table table-bordered m-0 " + state.appState.theme.table
+            }>
             <thead className={state.appState.theme.thead}>
               <tr>
                 <th
@@ -328,7 +335,7 @@ const ContestPage = () => {
                 })}
               </tr>
             </thead>
-            <tbody>
+            <tbody className={state.appState.theme.bg}>
               <ContestList
                 contestlist={
                   randomContest === -1

@@ -25,6 +25,7 @@ import { RootStateType } from "../../data/store";
 import { changeAppState } from "../../data/actions/fetchActions";
 import { AppReducerType } from "../../data/actions/types";
 import Problem from "../../util/DataTypes/Problem";
+import { ThemesType } from "../../util/Theme";
 
 const ProblemPage = () => {
   const state: RootStateType = useSelector((state) => state);
@@ -418,9 +419,15 @@ const ProblemPage = () => {
       <div
         className="container p-0 pt-3 pb-3"
         style={{ height: "calc(100vh - 200px)" }}>
-        <div className="overflow-auto card h-100 text-center">
+        <div
+          className={
+            "overflow-auto h-100 text-center " +
+            (state.appState.themeMod == ThemesType.LIGHT ? " card" : "")
+          }>
           <table
-            className={"table table-bordered m-0 " + state.appState.theme.table}>
+            className={
+              "table table-bordered m-0 " + state.appState.theme.table
+            }>
             <thead className={state.appState.theme.thead}>
               <tr>
                 <th scope="col">#</th>
@@ -458,7 +465,7 @@ const ProblemPage = () => {
                 </th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className={state.appState.theme.bg}>
               <ProblemList
                 problems={
                   randomProblem === -1
