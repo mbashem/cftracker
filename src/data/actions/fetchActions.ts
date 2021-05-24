@@ -11,8 +11,8 @@ import {
   LOADING_PROBLEM_LIST,
 } from "./types";
 
-import { jsonData } from "../jsons/related";
 import Problem, {
+  ProblemLite,
   ProblemShared,
   ProblemStatistics,
 } from "../../util/DataTypes/Problem";
@@ -127,22 +127,46 @@ export const fetchProblemList = (dispatch: AppDispatch) => {
 };
 
 export const fetchSharedProblemList = (dispatch) => {
-  if (jsonData != null) {
-    const result = jsonData;
-    if (result.status !== "OK")
+  import("../jsons/related")
+    .then(
+      (data) => {
+        const result = data.jsonData;
+        if (result.status !== "OK")
+          return dispatch(
+            createDispatch(
+              ERROR_FETCHING_SHARED_PROBLEMS,
+              "Error fetching shared problems api call failed"
+            )
+          );
+        const res: ProblemShared[] = result.result as ProblemShared[];
+
+        const send: ProblemShared[] = [];
+
+        for (let shared of res) {
+          let curr = new ProblemShared(shared.contestId, shared.index);
+
+          for (let lite of shared.shared)
+            curr.shared.push(new ProblemLite(lite.contestId, lite.index));
+          send.push(curr);
+        }
+
+        return dispatch(createDispatch(FETCH_SHARED_PROBLEMS, send));
+      },
+      (error) => {
+        return dispatch(
+          createDispatch(
+            ERROR_FETCHING_SHARED_PROBLEMS,
+            "Error processing shared problems"
+          )
+        );
+      }
+    )
+    .catch((e) => {
+      console.log(e);
       return dispatch(
-        createDispatch(
-          ERROR_FETCHING_SHARED_PROBLEMS,
-          "Error fetching shared problems"
-        )
+        createDispatch(ERROR_FETCHING_SHARED_PROBLEMS, "ERROR in PROBLEM LIST")
       );
-    const res: ProblemShared[] = result.result as ProblemShared[];
-    return dispatch(createDispatch(FETCH_SHARED_PROBLEMS, res));
-    //	console.log(result.result.length)
-  } else
-    return dispatch(
-      createDispatch(ERROR_FETCHING_SHARED_PROBLEMS, "ERROR in PROBLEM LIST")
-    );
+    });
 };
 
 export const fetchContestList = (dispatch: AppDispatch) => {
@@ -153,9 +177,21 @@ export const fetchContestList = (dispatch: AppDispatch) => {
       (result) => {
         if (result.status !== "OK")
           return dispatch(createDispatch(ERROR_FETCHING_CONTEST_LIST, "Eroor"));
-        let contests: Contest[] = result.result;
+        let contests: Contest[] = [];
 
-        contests = contests.filter((contest) => contest.phase === FINISHED);
+        for (let contest of result.result) {
+          if (contest.phase === FINISHED && contest.id)
+            contests.push(
+              new Contest(
+                contest.id,
+                contest.name,
+                contest.type,
+                contest.phase,
+                contest.durationSeconds,
+                contest.startTimeSeconds
+              )
+            );
+        }
 
         return dispatch({
           type: FETCH_CONTEST_LIST,

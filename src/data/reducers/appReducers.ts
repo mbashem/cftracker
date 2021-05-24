@@ -11,6 +11,7 @@ export class AppStateType {
   contestPage: {
     perPage: number;
     showDate: boolean;
+    maxIndex: number;
   };
   problemPage: {
     perPage: number;
@@ -27,7 +28,7 @@ export class AppStateType {
 
     this.loaded = false;
 
-    this.contestPage = { perPage: 100, showDate: false };
+    this.contestPage = { perPage: 100, showDate: false, maxIndex: 10 };
     this.problemPage = {
       perPage: 100,
       minRating: -1,
@@ -47,6 +48,8 @@ export class AppStateType {
         this.contestPage.perPage = data.contestPage.perPage;
       if (data.contestPage.showDate !== undefined)
         this.contestPage.showDate = data.contestPage.showDate;
+      if (data.contestPage.maxIndex)
+        this.contestPage.maxIndex = data.contestPage.maxIndex;
     }
 
     if (data.problemPage) {
@@ -108,6 +111,9 @@ export const AppReducer = (
       if (action.payload.isContest)
         curr.contestPage.perPage = action.payload.data as number;
       else curr.problemPage.perPage = action.payload.data as number;
+      return curr;
+    case AppReducerType.CHANGE_MAX_INDEX:
+      curr.contestPage.maxIndex = action.payload.data as number;
       return curr;
     default:
       return initState;

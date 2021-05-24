@@ -8,10 +8,11 @@ const lowerBound = <T extends Comparator<T>>(list: T[], val: T): number => {
   while (l <= r) {
     let mid = Math.floor(l + (r - l) / 2);
 
-    if (val.compareTo(list[mid]) === Compared.LESS) l = mid + 1;
-    else if (
-      val.compareTo(list[mid]) === Compared.GREATER ||
-      val.compareTo(list[mid]) === Compared.EQUAL
+    if (list[mid].compareTo(val) === Compared.LESS) {
+      l = mid + 1;
+    } else if (
+      list[mid].compareTo(val) === Compared.GREATER ||
+      list[mid].compareTo(val) === Compared.EQUAL
     ) {
       ans = mid;
       r = mid - 1;
