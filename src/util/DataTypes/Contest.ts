@@ -1,3 +1,4 @@
+import { sortByContestId } from "../sortMethods";
 import Problem from "./Problem";
 
 export default class Contest {
@@ -18,7 +19,10 @@ export default class Contest {
   country?: string;
   city?: string;
   season?: string;
-  private problemList: Problem[][];
+  solveCount: number;
+  attempCount: number;
+  count: number;
+  problemList: Record<string, Problem[]>;
 
   constructor(
     id: number,
@@ -34,6 +38,10 @@ export default class Contest {
     this.phase = phase;
     this.durationSeconds = durationSeconds;
     this.startTimeSeconds = startTimeSeconds;
+    this.solveCount = 0;
+    this.attempCount = 0;
+    this.count = 0;
+    this.problemList = {};
   }
 
   public clone = (): Contest => {
@@ -46,8 +54,37 @@ export default class Contest {
       this.startTimeSeconds
     );
 
-    clonedContest.problemList = [...this.problemList];
+    clonedContest.solveCount = this.solveCount;
+    clonedContest.attempCount = this.attempCount;
+    clonedContest.count = this.count;
+
+    clonedContest.problemList = { ...this.problemList };
 
     return clonedContest;
+  };
+
+  addProblem = (problem: Problem): boolean => {
+    let ind: string = problem.index.charAt(0);
+    if (this.problemList[ind] === undefined)
+      this.problemList[ind] = new Array<Problem>();
+    if (this.problemList[ind].length > 2) return false;
+
+    for (let i = 0; i < this.problemList[ind].length; i++) {
+      if (problem.getId() == this.problemList[ind][i].getId()) {
+        if (this.problemList[ind][i].solved) this.solveCount--;
+        else if (this.problemList[ind][i].attempted) this.attempCount--;
+        if (problem.solved) this.solveCount++;
+        else if (problem.attempted) this.attempCount++;
+        this.problemList[ind][i] = problem;
+        return false;
+      }
+    }
+
+    this.count++;
+    if (problem.solved) this.solveCount++;
+    else if (problem.attempted) this.attempCount++;
+    this.problemList[ind].push(problem);
+    this.problemList[ind].sort(sortByContestId);
+    return true;
   };
 }

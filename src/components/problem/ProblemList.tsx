@@ -7,16 +7,20 @@ import Problem from "../../util/DataTypes/Problem";
 
 interface ProblemListProps {
   problems: Problem[];
+  perPage: number;
+  pageSelected: number;
 }
 
-const ProblemList = ({ problems }: ProblemListProps): JSX.Element => {
+const ProblemList = ({
+  problems,
+  perPage,
+  pageSelected,
+}: ProblemListProps): JSX.Element => {
   const state: RootStateType = useSelector((state) => state);
 
   const getState = (problem: Problem) => {
-    if (state.userSubmissions[SOLVED_PROBLEMS].has(problem.id))
-      return SOLVED_PROBLEMS;
-    if (state.userSubmissions[ATTEMPTED_PROBLEMS].has(problem.id))
-      return ATTEMPTED_PROBLEMS;
+    if (problem.solved) return SOLVED_PROBLEMS;
+    if (problem.attempted) return ATTEMPTED_PROBLEMS;
     return "UNSOLVED";
   };
 
@@ -29,22 +33,35 @@ const ProblemList = ({ problems }: ProblemListProps): JSX.Element => {
       classes = state.appState.theme.bgDanger;
     return (
       <tr key={problem.id}>
-        <td className={"id font-weight-bold " + classes}>{index + 1}</td>
-        <td className={"id font-weight-bold " + classes}>{problem.id}</td>
+        <td className={"id font-weight-bold p-3 " + classes}>
+          {pageSelected * perPage + index + 1}
+        </td>
+        <td className={"id font-weight-bold " + classes}>
+          <a
+            className={
+              "text-decoration-none p-3 " + " " + state.appState.theme.text
+            }
+            target="_blank"
+            href={getProblemUrl(problem.contestId, problem.index)}>
+            {problem.id}
+          </a>
+        </td>
         <td className={"name " + classes}>
           <a
-            className={"text-decoration-none" + " " + state.appState.theme.text}
+            className={
+              "text-decoration-none p-3 " + " " + state.appState.theme.text
+            }
             target="_blank"
             title={problem.tags.toString()}
             href={getProblemUrl(problem.contestId, problem.index)}>
             {problem.name}
           </a>
         </td>
-        <td className={"rating " + classes}>
+        <td className={"rating p-3 " + classes}>
           {problem.rating != -1 ? problem.rating : "Not Rated"}
         </td>
 
-        <td className={"solvedCount " + classes}>{problem.solvedCount}</td>
+        <td className={"solvedCount p-3 " + classes}>{problem.solvedCount}</td>
       </tr>
     );
   };

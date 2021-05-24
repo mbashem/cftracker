@@ -24,6 +24,7 @@ import { AppReducer, AppStateType } from "./reducers/appReducers";
 import Problem, { ProblemLite, ProblemShared } from "../util/DataTypes/Problem";
 import { sortByCompare } from "../util/sortMethods";
 import lowerBound from "../util/lowerBound";
+import Contest from "../util/DataTypes/Contest";
 
 const middlewre = [thunk, logger];
 
@@ -56,11 +57,12 @@ export class RootStateForSave {
 
 const addSharedToProblems = (
   problemList: Problem[],
-  sharedProblems: ProblemShared[]
-): Problem[] => {
-  problemList = [...problemList];
-  const addProblems: Problem[] = new Array<Problem>();
-  const added: Set<string> = new Set<string>();
+  sharedProblems: ProblemShared[],
+  userSubmissions: SubmissionStateType,
+  contestList: Contest[]
+): Contest[] => {
+  let addProblems: Problem[] = new Array<Problem>();
+  let added: Set<string> = new Set<string>();
 
   for (let problem of sharedProblems) {
     let currentProblem: ProblemShared = new ProblemShared(
@@ -68,16 +70,12 @@ const addSharedToProblems = (
       problem.index,
       problem.shared
     );
+
     let lb: number = lowerBound(problemList, currentProblem as ProblemLite);
-    if (lb !== problemList.length && currentProblem.equal(problemList[lb])) {
+
+    if (lb !== problemList.length && problemList[lb].equal(currentProblem)) {
       for (let sharedProblem of problem.shared) {
-        lb = lowerBound(problemList, sharedProblem as ProblemLite);
-        if (
-          lb === problemList.length ||
-          !sharedProblem.equal(problemList[lb]) ||
-          added.has(problemList[lb].getId())
-        )
-          continue;
+        if (added.has(sharedProblem.getId())) continue;
         const newProblem: Problem = new Problem(
           sharedProblem.contestId,
           sharedProblem.index,
@@ -94,7 +92,31 @@ const addSharedToProblems = (
     }
   }
 
-  return problemList.concat(addProblems).sort(sortByCompare);
+  let rec: Record<number, number> = {};
+
+  let newProblems: Problem[] = problemList.concat(addProblems);
+
+  contestList.map((contest, index) => {
+    rec[contest.id] = index;
+  });
+
+  for (let problem of newProblems) {
+    problem.solved = false;
+    problem.attempted = false;
+
+    if (userSubmissions[SOLVED_PROBLEMS].has(problem.getId())) {
+      problem.solved = true;
+      problem.attempted = false;
+    } else if (userSubmissions[ATTEMPTED_PROBLEMS].has(problem.getId())) {
+      problem.solved = false;
+      problem.attempted = true;
+    }
+
+    if (rec[problem.contestId] !== undefined)
+      contestList[rec[problem.contestId]].addProblem(problem);
+  }
+
+  return contestList;
 };
 
 const addSharedToSubmissions = (
@@ -117,12 +139,7 @@ const addSharedToSubmissions = (
           sharedProblem.index
         );
         currUserSubmissions[SOLVED_PROBLEMS].add(sharedObject.getId());
-        if (sharedObject.contestId) {
-          currUserSubmissions[SOLVED_CONTESTS].add(sharedObject.contestId);
-          // if (sharedObject.contestId == 1508){
-          //   console.log(sharedObject.contestId);
-          // }
-        }
+        currUserSubmissions[SOLVED_CONTESTS].add(sharedObject.contestId);
       }
     } else if (
       userSubmissions[ATTEMPTED_PROBLEMS].has(currentProblem.getId())
@@ -134,13 +151,10 @@ const addSharedToSubmissions = (
         );
 
         currUserSubmissions[ATTEMPTED_PROBLEMS].add(sharedObject.getId());
-        if (sharedObject.contestId)
-          currUserSubmissions[ATTEMPTED_CONTESTS].add(sharedObject.contestId);
+        currUserSubmissions[ATTEMPTED_CONTESTS].add(sharedObject.contestId);
       }
     }
   }
-
-  // console.log("What!");
 
   return currUserSubmissions;
 };
@@ -153,9 +167,11 @@ const newCombinedReducers = (state: any, action: any): RootStateType => {
     intermediateReducer.sharedProblems.problems
   );
 
-  intermediateReducer.problemList.problems = addSharedToProblems(
+  intermediateReducer.contestList.contests = addSharedToProblems(
     intermediateReducer.problemList.problems,
-    intermediateReducer.sharedProblems.problems
+    intermediateReducer.sharedProblems.problems,
+    intermediateReducer.userSubmissions,
+    intermediateReducer.contestList.contests
   );
 
   return {

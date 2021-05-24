@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { getRandomInteger, parseQuery } from "../../util/bashforces";
 import { sortByRating, sortBySolveCount } from "../../util/sortMethods";
@@ -55,8 +55,12 @@ const ProblemPage = () => {
   const [randomProblem, setRandomProblem] = useState(-1);
   const [selected, setSelected] = useState(0);
   const [perPage, setPerPage] = useState(100);
-  const [minRating, setMinRating] = useState(-1);
-  const [maxRating, setMaxRating] = useState(4000);
+  const [minRating, setMinRating] = useState(
+    state.appState.problemPage.minRating
+  );
+  const [maxRating, setMaxRating] = useState(
+    state.appState.problemPage.maxRating
+  );
   const [showUnrated, setShowUnrated] = useState(true);
 
   const [filterState, setFilterState] = useState(initFilterState);
@@ -72,8 +76,7 @@ const ProblemPage = () => {
           break;
         }
     let ratingInside =
-      problem.rating <= state.appState.problemPage.maxRating &&
-      problem.rating >= state.appState.problemPage.minRating;
+      problem.rating <= maxRating && problem.rating >= minRating;
     // if (problem.rating == -1 && showUnrated == false) ratingInside = false;
     // else if (problem.rating == -1 && showUnrated) ratingInside = true;
     let solveStatus = filterState.solveStatus.includes(getState(problem));
@@ -90,8 +93,6 @@ const ProblemPage = () => {
 
   useEffect(() => {
     setPerPage(state.appState.problemPage.perPage);
-    setMinRating(state.appState.problemPage.minRating);
-    setMaxRating(state.appState.problemPage.maxRating);
     setShowUnrated(state.appState.problemPage.showUnrated);
 
     if (filterState.search.trim().length)
@@ -149,10 +150,6 @@ const ProblemPage = () => {
     return UNSOLVED;
   };
 
-  const searchData = (e) => {
-    setFilterState({ ...filterState, search: e.target.value });
-  };
-
   const chooseRandom = () => {
     if (problemList.problems.length === 0) return;
     setRandomProblem(getRandomInteger(0, problemList.problems.length - 1));
@@ -192,7 +189,8 @@ const ProblemPage = () => {
                 }
                 type="text"
                 placeholder="Problem Name or Id"
-                aria-label="Search"
+                aria-label="problemSearch"
+                name="problemSearch"
                 value={filterState.search}
                 onChange={(e) => {
                   setFilterState({
@@ -212,14 +210,14 @@ const ProblemPage = () => {
             <div className="btn-group" role="group" aria-label="Basic example">
               <button
                 type="button"
-                className={"btn nav-link " + state.appState.theme.btn}
+                className={"btn " + state.appState.theme.btn}
                 onClick={chooseRandom}
                 title="Find Random Problem">
                 <FontAwesomeIcon icon={faRandom} />
               </button>
               <button
                 type="button"
-                className={"btn nav-link " + state.appState.theme.btn}
+                className={"btn " + state.appState.theme.btn}
                 title="Cancel Random"
                 onClick={() => setRandomProblem(-1)}>
                 <FontAwesomeIcon icon={faRedo} />
@@ -279,6 +277,7 @@ const ProblemPage = () => {
                                   false
                                 );
                               }}>
+                              <option value="10">10</option>
                               <option value="20">20</option>
                               <option value="50">50</option>
                               <option value="100">100</option>
@@ -313,7 +312,7 @@ const ProblemPage = () => {
                           onClick={() => {
                             let myFilterState = { ...filterState };
                             let ind = filterState.solveStatus.indexOf(solved);
-                            if (ind != -1)
+                            if (ind !== -1)
                               myFilterState.solveStatus.splice(ind, 1);
                             else myFilterState.solveStatus.push(solved);
                             setFilterState(myFilterState);
@@ -346,7 +345,8 @@ const ProblemPage = () => {
                             name={"minRating"}
                             onChange={(e) => {
                               let num: number = parseInt(e.target.value);
-
+                              if (num === NaN) num = -1;
+                              setMinRating(num);
                               if (num != null && num != undefined)
                                 changeAppState(
                                   dispatch,
@@ -370,6 +370,8 @@ const ProblemPage = () => {
                             onChange={(e) => {
                               let num: number = parseInt(e.target.value);
 
+                              if (num === NaN) num = -1;
+                              setMaxRating(num);
                               if (num != null && num != undefined)
                                 changeAppState(
                                   dispatch,
@@ -412,64 +414,64 @@ const ProblemPage = () => {
           </li>
         </ul>
       </div>
-      <div className="p-2">
-        <Pagination
-          totalCount={problemList.problems.length}
-          perPage={perPage}
-          selected={selected}
-          theme={state.appState.theme}
-          pageSelected={(e) => setSelected(e)}
-        />
+
+      <div
+        className="container p-0 pt-3 pb-3"
+        style={{ height: "calc(100vh - 200px)" }}>
+        <div className="overflow-auto card h-100 text-center">
+          <table
+            className={"table table-bordered m-0 " + state.appState.theme.table}>
+            <thead className={state.appState.theme.thead}>
+              <tr>
+                <th scope="col">#</th>
+                <th scope="col">ID</th>
+                <th scope="col">Name</th>
+                <th
+                  scope="col"
+                  role="button"
+                  onClick={() => sortList(SORT_BY_RATING)}>
+                  <div className="d-flex justify-content-between">
+                    <div>Rating</div>
+                    <div>
+                      {filterState.sortBy === SORT_BY_RATING
+                        ? filterState.order === ASCENDING
+                          ? less()
+                          : greater()
+                        : nuetral()}
+                    </div>
+                  </div>
+                </th>
+                <th
+                  scope="col"
+                  role="button"
+                  onClick={() => sortList(SORT_BY_SOLVE)}>
+                  <div className="d-flex justify-content-between">
+                    <div>Solve Count</div>
+                    <div>
+                      {filterState.sortBy === SORT_BY_SOLVE
+                        ? filterState.order === ASCENDING
+                          ? less()
+                          : greater()
+                        : nuetral()}
+                    </div>
+                  </div>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <ProblemList
+                problems={
+                  randomProblem === -1
+                    ? paginate()
+                    : [problemList.problems[randomProblem]]
+                }
+                perPage={perPage}
+                pageSelected={selected}
+              />
+            </tbody>
+          </table>
+        </div>
       </div>
-      <table
-        className={
-          "table table-bordered container " + state.appState.theme.table
-        }>
-        <thead className={state.appState.theme.thead}>
-          <tr>
-            <th scope="col">#</th>
-            <th scope="col">ID</th>
-            <th scope="col">Name</th>
-            <th
-              scope="col"
-              role="button"
-              onClick={() => sortList(SORT_BY_RATING)}>
-              <div className="d-flex justify-content-between">
-                <div>Rating</div>
-                <div>
-                  {filterState.sortBy === SORT_BY_RATING
-                    ? filterState.order === ASCENDING
-                      ? less()
-                      : greater()
-                    : nuetral()}
-                </div>
-              </div>
-            </th>
-            <th
-              scope="col"
-              role="button"
-              onClick={() => sortList(SORT_BY_SOLVE)}>
-              <div className="d-flex justify-content-between">
-                <div>Solve Count</div>
-                <div>
-                  {filterState.sortBy === SORT_BY_SOLVE
-                    ? filterState.order === ASCENDING
-                      ? less()
-                      : greater()
-                    : nuetral()}
-                </div>
-              </div>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {randomProblem === -1 ? (
-            <ProblemList problems={paginate()} />
-          ) : (
-            <ProblemList problems={[problemList.problems[randomProblem]]} />
-          )}
-        </tbody>
-      </table>
       <Pagination
         totalCount={problemList.problems.length}
         perPage={perPage}

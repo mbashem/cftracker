@@ -51,12 +51,12 @@ export const fetchUserSubmissions = async (
   let currentId = Date.now();
   if (handles.length === 0) clearUsersSubmissions(dispatch);
 
-  await delay(1000);
+  await delay(500);
 
   for (let handle of handles) {
     dispatch(load(LOADING_USER_SUBMISSIONS));
 
-    await delay(300);
+    await delay(500);
 
     fetch(getUserSubmissionsURL(handle, limit))
       .then((res) => res.json())

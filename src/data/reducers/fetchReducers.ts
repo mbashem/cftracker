@@ -1,4 +1,4 @@
-import  Contest  from "../../util/DataTypes/Contest";
+import Contest from "../../util/DataTypes/Contest";
 import Problem, { ProblemShared } from "../../util/DataTypes/Problem";
 import { sortByContestId } from "../../util/sortMethods";
 
@@ -25,13 +25,10 @@ const problemListState: ProblemListStateInterface = {
   problems: [],
   error: "",
   tags: new Set<string>(),
-  loading: false,
+  loading: true,
 };
 
-export const problemListReducer = (
-  initState = problemListState,
-  action
-) => {
+export const problemListReducer = (initState = problemListState, action) => {
   switch (action.type) {
     case FETCH_PROBLEM_LIST:
       action.payload.sort(sortByContestId);
@@ -45,6 +42,7 @@ export const problemListReducer = (
         problems: action.payload as Problem[],
         error: "",
         tags: tags,
+        loading: false,
       };
 
     case ERROR_FETCHING_PROBLEMS:
@@ -63,23 +61,22 @@ export interface SharedProblemInterface {
   loading: boolean;
 }
 
-const sharedProblemsState : SharedProblemInterface = {
+const sharedProblemsState: SharedProblemInterface = {
   problems: [],
   error: "",
-  loading: false,
+  loading: true,
 };
 
 export const sharedProblemsReducer = (
-  initState :SharedProblemInterface = sharedProblemsState,
+  initState: SharedProblemInterface = sharedProblemsState,
   action
 ) => {
   switch (action.type) {
     case FETCH_SHARED_PROBLEMS:
-
       action.payload.sort(sortByContestId);
       return {
         ...sharedProblemsState,
-        problems: action.payload as ProblemShared[],
+        ...{ problems: action.payload as ProblemShared[], loading: false },
       };
     case ERROR_FETCHING_SHARED_PROBLEMS:
       return { ...initState, error: action.payload };
@@ -99,7 +96,7 @@ export interface ContestListStateInterface {
 const contestListInitialState: ContestListStateInterface = {
   contests: [],
   error: "",
-  loading: false,
+  loading: true,
 };
 
 export const contestReducer = (initState = contestListInitialState, action) => {
@@ -107,7 +104,7 @@ export const contestReducer = (initState = contestListInitialState, action) => {
     case FETCH_CONTEST_LIST:
       return {
         ...contestListInitialState,
-        ...{ contests: action.payload as Contest[], error: "" },
+        ...{ contests: action.payload as Contest[], error: "", loading: false },
       };
     case ERROR_FETCHING_CONTEST_LIST:
       return { ...contestListInitialState, error: action.payload as string };

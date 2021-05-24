@@ -1,7 +1,7 @@
 import { faMoon } from "@fortawesome/free-regular-svg-icons";
 import { faSun, faSync } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import {
@@ -12,10 +12,8 @@ import {
 } from "../data/actions/fetchActions";
 import { AppReducerType } from "../data/actions/types";
 import { fetchUserSubmissions, fetchUsers } from "../data/actions/userActions";
-import { RootState, RootStateType } from "../data/store";
+import { RootStateType } from "../data/store";
 import { PROBLEMS, CONTESTS } from "../util/constants";
-import { ProblemShared } from "../util/DataTypes/Problem";
-import { Verdict } from "../util/DataTypes/Submission";
 import { ThemesType } from "../util/Theme";
 
 const Menu = (): JSX.Element => {
@@ -34,8 +32,14 @@ const Menu = (): JSX.Element => {
   }, []);
 
   useEffect(() => {
-    sync();
+    if (!state.contestList.loading && !state.problemList.loading) sync();
   }, [state.userList]);
+
+  useEffect(() => {
+    if (!state.contestList.loading && !state.problemList.loading) sync();
+    // console.log(state.contestList.loading);
+    // console.log(state.problemList.loading);
+  }, [state.contestList.loading, state.problemList.loading]);
 
   const sync = () => {
     fetchUserSubmissions(dispatch, state.userList.handles);
@@ -61,7 +65,9 @@ const Menu = (): JSX.Element => {
 
   return (
     <nav
-      className={"navbar navbar-expand-lg p-2 ps-4 pe-4 " + state.appState.theme.navbar}>
+      className={
+        "navbar navbar-expand-lg p-2 ps-4 pe-4 " + state.appState.theme.navbar
+      }>
       <button
         className="navbar-toggler"
         type="button"
@@ -93,7 +99,7 @@ const Menu = (): JSX.Element => {
 
           <li className="nav-item">
             <a
-              className={"btn-transparent border-0 nav-link"}
+              className={"nav-link"}
               href="#"
               title="Change Theme"
               onClick={(e) => {
@@ -120,25 +126,6 @@ const Menu = (): JSX.Element => {
           </li>
 
           <li className="nav-item">
-            <form
-              className="form-inline d-flex my-2 my-lg-0 nav-item"
-              onSubmit={(e) => {
-                e.preventDefault();
-                submitUser();
-              }}>
-              <input
-                name="handle"
-                className="form-control mr-sm-2"
-                type="search"
-                placeholder="handle1,handle2,.."
-                aria-label="Search"
-                value={handle}
-                onChange={(e) => setHandle(e.target.value)}
-              />
-            </form>
-          </li>
-
-          <li className="nav-item">
             <a
               className="nav-link"
               onClick={(e) => {
@@ -149,6 +136,25 @@ const Menu = (): JSX.Element => {
               href="#">
               <FontAwesomeIcon icon={faSync} />
             </a>
+          </li>
+
+          <li className="nav-item">
+            <form
+              className="form-inline d-flex my-2 my-lg-0 nav-item"
+              onSubmit={(e) => {
+                e.preventDefault();
+                submitUser();
+              }}>
+              <input
+                name="handle"
+                className="form-control mr-sm-2"
+                type="text"
+                placeholder="handle1,handle2,.."
+                aria-label="handles"
+                value={handle}
+                onChange={(e) => setHandle(e.target.value)}
+              />
+            </form>
           </li>
         </ul>
       </div>

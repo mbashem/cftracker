@@ -1,5 +1,5 @@
 import "./App.css";
-import React, { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Switch, Route } from "react-router-dom";
 import { useSelector } from "react-redux";
 
@@ -22,8 +22,6 @@ function App() {
       document.body.classList.add("bg-light");
       document.body.classList.remove("bg-dark");
     }
-
-    document.title = "CFTracker";
   }, []);
 
   useEffect(() => {
@@ -39,7 +37,8 @@ function App() {
   return (
     <div
       className={
-        "App container-fluid p-0 min-vh-100 d-flex justify-content-between  flex-column " + state.appState.theme.bgText
+        "App container-fluid p-0 min-vh-100 d-flex  flex-column " +
+        state.appState.theme.bgText
       }>
       <div className="top">
         <div className="menu w-100">
@@ -52,8 +51,19 @@ function App() {
           <Route strict path={CONTESTS} component={ContestPage} />
         </Switch>
       </div>
-      <footer className="text-light text-center justify-content-center p-3 w-100 align-self-end">
-        All rights reserved by @Bashem
+      <footer
+        className={
+          "text-center justify-content-center p-3 w-100 align-self-end " +
+          state.appState.theme.text
+        }
+        style={{ height: "50px !important" }}>
+        All rights reserved by{" "}
+        <a
+          href="https://codeforces.com/profile/bashem"
+          className={state.appState.theme.text + " text-decoration-none"}
+          target="_blank">
+          @Bashem
+        </a>
       </footer>
     </div>
   );
