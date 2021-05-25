@@ -21,7 +21,7 @@ const ContestPage = () => {
 
   const [contestList, setContestList] = useState({ contests: [], error: "" });
   const [randomContest, setRandomContest] = useState(-1);
-  const [perPage, setPerPage] = useState(100);
+  const [perPage, setPerPage] = useState(state.appState.contestPage.perPage);
   const [showDate, setShowDate] = useState(state.appState.contestPage.showDate);
   const [maxIndex, setMaxIndex] = useState(state.appState.contestPage.maxIndex);
 
@@ -299,7 +299,7 @@ const ContestPage = () => {
           </div>
         </nav>
       </div>
-      <div className="ps-4 pt-1 pb-2" style={{ height: "calc(100vh - 230px)" }}>
+      <div className="ps-4 pt-1 pb-2" style={{ height: "calc(100vh - 190px)" }}>
         <div
           className={
             "overflow-auto h-100 m-0 " +
@@ -347,6 +347,7 @@ const ContestPage = () => {
                 maxIndex={maxIndex}
                 perPage={perPage}
                 pageSelected={selected}
+                theme={state.appState.theme}
               />
             </tbody>
           </table>

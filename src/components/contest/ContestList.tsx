@@ -1,6 +1,4 @@
 import React from "react";
-import { useSelector } from "react-redux";
-import { RootStateType } from "../../data/store";
 import {
   getProblemUrl,
   formateDate,
@@ -9,6 +7,7 @@ import {
 } from "../../util/bashforces";
 import Contest from "../../util/DataTypes/Contest";
 import Problem from "../../util/DataTypes/Problem";
+import Theme from "../../util/Theme";
 
 interface PropsType {
   contestlist: Contest[];
@@ -17,10 +16,10 @@ interface PropsType {
   maxIndex: number;
   perPage: number;
   pageSelected: number;
+  theme: Theme;
 }
 
-const ContestList = (props) => {
-  const state: RootStateType = useSelector((state) => state);
+const ContestList = (props: PropsType) => {
 
   const renderProblem = (problem: Problem, inside = false) => {
     let solved = problem.solved;
@@ -32,17 +31,17 @@ const ContestList = (props) => {
 
     let className =
       (solved
-        ? state.appState.theme.bgSuccess
+        ? props.theme.bgSuccess
         : attempted
-        ? state.appState.theme.bgDanger
+        ? props.theme.bgDanger
         : "") + (inside ? " w-50 " : " w-100 ");
 
     return (
       <div className={className} key={id}>
         <a
           className={
-            "text-decoration-none wrap font-bold p-3 " +
-            state.appState.theme.text
+            "text-decoration-none wrap font-bold p-2 " +
+            props.theme.text
           }
           target="_blank"
           rel="noreferrer"
@@ -57,7 +56,7 @@ const ContestList = (props) => {
   };
 
   const getInfo = (contest: Contest, index) => {
-    const EMPTY = "EMPTY " + state.appState.theme.bg;
+    const EMPTY = "EMPTY " + props.theme.bg;
 
     let contestId = contest.id;
     let problems = contest.problemList[index];
@@ -74,9 +73,9 @@ const ContestList = (props) => {
           className={
             "p-0 w-problem " +
             (problems[0].solved
-              ? state.appState.theme.bgSuccess
+              ? props.theme.bgSuccess
               : problems[0].attempted
-              ? state.appState.theme.bgDanger
+              ? props.theme.bgDanger
               : "")
           }
           key={contestId + index.charAt(0)}>
@@ -107,14 +106,14 @@ const ContestList = (props) => {
   const contestCard = (contest: Contest, index) => {
     return (
       <tr key={contest.id}>
-        <td scope="row" className="w-sl p-3">
+        <td scope="row" className="w-sl p-2">
           <div className="d-inline-block">
             {props.pageSelected * props.perPage + index + 1}
           </div>
         </td>
         <td
           scope="row"
-          className="w-id p-3 "
+          className="w-id p-2 "
           title={
             "Solve Count: " + contest.solveCount + " , Total:" + contest.count
           }>
@@ -124,14 +123,14 @@ const ContestList = (props) => {
           className={
             "p-2 w-contest " +
             (contest.solveCount === contest.count && contest.count !== 0
-              ? state.appState.theme.bgSuccess
+              ? props.theme.bgSuccess
               : " ")
           }>
           <div className="d-inline-block name">
             <a
               className={
                 "text-decoration-none wrap font-bold w-contest p-3 " +
-                state.appState.theme.text
+                props.theme.text
               }
               target="_blank"
               rel="noreferrer"

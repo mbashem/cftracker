@@ -28,9 +28,9 @@ export class AppStateType {
 
     this.loaded = false;
 
-    this.contestPage = { perPage: 100, showDate: false, maxIndex: 10 };
+    this.contestPage = { perPage: 20, showDate: false, maxIndex: 8 };
     this.problemPage = {
-      perPage: 100,
+      perPage: 20,
       minRating: -1,
       maxRating: 4000,
       showUnrated: true,

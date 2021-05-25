@@ -1,5 +1,5 @@
 import { faMoon } from "@fortawesome/free-regular-svg-icons";
-import { faSun, faSync } from "@fortawesome/free-solid-svg-icons";
+import { faInfo, faSun, faSync } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
@@ -95,6 +95,18 @@ const Menu = (): JSX.Element => {
             <Link to={CONTESTS} className="nav-link" href="#">
               Contest
             </Link>
+          </li>
+
+          <li className="nav-item">
+            <a
+              href="https://codeforces.com/profile/bashem"
+              className="nav-link"
+              title="Created by Bashem"
+              data-bs-toggle="tooltip"
+              data-bs-placement="top"
+              target="__blank">
+              <FontAwesomeIcon icon={faInfo} />
+            </a>
           </li>
 
           <li className="nav-item">
