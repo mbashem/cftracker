@@ -51,20 +51,6 @@ function App() {
           <Route strict path={CONTESTS} component={ContestPage} />
         </Switch>
       </div>
-      <footer
-        className={
-          "text-center justify-content-center p-3 w-100 align-self-end " +
-          state.appState.theme.text
-        }
-        style={{ height: "50px !important" }}>
-        All rights reserved by{" "}
-        <a
-          href="https://codeforces.com/profile/bashem"
-          className={state.appState.theme.text + " text-decoration-none"}
-          target="_blank">
-          @Bashem
-        </a>
-      </footer>
     </div>
   );
 }

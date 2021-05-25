@@ -55,7 +55,7 @@ const ProblemPage = () => {
   const [tagList, setTagList] = useState({ tags: [] });
   const [randomProblem, setRandomProblem] = useState(-1);
   const [selected, setSelected] = useState(0);
-  const [perPage, setPerPage] = useState(100);
+  const [perPage, setPerPage] = useState(state.appState.problemPage.perPage);
   const [minRating, setMinRating] = useState(
     state.appState.problemPage.minRating
   );
@@ -144,9 +144,9 @@ const ProblemPage = () => {
       });
   };
 
-  const getState = (problem) => {
-    if (state.userSubmissions[SOLVED_PROBLEMS].has(problem.id)) return SOLVED;
-    if (state.userSubmissions[ATTEMPTED_PROBLEMS].has(problem.id))
+  const getState = (problem: Problem) => {
+    if (problem.solved) return SOLVED;
+    if (problem.attempted)
       return ATTEMPTED;
     return UNSOLVED;
   };
@@ -474,6 +474,7 @@ const ProblemPage = () => {
                 }
                 perPage={perPage}
                 pageSelected={selected}
+                theme={state.appState.theme}
               />
             </tbody>
           </table>

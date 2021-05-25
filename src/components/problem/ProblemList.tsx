@@ -1,22 +1,17 @@
 import React from "react";
-import { useSelector } from "react-redux";
-import { RootStateType } from "../../data/store";
 import { getProblemUrl } from "../../util/bashforces";
 import { ATTEMPTED_PROBLEMS, SOLVED_PROBLEMS } from "../../util/constants";
 import Problem from "../../util/DataTypes/Problem";
+import Theme from "../../util/Theme";
 
 interface ProblemListProps {
   problems: Problem[];
   perPage: number;
   pageSelected: number;
+  theme: Theme;
 }
 
-const ProblemList = ({
-  problems,
-  perPage,
-  pageSelected,
-}: ProblemListProps): JSX.Element => {
-  const state: RootStateType = useSelector((state) => state);
+const ProblemList = (props: ProblemListProps): JSX.Element => {
 
   const getState = (problem: Problem) => {
     if (problem.solved) return SOLVED_PROBLEMS;
@@ -25,22 +20,19 @@ const ProblemList = ({
   };
 
   const ProblemCard = (problem: Problem, index: number) => {
-    let classes = state.appState.theme.bg;
+    let classes = props.theme.bg;
     let problemState = getState(problem);
-    if (problemState === SOLVED_PROBLEMS)
-      classes = state.appState.theme.bgSuccess;
+    if (problemState === SOLVED_PROBLEMS) classes = props.theme.bgSuccess;
     else if (problemState === ATTEMPTED_PROBLEMS)
-      classes = state.appState.theme.bgDanger;
+      classes = props.theme.bgDanger;
     return (
       <tr key={problem.id}>
-        <td className={"id font-weight-bold p-3 " + classes}>
-          {pageSelected * perPage + index + 1}
+        <td className={"id font-weight-bold p-2 " + classes}>
+          {props.pageSelected * props.perPage + index + 1}
         </td>
         <td className={"id font-weight-bold " + classes}>
           <a
-            className={
-              "text-decoration-none p-3 " + " " + state.appState.theme.text
-            }
+            className={"text-decoration-none p-2 " + " " + props.theme.text}
             target="_blank"
             href={getProblemUrl(problem.contestId, problem.index)}>
             {problem.id}
@@ -48,27 +40,25 @@ const ProblemList = ({
         </td>
         <td className={"name " + classes}>
           <a
-            className={
-              "text-decoration-none p-3 " + " " + state.appState.theme.text
-            }
+            className={"text-decoration-none p-2 " + " " + props.theme.text}
             target="_blank"
             title={problem.tags.toString()}
             href={getProblemUrl(problem.contestId, problem.index)}>
             {problem.name}
           </a>
         </td>
-        <td className={"rating p-3 " + classes}>
+        <td className={"rating p-2 " + classes}>
           {problem.rating != -1 ? problem.rating : "Not Rated"}
         </td>
 
-        <td className={"solvedCount p-3 " + classes}>{problem.solvedCount}</td>
+        <td className={"solvedCount p-2 " + classes}>{problem.solvedCount}</td>
       </tr>
     );
   };
 
   return (
     <React.Fragment>
-      {problems.map((problem: Problem, index: number) => {
+      {props.problems.map((problem: Problem, index: number) => {
         return ProblemCard(problem, index);
       })}
     </React.Fragment>
