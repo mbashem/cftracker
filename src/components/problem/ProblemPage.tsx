@@ -48,7 +48,6 @@ const ProblemPage = () => {
 
   const initFilterState = {
     solveStatus: [SOLVED, ATTEMPTED, UNSOLVED],
-    rating: { min_rating: -1, max_rating: 4000 },
     tags: new Set(),
     search: SEARCH in query ? query[SEARCH] : "",
     sortBy: SORT_BY_SOLVE,
@@ -291,10 +290,12 @@ const ProblemPage = () => {
                       <div className="d-flex">
                         <InputNumber
                           header="Min Rating"
-                          min={-1}
+                          min={0}
                           max={4000}
                           value={minRating}
                           name={"minRating"}
+                          step={100}
+                          title={"Set 0 to show Unrated Problems"}
                           onChange={(num) => {
                             setMinRating(num);
                             if (num != null && num != undefined)
@@ -308,10 +309,11 @@ const ProblemPage = () => {
                         />
                         <InputNumber
                           header="Max Rating"
-                          min={-1}
+                          min={0}
                           max={4000}
                           value={maxRating}
                           name={"maxRating"}
+                          step={100}
                           onChange={(num) => {
                             setMaxRating(num);
                             if (num != null && num != undefined)
