@@ -22,8 +22,12 @@ export const getProblemUrl = (contestId, index) => {
   return getContestUrl(contestId) + "/problem/" + index;
 };
 
-export const getUserSubmissionsURL = (handle:string,limit?:number) => {
-  return "https://codeforces.com/api/user.status?handle=" + handle + (limit ? "&&from=1&count="+limit : "");
+export const getUserSubmissionsURL = (handle: string, limit?: number) => {
+  return (
+    "https://codeforces.com/api/user.status?handle=" +
+    handle +
+    (limit ? "&&from=1&count=" + limit : "")
+  );
 };
 
 export const getUserInfoURL = (handle) => {
@@ -31,7 +35,7 @@ export const getUserInfoURL = (handle) => {
   return "https://codeforces.com/api/user.info?handles=" + handle;
 };
 
-export const stringToArray = (s: string,separator:string): string[] => {
+export const stringToArray = (s: string, separator: string): string[] => {
   return s.trim().split(separator);
 };
 
@@ -46,9 +50,8 @@ export const getRandomInteger = (min, max) => {
 export const parseQuery = (queryString) => {
   queryString = queryString.trim();
   var query = {};
-  var pairs = (queryString[0] === "?"
-    ? queryString.substr(1)
-    : queryString
+  var pairs = (
+    queryString[0] === "?" ? queryString.substr(1) : queryString
   ).split("&");
   for (var i = 0; i < pairs.length; i++) {
     var pair = pairs[i].split("=");
@@ -57,4 +60,15 @@ export const parseQuery = (queryString) => {
   return query;
 };
 
-export const delay = ms => new Promise(res => setTimeout(res, ms));
+export const delay = (ms) => new Promise((res) => setTimeout(res, ms));
+
+export const processNumber = (
+  num: number,
+  min: number,
+  max: number
+): number => {
+  if (isNaN(num)) return min;
+  if (num < min) return min;
+  if (num > max) return max;
+  return num;
+};

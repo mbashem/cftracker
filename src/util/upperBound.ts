@@ -8,12 +8,11 @@ const upperBound = <T extends Comparator<T>>(list: T[], val: T): number => {
   while (l <= r) {
     let mid = Math.floor(l + (r - l) / 2);
 
-    let res: number = val.compareTo(list[mid]);
+    let res: number = list[mid].compareTo(val);
 
     if (res == Compared.LESS || res === Compared.EQUAL) {
-			l = mid + 1;
-		}
-    else if (res === Compared.GREATER) {
+      l = mid + 1;
+    } else if (res === Compared.GREATER) {
       ans = mid;
       r = mid - 1;
     }

@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { getRandomInteger, parseQuery } from "../../util/bashforces";
+import {
+  getRandomInteger,
+  parseQuery,
+  processNumber,
+} from "../../util/bashforces";
 import { sortByRating, sortBySolveCount } from "../../util/sortMethods";
 import {
   ATTEMPTED_PROBLEMS,
@@ -8,7 +12,7 @@ import {
   SEARCH,
   PROBLEMS,
 } from "../../util/constants";
-import Pagination from "../../util/Pagination";
+import Pagination from "../../util/Components/Pagination";
 import ProblemList from "./ProblemList";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -18,7 +22,6 @@ import {
   faSortDown,
   faSortUp,
   faRedo,
-  faRedoAlt,
 } from "@fortawesome/free-solid-svg-icons";
 import { useHistory } from "react-router";
 import { RootStateType } from "../../data/store";
@@ -26,9 +29,10 @@ import { changeAppState } from "../../data/actions/fetchActions";
 import { AppReducerType } from "../../data/actions/types";
 import Problem from "../../util/DataTypes/Problem";
 import { ThemesType } from "../../util/Theme";
+import InputNumber from "../../util/Components/InputNumber";
 
 const ProblemPage = () => {
-  const state: RootStateType = useSelector((state) => state);
+  const state: RootStateType = useSelector((state) => state) as RootStateType;
   const history = useHistory();
   const dispatch = useDispatch();
 
@@ -146,8 +150,7 @@ const ProblemPage = () => {
 
   const getState = (problem: Problem) => {
     if (problem.solved) return SOLVED;
-    if (problem.attempted)
-      return ATTEMPTED;
+    if (problem.attempted) return ATTEMPTED;
     return UNSOLVED;
   };
 
@@ -252,52 +255,6 @@ const ProblemPage = () => {
                       aria-label="Close"></button>
                   </div>
                   <div className="modal-body">
-                    <div className="group">
-                      <form
-                        className="form-inline d-flex justify-content-between my-2 my-lg-0"
-                        onSubmit={(e) => e.preventDefault()}>
-                        <div className="d-flex justify-content-between w-100">
-                          <div className="input-group mb-3">
-                            <div className="input-group-prepend">
-                              <label
-                                className="input-group-text"
-                                htmlFor="inputGroupSelect01">
-                                Per Page
-                              </label>
-                            </div>
-                            <select
-                              className="custom-select"
-                              id="inputGroupSelect01"
-                              value={perPage}
-                              onChange={(e) => {
-                                let num: number = parseInt(e.target.value);
-                                changeAppState(
-                                  dispatch,
-                                  AppReducerType.CHANGE_PER_PAGE,
-                                  num,
-                                  false
-                                );
-                              }}>
-                              <option value="10">10</option>
-                              <option value="20">20</option>
-                              <option value="50">50</option>
-                              <option value="100">100</option>
-                              <option value={problemList.problems.length}>
-                                All
-                              </option>
-                            </select>
-                          </div>
-                          <div className="input-group d-flex justify-content-end">
-                            <button
-                              className="btn btn-light nav-link h-6"
-                              onClick={() => setFilterState(initFilterState)}
-                              title="Reset To Default State">
-                              <FontAwesomeIcon icon={faRedoAlt} />
-                            </button>
-                          </div>
-                        </div>
-                      </form>
-                    </div>
                     <div
                       className="btn-group me-2 d-flex flex-wrap"
                       role="group"
@@ -332,57 +289,40 @@ const ProblemPage = () => {
                         e.preventDefault();
                       }}>
                       <div className="d-flex">
-                        <div
-                          className="input-group pe-1"
-                          title="place -1 to show unrated">
-                          <span className="input-group-text" id="perpage-input">
-                            Min Rating
-                          </span>
-                          <input
-                            className="form-control mr-sm-2"
-                            type="text"
-                            placeholder="Min Rating"
-                            value={minRating}
-                            name={"minRating"}
-                            onChange={(e) => {
-                              let num: number = parseInt(e.target.value);
-                              if (num === NaN) num = -1;
-                              setMinRating(num);
-                              if (num != null && num != undefined)
-                                changeAppState(
-                                  dispatch,
-                                  AppReducerType.CHANGE_MIN_RATING,
-                                  num,
-                                  false
-                                );
-                            }}
-                          />
-                        </div>
-                        <div className="input-group ps-1">
-                          <span className="input-group-text" id="perpage-input">
-                            Max Rating
-                          </span>
-                          <input
-                            className="form-control mr-sm-2"
-                            type="text"
-                            placeholder="Max Rating"
-                            value={maxRating}
-                            name={"maxRating"}
-                            onChange={(e) => {
-                              let num: number = parseInt(e.target.value);
-
-                              if (num === NaN) num = -1;
-                              setMaxRating(num);
-                              if (num != null && num != undefined)
-                                changeAppState(
-                                  dispatch,
-                                  AppReducerType.CHANGE_MAX_RATING,
-                                  num,
-                                  false
-                                );
-                            }}
-                          />
-                        </div>
+                        <InputNumber
+                          header="Min Rating"
+                          min={-1}
+                          max={4000}
+                          value={minRating}
+                          name={"minRating"}
+                          onChange={(num) => {
+                            setMinRating(num);
+                            if (num != null && num != undefined)
+                              changeAppState(
+                                dispatch,
+                                AppReducerType.CHANGE_MIN_RATING,
+                                num,
+                                false
+                              );
+                          }}
+                        />
+                        <InputNumber
+                          header="Max Rating"
+                          min={-1}
+                          max={4000}
+                          value={maxRating}
+                          name={"maxRating"}
+                          onChange={(num) => {
+                            setMaxRating(num);
+                            if (num != null && num != undefined)
+                              changeAppState(
+                                dispatch,
+                                AppReducerType.CHANGE_MAX_RATING,
+                                num,
+                                false
+                              );
+                          }}
+                        />
                       </div>
                     </form>
                     <div
@@ -417,8 +357,8 @@ const ProblemPage = () => {
       </div>
 
       <div
-        className="container p-0 pt-3 pb-3"
-        style={{ height: "calc(100vh - 200px)" }}>
+        className={"container p-0 pt-3 pb-3 " + state.appState.theme.bg}
+        style={{ height: "calc(100vh - 190px)" }}>
         <div
           className={
             "overflow-auto h-100 text-center " +
@@ -480,13 +420,19 @@ const ProblemPage = () => {
           </table>
         </div>
       </div>
-      <Pagination
-        totalCount={problemList.problems.length}
-        perPage={perPage}
-        selected={selected}
-        theme={state.appState.theme}
-        pageSelected={(e) => setSelected(e)}
-      />
+      <footer>
+        <Pagination
+          totalCount={problemList.problems.length}
+          perPage={perPage}
+          selected={selected}
+          theme={state.appState.theme}
+          pageSelected={(e) => setSelected(e)}
+          pageSize={(e) => {
+            setPerPage(e);
+            changeAppState(dispatch, AppReducerType.CHANGE_PER_PAGE, e, false);
+          }}
+        />
+      </footer>
     </div>
   );
 };

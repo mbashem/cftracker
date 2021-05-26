@@ -96,8 +96,11 @@ const addSharedToProblems = (
 
   let newProblems: Problem[] = problemList.concat(addProblems);
 
+  let newConestList : Contest[] = new Array<Contest>();
+
   contestList.map((contest, index) => {
-    rec[contest.id] = index;
+    newConestList.push(contest);
+    rec[contest.id] =  newConestList.length-1;
   });
 
   for (let problem of newProblems) {
@@ -113,10 +116,10 @@ const addSharedToProblems = (
     }
 
     if (rec[problem.contestId] !== undefined)
-      contestList[rec[problem.contestId]].addProblem(problem);
+      newConestList[rec[problem.contestId]].addProblem(problem);
   }
 
-  return contestList;
+  return newConestList;
 };
 
 const addSharedToSubmissions = (

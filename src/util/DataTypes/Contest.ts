@@ -70,7 +70,7 @@ export default class Contest {
     if (this.problemList[ind].length > 2) return false;
 
     for (let i = 0; i < this.problemList[ind].length; i++) {
-      if (problem.getId() == this.problemList[ind][i].getId()) {
+      if (problem.getId() === this.problemList[ind][i].getId()) {
         if (this.problemList[ind][i].solved) this.solveCount--;
         else if (this.problemList[ind][i].attempted) this.attempCount--;
         if (problem.solved) this.solveCount++;
