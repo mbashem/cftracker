@@ -1,5 +1,4 @@
 import { processNumber } from "../bashforces";
-import Theme from "../Theme";
 
 interface PropsType {
   header: string;
@@ -10,11 +9,17 @@ interface PropsType {
   max: number;
   inputClass?: string;
   textClass?: string;
+  title?: string;
+  step?: number;
 }
 
 const InputNumber = (props: PropsType) => {
+  if (props.title === undefined) props = { ...props, title: "" };
+  if (props.step === undefined || isNaN(props.step))
+    props = { ...props, step: 1 };
+
   return (
-    <div className="input-group">
+    <div className="input-group" title={props.title}>
       <span
         className={"input-group-text " + props.textClass}
         id={props.name + "-input"}>
@@ -26,6 +31,7 @@ const InputNumber = (props: PropsType) => {
         placeholder="Max Rating"
         value={props.value}
         name={props.name}
+        step={props.step}
         onChange={(e) => {
           let num: number = parseInt(e.target.value);
 

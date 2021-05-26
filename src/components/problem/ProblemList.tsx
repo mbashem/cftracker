@@ -48,7 +48,7 @@ const ProblemList = (props: ProblemListProps): JSX.Element => {
           </a>
         </td>
         <td className={"rating p-2 " + classes}>
-          {problem.rating != -1 ? problem.rating : "Not Rated"}
+          {problem.rating > 0 ? problem.rating : "Not Rated(0)"}
         </td>
 
         <td className={"solvedCount p-2 " + classes}>{problem.solvedCount}</td>

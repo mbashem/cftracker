@@ -110,26 +110,22 @@ const ContestPage = () => {
             id="navbarTogglerDemo03">
             <ul className="navbar w-100 d-flex justify-content-between list-unstyled">
               <li className="nav-item col-6">
-                <form
-                  className="form-inline d-flex my-2 my-lg-0"
-                  onSubmit={(e) => e.preventDefault()}>
-                  <input
-                    className={
-                      "form-control mr-sm-2 " + state.appState.theme.bgText
-                    }
-                    type="text"
-                    placeholder="Search by Contest Name or Id"
-                    name="searchContest"
-                    autoComplete="on"
-                    value={filterState.search}
-                    onChange={(e) => {
-                      setFilterState({
-                        ...filterState,
-                        search: e.target.value,
-                      });
-                    }}
-                  />
-                </form>
+                <input
+                  className={
+                    "form-control mr-sm-2 " + state.appState.theme.bgText
+                  }
+                  type="text"
+                  placeholder="Search by Contest Name or Id"
+                  name="searchContest"
+                  autoComplete="on"
+                  value={filterState.search}
+                  onChange={(e) => {
+                    setFilterState({
+                      ...filterState,
+                      search: e.target.value,
+                    });
+                  }}
+                />
               </li>
               <li className="nav-item text-secondary">
                 Showing {paginate().length} of {contestList.contests.length}

@@ -83,7 +83,7 @@ export const fetchProblemList = (dispatch: AppDispatch) => {
         );
 
         for (let i = 0; i < problems.length; i++) {
-          problems[i].rating = problems[i].rating ?? -1;
+          problems[i].rating = problems[i].rating ?? 0;
           problems[i].solvedCount = problemStatistics[i].solvedCount;
           problems[i].id = problems[i].contestId.toString() + problems[i].index;
         }
