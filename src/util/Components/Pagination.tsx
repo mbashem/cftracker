@@ -105,7 +105,7 @@ const Pagination = (props: PaginationProps) => {
                     );
                   }
                 }}>
-                {[10, 20, 30, 40, 50, props.totalCount].map((pageSize) => (
+                {[10, 20, 50,100, props.totalCount].map((pageSize) => (
                   <option key={pageSize} value={pageSize}>
                     {pageSize}
                   </option>
