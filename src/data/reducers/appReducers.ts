@@ -45,16 +45,16 @@ export class AppStateType {
 
     if (data.contestPage) {
       if (data.contestPage.perPage)
-        this.contestPage.perPage = data.contestPage.perPage;
+        this.contestPage.perPage = Math.abs(data.contestPage.perPage);
       if (data.contestPage.showDate !== undefined)
         this.contestPage.showDate = data.contestPage.showDate;
       if (data.contestPage.maxIndex)
-        this.contestPage.maxIndex = data.contestPage.maxIndex;
+        this.contestPage.maxIndex = Math.abs(data.contestPage.maxIndex);
     }
 
     if (data.problemPage) {
       if (data.problemPage.perPage)
-        this.problemPage.perPage = data.problemPage.perPage;
+        this.problemPage.perPage = Math.abs(data.problemPage.perPage);
       if (data.problemPage.minRating)
         this.problemPage.minRating = data.problemPage.minRating;
       if (data.problemPage.maxRating)

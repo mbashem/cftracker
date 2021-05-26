@@ -2,8 +2,13 @@ import { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { charInc, getRandomInteger, parseQuery } from "../../util/bashforces";
 import ContestList from "./ContestList";
-import { CONTESTS, SEARCH } from "../../util/constants";
-import Pagination from "../../util/Pagination";
+import {
+  ATTEMPTED_CONTESTS,
+  CONTESTS,
+  SEARCH,
+  SOLVED_CONTESTS,
+} from "../../util/constants";
+import Pagination from "../../util/Components/Pagination";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFilter, faRandom, faRedo } from "@fortawesome/free-solid-svg-icons";
 import { useHistory } from "react-router";
@@ -12,6 +17,7 @@ import { changeAppState } from "../../data/actions/fetchActions";
 import { AppReducerType } from "../../data/actions/types";
 import Contest from "../../util/DataTypes/Contest";
 import { ThemesType } from "../../util/Theme";
+import InputNumber from "../../util/Components/InputNumber";
 
 const ContestPage = () => {
   const state: RootStateType = useSelector((state) => state);
@@ -40,8 +46,9 @@ const ContestPage = () => {
   const [selected, setSelected] = useState(0);
 
   const contestStatus = (contest: Contest) => {
-    if (contest.solveCount) return SOLVED;
-    if (contest.attempCount) return ATTEMPTED;
+    if (state.userSubmissions[SOLVED_CONTESTS].has(contest.id)) return SOLVED;
+    if (state.userSubmissions[ATTEMPTED_CONTESTS].has(contest.id))
+      return ATTEMPTED;
     return UNSOLVED;
   };
 
@@ -180,62 +187,24 @@ const ContestPage = () => {
                             className="form-inline d-flex justify-content-between my-2 my-lg-0 pb-3"
                             onSubmit={(e) => e.preventDefault()}>
                             <div className="d-flex justify-content-between w-100">
-                              <div className="input-group">
-                                <div className="input-group-prepend">
-                                  <label
-                                    className="input-group-text"
-                                    htmlFor="inputGroupSelect01">
-                                    Per Page
-                                  </label>
-                                </div>
-                                <select
-                                  className="custom-select"
-                                  id="inputGroupSelect01"
-                                  value={perPage}
-                                  onChange={(e) => {
-                                    let num: number = parseInt(e.target.value);
+                              <InputNumber
+                                header="Max Index"
+                                min={0}
+                                max={26}
+                                value={maxIndex}
+                                name={"maxIndex"}
+                                onChange={(num) => {
+                                  setMaxIndex(num);
+
+                                  if (num != null && num != undefined)
                                     changeAppState(
                                       dispatch,
-                                      AppReducerType.CHANGE_PER_PAGE,
+                                      AppReducerType.CHANGE_MAX_INDEX,
                                       num,
-                                      true
+                                      false
                                     );
-                                  }}>
-                                  <option value="10">10</option>
-
-                                  <option value="20">20</option>
-                                  <option value="50">50</option>
-                                  <option value="100">100</option>
-                                  <option value={contestList.contests.length}>
-                                    All
-                                  </option>
-                                </select>
-                              </div>
-                              <div className="input-group">
-                                <span className="input-group-text">
-                                  Max Index
-                                </span>
-                                <input
-                                  className="form-control "
-                                  type="number"
-                                  placeholder="Max Index"
-                                  value={maxIndex}
-                                  name={"maxIndex"}
-                                  onChange={(e) => {
-                                    let num: number =
-                                      parseInt(e.target.value) | 0;
-                                    setMaxIndex(num);
-
-                                    if (num != null && num != undefined)
-                                      changeAppState(
-                                        dispatch,
-                                        AppReducerType.CHANGE_MAX_INDEX,
-                                        num,
-                                        false
-                                      );
-                                  }}
-                                />
-                              </div>
+                                }}
+                              />
                               <div className="input-group d-flex justify-content-end">
                                 <span
                                   className="input-group-text"
@@ -246,7 +215,7 @@ const ContestPage = () => {
                                   <input
                                     className="form-check-input mt-0"
                                     type="checkbox"
-                                    defaultChecked={showDate}
+                                    checked={showDate}
                                     onChange={() =>
                                       changeAppState(
                                         dispatch,
@@ -299,7 +268,9 @@ const ContestPage = () => {
           </div>
         </nav>
       </div>
-      <div className="ps-4 pt-1 pb-2" style={{ height: "calc(100vh - 190px)" }}>
+      <div
+        className={"p-0 ps-4 pt-3 pb-3 " + state.appState.theme.bg}
+        style={{ height: "calc(100vh - 200px)" }}>
         <div
           className={
             "overflow-auto h-100 m-0 " +
@@ -317,10 +288,13 @@ const ContestPage = () => {
                   style={{ width: "20px" }}>
                   #
                 </th>
-                <th scope="col" className="w-id" style={{ width: "50px" }}>
+                <th
+                  scope="col"
+                  className="w-id second-column"
+                  style={{ width: "50px" }}>
                   ID
                 </th>
-                <th scope="col" className="w-contest">
+                <th scope="col" className="w-contest third-column">
                   Contest Name
                 </th>
                 {[...Array(maxIndex)].map((x, i) => {
@@ -353,13 +327,19 @@ const ContestPage = () => {
           </table>
         </div>
       </div>
-      <Pagination
-        pageSelected={(e) => setSelected(e)}
-        perPage={perPage}
-        selected={selected}
-        theme={state.appState.theme}
-        totalCount={contestList.contests.length}
-      />
+      <footer>
+        <Pagination
+          pageSelected={(e) => setSelected(e)}
+          perPage={perPage}
+          selected={selected}
+          theme={state.appState.theme}
+          totalCount={contestList.contests.length}
+          pageSize={(e) => {
+            setPerPage(e);
+            changeAppState(dispatch, AppReducerType.CHANGE_PER_PAGE, e, true);
+          }}
+        />
+      </footer>
     </div>
   );
 };

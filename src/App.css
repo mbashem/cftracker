@@ -29,10 +29,31 @@
   background-color: #ffe3e3 !important;
 }
 
+/* .first-column {
+  position: sticky;
+  left: 0px;
+  border-left: 1px;
+  border-right: 1px;
+}
+
+.second-column {
+  position: sticky;
+  left: 20px;
+  border-left: 1px;
+  border-right: 1px;
+}
+
+.third-column {
+  position: sticky;
+  left: 70px;
+} */
+
 .w-contest {
   width: 280px !important;
   min-width: 280px !important;
   max-width: 280px !important;
+  display: flex;
+  padding: 4px !important;
 }
 
 /* .w-problem .w-100, */

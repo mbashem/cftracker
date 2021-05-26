@@ -20,7 +20,6 @@ interface PropsType {
 }
 
 const ContestList = (props: PropsType) => {
-
   const renderProblem = (problem: Problem, inside = false) => {
     let solved = problem.solved;
     let attempted = problem.attempted;
@@ -30,18 +29,14 @@ const ContestList = (props: PropsType) => {
     // if (name.length > 10) name = name.substring(0, inside ? 9 : 14) + "...";
 
     let className =
-      (solved
-        ? props.theme.bgSuccess
-        : attempted
-        ? props.theme.bgDanger
-        : "") + (inside ? " w-50 " : " w-100 ");
+      (solved ? props.theme.bgSuccess : attempted ? props.theme.bgDanger : "") +
+      (inside ? " w-50 " : " w-100 ");
 
     return (
       <div className={className} key={id}>
         <a
           className={
-            "text-decoration-none wrap font-bold p-2 " +
-            props.theme.text
+            "text-decoration-none wrap font-bold p-2 " + props.theme.text
           }
           target="_blank"
           rel="noreferrer"
@@ -106,14 +101,14 @@ const ContestList = (props: PropsType) => {
   const contestCard = (contest: Contest, index) => {
     return (
       <tr key={contest.id}>
-        <td scope="row" className="w-sl p-2">
+        <td scope="row" className="w-sl p-2 first-column">
           <div className="d-inline-block">
             {props.pageSelected * props.perPage + index + 1}
           </div>
         </td>
         <td
           scope="row"
-          className="w-id p-2 "
+          className="w-id p-2 second-column"
           title={
             "Solve Count: " + contest.solveCount + " , Total:" + contest.count
           }>
@@ -121,7 +116,7 @@ const ContestList = (props: PropsType) => {
         </td>
         <td
           className={
-            "p-2 w-contest " +
+            "p-2 w-contest third-column " +
             (contest.solveCount === contest.count && contest.count !== 0
               ? props.theme.bgSuccess
               : " ")
