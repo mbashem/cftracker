@@ -3,6 +3,8 @@ import { AppPayloadType } from "../actions/fetchActions";
 import { AppReducerType } from "../actions/types";
 
 export class AppStateType {
+  readonly minRating = 0;
+  readonly maxRating = 4000;
   errorLog: string[];
   successLog: string[];
   theme: Theme;
@@ -31,8 +33,8 @@ export class AppStateType {
     this.contestPage = { perPage: 20, showDate: false, maxIndex: 8 };
     this.problemPage = {
       perPage: 20,
-      minRating: -1,
-      maxRating: 4000,
+      minRating: this.minRating,
+      maxRating: this.maxRating,
       showUnrated: true,
     };
   }

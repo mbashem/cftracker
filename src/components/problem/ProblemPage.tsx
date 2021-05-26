@@ -290,8 +290,8 @@ const ProblemPage = () => {
                       <div className="d-flex">
                         <InputNumber
                           header="Min Rating"
-                          min={0}
-                          max={4000}
+                          min={state.appState.minRating}
+                          max={state.appState.maxRating}
                           value={minRating}
                           name={"minRating"}
                           step={100}
@@ -309,8 +309,8 @@ const ProblemPage = () => {
                         />
                         <InputNumber
                           header="Max Rating"
-                          min={0}
-                          max={4000}
+                          min={state.appState.minRating}
+                          max={state.appState.maxRating}
                           value={maxRating}
                           name={"maxRating"}
                           step={100}
