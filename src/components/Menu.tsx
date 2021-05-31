@@ -2,6 +2,12 @@ import { faMoon } from "@fortawesome/free-regular-svg-icons";
 import { faInfo, faSun, faSync } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useEffect, useState } from "react";
+import {
+  OverlayTrigger,
+  Popover,
+  PopoverContent,
+  PopoverTitle,
+} from "react-bootstrap";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import {
@@ -98,15 +104,45 @@ const Menu = (): JSX.Element => {
           </li>
 
           <li className="nav-item">
-            <a
-              href="https://codeforces.com/profile/bashem"
-              className="nav-link"
-              title="Created by Bashem"
-              data-bs-toggle="tooltip"
-              data-bs-placement="top"
-              target="__blank">
-              <FontAwesomeIcon icon={faInfo} />
-            </a>
+            <OverlayTrigger
+              trigger="click"
+              placement="bottom"
+              key="bottom"
+              overlay={
+                <Popover
+                  id="popover-basic"
+                  className={state.appState.theme.bgText}>
+                  <PopoverTitle as="h3" className={state.appState.theme.bgText}>
+                    <div className="d-flex align-items-center">
+                      <span className={state.appState.theme.bgText}>
+                        CFTracker (Created by
+                        <a
+                          href="https://codeforces.com/profile/bashem"
+                          className={" " + state.appState.theme.text}
+                          target="__blank">
+                          Bashem
+                        </a>
+                        )
+                      </span>
+                    </div>
+                  </PopoverTitle>
+                  <PopoverContent>
+                    <ul>
+                      <li>
+                        On Contest Page To see rating hover over problem Name
+                      </li>
+                    </ul>
+                  </PopoverContent>
+                </Popover>
+              }>
+              <a
+                href="#"
+                onClick={(e) => e.preventDefault()}
+                className="nav-link"
+                title="Created by Bashem">
+                <FontAwesomeIcon icon={faInfo} />
+              </a>
+            </OverlayTrigger>
           </li>
 
           <li className="nav-item">

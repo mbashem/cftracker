@@ -53,14 +53,14 @@
   min-width: 280px !important;
   max-width: 280px !important;
   display: flex;
-  padding: 4px !important;
+  /* padding: 4px !important; */
 }
 
 /* .w-problem .w-100, */
 .w-problem {
-  width: 150px !important;
-  min-width: 150px !important;
-  max-width: 150px !important;
+  width: 180px !important;
+  min-width: 180px !important;
+  max-width: 180px !important;
 }
 .w-problem .w-50 {
   width: 50% !important;
@@ -71,16 +71,13 @@
 .w-problem a {
   display: block;
   max-width: 98%;
-  white-space: nowrap;
-  overflow: hidden !important;
-  text-overflow: ellipsis;
 }
 
-.w-problem tbody td {
-  width: 75px;
-  min-width: 75px;
-  max-width: 75px;
-}
+/* .w-problem tbody td {
+  width: 90px;
+  min-width: 90px;
+  max-width: 90px;
+} */
 
 .w-problem tbody a {
   display: -webkit-box;
@@ -100,4 +97,37 @@
 
 footer {
   height: 50px !important;
+}
+
+/**/
+.light-gray {
+  color: gray !important;
+}
+
+.light-green {
+  color: cyan !important;
+}
+
+.light-expert {
+  color: blue !important;
+}
+
+.light-violet {
+  color: violet !important;
+}
+
+.light-orange {
+  color: orange !important;
+}
+
+.light-red {
+  color: red !important;
+}
+
+.light-black-red {
+  color: red !important;
+}
+
+.light-black-red::first-letter {
+  color: black !important;
 }

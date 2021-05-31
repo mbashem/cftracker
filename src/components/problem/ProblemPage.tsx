@@ -1,27 +1,15 @@
 import { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import {
-  getRandomInteger,
-  parseQuery,
-  processNumber,
-} from "../../util/bashforces";
+import { parseQuery } from "../../util/bashforces";
 import { sortByRating, sortBySolveCount } from "../../util/sortMethods";
-import {
-  ATTEMPTED_PROBLEMS,
-  SOLVED_PROBLEMS,
-  SEARCH,
-  PROBLEMS,
-} from "../../util/constants";
+import { SEARCH, PROBLEMS } from "../../util/constants";
 import Pagination from "../../util/Components/Pagination";
 import ProblemList from "./ProblemList";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faFilter,
-  faRandom,
   faSort,
   faSortDown,
   faSortUp,
-  faRedo,
 } from "@fortawesome/free-solid-svg-icons";
 import { useHistory } from "react-router";
 import { RootStateType } from "../../data/store";
@@ -29,31 +17,36 @@ import { changeAppState } from "../../data/actions/fetchActions";
 import { AppReducerType } from "../../data/actions/types";
 import Problem from "../../util/DataTypes/Problem";
 import { ThemesType } from "../../util/Theme";
-import InputNumber from "../../util/Components/InputNumber";
+import CustomModal from "../../util/Components/CustomModal";
+import CheckList from "../../util/Components/Forms/CheckList";
+import Filter from "../../util/Components/Filter";
+import InputRange from "../../util/Components/Forms/InputRange";
 
 const ProblemPage = () => {
   const state: RootStateType = useSelector((state) => state) as RootStateType;
   const history = useHistory();
   const dispatch = useDispatch();
 
-  const SOLVED = 1,
-    ATTEMPTED = 0,
-    UNSOLVED = -1,
-    SORT_BY_RATING = 1,
+  const SORT_BY_RATING = 1,
     SORT_BY_SOLVE = 2,
     ASCENDING = 0,
     DESCENDING = 1;
+  const SOLVED = "SOLVED",
+    ATTEMPTED = "ATTEMPED",
+    UNSOLVED = "UNSOLVED";
 
   const query = parseQuery(history.location.search.trim());
 
+  const SOLVEBUTTONS = [SOLVED, ATTEMPTED, UNSOLVED];
+
   const initFilterState = {
-    solveStatus: [SOLVED, ATTEMPTED, UNSOLVED],
-    tags: new Set(),
-    search: SEARCH in query ? query[SEARCH] : "",
+    tags: new Set<string>(),
     sortBy: SORT_BY_SOLVE,
     order: DESCENDING,
   };
 
+  const [solveStatus, setSolveStatus] = useState(new Set<string>(SOLVEBUTTONS));
+  const [search, setSearch] = useState(SEARCH in query ? query[SEARCH] : "");
   const [problemList, setProblemList] = useState({ problems: [], error: "" });
   const [tagList, setTagList] = useState({ tags: [] });
   const [randomProblem, setRandomProblem] = useState(-1);
@@ -65,11 +58,17 @@ const ProblemPage = () => {
   const [maxRating, setMaxRating] = useState(
     state.appState.problemPage.maxRating
   );
-  const [showUnrated, setShowUnrated] = useState(true);
+
+  const [minContestId, setMinContestId] = useState(
+    state.appState.problemPage.minContestId
+  );
+  const [maxContestId, setMaxContestId] = useState(
+    state.appState.problemPage.maxContestId
+  );
 
   const [filterState, setFilterState] = useState(initFilterState);
 
-  const filterProblem = (problem) => {
+  const filterProblem = (problem: Problem) => {
     let containTags = false;
 
     if (filterState.tags.size === 0) containTags = true;
@@ -81,28 +80,30 @@ const ProblemPage = () => {
         }
     let ratingInside =
       problem.rating <= maxRating && problem.rating >= minRating;
-    // if (problem.rating == -1 && showUnrated == false) ratingInside = false;
-    // else if (problem.rating == -1 && showUnrated) ratingInside = true;
-    let solveStatus = filterState.solveStatus.includes(getState(problem));
+
+    let contestIdInside =
+      problem.contestId <= maxContestId && problem.contestId >= minContestId;
+    let status = solveStatus.has(getState(problem));
 
     let searchIncluded = true;
-    let text = filterState.search.toLowerCase().trim();
+    let text = search.toLowerCase().trim();
     if (text.length)
       searchIncluded =
         problem.name.toLowerCase().includes(text) ||
         problem.id.toLowerCase().includes(text);
 
-    return solveStatus && ratingInside && containTags && searchIncluded;
+    return (
+      status && ratingInside && containTags && searchIncluded && contestIdInside
+    );
   };
 
   useEffect(() => {
     setPerPage(state.appState.problemPage.perPage);
-    setShowUnrated(state.appState.problemPage.showUnrated);
 
-    if (filterState.search.trim().length)
+    if (search.trim().length)
       history.push({
         pathname: PROBLEMS,
-        search: "?" + SEARCH + "=" + filterState.search.trim(),
+        search: "?" + SEARCH + "=" + search.trim(),
       });
     else
       history.push({
@@ -132,7 +133,7 @@ const ProblemPage = () => {
     }
     setRandomProblem(-1);
     setSelected(0);
-  }, [state, filterState]);
+  }, [state, filterState, search, solveStatus]);
 
   const sortList = (sortBy) => {
     if (filterState.sortBy === sortBy)
@@ -151,11 +152,6 @@ const ProblemPage = () => {
     if (problem.solved) return SOLVED;
     if (problem.attempted) return ATTEMPTED;
     return UNSOLVED;
-  };
-
-  const chooseRandom = () => {
-    if (problemList.problems.length === 0) return;
-    setRandomProblem(getRandomInteger(0, problemList.problems.length - 1));
   };
 
   const paginate = () => {
@@ -180,183 +176,100 @@ const ProblemPage = () => {
 
   return (
     <div>
-      <div className="menu">
-        <ul className="nav nav-tabs d-flex justify-content-between container border-0 mt-3">
-          <li className="nav-item col-4">
-            <form
-              className="form-inline d-flex my-2 my-lg-0"
-              onSubmit={(e) => e.preventDefault()}>
-              <input
-                className={
-                  "form-control mr-sm-2 " + state.appState.theme.bgText
-                }
-                type="text"
-                placeholder="Problem Name or Id"
-                aria-label="problemSearch"
-                name="problemSearch"
-                value={filterState.search}
-                onChange={(e) => {
-                  setFilterState({
-                    ...filterState,
-                    search: e.target.value,
-                  });
-                }}
-              />
-            </form>
-          </li>
-
-          <li className="nav-item text-secondary h-6">
-            Showing {paginate().length} of {problemList.problems.length}
-          </li>
-
-          <li className="nav-item">
-            <div className="btn-group" role="group" aria-label="Basic example">
-              <button
-                type="button"
-                className={"btn " + state.appState.theme.btn}
-                onClick={chooseRandom}
-                title="Find Random Problem">
-                <FontAwesomeIcon icon={faRandom} />
-              </button>
-              <button
-                type="button"
-                className={"btn " + state.appState.theme.btn}
-                title="Cancel Random"
-                onClick={() => setRandomProblem(-1)}>
-                <FontAwesomeIcon icon={faRedo} />
-              </button>
-            </div>
-          </li>
-          <li className="nav-item">
-            <button
-              type="button"
-              className="btn btn-primary"
-              data-bs-toggle="modal"
-              data-bs-target="#exampleModal">
-              {<FontAwesomeIcon icon={faFilter} />}
-            </button>
-            <div
-              className="modal"
-              id="exampleModal"
-              tabIndex={-1}
-              aria-labelledby="exampleModalLabel"
-              aria-hidden="true">
-              <div className="modal-dialog">
-                <div className="modal-content">
-                  <div className="modal-header">
-                    <h5 className="modal-title" id="exampleModalLabel">
-                      Filter
-                    </h5>
-                    <button
-                      type="button"
-                      className="btn-close"
-                      data-bs-dismiss="modal"
-                      aria-label="Close"></button>
-                  </div>
-                  <div className="modal-body">
-                    <div
-                      className="btn-group me-2 d-flex flex-wrap"
-                      role="group"
-                      aria-label="First group">
-                      {initFilterState.solveStatus.map((solved) => (
-                        <button
-                          className={
-                            (filterState.solveStatus.includes(solved)
-                              ? "btn bg-success"
-                              : "btn bg-dark") + " h-6 m-1 p-1 text-light"
-                          }
-                          key={solved}
-                          onClick={() => {
-                            let myFilterState = { ...filterState };
-                            let ind = filterState.solveStatus.indexOf(solved);
-                            if (ind !== -1)
-                              myFilterState.solveStatus.splice(ind, 1);
-                            else myFilterState.solveStatus.push(solved);
-                            setFilterState(myFilterState);
-                          }}>
-                          {solved === SOLVED
-                            ? "Solved"
-                            : solved === ATTEMPTED
-                            ? "Attempted"
-                            : "Unsolved"}
-                        </button>
-                      ))}
-                    </div>
-                    <form
-                      className=""
-                      onSubmit={(e) => {
-                        e.preventDefault();
-                      }}>
-                      <div className="d-flex">
-                        <InputNumber
-                          header="Min Rating"
-                          min={state.appState.minRating}
-                          max={state.appState.maxRating}
-                          value={minRating}
-                          name={"minRating"}
-                          step={100}
-                          title={"Set 0 to show Unrated Problems"}
-                          onChange={(num) => {
-                            setMinRating(num);
-                            if (num != null && num != undefined)
-                              changeAppState(
-                                dispatch,
-                                AppReducerType.CHANGE_MIN_RATING,
-                                num,
-                                false
-                              );
-                          }}
-                        />
-                        <InputNumber
-                          header="Max Rating"
-                          min={state.appState.minRating}
-                          max={state.appState.maxRating}
-                          value={maxRating}
-                          name={"maxRating"}
-                          step={100}
-                          onChange={(num) => {
-                            setMaxRating(num);
-                            if (num != null && num != undefined)
-                              changeAppState(
-                                dispatch,
-                                AppReducerType.CHANGE_MAX_RATING,
-                                num,
-                                false
-                              );
-                          }}
-                        />
-                      </div>
-                    </form>
-                    <div
-                      className="btn-group me-2 d-flex flex-wrap"
-                      role="group"
-                      aria-label="First group">
-                      {tagList.tags.map((tag) => (
-                        <button
-                          className={
-                            (filterState.tags.has(tag)
-                              ? "btn bg-success"
-                              : "btn bg-dark") + " h-6 m-1 p-1 text-light"
-                          }
-                          key={tag}
-                          onClick={() => {
-                            let myFilterState = { ...filterState };
-                            if (filterState.tags.has(tag))
-                              myFilterState.tags.delete(tag);
-                            else myFilterState.tags.add(tag);
-                            setFilterState(myFilterState);
-                          }}>
-                          {tag}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </li>
-        </ul>
-      </div>
+      <Filter
+        search={search}
+        searchName="problemSearch"
+        searchPlaceHolder="Problem Name or Id"
+        name="Problem"
+        onSearch={(e) => {
+          setSearch(e);
+        }}
+        length={problemList.problems.length}
+        perPage={perPage}
+        selected={selected}
+        setRandom={(num) => {
+          setRandomProblem(num);
+        }}
+        theme={state.appState.theme}>
+        <CustomModal title="Filter">
+          <CheckList
+            items={SOLVEBUTTONS}
+            present={solveStatus}
+            onClick={(newSet) => {
+              setSolveStatus(newSet);
+            }}
+            theme={state.appState.theme}
+          />
+          <InputRange
+            min={state.appState.minRating}
+            max={state.appState.maxRating}
+            minValue={minRating}
+            maxValue={maxRating}
+            name="Rating"
+            step={100}
+            minTitle="Set 0 to show Unrated Problems"
+            className="p-2 pb-0"
+            onMinChange={(num: number) => {
+              setMinRating(num);
+              if (num !== null && num !== undefined)
+                changeAppState(
+                  dispatch,
+                  AppReducerType.CHANGE_MIN_RATING,
+                  num,
+                  false
+                );
+            }}
+            onMaxChange={(num: number) => {
+              setMaxRating(num);
+              if (num !== null && num !== undefined)
+                changeAppState(
+                  dispatch,
+                  AppReducerType.CHANGE_MAX_RATING,
+                  num,
+                  false
+                );
+            }}
+          />
+          <InputRange
+            min={state.appState.minContestId}
+            max={state.appState.maxContestId}
+            minValue={minContestId}
+            maxValue={maxContestId}
+            name="ContestId"
+            step={1}
+            className="p-2"
+            onMinChange={(num: number) => {
+              setMinContestId(num);
+              if (num !== null && num !== undefined)
+                changeAppState(
+                  dispatch,
+                  AppReducerType.CHANGE_MIN_CONTESTID,
+                  num,
+                  false
+                );
+            }}
+            onMaxChange={(num: number) => {
+              setMaxContestId(num);
+              if (num !== null && num !== undefined)
+                changeAppState(
+                  dispatch,
+                  AppReducerType.CHANGE_MAX_CONTESTID,
+                  num,
+                  false
+                );
+            }}
+          />
+          <CheckList
+            items={tagList.tags}
+            present={filterState.tags}
+            onClick={(newSet) => {
+              let myFilterState = { ...filterState };
+              myFilterState.tags = newSet;
+              setFilterState(myFilterState);
+            }}
+          />
+        </CustomModal>
+      </Filter>
 
       <div
         className={"container p-0 pt-3 pb-3 " + state.appState.theme.bg}
@@ -364,7 +277,7 @@ const ProblemPage = () => {
         <div
           className={
             "overflow-auto h-100 text-center " +
-            (state.appState.themeMod == ThemesType.LIGHT ? " card" : "")
+            (state.appState.themeMod === ThemesType.LIGHT ? " card" : "")
           }>
           <table
             className={
