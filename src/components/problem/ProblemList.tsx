@@ -33,7 +33,7 @@ const ProblemList = (props: ProblemListProps): JSX.Element => {
         <td className={"id font-weight-bold " + classes}>
           <a
             className={"text-decoration-none p-2 " + " " + props.theme.text}
-            target="_blank"
+            target="_blank" rel="noreferrer"
             href={getProblemUrl(problem.contestId, problem.index)}>
             {problem.id}
           </a>
@@ -41,7 +41,7 @@ const ProblemList = (props: ProblemListProps): JSX.Element => {
         <td className={"name " + classes}>
           <a
             className={"text-decoration-none p-2 " + " " + props.theme.text}
-            target="_blank"
+            target="_blank" rel="noreferrer"
             title={problem.tags.toString()}
             href={getProblemUrl(problem.contestId, problem.index)}>
             {problem.name}

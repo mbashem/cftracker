@@ -1,6 +1,6 @@
 import { processNumber } from "../bashforces";
 import Theme from "../Theme";
-import InputNumber from "./InputNumber";
+import InputNumber from "./Forms/InputNumber";
 
 interface PaginationProps {
   perPage: number;

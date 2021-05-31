@@ -1,4 +1,8 @@
-import React from "react";
+import { faInfo } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import React, { useRef } from "react";
+import { Button, OverlayTrigger, Tooltip } from "react-bootstrap";
+import ReactTooltip from "react-tooltip";
 import {
   getProblemUrl,
   formateDate,
@@ -11,15 +15,16 @@ import Theme from "../../util/Theme";
 
 interface PropsType {
   contestlist: Contest[];
-  filterState: any;
   showDate: boolean;
   maxIndex: number;
   perPage: number;
   pageSelected: number;
   theme: Theme;
+  showRating: boolean;
 }
 
 const ContestList = (props: PropsType) => {
+  const target = useRef(null);
   const renderProblem = (problem: Problem, inside = false) => {
     let solved = problem.solved;
     let attempted = problem.attempted;
@@ -33,19 +38,60 @@ const ContestList = (props: PropsType) => {
       (inside ? " w-50 " : " w-100 ");
 
     return (
-      <div className={className} key={id}>
-        <a
-          className={
-            "text-decoration-none wrap font-bold p-2 " + props.theme.text
-          }
-          target="_blank"
-          rel="noreferrer"
-          tabIndex={0}
-          title={problem.name + ", Rating:" + problem.rating}
-          href={getProblemUrl(problem.contestId, problem.index)}>
-          {problem.index + ". "}
-          {name}
-        </a>
+      <div className={className + " p-2"} key={id}>
+        <div className="d-flex align-items-center">
+          {/* <OverlayTrigger
+            key={"bottom"}
+            placement={"bottom"}
+            overlay={
+              <Tooltip id={`tooltip-bottom`}>
+                <ul className="list-unstyled">
+                  <li>{problem.name}</li>
+                  <li>
+                    Rating: {problem.rating > 0 ? problem.rating : "Not Rated"}
+                  </li>
+                </ul>
+              </Tooltip>
+            }>
+          </OverlayTrigger> */}
+          {/* <div
+            className="pe-2"
+            title={
+              "Rating:" + (problem.rating > 0 ? problem.rating : "Not Rated")
+            }>
+            <FontAwesomeIcon icon={faInfo} role="button" />
+          </div> */}
+          {/* <p data-tip="hello world">Tooltip</p> */}
+          {/* <ReactTooltip /> */}
+          <a
+            className={
+              "text-decoration-none wrap font-bold d-inline-block text-truncate " +
+              props.theme.text
+            }
+            target="_blank"
+            rel="noreferrer"
+            tabIndex={0}
+            title={
+              problem.name +
+              ",Rating:" +
+              (problem.rating > 0 ? problem.rating : "Not Rated")
+            }
+            data-bs-html="true"
+            data-bs-toggle="tooltip"
+            data-bs-placement="top"
+            href={getProblemUrl(problem.contestId, problem.index)}>
+            {problem.index + ". "}
+            {name}
+            {props.showRating ? (
+              <>
+                <br />
+                {problem.rating}
+              </>
+            ) : (
+              ""
+            )}
+          </a>
+        </div>
       </div>
     );
   };
@@ -62,7 +108,7 @@ const ContestList = (props: PropsType) => {
       );
     }
 
-    if (problems.length == 1) {
+    if (problems.length === 1) {
       return (
         <td
           className={
@@ -84,7 +130,7 @@ const ContestList = (props: PropsType) => {
         <td className="p-0 w-problem" key={contestId + index.charAt(0)}>
           <div className="d-flex">
             {problems.map((element) =>
-              renderProblem(element, problems.length != 1)
+              renderProblem(element, problems.length !== 1)
             )}
           </div>
         </td>
@@ -98,7 +144,7 @@ const ContestList = (props: PropsType) => {
     );
   };
 
-  const contestCard = (contest: Contest, index) => {
+  const contestCard = (contest: Contest, index: number) => {
     return (
       <tr key={contest.id}>
         <td scope="row" className="w-sl p-2 first-column">
@@ -116,7 +162,7 @@ const ContestList = (props: PropsType) => {
         </td>
         <td
           className={
-            "p-2 w-contest third-column " +
+            "w-contest p-0 d-flex flex-column third-column " +
             (contest.solveCount === contest.count && contest.count !== 0
               ? props.theme.bgSuccess
               : " ")
@@ -124,7 +170,7 @@ const ContestList = (props: PropsType) => {
           <div className="d-inline-block name">
             <a
               className={
-                "text-decoration-none wrap font-bold w-contest p-3 " +
+                "text-decoration-none wrap font-bold w-contest p-2 " +
                 props.theme.text
               }
               target="_blank"
@@ -135,7 +181,9 @@ const ContestList = (props: PropsType) => {
             </a>
           </div>
           {props.showDate ? (
-            <div className="time">{formateDate(contest.startTimeSeconds)}</div>
+            <div className="time ps-2">
+              {formateDate(contest.startTimeSeconds)}
+            </div>
           ) : (
             ""
           )}

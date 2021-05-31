@@ -5,6 +5,9 @@ import { AppReducerType } from "../actions/types";
 export class AppStateType {
   readonly minRating = 0;
   readonly maxRating = 4000;
+  readonly minContestId = 1;
+  readonly maxContestId = 4000;
+
   errorLog: string[];
   successLog: string[];
   theme: Theme;
@@ -14,12 +17,16 @@ export class AppStateType {
     perPage: number;
     showDate: boolean;
     maxIndex: number;
+    showRating: boolean;
+    showColor: boolean;
   };
   problemPage: {
     perPage: number;
     minRating: number;
     maxRating: number;
     showUnrated: boolean;
+    minContestId: number;
+    maxContestId: number;
   };
 
   constructor() {
@@ -30,12 +37,20 @@ export class AppStateType {
 
     this.loaded = false;
 
-    this.contestPage = { perPage: 20, showDate: false, maxIndex: 8 };
+    this.contestPage = {
+      perPage: 20,
+      showDate: false,
+      maxIndex: 8,
+      showRating: false,
+      showColor: false,
+    };
     this.problemPage = {
       perPage: 20,
       minRating: this.minRating,
       maxRating: this.maxRating,
       showUnrated: true,
+      minContestId: this.minContestId,
+      maxContestId: this.maxContestId,
     };
   }
 
@@ -46,23 +61,11 @@ export class AppStateType {
     }
 
     if (data.contestPage) {
-      if (data.contestPage.perPage)
-        this.contestPage.perPage = Math.abs(data.contestPage.perPage);
-      if (data.contestPage.showDate !== undefined)
-        this.contestPage.showDate = data.contestPage.showDate;
-      if (data.contestPage.maxIndex)
-        this.contestPage.maxIndex = Math.abs(data.contestPage.maxIndex);
+      this.contestPage = { ...this.contestPage, ...data.contestPage };
     }
 
     if (data.problemPage) {
-      if (data.problemPage.perPage)
-        this.problemPage.perPage = Math.abs(data.problemPage.perPage);
-      if (data.problemPage.minRating)
-        this.problemPage.minRating = data.problemPage.minRating;
-      if (data.problemPage.maxRating)
-        this.problemPage.maxRating = data.problemPage.maxRating;
-      if (data.problemPage.showUnrated !== undefined)
-        this.problemPage.showUnrated = data.showUnrated;
+      this.problemPage = { ...this.problemPage, ...data.problemPage };
     }
   };
 
@@ -101,6 +104,12 @@ export const AppReducer = (
     case AppReducerType.TOGGLE_DATE:
       curr.contestPage.showDate = !initState.contestPage.showDate;
       return curr;
+    case AppReducerType.TOGGLE_RATING:
+      curr.contestPage.showRating = !initState.contestPage.showRating;
+      return curr;
+    case AppReducerType.TOGGLE_RATING:
+      curr.contestPage.showRating = !initState.contestPage.showRating;
+      return curr;
     case AppReducerType.APP_LOADED:
       return { ...initState, loaded: true };
     case AppReducerType.CHANGE_MAX_RATING:
@@ -108,6 +117,12 @@ export const AppReducer = (
       return curr;
     case AppReducerType.CHANGE_MIN_RATING:
       curr.problemPage.minRating = action.payload.data as number;
+      return curr;
+    case AppReducerType.CHANGE_MIN_CONTESTID:
+      curr.problemPage.minContestId = action.payload.data as number;
+      return curr;
+    case AppReducerType.CHANGE_MAX_CONTESTID:
+      curr.problemPage.maxContestId = action.payload.data as number;
       return curr;
     case AppReducerType.CHANGE_PER_PAGE:
       if (action.payload.isContest)
