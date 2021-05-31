@@ -44,4 +44,27 @@ export default class Theme {
 
     this.bgText = this.bg + " " + this.text;
   }
+
+  color(rating: number): string {
+    let ans: string = (this.name === "light" ? "" : "dark-") + "rating-";
+    if (rating >= 3000) {
+      ans += "legendary";
+    } else if (rating >= 2400) {
+      ans += "red";
+    } else if (rating >= 2100) {
+      ans += "orange";
+    } else if (rating >= 1900) {
+      ans += "violet";
+    } else if (rating >= 1600) {
+      ans += "blue";
+    } else if (rating >= 1400) {
+      ans += "cyan";
+    } else if (rating >= 1200) {
+      ans += "green";
+    } else if (rating >= 800) {
+      ans += "gray";
+    } else ans = this.text;
+
+    return ans;
+  }
 }

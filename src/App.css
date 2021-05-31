@@ -100,34 +100,79 @@ footer {
 }
 
 /**/
-.light-gray {
+.rating-gray {
   color: gray !important;
 }
 
-.light-green {
-  color: cyan !important;
+.rating-green {
+  color: green !important;
 }
 
-.light-expert {
-  color: blue !important;
+.rating-cyan {
+  color: #00c0c0 !important;
 }
 
-.light-violet {
-  color: violet !important;
+.rating-blue {
+  color: #4952ce !important;
 }
 
-.light-orange {
+.rating-violet {
+  color: #a0a !important;
+}
+
+.rating-orange {
   color: orange !important;
 }
 
-.light-red {
+.rating-red {
   color: red !important;
 }
 
-.light-black-red {
+.rating-legendary {
   color: red !important;
 }
 
-.light-black-red::first-letter {
+.rating-legendary::first-letter {
+  color: black !important;
+}
+
+.bg-success {
+  background-color: #345f4a !important;
+}
+
+.bg-danger {
+  background-color: #52212b !important;
+}
+
+.dark-rating-gray {
+  color: #c7bfbf !important;
+}
+
+.dark-rating-green {
+  color: #00f900 !important;
+}
+
+.dark-rating-cyan {
+  color: cyan !important;
+}
+
+.dark-rating-blue {
+  color: #a2a2ff !important;
+}
+
+.dark-rating-violet {
+  color: #a0a !important;
+}
+
+.dark-rating-orange {
+  color: orange !important;
+}
+
+.dark-rating-red,
+.dark-rating-legendary {
+  color: #c30606 !important;
+}
+
+.dark-rating-legendary::first-letter {
   color: black !important;
 }

@@ -21,6 +21,7 @@ interface PropsType {
   pageSelected: number;
   theme: Theme;
   showRating: boolean;
+  showColor: boolean;
 }
 
 const ContestList = (props: PropsType) => {
@@ -66,7 +67,9 @@ const ContestList = (props: PropsType) => {
           <a
             className={
               "text-decoration-none wrap font-bold d-inline-block text-truncate " +
-              props.theme.text
+              (props.showColor
+                ? props.theme.color(problem.rating)
+                : props.theme.text)
             }
             target="_blank"
             rel="noreferrer"
@@ -85,7 +88,7 @@ const ContestList = (props: PropsType) => {
             {props.showRating ? (
               <>
                 <br />
-                {problem.rating}
+                ({problem.rating ? problem.rating : "Not Rated"})
               </>
             ) : (
               ""

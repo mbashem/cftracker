@@ -42,7 +42,7 @@ export class AppStateType {
       showDate: false,
       maxIndex: 8,
       showRating: false,
-      showColor: false,
+      showColor: true,
     };
     this.problemPage = {
       perPage: 20,
@@ -107,8 +107,8 @@ export const AppReducer = (
     case AppReducerType.TOGGLE_RATING:
       curr.contestPage.showRating = !initState.contestPage.showRating;
       return curr;
-    case AppReducerType.TOGGLE_RATING:
-      curr.contestPage.showRating = !initState.contestPage.showRating;
+    case AppReducerType.TOGGLE_COLOR:
+      curr.contestPage.showColor = !initState.contestPage.showColor;
       return curr;
     case AppReducerType.APP_LOADED:
       return { ...initState, loaded: true };

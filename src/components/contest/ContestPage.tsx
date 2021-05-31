@@ -120,73 +120,75 @@ const ContestPage = () => {
         theme={state.appState.theme}>
         <CustomModal title="filter">
           <div className="group">
-            <div className="d-flex justify-content-between pb-3 w-100">
-              <InputNumber
-                header="Max Index"
-                min={0}
-                max={26}
-                value={maxIndex}
-                name={"maxIndex"}
-                onChange={(num) => {
-                  setMaxIndex(num);
-
-                  if (num !== null && num !== undefined)
+            <div className="d-flex flex-column justify-content-between pb-2 w-100">
+              <div className="d-flex justify-content-between pt-1">
+                <InputChecked
+                  header="Show Date"
+                  name="showDate"
+                  checked={showDate}
+                  title={"Show Date?"}
+                  onChange={(val) => {
+                    setShowDate(!showDate);
                     changeAppState(
                       dispatch,
-                      AppReducerType.CHANGE_MAX_INDEX,
-                      num,
-                      false
+                      AppReducerType.TOGGLE_DATE,
+                      val ? 1 : 0,
+                      true
                     );
-                }}
-              />
-              <InputChecked
-                header="Show Date"
-                name="showDate"
-                checked={showDate}
-                title={"Show Date?"}
-                className="pe-2"
-                onChange={(val) => {
-                  setShowDate(!showDate);
-                  changeAppState(
-                    dispatch,
-                    AppReducerType.TOGGLE_DATE,
-                    val ? 1 : 0,
-                    true
-                  );
-                }}
-              />
+                  }}
+                />
+                <InputChecked
+                  header="Show Rating"
+                  name="showRating"
+                  checked={showRating}
+                  title={"Show Rating?"}
+                  onChange={(val) => {
+                    setShowRating(!showRating);
+                    changeAppState(
+                      dispatch,
+                      AppReducerType.TOGGLE_RATING,
+                      val ? 1 : 0,
+                      true
+                    );
+                  }}
+                />
 
-              <InputChecked
-                header="Show Rating"
-                name="showRating"
-                checked={showRating}
-                title={"Show Rating?"}
-                onChange={(val) => {
-                  setShowRating(!showRating);
-                  changeAppState(
-                    dispatch,
-                    AppReducerType.TOGGLE_RATING,
-                    val ? 1 : 0,
-                    true
-                  );
-                }}
-              />
+                <InputChecked
+                  header="Show Color"
+                  name="showColor"
+                  checked={showColor}
+                  title={"Show Color?"}
+                  onChange={(val) => {
+                    setShowColor(!showColor);
+                    changeAppState(
+                      dispatch,
+                      AppReducerType.TOGGLE_COLOR,
+                      val ? 1 : 0,
+                      true
+                    );
+                  }}
+                />
+              </div>
+              <div className="d-flex w-50 pt-2">
+                <InputNumber
+                  header="Max Index"
+                  min={0}
+                  max={26}
+                  value={maxIndex}
+                  name={"maxIndex"}
+                  onChange={(num) => {
+                    setMaxIndex(num);
 
-              {/* <InputChecked
-                header="Show Color"
-                name="showColor"
-                checked={showColor}
-                title={"Show Color?"}
-                onChange={(val) => {
-                  setShowColor(!showColor);
-                  changeAppState(
-                    dispatch,
-                    AppReducerType.TOGGLE_RATING,
-                    val ? 1 : 0,
-                    true
-                  );
-                }}
-              /> */}
+                    if (num !== null && num !== undefined)
+                      changeAppState(
+                        dispatch,
+                        AppReducerType.CHANGE_MAX_INDEX,
+                        num,
+                        false
+                      );
+                  }}
+                />
+              </div>
             </div>
           </div>
           <CheckList
@@ -246,6 +248,7 @@ const ContestPage = () => {
                     ? paginate()
                     : [contestList.contests[randomContest]]
                 }
+                showColor={showColor}
                 showDate={showDate}
                 maxIndex={maxIndex}
                 showRating={showRating}

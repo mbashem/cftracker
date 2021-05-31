@@ -15,7 +15,7 @@ const InputChecked = (props: PropsType) => {
   return (
     <InputGroup
       className={
-        "d-flex justify-content-end " + (props.className ? props.className : "")
+        "d-flex " + (props.className ? props.className : "")
       }
       title={props.title}>
       <InputGroup.Text>{props.header}</InputGroup.Text>
