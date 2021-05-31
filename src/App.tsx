@@ -10,26 +10,11 @@ import HomePage from "./components/home/HomePage";
 import { PROBLEMS, CONTESTS } from "./util/constants";
 import { RootStateType } from "./data/store";
 import { ThemesType } from "./util/Theme";
-import bootstrap from "bootstrap/dist/js/bootstrap.bundle";
 
 function App() {
   const state: RootStateType = useSelector((state) => state);
 
   useEffect(() => {
-    var tooltipTriggerList = [].slice.call(
-      document.querySelectorAll('[data-bs-toggle="tooltip"]')
-    );
-    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-      return new bootstrap.Tooltip(tooltipTriggerEl);
-    });
-
-    var popoverTriggerList = [].slice.call(
-      document.querySelectorAll('[data-bs-toggle="popover"]')
-    );
-    var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
-      return new bootstrap.Popover(popoverTriggerEl);
-    });
-
     if (state.appState.themeMod === ThemesType.DARK) {
       document.body.classList.add("bg-dark");
       document.body.classList.remove("bg-light");

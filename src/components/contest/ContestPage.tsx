@@ -120,28 +120,7 @@ const ContestPage = () => {
         theme={state.appState.theme}>
         <CustomModal title="filter">
           <div className="group">
-            <div className="d-flex flex-column justify-content-between pb-3 w-100">
-              <div className="d-flex">
-                <InputNumber
-                  header="Max Index"
-                  min={0}
-                  max={26}
-                  value={maxIndex}
-                  name={"maxIndex"}
-                  onChange={(num) => {
-                    setMaxIndex(num);
-
-                    if (num !== null && num !== undefined)
-                      changeAppState(
-                        dispatch,
-                        AppReducerType.CHANGE_MAX_INDEX,
-                        num,
-                        false
-                      );
-                  }}
-                />
-              </div>
-
+            <div className="d-flex flex-column justify-content-between pb-2 w-100">
               <div className="d-flex justify-content-between pt-1">
                 <InputChecked
                   header="Show Date"
@@ -187,6 +166,26 @@ const ContestPage = () => {
                       val ? 1 : 0,
                       true
                     );
+                  }}
+                />
+              </div>
+              <div className="d-flex w-50 pt-2">
+                <InputNumber
+                  header="Max Index"
+                  min={0}
+                  max={26}
+                  value={maxIndex}
+                  name={"maxIndex"}
+                  onChange={(num) => {
+                    setMaxIndex(num);
+
+                    if (num !== null && num !== undefined)
+                      changeAppState(
+                        dispatch,
+                        AppReducerType.CHANGE_MAX_INDEX,
+                        num,
+                        false
+                      );
                   }}
                 />
               </div>
