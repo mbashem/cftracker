@@ -1,8 +1,4 @@
-import { faInfo } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { useRef } from "react";
-import { Button, OverlayTrigger, Tooltip } from "react-bootstrap";
-import ReactTooltip from "react-tooltip";
 import {
   getProblemUrl,
   formateDate,

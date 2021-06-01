@@ -273,7 +273,7 @@ const ProblemPage = () => {
 
       <div
         className={"container p-0 pt-3 pb-3 " + state.appState.theme.bg}
-        style={{ height: "calc(100vh - 190px)" }}>
+        style={{ height: "calc(100vh - 175px)" }}>
         <div
           className={
             "overflow-auto h-100 text-center " +

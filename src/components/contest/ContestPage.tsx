@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { charInc, getRandomInteger, parseQuery } from "../../util/bashforces";
+import { charInc, parseQuery } from "../../util/bashforces";
 import ContestList from "./ContestList";
 import {
   ATTEMPTED_CONTESTS,
@@ -202,7 +202,7 @@ const ContestPage = () => {
       </Filter>
       <div
         className={"p-0 ps-4 pt-3 pb-3 " + state.appState.theme.bg}
-        style={{ height: "calc(100vh - 190px)" }}>
+        style={{ height: "calc(100vh - 175px)" }}>
         <div
           className={
             "overflow-auto h-100 m-0 " +

@@ -137,7 +137,7 @@ footer {
 }
 
 .bg-success {
-  background-color: #345f4a !important;
+  background-color: #00773d !important;
 }
 
 .bg-danger {
@@ -149,11 +149,11 @@ footer {
 }
 
 .dark-rating-green {
-  color: #00f900 !important;
+  color: #0eb50e !important;
 }
 
 .dark-rating-cyan {
-  color: cyan !important;
+  color: #00bbbb !important;
 }
 
 .dark-rating-blue {
@@ -165,12 +165,12 @@ footer {
 }
 
 .dark-rating-orange {
-  color: orange !important;
+  color: #ffc251 !important;
 }
 
 .dark-rating-red,
 .dark-rating-legendary {
-  color: #c30606 !important;
+  color: #ff6767 !important;
 }
 
 .dark-rating-legendary::first-letter {

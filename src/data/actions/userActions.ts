@@ -49,7 +49,10 @@ export const fetchUserSubmissions = async (
   limit?: number
 ) => {
   let currentId = Date.now();
-  if (handles.length === 0) clearUsersSubmissions(dispatch);
+  if (handles.length === 0){
+    clearUsersSubmissions(dispatch);
+    return;
+  }
 
   await delay(500);
 
