@@ -118,7 +118,7 @@ const ContestPage = () => {
           setRandomContest(num);
         }}
         theme={state.appState.theme}>
-        <CustomModal title="filter">
+        <CustomModal title="filter" theme={state.appState.theme}>
           <div className="group">
             <div className="d-flex flex-column justify-content-between pb-2 w-100">
               <div className="d-flex justify-content-between pt-1">

@@ -2,10 +2,12 @@ import { faFilter } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useState } from "react";
 import { Modal } from "react-bootstrap";
+import Theme from "../../util/Theme";
 
 interface PropsType {
   title: string;
   children: React.ReactNode;
+  theme: Theme;
 }
 
 const CustomModal = (props: PropsType) => {
@@ -16,7 +18,10 @@ const CustomModal = (props: PropsType) => {
 
   return (
     <>
-      <button type="button" className="btn btn-primary" onClick={handleShow}>
+      <button
+        type="button"
+        className={"btn " + props.theme.btn}
+        onClick={handleShow}>
         {<FontAwesomeIcon icon={faFilter} />}
       </button>
       <Modal className="modal" show={show} onHide={handleClose}>
