@@ -2,7 +2,6 @@ import { faFilter } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useState } from "react";
 import { Modal } from "react-bootstrap";
-import InputNumber from "./Forms/InputNumber";
 
 interface PropsType {
   title: string;

@@ -33,7 +33,7 @@ export class AppStateType {
     this.errorLog = new Array<string>();
     this.successLog = new Array<string>();
     this.theme = new Theme();
-    this.themeMod = ThemesType.DARK;
+    this.themeMod = ThemesType.LIGHT;
 
     this.loaded = false;
 
