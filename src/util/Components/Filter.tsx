@@ -14,7 +14,7 @@ interface PropsType {
   onSearch: (s: string) => void;
   setRandom: (num: number) => void;
   theme: Theme;
-	name:string;
+  name: string;
 }
 
 const Filter = (props: PropsType) => {
@@ -44,17 +44,17 @@ const Filter = (props: PropsType) => {
           <div className="btn-group" role="group" aria-label="Basic example">
             <button
               type="button"
-              className={"btn " + props.theme.btn}
+              className={"btn btn-transparent text-secondary"}
               onClick={() => {
                 if (props.length > 0)
                   props.setRandom(getRandomInteger(0, props.length - 1));
               }}
-              title={"Find Random "+props.name}>
+              title={"Find Random " + props.name}>
               <FontAwesomeIcon icon={faRandom} />
             </button>
             <button
               type="button"
-              className={"btn " + props.theme.btn}
+              className={"btn btn-transparent text-secondary"}
               title="Cancel Random"
               onClick={() => props.setRandom(-1)}>
               <FontAwesomeIcon icon={faRedo} />

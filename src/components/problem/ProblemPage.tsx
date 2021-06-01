@@ -191,7 +191,7 @@ const ProblemPage = () => {
           setRandomProblem(num);
         }}
         theme={state.appState.theme}>
-        <CustomModal title="Filter">
+        <CustomModal title="Filter" theme={state.appState.theme}>
           <CheckList
             items={SOLVEBUTTONS}
             present={solveStatus}
