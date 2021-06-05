@@ -205,7 +205,7 @@ const ContestPage = () => {
         </CustomModal>
       </Filter>
       <div
-        className={"p-0 ps-3 pe-3 pt-3 pb-3 mb-5 " + state.appState.theme.bg}
+        className={"p-0 ps-3 pe-3 pt-3 pb-3 " + state.appState.theme.bg}
         // style={{ height: "calc(100vh - 175px)" }}
       >
         <div className={"h-100 m-0 pb-2 " + state.appState.theme.bg}>
@@ -262,7 +262,7 @@ const ContestPage = () => {
           </table>
         </div>
       </div>
-      <footer className={"fixed-bottom pt-2 " + state.appState.theme.bg}>
+      <footer className={"pt-2 " + state.appState.theme.bg}>
         <Pagination
           pageSelected={(e) => setSelected(e)}
           perPage={perPage}
