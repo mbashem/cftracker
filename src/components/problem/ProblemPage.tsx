@@ -16,7 +16,6 @@ import { RootStateType } from "../../data/store";
 import { changeAppState } from "../../data/actions/fetchActions";
 import { AppReducerType } from "../../data/actions/types";
 import Problem from "../../util/DataTypes/Problem";
-import { ThemesType } from "../../util/Theme";
 import CustomModal from "../../util/Components/CustomModal";
 import CheckList from "../../util/Components/Forms/CheckList";
 import Filter from "../../util/Components/Filter";
@@ -46,7 +45,9 @@ const ProblemPage = () => {
   };
 
   const [solveStatus, setSolveStatus] = useState(new Set<string>(SOLVEBUTTONS));
-  const [search, setSearch] = useState(SEARCH in query ? query[SEARCH] : "");
+  const [search, setSearch] = useState(
+    SEARCH in query ? query[SEARCH] : state.appState.problemPage.query
+  );
   const [problemList, setProblemList] = useState({ problems: [], error: "" });
   const [tagList, setTagList] = useState({ tags: [] });
   const [randomProblem, setRandomProblem] = useState(-1);
@@ -183,6 +184,7 @@ const ProblemPage = () => {
         name="Problem"
         onSearch={(e) => {
           setSearch(e);
+          changeAppState(dispatch, AppReducerType.CHANGE_QUERY, e, false);
         }}
         length={problemList.problems.length}
         perPage={perPage}
@@ -271,14 +273,9 @@ const ProblemPage = () => {
         </CustomModal>
       </Filter>
 
-      <div
-        className={"container p-0 pt-3 pb-3 " + state.appState.theme.bg}
-        style={{ height: "calc(100vh - 175px)" }}>
+      <div className={"container p-0 pt-3 pb-3 " + state.appState.theme.bg}>
         <div
-          className={
-            "overflow-auto h-100 text-center " +
-            (state.appState.themeMod === ThemesType.LIGHT ? " card" : "")
-          }>
+          className={"h-100 text-center pb-3 mb-5 " + state.appState.theme.bg}>
           <table
             className={
               "table table-bordered m-0 " + state.appState.theme.table
@@ -335,7 +332,7 @@ const ProblemPage = () => {
           </table>
         </div>
       </div>
-      <footer>
+      <footer className={"fixed-bottom pt-2 " + state.appState.theme.bg}>
         <Pagination
           totalCount={problemList.problems.length}
           perPage={perPage}

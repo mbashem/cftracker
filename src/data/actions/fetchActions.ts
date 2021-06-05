@@ -41,7 +41,7 @@ export interface AppPayloadType {
 export const changeAppState = (
   dispatch: AppDispatch,
   type: AppReducerType,
-  data: number | ThemesType,
+  data: number | ThemesType | string,
   isContest: boolean = false
 ) => {
   let curr: AppPayloadType = {

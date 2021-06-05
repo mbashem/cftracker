@@ -18,6 +18,7 @@ interface PropsType {
   theme: Theme;
   showRating: boolean;
   showColor: boolean;
+  showName: boolean;
 }
 
 const ContestList = (props: PropsType) => {
@@ -36,8 +37,7 @@ const ContestList = (props: PropsType) => {
 
     return (
       <div className={className + " p-2"} key={id}>
-        <div className="d-flex align-items-center">
-          {/* <OverlayTrigger
+        {/* <OverlayTrigger
             key={"bottom"}
             placement={"bottom"}
             overlay={
@@ -51,46 +51,44 @@ const ContestList = (props: PropsType) => {
               </Tooltip>
             }>
           </OverlayTrigger> */}
-          {/* <div
+        {/* <div
             className="pe-2"
             title={
               "Rating:" + (problem.rating > 0 ? problem.rating : "Not Rated")
             }>
             <FontAwesomeIcon icon={faInfo} role="button" />
           </div> */}
-          {/* <p data-tip="hello world">Tooltip</p> */}
-          {/* <ReactTooltip /> */}
-          <a
-            className={
-              "text-decoration-none wrap font-bold d-inline-block text-truncate " +
-              (props.showColor
-                ? props.theme.color(problem.rating)
-                : props.theme.text)
-            }
-            target="_blank"
-            rel="noreferrer"
-            tabIndex={0}
-            title={
-              problem.name +
-              ",Rating:" +
-              (problem.rating > 0 ? problem.rating : "Not Rated")
-            }
-            data-bs-html="true"
-            data-bs-toggle="tooltip"
-            data-bs-placement="top"
-            href={getProblemUrl(problem.contestId, problem.index)}>
-            {problem.index + ". "}
-            {name}
-            {props.showRating ? (
-              <>
-                <br />
-                ({problem.rating ? problem.rating : "Not Rated"})
-              </>
-            ) : (
-              ""
-            )}
-          </a>
-        </div>
+        {/* <p data-tip="hello world">Tooltip</p> */}
+        {/* <ReactTooltip /> */}
+        <a
+          className={
+            "text-decoration-none wrap font-bold d-inline-block text-truncate " +
+            (props.showColor
+              ? props.theme.color(problem.rating)
+              : props.theme.text)
+          }
+          target="_blank"
+          rel="noreferrer"
+          tabIndex={0}
+          title={
+            problem.name +
+            ",Rating:" +
+            (problem.rating > 0 ? problem.rating : "Not Rated")
+          }
+          data-bs-html="true"
+          data-bs-toggle="tooltip"
+          data-bs-placement="top"
+          href={getProblemUrl(problem.contestId, problem.index)}>
+          {problem.index + ". "}
+          {props.showName ? name : ""}
+          {props.showRating ? (
+            <>
+              <br />({problem.rating ? problem.rating : "Not Rated"})
+            </>
+          ) : (
+            ""
+          )}
+        </a>
       </div>
     );
   };
@@ -103,7 +101,9 @@ const ContestList = (props: PropsType) => {
 
     if (problems === undefined || problems.length === 0) {
       return (
-        <td key={contest.id + index} className={EMPTY + " w-problem"}></td>
+        <td
+          key={contest.id + index}
+          className={EMPTY + (props.showName ? "w-problem " : "")}></td>
       );
     }
 
@@ -111,7 +111,8 @@ const ContestList = (props: PropsType) => {
       return (
         <td
           className={
-            "p-0 w-problem " +
+            "p-0  " +
+            (props.showName ? "w-problem " : "") +
             (problems[0].solved
               ? props.theme.bgSuccess
               : problems[0].attempted
@@ -126,7 +127,9 @@ const ContestList = (props: PropsType) => {
 
     if (problems.length <= 2) {
       return (
-        <td className="p-0 w-problem" key={contestId + index.charAt(0)}>
+        <td
+          className={"p-0 " + (props.showName ? "w-problem " : "")}
+          key={contestId + index.charAt(0)}>
           <div className="d-flex">
             {problems.map((element) =>
               renderProblem(element, problems.length !== 1)
@@ -137,7 +140,9 @@ const ContestList = (props: PropsType) => {
     }
 
     return (
-      <td className="inside p-0 w-problem" key={contestId + index}>
+      <td
+        className={"inside p-0 " + (props.showName ? "w-problem " : "")}
+        key={contestId + index}>
         More than 2
       </td>
     );
@@ -161,7 +166,7 @@ const ContestList = (props: PropsType) => {
         </td>
         <td
           className={
-            "w-contest p-0 d-flex flex-column third-column " +
+            "w-contest p-0 " +
             (contest.solveCount === contest.count && contest.count !== 0
               ? props.theme.bgSuccess
               : " ")
@@ -169,7 +174,7 @@ const ContestList = (props: PropsType) => {
           <div className="d-inline-block name">
             <a
               className={
-                "text-decoration-none wrap font-bold w-contest p-2 " +
+                "text-decoration-none wrap font-bold w-contest pt-2 pb-2 ps-2 pe-1 " +
                 props.theme.text
               }
               target="_blank"

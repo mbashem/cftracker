@@ -1,6 +1,6 @@
 import Member from "./Member";
 
-enum ParticipantType {
+export enum ParticipantType {
   CONTESTANT = "CONTESTANT",
   PRACTICE = "PRACTICE",
   VIRTUAL = "VIRTUAL",
