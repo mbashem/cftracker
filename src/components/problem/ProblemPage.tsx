@@ -274,8 +274,7 @@ const ProblemPage = () => {
       </Filter>
 
       <div className={"container p-0 pt-3 pb-3 " + state.appState.theme.bg}>
-        <div
-          className={"h-100 text-center pb-3 mb-5 " + state.appState.theme.bg}>
+        <div className={"h-100 text-center pb-3 " + state.appState.theme.bg}>
           <table
             className={
               "table table-bordered m-0 " + state.appState.theme.table
@@ -332,7 +331,7 @@ const ProblemPage = () => {
           </table>
         </div>
       </div>
-      <footer className={"fixed-bottom pt-2 " + state.appState.theme.bg}>
+      <footer className={"pt-2 " + state.appState.theme.bg}>
         <Pagination
           totalCount={problemList.problems.length}
           perPage={perPage}
