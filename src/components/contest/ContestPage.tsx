@@ -27,23 +27,26 @@ const ContestPage = () => {
   const history = useHistory();
   const dispatch = useDispatch();
 
+  const query = parseQuery(history.location.search.trim());
+
   const [contestList, setContestList] = useState({ contests: [], error: "" });
   const [randomContest, setRandomContest] = useState(-1);
   const [perPage, setPerPage] = useState(state.appState.contestPage.perPage);
   const [showDate, setShowDate] = useState(state.appState.contestPage.showDate);
   const [maxIndex, setMaxIndex] = useState(state.appState.contestPage.maxIndex);
+  const [search, setSearch] = useState(
+    SEARCH in query ? query[SEARCH] : state.appState.contestPage.query
+  );
+  const [showName, setShowName] = useState(true);
 
   const SOLVED = "SOLVED",
     ATTEMPTED = "ATTEMPED",
     UNSOLVED = "UNSOLVED";
 
-  const query = parseQuery(history.location.search.trim());
-
   const SOLVEBUTTONS = [SOLVED, ATTEMPTED, UNSOLVED];
 
   const [selected, setSelected] = useState(0);
   const [solveStatus, setSolveStatus] = useState(new Set<string>(SOLVEBUTTONS));
-  const [search, setSearch] = useState(SEARCH in query ? query[SEARCH] : "");
   const [showRating, setShowRating] = useState(
     state.appState.contestPage.showRating
   );
@@ -109,6 +112,7 @@ const ContestPage = () => {
         searchPlaceHolder="Search by Contest Name or Id"
         onSearch={(e) => {
           setSearch(e);
+          changeAppState(dispatch, AppReducerType.CHANGE_QUERY, e, true);
         }}
         length={contestList.contests.length}
         perPage={perPage}
@@ -201,13 +205,10 @@ const ContestPage = () => {
         </CustomModal>
       </Filter>
       <div
-        className={"p-0 ps-4 pt-3 pb-3 " + state.appState.theme.bg}
-        style={{ height: "calc(100vh - 175px)" }}>
-        <div
-          className={
-            "overflow-auto h-100 m-0 " +
-            (state.appState.themeMod === ThemesType.LIGHT ? " card" : "")
-          }>
+        className={"p-0 ps-3 pe-3 pt-3 pb-3 mb-5 " + state.appState.theme.bg}
+        // style={{ height: "calc(100vh - 175px)" }}
+      >
+        <div className={"h-100 m-0 pb-2 " + state.appState.theme.bg}>
           <table
             className={
               "table table-bordered m-0 " + state.appState.theme.table
@@ -234,7 +235,7 @@ const ContestPage = () => {
                     <th
                       scope="col"
                       key={"problem-index-" + charInc("A", i)}
-                      className="w-problem">
+                      className={showName ? "w-problem" : ""}>
                       {charInc("A", i)}
                     </th>
                   );
@@ -248,6 +249,7 @@ const ContestPage = () => {
                     ? paginate()
                     : [contestList.contests[randomContest]]
                 }
+                showName={showName}
                 showColor={showColor}
                 showDate={showDate}
                 maxIndex={maxIndex}
@@ -260,7 +262,7 @@ const ContestPage = () => {
           </table>
         </div>
       </div>
-      <footer>
+      <footer className={"fixed-bottom pt-2 " + state.appState.theme.bg}>
         <Pagination
           pageSelected={(e) => setSelected(e)}
           perPage={perPage}

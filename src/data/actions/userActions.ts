@@ -54,7 +54,7 @@ export const fetchUserSubmissions = async (
     return;
   }
 
-  await delay(500);
+  // await delay(500);
 
   for (let handle of handles) {
     dispatch(load(LOADING_USER_SUBMISSIONS));

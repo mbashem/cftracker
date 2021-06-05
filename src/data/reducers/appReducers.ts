@@ -1,3 +1,4 @@
+import { ParticipantType } from "../../util/DataTypes/Party";
 import Theme, { ThemesType } from "../../util/Theme";
 import { AppPayloadType } from "../actions/fetchActions";
 import { AppReducerType } from "../actions/types";
@@ -19,6 +20,7 @@ export class AppStateType {
     maxIndex: number;
     showRating: boolean;
     showColor: boolean;
+    query: string;
   };
   problemPage: {
     perPage: number;
@@ -27,7 +29,11 @@ export class AppStateType {
     showUnrated: boolean;
     minContestId: number;
     maxContestId: number;
+    query: string;
   };
+  // submissions: {
+  //   participantType: string[];
+  // };
 
   constructor() {
     this.errorLog = new Array<string>();
@@ -37,12 +43,17 @@ export class AppStateType {
 
     this.loaded = false;
 
+    // this.submissions = {
+    //   participantType: new Array<string>(Object.keys(ParticipantType)),
+    // };
+
     this.contestPage = {
       perPage: 20,
       showDate: false,
       maxIndex: 8,
       showRating: false,
       showColor: true,
+      query: "",
     };
     this.problemPage = {
       perPage: 20,
@@ -51,6 +62,7 @@ export class AppStateType {
       showUnrated: true,
       minContestId: this.minContestId,
       maxContestId: this.maxContestId,
+      query: "",
     };
   }
 
@@ -60,13 +72,19 @@ export class AppStateType {
       this.theme = new Theme(this.themeMod);
     }
 
-    if (data.contestPage) {
+    if ("contestPage" in data) {
       this.contestPage = { ...this.contestPage, ...data.contestPage };
     }
 
-    if (data.problemPage) {
+    if ("problemPage" in data) {
       this.problemPage = { ...this.problemPage, ...data.problemPage };
     }
+
+    // if ("submissions" in data && "participantType" in data.submissions) {
+    //   this.submissions.participantType = new Array<string>(
+    //     data.submissions.participantType
+    //   );
+    // }
   };
 
   clone = (): AppStateType => {
@@ -128,6 +146,11 @@ export const AppReducer = (
       if (action.payload.isContest)
         curr.contestPage.perPage = action.payload.data as number;
       else curr.problemPage.perPage = action.payload.data as number;
+      return curr;
+    case AppReducerType.CHANGE_QUERY:
+      if (action.payload.isContest)
+        curr.contestPage.query = action.payload.data as string;
+      else curr.problemPage.query = action.payload.data as string;
       return curr;
     case AppReducerType.CHANGE_MAX_INDEX:
       curr.contestPage.maxIndex = action.payload.data as number;
