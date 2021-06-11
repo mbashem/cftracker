@@ -46,22 +46,22 @@ export const clearUsersSubmissions = (dispatch) => {
 export const fetchUserSubmissions = async (
   dispatch: AppDispatch,
   handles: string[],
-  limit?: number
+  wait = false
 ) => {
   let currentId = Date.now();
-  if (handles.length === 0){
+  if (handles.length === 0) {
     clearUsersSubmissions(dispatch);
     return;
   }
 
-  // await delay(500);
+  if (wait) await delay(500);
 
   for (let handle of handles) {
     dispatch(load(LOADING_USER_SUBMISSIONS));
 
     await delay(500);
 
-    fetch(getUserSubmissionsURL(handle, limit))
+    fetch(getUserSubmissionsURL(handle))
       .then((res) => res.json())
       .then(
         (result) => {

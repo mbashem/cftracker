@@ -1,3 +1,5 @@
+import { copyFile } from "node:fs";
+import Comparator, { Compared } from "../Comparator";
 import Party from "./Party";
 import Problem from "./Problem";
 
@@ -20,21 +22,70 @@ export enum Verdict {
   TESTING = "TESTING",
   REJECTED = "REJECTED",
   // Custom Verdict
-  NOT_FOUND = "NOT_FOUND",
+  SOLVED = "SOLVED",
+  ATTEMPTED = "ATTEMPTED",
+  UNSOLVED = "UNSOLVED"
 }
 
-export default class Submission {
-  id: number;
+export class SubmissionLite implements Comparator<SubmissionLite> {
   contestId?: number;
+  index?: string;
+  verdict: Verdict;
+
+  constructor(contestId?: number, index?: string, verdict?: Verdict) {
+    this.contestId = contestId;
+    this.index = index;
+    this.verdict = verdict;
+  }
+
+  compareTo = (a: SubmissionLite): number => {
+    if (this.contestId === a.contestId) {
+      if (this.index == a.index) {
+        if (this.verdict === Verdict.OK && a.verdict === Verdict.OK)
+          return Compared.EQUAL;
+        else if (this.verdict === Verdict.OK) return Compared.LESS;
+        else return Compared.GREATER;
+      } else if (this.index > a.index) return Compared.GREATER;
+      else return Compared.LESS;
+    }
+
+    if (this.contestId < a.contestId) return Compared.LESS;
+    return Compared.GREATER;
+  };
+}
+
+export default class Submission extends SubmissionLite {
+  id: number;
   creationTimeSeconds: number;
   relativeTimeSeconds: number;
   problem: Problem;
   author: Party;
   programmingLanguage: string;
-  verdict: Verdict;
   testset?: string;
   passedTestCount: number;
   timeConsumedMillis: number;
   memoryConsumedBytes: number;
   points?: number;
+  fromShared?: boolean;
+
+  constructor(sub?: Submission) {
+    super();
+    if (sub) {
+      this.id = sub.id;
+      this.contestId = sub.contestId;
+      this.creationTimeSeconds = sub.creationTimeSeconds;
+      this.relativeTimeSeconds = sub.relativeTimeSeconds;
+      this.problem = sub.problem;
+      this.author = sub.author;
+      this.programmingLanguage = sub.programmingLanguage;
+      this.verdict = sub.verdict;
+      this.testset = sub.testset;
+      this.passedTestCount = sub.passedTestCount;
+      this.timeConsumedMillis = sub.timeConsumedMillis;
+      this.memoryConsumedBytes = sub.memoryConsumedBytes;
+      this.points = sub.points;
+      this.fromShared = sub.fromShared ? sub.fromShared : false;
+      this.index = sub.problem.index;
+    }
+  }
 }

@@ -10,7 +10,7 @@ import {
   REMOVE_USER,
 } from "../actions/types";
 
-import { Verdict } from "../../util/DataTypes/Submission";
+import Submission, { Verdict } from "../../util/DataTypes/Submission";
 
 import {
   SOLVED_PROBLEMS,
@@ -18,6 +18,7 @@ import {
   SOLVED_CONTESTS,
   ATTEMPTED_CONTESTS,
 } from "../../util/constants";
+import { sortByCompare, sortSubmissions } from "../../util/sortMethods";
 
 const userInitialState = {
   handles: [],
@@ -84,12 +85,14 @@ export class SubmissionStateType {
   error: string;
   loading: boolean;
   id: number;
+  submissions: Submission[];
 
   constructor() {
     this[SOLVED_PROBLEMS] = new Set<string>();
     this[ATTEMPTED_PROBLEMS] = new Set<string>();
     this[SOLVED_CONTESTS] = new Set<number>();
     this[ATTEMPTED_CONTESTS] = new Set<number>();
+    this.submissions = new Array<Submission>();
     this.error = "";
     this.loading = false;
     this.id = 0;
@@ -97,7 +100,7 @@ export class SubmissionStateType {
 
   clone = (): SubmissionStateType => {
     const cloned: SubmissionStateType = new SubmissionStateType();
-    
+
     cloned[SOLVED_PROBLEMS] = this[SOLVED_PROBLEMS];
     cloned[ATTEMPTED_PROBLEMS] = this[ATTEMPTED_PROBLEMS];
     cloned[SOLVED_CONTESTS] = this[SOLVED_CONTESTS];
@@ -105,21 +108,22 @@ export class SubmissionStateType {
     cloned.error = this.error;
     cloned.loading = this.loading;
     cloned.id = this.id;
+    cloned.submissions = this.submissions;
 
     return cloned;
   };
 
-  problemStatus = (problemId: string) => {
-    if (this[SOLVED_PROBLEMS].has(problemId)) return Verdict.OK;
-    if (this[ATTEMPTED_PROBLEMS].has(problemId)) return Verdict.WRONG_ANSWER;
-    return Verdict.NOT_FOUND;
-  };
+  // problemStatus = (problemId: string) => {
+  //   if (this[SOLVED_PROBLEMS].has(problemId)) return Verdict.OK;
+  //   if (this[ATTEMPTED_PROBLEMS].has(problemId)) return Verdict.WRONG_ANSWER;
+  //   return Verdict.NOT_FOUND;
+  // };
 
-  contestStatus = (contestId: number) => {
-    if (this[SOLVED_CONTESTS].has(contestId)) return Verdict.OK;
-    if (this[ATTEMPTED_CONTESTS].has(contestId)) return Verdict.WRONG_ANSWER;
-    return Verdict.NOT_FOUND;
-  };
+  // contestStatus = (contestId: number) => {
+  //   if (this[SOLVED_CONTESTS].has(contestId)) return Verdict.OK;
+  //   if (this[ATTEMPTED_CONTESTS].has(contestId)) return Verdict.WRONG_ANSWER;
+  //   return Verdict.NOT_FOUND;
+  // };
 }
 
 const submissionsInitialState: SubmissionStateType = new SubmissionStateType();
@@ -154,7 +158,10 @@ export const userSubmissionsReducer = (
           );
           currentState[ATTEMPTED_CONTESTS].add(contestId);
         }
+        currentState.submissions.push(new Submission(element));
       });
+
+      currentState.submissions.sort(sortByCompare);
 
       for (let id of Array.from(currentState[SOLVED_PROBLEMS].values())) {
         currentState[ATTEMPTED_PROBLEMS].delete(id);

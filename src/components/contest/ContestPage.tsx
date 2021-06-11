@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { charInc, parseQuery } from "../../util/bashforces";
+import { charInc, parseQuery, stringToArray } from "../../util/bashforces";
 import ContestList from "./ContestList";
 import {
   ATTEMPTED_CONTESTS,
@@ -14,12 +14,14 @@ import { RootStateType } from "../../data/store";
 import { changeAppState } from "../../data/actions/fetchActions";
 import { AppReducerType } from "../../data/actions/types";
 import Contest from "../../util/DataTypes/Contest";
-import { ThemesType } from "../../util/Theme";
-import InputNumber from "../../util/Components/Forms/InputNumber";
 import InputChecked from "../../util/Components/Forms/InputChecked";
 import CustomModal from "../../util/Components/CustomModal";
 import CheckList from "../../util/Components/Forms/CheckList";
 import Filter from "../../util/Components/Filter";
+import InputRange from "../../util/Components/Forms/InputRange";
+import { getObj, getSet, saveObj, saveSet } from "../../util/save";
+import Submission, { Verdict } from "../../util/DataTypes/Submission";
+import { ParticipantType } from "../../util/DataTypes/Party";
 
 const ContestPage = () => {
   const state: RootStateType = useSelector((state) => state);
@@ -31,34 +33,57 @@ const ContestPage = () => {
 
   const [contestList, setContestList] = useState({ contests: [], error: "" });
   const [randomContest, setRandomContest] = useState(-1);
-  const [perPage, setPerPage] = useState(state.appState.contestPage.perPage);
-  const [showDate, setShowDate] = useState(state.appState.contestPage.showDate);
-  const [maxIndex, setMaxIndex] = useState(state.appState.contestPage.maxIndex);
-  const [search, setSearch] = useState(
-    SEARCH in query ? query[SEARCH] : state.appState.contestPage.query
+
+  interface filt {
+    perPage: number;
+    showDate: boolean;
+    maxIndex: number;
+    minIndex: number;
+    showRating: boolean;
+    showColor: boolean;
+    search: string;
+  }
+
+  const defaultFilt: filt = {
+    perPage: 20,
+    showDate: false,
+    maxIndex: 8,
+    minIndex: 1,
+    showRating: false,
+    showColor: true,
+    search: SEARCH in query ? query[SEARCH] : "",
+  };
+
+  enum ContestSave {
+    CONTEST_SOLVE_STATUS = "CONTEST_SOLVE_STATUS",
+    PARTICIPANT_TYPE = "PARTICIPANT_TYPE",
+    CONTEST_FILTER = "CONTEST_FILTER",
+  }
+
+  const [filter, setFilter] = useState<filt>(
+    getObj(ContestSave.CONTEST_FILTER, defaultFilt)
   );
-  const [showName, setShowName] = useState(true);
 
-  const SOLVED = "SOLVED",
-    ATTEMPTED = "ATTEMPED",
-    UNSOLVED = "UNSOLVED";
+  const SOLVEBUTTONS = [Verdict.SOLVED, Verdict.ATTEMPTED, Verdict.UNSOLVED];
 
-  const SOLVEBUTTONS = [SOLVED, ATTEMPTED, UNSOLVED];
+  const PARTICIPANTSTYPE = Object.keys(ParticipantType);
 
   const [selected, setSelected] = useState(0);
-  const [solveStatus, setSolveStatus] = useState(new Set<string>(SOLVEBUTTONS));
-  const [showRating, setShowRating] = useState(
-    state.appState.contestPage.showRating
+  const [solveStatus, setSolveStatus] = useState(
+    getSet(ContestSave.CONTEST_SOLVE_STATUS, SOLVEBUTTONS)
   );
-  const [showColor, setShowColor] = useState(
-    state.appState.contestPage.showColor
+  const [participant, setParticipant] = useState(
+    getSet(ContestSave.PARTICIPANT_TYPE, PARTICIPANTSTYPE)
   );
 
+  const [submissions, setSubmissions] = useState<
+    Map<number, Map<Verdict, Set<string>>>
+  >(new Map());
+
   const contestStatus = (contest: Contest) => {
-    if (state.userSubmissions[SOLVED_CONTESTS].has(contest.id)) return SOLVED;
-    if (state.userSubmissions[ATTEMPTED_CONTESTS].has(contest.id))
-      return ATTEMPTED;
-    return UNSOLVED;
+    if (!submissions.has(contest.id)) return Verdict.UNSOLVED;
+    if (submissions.get(contest.id).has(Verdict.SOLVED)) return Verdict.SOLVED;
+    return Verdict.ATTEMPTED;
   };
 
   const filterContest = (contest: Contest) => {
@@ -66,7 +91,7 @@ const ContestPage = () => {
 
     let searchIncluded = true;
 
-    let text = search.toLowerCase().trim();
+    let text = filter.search.toLowerCase().trim();
 
     if (text.length)
       searchIncluded =
@@ -77,12 +102,11 @@ const ContestPage = () => {
   };
 
   useEffect(() => {
-    setPerPage(state.appState.contestPage.perPage);
-    setShowDate(state.appState.contestPage.showDate);
-    if (search.trim().length)
+    saveObj(ContestSave.CONTEST_FILTER, filter);
+    if (filter.search.trim().length)
       history.push({
         pathname: CONTESTS,
-        search: "?" + SEARCH + "=" + search.trim(),
+        search: "?" + SEARCH + "=" + filter.search.trim(),
       });
     else
       history.push({
@@ -94,188 +118,197 @@ const ContestPage = () => {
 
     setContestList({ ...contestList, contests: newContestList });
     setRandomContest(-1);
-  }, [state, search, solveStatus]);
+  }, [state, filter, solveStatus]);
+
+  useEffect(() => {
+    let currRec: Map<number, Map<Verdict, Set<string>>> = new Map();
+    for (let sub of state.userSubmissions.submissions) {
+      if (!participant.has(sub.author.participantType)) continue;
+      let ver = sub.verdict === Verdict.OK ? Verdict.SOLVED : Verdict.ATTEMPTED;
+      if (!currRec.has(sub.contestId))
+        currRec.set(sub.contestId, new Map<Verdict, Set<string>>());
+      if (!currRec.get(sub.contestId).has(ver))
+        currRec.get(sub.contestId).set(ver, new Set());
+      currRec.get(sub.contestId).get(ver).add(sub.index);
+    }
+    setSubmissions(currRec);
+  }, [state.userSubmissions.submissions, participant]);
 
   const paginate = () => {
-    let lo = selected * perPage;
-    let high = Math.min(contestList.contests.length, lo + perPage);
+    let lo = selected * filter.perPage;
+    let high = Math.min(contestList.contests.length, lo + filter.perPage);
 
     if (lo > high) return [];
     return contestList.contests.slice(lo, high);
   };
 
   return (
-    <div className="div">
-      <Filter
-        search={search}
-        searchName="searchContest"
-        searchPlaceHolder="Search by Contest Name or Id"
-        onSearch={(e) => {
-          setSearch(e);
-          changeAppState(dispatch, AppReducerType.CHANGE_QUERY, e, true);
-        }}
-        length={contestList.contests.length}
-        perPage={perPage}
-        selected={selected}
-        name="Contest"
-        setRandom={(num) => {
-          setRandomContest(num);
-        }}
-        theme={state.appState.theme}>
-        <CustomModal title="filter" theme={state.appState.theme}>
-          <div className="group">
-            <div className="d-flex flex-column justify-content-between pb-2 w-100">
-              <div className="d-flex justify-content-between pt-1">
-                <InputChecked
-                  header="Show Date"
-                  name="showDate"
-                  checked={showDate}
-                  title={"Show Date?"}
-                  onChange={(val) => {
-                    setShowDate(!showDate);
-                    changeAppState(
-                      dispatch,
-                      AppReducerType.TOGGLE_DATE,
-                      val ? 1 : 0,
-                      true
-                    );
-                  }}
-                />
-                <InputChecked
-                  header="Show Rating"
-                  name="showRating"
-                  checked={showRating}
-                  title={"Show Rating?"}
-                  onChange={(val) => {
-                    setShowRating(!showRating);
-                    changeAppState(
-                      dispatch,
-                      AppReducerType.TOGGLE_RATING,
-                      val ? 1 : 0,
-                      true
-                    );
-                  }}
-                />
+    <>
+      <div>
+        <Filter
+          search={filter.search}
+          searchName="searchContest"
+          searchPlaceHolder="Search by Contest Name or Id"
+          onSearch={(e) => {
+            setFilter({ ...filter, search: e });
+          }}
+          length={contestList.contests.length}
+          perPage={filter.perPage}
+          selected={selected}
+          name="Contest"
+          setRandom={(num) => {
+            setRandomContest(num);
+          }}
+          theme={state.appState.theme}>
+          <CustomModal title="filter" theme={state.appState.theme}>
+            <div className="group">
+              <div className="d-flex flex-column justify-content-between pb-2 w-100">
+                <div className="d-flex justify-content-between pt-1">
+                  <InputChecked
+                    header="Show Date"
+                    name="showDate"
+                    checked={filter.showDate}
+                    title={"Show Date?"}
+                    onChange={(val) => {
+                      setFilter({ ...filter, showDate: !filter.showDate });
+                    }}
+                  />
+                  <InputChecked
+                    header="Show Rating"
+                    name="showRating"
+                    checked={filter.showRating}
+                    title={"Show Rating?"}
+                    onChange={(val) => {
+                      setFilter({ ...filter, showRating: !filter.showRating });
+                    }}
+                  />
 
-                <InputChecked
-                  header="Show Color"
-                  name="showColor"
-                  checked={showColor}
-                  title={"Show Color?"}
-                  onChange={(val) => {
-                    setShowColor(!showColor);
-                    changeAppState(
-                      dispatch,
-                      AppReducerType.TOGGLE_COLOR,
-                      val ? 1 : 0,
-                      true
-                    );
-                  }}
-                />
-              </div>
-              <div className="d-flex w-50 pt-2">
-                <InputNumber
-                  header="Max Index"
-                  min={0}
-                  max={26}
-                  value={maxIndex}
-                  name={"maxIndex"}
-                  onChange={(num) => {
-                    setMaxIndex(num);
-
-                    if (num !== null && num !== undefined)
-                      changeAppState(
-                        dispatch,
-                        AppReducerType.CHANGE_MAX_INDEX,
-                        num,
-                        false
-                      );
-                  }}
-                />
+                  <InputChecked
+                    header="Show Color"
+                    name="showColor"
+                    checked={filter.showColor}
+                    title={"Show Color?"}
+                    onChange={(val) => {
+                      setFilter({ ...filter, showColor: !filter.showColor });
+                    }}
+                  />
+                </div>
+                <div className="pt-2">
+                  <InputRange
+                    name="Index"
+                    min={1}
+                    max={26}
+                    step={1}
+                    minValue={filter.minIndex}
+                    maxValue={filter.maxIndex}
+                    onMaxChange={(num) => {
+                      setFilter({ ...filter, maxIndex: num });
+                    }}
+                    onMinChange={(num) => {
+                      setFilter({ ...filter, minIndex: num });
+                    }}
+                  />
+                </div>
               </div>
             </div>
+            <CheckList
+              items={SOLVEBUTTONS}
+              present={solveStatus}
+              name={"Solve Status"}
+              onClick={(newSet) => {
+                setSolveStatus(newSet);
+                saveSet(ContestSave.CONTEST_SOLVE_STATUS, newSet);
+              }}
+            />
+            <CheckList
+              items={PARTICIPANTSTYPE}
+              present={participant}
+              name={"Participant Type"}
+              onClick={(newSet) => {
+                setParticipant(newSet);
+                saveSet(ContestSave.PARTICIPANT_TYPE, newSet);
+              }}
+            />
+          </CustomModal>
+        </Filter>
+        <div
+          className={"ps-3 pe-3 pt-3 pb-3 " + state.appState.theme.bg}
+          // style={{ height: "calc(100vh - 175px)" }}
+        >
+          <div className={"h-100 m-0 pb-2 " + state.appState.theme.bg}>
+            <table
+              className={
+                "table table-bordered m-0 " + state.appState.theme.table
+              }>
+              <thead className={state.appState.theme.thead}>
+                <tr>
+                  <th
+                    scope="col"
+                    className="w-sl first-column"
+                    style={{ width: "20px" }}>
+                    #
+                  </th>
+                  <th
+                    scope="col"
+                    className="w-id second-column"
+                    style={{ width: "50px" }}>
+                    ID
+                  </th>
+                  <th scope="col" className="w-contest third-column">
+                    Contest Name
+                  </th>
+                  {[...Array(filter.maxIndex - filter.minIndex + 1)].map(
+                    (x, i) => {
+                      return (
+                        <th
+                          scope="col"
+                          key={
+                            "problem-index-" +
+                            charInc("A", i + filter.minIndex - 1)
+                          }
+                          className={"w-problem"}>
+                          {charInc("A", i + filter.minIndex - 1)}
+                        </th>
+                      );
+                    }
+                  )}
+                </tr>
+              </thead>
+              <tbody className={state.appState.theme.bg}>
+                <ContestList
+                  contestlist={
+                    randomContest === -1
+                      ? paginate()
+                      : [contestList.contests[randomContest]]
+                  }
+                  submissions={submissions}
+                  showColor={filter.showColor}
+                  showDate={filter.showDate}
+                  maxIndex={filter.maxIndex}
+                  minIndex={filter.minIndex}
+                  showRating={filter.showRating}
+                  perPage={filter.perPage}
+                  pageSelected={selected}
+                  theme={state.appState.theme}
+                />
+              </tbody>
+            </table>
           </div>
-          <CheckList
-            items={SOLVEBUTTONS}
-            present={solveStatus}
-            onClick={(newSet) => {
-              setSolveStatus(newSet);
-            }}
-          />
-        </CustomModal>
-      </Filter>
-      <div
-        className={"p-0 ps-3 pe-3 pt-3 pb-3 " + state.appState.theme.bg}
-        // style={{ height: "calc(100vh - 175px)" }}
-      >
-        <div className={"h-100 m-0 pb-2 " + state.appState.theme.bg}>
-          <table
-            className={
-              "table table-bordered m-0 " + state.appState.theme.table
-            }>
-            <thead className={state.appState.theme.thead}>
-              <tr>
-                <th
-                  scope="col"
-                  className="w-sl first-column"
-                  style={{ width: "20px" }}>
-                  #
-                </th>
-                <th
-                  scope="col"
-                  className="w-id second-column"
-                  style={{ width: "50px" }}>
-                  ID
-                </th>
-                <th scope="col" className="w-contest third-column">
-                  Contest Name
-                </th>
-                {[...Array(maxIndex)].map((x, i) => {
-                  return (
-                    <th
-                      scope="col"
-                      key={"problem-index-" + charInc("A", i)}
-                      className={showName ? "w-problem" : ""}>
-                      {charInc("A", i)}
-                    </th>
-                  );
-                })}
-              </tr>
-            </thead>
-            <tbody className={state.appState.theme.bg}>
-              <ContestList
-                contestlist={
-                  randomContest === -1
-                    ? paginate()
-                    : [contestList.contests[randomContest]]
-                }
-                showName={showName}
-                showColor={showColor}
-                showDate={showDate}
-                maxIndex={maxIndex}
-                showRating={showRating}
-                perPage={perPage}
-                pageSelected={selected}
-                theme={state.appState.theme}
-              />
-            </tbody>
-          </table>
         </div>
       </div>
       <footer className={"pt-2 " + state.appState.theme.bg}>
         <Pagination
           pageSelected={(e) => setSelected(e)}
-          perPage={perPage}
+          perPage={filter.perPage}
           selected={selected}
           theme={state.appState.theme}
           totalCount={contestList.contests.length}
           pageSize={(e) => {
-            setPerPage(e);
-            changeAppState(dispatch, AppReducerType.CHANGE_PER_PAGE, e, true);
+            setFilter({ ...filter, perPage: e });
           }}
         />
       </footer>
-    </div>
+    </>
   );
 };
 

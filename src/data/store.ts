@@ -25,6 +25,8 @@ import Problem, { ProblemLite, ProblemShared } from "../util/DataTypes/Problem";
 import { sortByCompare } from "../util/sortMethods";
 import lowerBound from "../util/lowerBound";
 import Contest from "../util/DataTypes/Contest";
+import Submission from "../util/DataTypes/Submission";
+import { Compared } from "../util/Comparator";
 
 const middlewre = [thunk, logger];
 
@@ -96,11 +98,11 @@ const addSharedToProblems = (
 
   let newProblems: Problem[] = problemList.concat(addProblems);
 
-  let newConestList : Contest[] = new Array<Contest>();
+  let newConestList: Contest[] = new Array<Contest>();
 
   contestList.map((contest, index) => {
     newConestList.push(contest);
-    rec[contest.id] =  newConestList.length-1;
+    rec[contest.id] = newConestList.length - 1;
   });
 
   for (let problem of newProblems) {
@@ -127,6 +129,36 @@ const addSharedToSubmissions = (
   sharedProblems: ProblemShared[]
 ): SubmissionStateType => {
   let currUserSubmissions = userSubmissions.clone();
+
+  let newSubmissions: Submission[] = new Array<Submission>();
+
+  for (let submission of userSubmissions.submissions) {
+    let currentShared: ProblemShared = new ProblemShared(
+      submission.contestId,
+      submission.problem.index
+    );
+
+    let lb: number = lowerBound(sharedProblems, currentShared);
+
+    if (
+      lb >= sharedProblems.length ||
+      currentShared.compareTo(sharedProblems[lb]) !== Compared.EQUAL
+    )
+      continue;
+
+    if (sharedProblems[lb].shared)
+      for (let problem of sharedProblems[lb].shared) {
+        let newS = new Submission(submission);
+        newS.contestId = problem.contestId;
+        newS.problem.contestId = problem.contestId;
+        newS.problem.index = problem.index;
+        newS.author.contestId = problem.contestId;
+        newS.fromShared = true;
+        newS.index = problem.index;
+
+        newSubmissions.push(newS);
+      }
+  }
 
   for (let problem of sharedProblems) {
     let currentProblem: ProblemShared = new ProblemShared(
@@ -158,6 +190,12 @@ const addSharedToSubmissions = (
       }
     }
   }
+
+  currUserSubmissions.submissions = newSubmissions.concat(
+    currUserSubmissions.submissions
+  );
+
+  currUserSubmissions.submissions.sort(sortByCompare);
 
   return currUserSubmissions;
 };

@@ -1,5 +1,6 @@
-import Comparator from "./Comparator";
+import Comparator, { Compared } from "./Comparator";
 import Problem, { ProblemLite } from "./DataTypes/Problem";
+import Submission, { Verdict } from "./DataTypes/Submission";
 
 export const sortByRating = (a: Problem, b: Problem): number => {
   if (a.rating < b.rating) return -1;
@@ -36,4 +37,16 @@ export const sortById = (
 
 export const sortByCompare = <T extends Comparator<T>>(a: T, b: T): number => {
   return a.compareTo(b);
+};
+
+export const sortSubmissions = (a: Submission, b: Submission): number => {
+  if (a.problem.contestId === b.problem.contestId) {
+    if (a.problem.index == b.problem.index) {
+      if (a.verdict === Verdict.OK && b.verdict === Verdict.OK) return 0;
+      else if (a.verdict === Verdict.OK) return -1;
+      else return 1;
+    } else if (a.problem.index > b.problem.index) return 1;
+    else return -1;
+  }
+  return a.problem.contestId - b.problem.contestId;
 };

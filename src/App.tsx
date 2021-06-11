@@ -40,11 +40,12 @@ function App() {
         "App container-fluid p-0 min-vh-100 d-flex  flex-column " +
         state.appState.theme.bgText
       }>
-      <div className="top">
-        <div className="menu w-100">
-          <Menu />
-        </div>
-
+      <div className="menu w-100">
+        <Menu />
+      </div>
+      <div
+        className="d-flex flex-column justify-content-between"
+        style={{ minHeight: "calc(100vh - 60px)" }}>
         <Switch>
           <Route exact path="/" component={HomePage} />
           <Route path={PROBLEMS} component={ProblemPage} />
