@@ -1,4 +1,3 @@
-import { copyFile } from "node:fs";
 import Comparator, { Compared } from "../Comparator";
 import Party from "./Party";
 import Problem from "./Problem";
@@ -24,7 +23,7 @@ export enum Verdict {
   // Custom Verdict
   SOLVED = "SOLVED",
   ATTEMPTED = "ATTEMPTED",
-  UNSOLVED = "UNSOLVED"
+  UNSOLVED = "UNSOLVED",
 }
 
 export class SubmissionLite implements Comparator<SubmissionLite> {
@@ -41,9 +40,10 @@ export class SubmissionLite implements Comparator<SubmissionLite> {
   compareTo = (a: SubmissionLite): number => {
     if (this.contestId === a.contestId) {
       if (this.index == a.index) {
-        if (this.verdict === Verdict.OK && a.verdict === Verdict.OK)
-          return Compared.EQUAL;
-        else if (this.verdict === Verdict.OK) return Compared.LESS;
+        if (this.verdict === a.verdict) return Compared.EQUAL;
+        if (this.verdict === Verdict.OK) return Compared.LESS;
+        else if (a.verdict === Verdict.OK) return Compared.GREATER;
+        else if (this.verdict < a.verdict) return Compared.LESS;
         else return Compared.GREATER;
       } else if (this.index > a.index) return Compared.GREATER;
       else return Compared.LESS;

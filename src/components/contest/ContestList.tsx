@@ -7,13 +7,10 @@ import {
 } from "../../util/bashforces";
 import Contest from "../../util/DataTypes/Contest";
 import Problem from "../../util/DataTypes/Problem";
-import Submission, {
-  SubmissionLite,
+import  {
   Verdict,
 } from "../../util/DataTypes/Submission";
-import lowerBound from "../../util/lowerBound";
 import Theme from "../../util/Theme";
-import upperBound from "../../util/upperBound";
 
 interface PropsType {
   contestlist: Contest[];
@@ -150,7 +147,7 @@ const ContestList = (props: PropsType) => {
               ? props.theme.bgDanger
               : "")
           }
-          key={contestId + index.charAt(0)}>
+          key={contestId + index.charAt(0) + "1"}>
           {renderProblem(problems[0], false)}
         </td>
       );

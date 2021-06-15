@@ -13,8 +13,6 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { useHistory } from "react-router";
 import { RootStateType } from "../../data/store";
-import { changeAppState } from "../../data/actions/fetchActions";
-import { AppReducerType } from "../../data/actions/types";
 import Problem from "../../util/DataTypes/Problem";
 import CustomModal from "../../util/Components/CustomModal";
 import CheckList from "../../util/Components/Forms/CheckList";

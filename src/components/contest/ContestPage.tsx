@@ -1,18 +1,14 @@
 import { useEffect, useState } from "react";
-import { useSelector, useDispatch } from "react-redux";
+import { useSelector } from "react-redux";
 import { charInc, parseQuery, stringToArray } from "../../util/bashforces";
 import ContestList from "./ContestList";
 import {
-  ATTEMPTED_CONTESTS,
   CONTESTS,
   SEARCH,
-  SOLVED_CONTESTS,
 } from "../../util/constants";
 import Pagination from "../../util/Components/Pagination";
 import { useHistory } from "react-router";
 import { RootStateType } from "../../data/store";
-import { changeAppState } from "../../data/actions/fetchActions";
-import { AppReducerType } from "../../data/actions/types";
 import Contest from "../../util/DataTypes/Contest";
 import InputChecked from "../../util/Components/Forms/InputChecked";
 import CustomModal from "../../util/Components/CustomModal";
@@ -20,14 +16,13 @@ import CheckList from "../../util/Components/Forms/CheckList";
 import Filter from "../../util/Components/Filter";
 import InputRange from "../../util/Components/Forms/InputRange";
 import { getObj, getSet, saveObj, saveSet } from "../../util/save";
-import Submission, { Verdict } from "../../util/DataTypes/Submission";
+import  { Verdict } from "../../util/DataTypes/Submission";
 import { ParticipantType } from "../../util/DataTypes/Party";
 
 const ContestPage = () => {
   const state: RootStateType = useSelector((state) => state);
 
   const history = useHistory();
-  const dispatch = useDispatch();
 
   const query = parseQuery(history.location.search.trim());
 
