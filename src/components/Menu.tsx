@@ -37,18 +37,19 @@ const Menu = (): JSX.Element => {
     fetchSharedProblemList(dispatch);
   }, []);
 
-  useEffect(() => {
-    if (!state.contestList.loading && !state.problemList.loading) sync();
-  }, [state.userList]);
+  // useEffect(() => {
+  //   if (!state.contestList.loading && !state.problemList.loading) sync(true);
+  // }, [state.userList]);
 
   useEffect(() => {
-    if (!state.contestList.loading && !state.problemList.loading) sync();
+    if (!state.contestList.loading && !state.problemList.loading)
+      sync(state.userList.handles.length > 2 ? true : false);
     // console.log(state.contestList.loading);
     // console.log(state.problemList.loading);
-  }, [state.contestList.loading, state.problemList.loading]);
+  }, [state.userList, state.contestList.loading, state.problemList.loading]);
 
-  const sync = () => {
-    fetchUserSubmissions(dispatch, state.userList.handles);
+  const sync = (wait = false) => {
+    fetchUserSubmissions(dispatch, state.userList.handles, wait);
   };
 
   const submitUser = () => {

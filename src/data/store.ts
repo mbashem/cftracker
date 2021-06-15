@@ -14,17 +14,17 @@ import {
   userReducer,
   SubmissionStateType,
 } from "./reducers/userReducers";
-import {
-  SOLVED_PROBLEMS,
-  ATTEMPTED_PROBLEMS,
-  SOLVED_CONTESTS,
-  ATTEMPTED_CONTESTS,
-} from "../util/constants";
 import { AppReducer, AppStateType } from "./reducers/appReducers";
 import Problem, { ProblemLite, ProblemShared } from "../util/DataTypes/Problem";
 import { sortByCompare } from "../util/sortMethods";
 import lowerBound from "../util/lowerBound";
 import Contest from "../util/DataTypes/Contest";
+import Submission, {
+  SubmissionLite,
+  Verdict,
+} from "../util/DataTypes/Submission";
+import { Compared } from "../util/Comparator";
+import upperBound from "../util/upperBound";
 
 const middlewre = [thunk, logger];
 
@@ -96,23 +96,39 @@ const addSharedToProblems = (
 
   let newProblems: Problem[] = problemList.concat(addProblems);
 
-  let newConestList : Contest[] = new Array<Contest>();
+  let newConestList: Contest[] = new Array<Contest>();
 
   contestList.map((contest, index) => {
     newConestList.push(contest);
-    rec[contest.id] =  newConestList.length-1;
+    rec[contest.id] = newConestList.length - 1;
   });
 
   for (let problem of newProblems) {
     problem.solved = false;
     problem.attempted = false;
 
-    if (userSubmissions[SOLVED_PROBLEMS].has(problem.getId())) {
-      problem.solved = true;
-      problem.attempted = false;
-    } else if (userSubmissions[ATTEMPTED_PROBLEMS].has(problem.getId())) {
-      problem.solved = false;
-      problem.attempted = true;
+    let lb: number = lowerBound(
+      userSubmissions.submissions,
+      new SubmissionLite(problem.contestId, problem.index, Verdict.OK)
+    );
+    // let ub: number = upperBound(
+    //   userSubmissions.submissions,
+    //   new SubmissionLite(problem.contestId, problem.index, Verdict.OK)
+    // );
+
+    if (lb < userSubmissions.submissions.length) {
+      if (
+        userSubmissions.submissions[lb].contestId === problem.contestId &&
+        userSubmissions.submissions[lb].index === problem.index
+      ) {
+        if (userSubmissions.submissions[lb].verdict === Verdict.OK) {
+          problem.solved = true;
+          problem.attempted = false;
+        } else {
+          problem.solved = false;
+          problem.attempted = true;
+        }
+      }
     }
 
     if (rec[problem.contestId] !== undefined)
@@ -128,36 +144,60 @@ const addSharedToSubmissions = (
 ): SubmissionStateType => {
   let currUserSubmissions = userSubmissions.clone();
 
-  for (let problem of sharedProblems) {
-    let currentProblem: ProblemShared = new ProblemShared(
-      problem.contestId,
-      problem.index,
-      problem.shared
+  let presSubs: Set<string> = new Set<string>();
+  let newSubmissions: Submission[] = new Array<Submission>();
+
+  for (let submission of userSubmissions.submissions) {
+    let id: string = submission.id.toString() + submission.contestId.toString();
+    presSubs.add(id);
+  }
+
+  for (let submission of userSubmissions.submissions) {
+    let currentShared: ProblemShared = new ProblemShared(
+      submission.contestId,
+      submission.problem.index
     );
 
-    if (userSubmissions[SOLVED_PROBLEMS].has(currentProblem.getId())) {
-      for (let sharedProblem of problem.shared) {
-        let sharedObject: ProblemShared = new ProblemShared(
-          sharedProblem.contestId,
-          sharedProblem.index
-        );
-        currUserSubmissions[SOLVED_PROBLEMS].add(sharedObject.getId());
-        currUserSubmissions[SOLVED_CONTESTS].add(sharedObject.contestId);
-      }
-    } else if (
-      userSubmissions[ATTEMPTED_PROBLEMS].has(currentProblem.getId())
-    ) {
-      for (let sharedProblem of problem.shared) {
-        let sharedObject: ProblemShared = new ProblemShared(
-          sharedProblem.contestId,
-          sharedProblem.index
-        );
+    let lb: number = lowerBound(sharedProblems, currentShared);
 
-        currUserSubmissions[ATTEMPTED_PROBLEMS].add(sharedObject.getId());
-        currUserSubmissions[ATTEMPTED_CONTESTS].add(sharedObject.contestId);
+    if (
+      lb >= sharedProblems.length ||
+      currentShared.compareTo(sharedProblems[lb]) !== Compared.EQUAL
+    )
+      continue;
+
+    if (sharedProblems[lb].shared)
+      for (let problem of sharedProblems[lb].shared) {
+        let id: string =
+          submission.id.toString() + problem.contestId.toString();
+
+        if (presSubs.has(id)) continue;
+        presSubs.add(id);
+        let newS = new Submission(submission);
+        newS.contestId = problem.contestId;
+        newS.problem.contestId = problem.contestId;
+        newS.problem.index = problem.index;
+        newS.author.contestId = problem.contestId;
+        newS.fromShared = true;
+        newS.index = problem.index;
+
+        if (
+          newS.index != problem.index ||
+          newS.problem.index != problem.index ||
+          newS.contestId != problem.contestId
+        ) {
+          console.log(newS);
+        }
+
+        newSubmissions.push(newS);
       }
-    }
   }
+
+  currUserSubmissions.submissions = newSubmissions.concat(
+    currUserSubmissions.submissions
+  );
+
+  currUserSubmissions.submissions.sort(sortByCompare);
 
   return currUserSubmissions;
 };

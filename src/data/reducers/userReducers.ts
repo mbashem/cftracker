@@ -10,14 +10,9 @@ import {
   REMOVE_USER,
 } from "../actions/types";
 
-import { Verdict } from "../../util/DataTypes/Submission";
+import Submission, { Verdict } from "../../util/DataTypes/Submission";
 
-import {
-  SOLVED_PROBLEMS,
-  ATTEMPTED_PROBLEMS,
-  SOLVED_CONTESTS,
-  ATTEMPTED_CONTESTS,
-} from "../../util/constants";
+import { sortByCompare, sortSubmissions } from "../../util/sortMethods";
 
 const userInitialState = {
   handles: [],
@@ -62,34 +57,14 @@ export const userReducer = (initState = userInitialState, action) => {
   }
 };
 
-export class SubmissionStateForSave {
-  [Verdict.OK]: {
-    problems: Array<string>;
-    contests: Array<number>;
-  };
-  [Verdict.WRONG_ANSWER]: {
-    problems: Array<string>;
-    contests: Array<number>;
-  };
-  error: string;
-  loading: boolean;
-  id: number;
-}
-
 export class SubmissionStateType {
-  [SOLVED_PROBLEMS]: Set<string>;
-  [ATTEMPTED_PROBLEMS]: Set<string>;
-  [SOLVED_CONTESTS]: Set<number>;
-  [ATTEMPTED_CONTESTS]: Set<number>;
   error: string;
   loading: boolean;
   id: number;
+  submissions: Submission[];
 
   constructor() {
-    this[SOLVED_PROBLEMS] = new Set<string>();
-    this[ATTEMPTED_PROBLEMS] = new Set<string>();
-    this[SOLVED_CONTESTS] = new Set<number>();
-    this[ATTEMPTED_CONTESTS] = new Set<number>();
+    this.submissions = new Array<Submission>();
     this.error = "";
     this.loading = false;
     this.id = 0;
@@ -97,28 +72,13 @@ export class SubmissionStateType {
 
   clone = (): SubmissionStateType => {
     const cloned: SubmissionStateType = new SubmissionStateType();
-    
-    cloned[SOLVED_PROBLEMS] = this[SOLVED_PROBLEMS];
-    cloned[ATTEMPTED_PROBLEMS] = this[ATTEMPTED_PROBLEMS];
-    cloned[SOLVED_CONTESTS] = this[SOLVED_CONTESTS];
-    cloned[ATTEMPTED_CONTESTS] = this[ATTEMPTED_CONTESTS];
+
     cloned.error = this.error;
     cloned.loading = this.loading;
     cloned.id = this.id;
+    cloned.submissions = this.submissions;
 
     return cloned;
-  };
-
-  problemStatus = (problemId: string) => {
-    if (this[SOLVED_PROBLEMS].has(problemId)) return Verdict.OK;
-    if (this[ATTEMPTED_PROBLEMS].has(problemId)) return Verdict.WRONG_ANSWER;
-    return Verdict.NOT_FOUND;
-  };
-
-  contestStatus = (contestId: number) => {
-    if (this[SOLVED_CONTESTS].has(contestId)) return Verdict.OK;
-    if (this[ATTEMPTED_CONTESTS].has(contestId)) return Verdict.WRONG_ANSWER;
-    return Verdict.NOT_FOUND;
   };
 }
 
@@ -140,28 +100,10 @@ export const userSubmissionsReducer = (
       } else return initState;
 
       action.payload.result.forEach((element) => {
-        let contestId = element.problem.contestId;
-        let verdict = element.verdict;
-        let problemIndex = element.problem.index;
-        if (verdict === "OK") {
-          currentState[SOLVED_PROBLEMS].add(
-            contestId.toString() + problemIndex
-          );
-          currentState[SOLVED_CONTESTS].add(contestId);
-        } else {
-          currentState[ATTEMPTED_PROBLEMS].add(
-            contestId.toString() + problemIndex
-          );
-          currentState[ATTEMPTED_CONTESTS].add(contestId);
-        }
+        currentState.submissions.push(new Submission(element));
       });
 
-      for (let id of Array.from(currentState[SOLVED_PROBLEMS].values())) {
-        currentState[ATTEMPTED_PROBLEMS].delete(id);
-      }
-
-      for (let contestId of Array.from(currentState[SOLVED_CONTESTS].values()))
-        currentState[ATTEMPTED_CONTESTS].delete(contestId);
+      currentState.submissions.sort(sortByCompare);
 
       return currentState;
     case ERROR_FETCHING_USER_SUBMISSIONS:

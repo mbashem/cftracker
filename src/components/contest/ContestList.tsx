@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React from "react";
 import {
   getProblemUrl,
   formateDate,
@@ -7,25 +7,76 @@ import {
 } from "../../util/bashforces";
 import Contest from "../../util/DataTypes/Contest";
 import Problem from "../../util/DataTypes/Problem";
+import  {
+  Verdict,
+} from "../../util/DataTypes/Submission";
 import Theme from "../../util/Theme";
 
 interface PropsType {
   contestlist: Contest[];
   showDate: boolean;
+  minIndex: number;
   maxIndex: number;
   perPage: number;
   pageSelected: number;
   theme: Theme;
   showRating: boolean;
   showColor: boolean;
-  showName: boolean;
+  submissions: Map<number, Map<Verdict, Set<string>>>;
 }
 
 const ContestList = (props: PropsType) => {
-  const target = useRef(null);
+  const getStatus = (problem: Problem) => {
+    if (!props.submissions.get(problem.contestId)) return Verdict.UNSOLVED;
+
+    if (props.submissions.get(problem.contestId).has(Verdict.SOLVED)) {
+      if (
+        props.submissions
+          .get(problem.contestId)
+          .get(Verdict.SOLVED)
+          .has(problem.index)
+      )
+        return Verdict.SOLVED;
+    }
+    if (props.submissions.get(problem.contestId).has(Verdict.ATTEMPTED)) {
+      if (
+        props.submissions
+          .get(problem.contestId)
+          .get(Verdict.ATTEMPTED)
+          .has(problem.index)
+      )
+        return Verdict.ATTEMPTED;
+    }
+  };
+
   const renderProblem = (problem: Problem, inside = false) => {
-    let solved = problem.solved;
-    let attempted = problem.attempted;
+    let solved = false;
+    let attempted = false;
+
+    let v = getStatus(problem);
+    if (v === Verdict.SOLVED) solved = true;
+    if (v === Verdict.ATTEMPTED) attempted = true;
+
+    if (props.submissions.has(problem.contestId)) {
+      if (props.submissions.get(problem.contestId).has(Verdict.SOLVED)) {
+        if (
+          props.submissions
+            .get(problem.contestId)
+            .get(Verdict.SOLVED)
+            .has(problem.index)
+        )
+          solved = true;
+      }
+      if (props.submissions.get(problem.contestId).has(Verdict.ATTEMPTED)) {
+        if (
+          props.submissions
+            .get(problem.contestId)
+            .get(Verdict.ATTEMPTED)
+            .has(problem.index)
+        )
+          attempted = true;
+      }
+    }
 
     let name = problem.name;
     let id = problem.id;
@@ -37,29 +88,6 @@ const ContestList = (props: PropsType) => {
 
     return (
       <div className={className + " p-2"} key={id}>
-        {/* <OverlayTrigger
-            key={"bottom"}
-            placement={"bottom"}
-            overlay={
-              <Tooltip id={`tooltip-bottom`}>
-                <ul className="list-unstyled">
-                  <li>{problem.name}</li>
-                  <li>
-                    Rating: {problem.rating > 0 ? problem.rating : "Not Rated"}
-                  </li>
-                </ul>
-              </Tooltip>
-            }>
-          </OverlayTrigger> */}
-        {/* <div
-            className="pe-2"
-            title={
-              "Rating:" + (problem.rating > 0 ? problem.rating : "Not Rated")
-            }>
-            <FontAwesomeIcon icon={faInfo} role="button" />
-          </div> */}
-        {/* <p data-tip="hello world">Tooltip</p> */}
-        {/* <ReactTooltip /> */}
         <a
           className={
             "text-decoration-none wrap font-bold d-inline-block text-truncate " +
@@ -80,11 +108,11 @@ const ContestList = (props: PropsType) => {
           data-bs-placement="top"
           href={getProblemUrl(problem.contestId, problem.index)}>
           {problem.index + ". "}
-          {props.showName ? name : ""}
+          {name}
           {props.showRating ? (
-            <>
+            <span className="fs-6">
               <br />({problem.rating ? problem.rating : "Not Rated"})
-            </>
+            </span>
           ) : (
             ""
           )}
@@ -101,25 +129,25 @@ const ContestList = (props: PropsType) => {
 
     if (problems === undefined || problems.length === 0) {
       return (
-        <td
-          key={contest.id + index}
-          className={EMPTY + (props.showName ? "w-problem " : "")}></td>
+        <td key={contest.id + index} className={EMPTY + "w-problem "}></td>
       );
     }
 
     if (problems.length === 1) {
+      let v = getStatus(problems[0]);
+
       return (
         <td
           className={
             "p-0  " +
-            (props.showName ? "w-problem " : "") +
-            (problems[0].solved
+            "w-problem " +
+            (v === Verdict.SOLVED
               ? props.theme.bgSuccess
-              : problems[0].attempted
+              : v === Verdict.ATTEMPTED
               ? props.theme.bgDanger
               : "")
           }
-          key={contestId + index.charAt(0)}>
+          key={contestId + index.charAt(0) + "1"}>
           {renderProblem(problems[0], false)}
         </td>
       );
@@ -127,9 +155,7 @@ const ContestList = (props: PropsType) => {
 
     if (problems.length <= 2) {
       return (
-        <td
-          className={"p-0 " + (props.showName ? "w-problem " : "")}
-          key={contestId + index.charAt(0)}>
+        <td className={"p-0 " + "w-problem "} key={contestId + index.charAt(0)}>
           <div className="d-flex">
             {problems.map((element) =>
               renderProblem(element, problems.length !== 1)
@@ -140,37 +166,46 @@ const ContestList = (props: PropsType) => {
     }
 
     return (
-      <td
-        className={"inside p-0 " + (props.showName ? "w-problem " : "")}
-        key={contestId + index}>
+      <td className={"inside p-0 " + "w-problem "} key={contestId + index}>
         More than 2
       </td>
     );
   };
 
   const contestCard = (contest: Contest, index: number) => {
+    let solved = false;
+
+    if (
+      props.submissions.has(contest.id) &&
+      props.submissions.get(contest.id).has(Verdict.SOLVED) &&
+      props.submissions.get(contest.id).get(Verdict.SOLVED).size ===
+        contest.count
+    )
+      solved = true;
+
     return (
       <tr key={contest.id}>
-        <td scope="row" className="w-sl p-2 first-column">
+        <td
+          scope="row"
+          className={
+            "w-sl p-2 first-column " + (solved ? props.theme.bgSuccess : " ")
+          }>
           <div className="d-inline-block">
             {props.pageSelected * props.perPage + index + 1}
           </div>
         </td>
         <td
           scope="row"
-          className="w-id p-2 second-column"
+          className={
+            "w-id p-2 second-column " + (solved ? props.theme.bgSuccess : " ")
+          }
           title={
             "Solve Count: " + contest.solveCount + " , Total:" + contest.count
           }>
           <div className="d-inline-block">{contest.id}</div>
         </td>
         <td
-          className={
-            "w-contest p-0 " +
-            (contest.solveCount === contest.count && contest.count !== 0
-              ? props.theme.bgSuccess
-              : " ")
-          }>
+          className={"w-contest p-0 " + (solved ? props.theme.bgSuccess : " ")}>
           <div className="d-inline-block name">
             <a
               className={
@@ -192,8 +227,8 @@ const ContestList = (props: PropsType) => {
             ""
           )}
         </td>
-        {[...Array(props.maxIndex)].map((x, i) => {
-          return getInfo(contest, charInc("A", i));
+        {[...Array(props.maxIndex - props.minIndex + 1)].map((x, i) => {
+          return getInfo(contest, charInc("A", i + props.minIndex - 1));
         })}
       </tr>
     );

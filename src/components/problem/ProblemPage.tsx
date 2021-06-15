@@ -13,13 +13,13 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { useHistory } from "react-router";
 import { RootStateType } from "../../data/store";
-import { changeAppState } from "../../data/actions/fetchActions";
-import { AppReducerType } from "../../data/actions/types";
 import Problem from "../../util/DataTypes/Problem";
 import CustomModal from "../../util/Components/CustomModal";
 import CheckList from "../../util/Components/Forms/CheckList";
 import Filter from "../../util/Components/Filter";
 import InputRange from "../../util/Components/Forms/InputRange";
+import { getObj, getSet, saveObj, saveSet } from "../../util/save";
+import { Verdict } from "../../util/DataTypes/Submission";
 
 const ProblemPage = () => {
   const state: RootStateType = useSelector((state) => state) as RootStateType;
@@ -34,38 +34,54 @@ const ProblemPage = () => {
     ATTEMPTED = "ATTEMPED",
     UNSOLVED = "UNSOLVED";
 
+  enum ProblemSave {
+    PROBLEM_SOLVE_STATUS = "PROBLEM_SOLVE_STATUS",
+    PROBLEM_TAGS = "PROBLEM_TAGS",
+    PROBLEM_FILTER = "PROBLEM_FILTER"
+  }
+  
   const query = parseQuery(history.location.search.trim());
 
-  const SOLVEBUTTONS = [SOLVED, ATTEMPTED, UNSOLVED];
+  interface filt {
+    perPage: number;
+    minRating: number;
+    maxRating: number;
+    showUnrated: boolean;
+    minContestId: number;
+    maxContestId: number;
+    search: string;
+  };
+
+  const defaultFilt : filt = {
+    perPage: 20,
+    minRating: state.appState.minRating,
+    maxRating: state.appState.maxRating,
+    showUnrated: true,
+    minContestId: state.appState.minContestId,
+    maxContestId: state.appState.maxContestId,
+    search: SEARCH in query ? query[SEARCH] : "",
+  };
+
+  const [filter, setFilter] = useState<filt>(
+    getObj(ProblemSave.PROBLEM_FILTER, defaultFilt)
+  );
+
+
+  const SOLVEBUTTONS = [Verdict.SOLVED, Verdict.ATTEMPTED, Verdict.UNSOLVED];
 
   const initFilterState = {
-    tags: new Set<string>(),
+    tags: getSet(ProblemSave.PROBLEM_TAGS, []),
     sortBy: SORT_BY_SOLVE,
     order: DESCENDING,
   };
 
-  const [solveStatus, setSolveStatus] = useState(new Set<string>(SOLVEBUTTONS));
-  const [search, setSearch] = useState(
-    SEARCH in query ? query[SEARCH] : state.appState.problemPage.query
+  const [solveStatus, setSolveStatus] = useState(
+    getSet(ProblemSave.PROBLEM_SOLVE_STATUS, SOLVEBUTTONS)
   );
   const [problemList, setProblemList] = useState({ problems: [], error: "" });
   const [tagList, setTagList] = useState({ tags: [] });
   const [randomProblem, setRandomProblem] = useState(-1);
   const [selected, setSelected] = useState(0);
-  const [perPage, setPerPage] = useState(state.appState.problemPage.perPage);
-  const [minRating, setMinRating] = useState(
-    state.appState.problemPage.minRating
-  );
-  const [maxRating, setMaxRating] = useState(
-    state.appState.problemPage.maxRating
-  );
-
-  const [minContestId, setMinContestId] = useState(
-    state.appState.problemPage.minContestId
-  );
-  const [maxContestId, setMaxContestId] = useState(
-    state.appState.problemPage.maxContestId
-  );
 
   const [filterState, setFilterState] = useState(initFilterState);
 
@@ -80,14 +96,14 @@ const ProblemPage = () => {
           break;
         }
     let ratingInside =
-      problem.rating <= maxRating && problem.rating >= minRating;
+      problem.rating <= filter.maxRating && problem.rating >= filter.minRating;
 
     let contestIdInside =
-      problem.contestId <= maxContestId && problem.contestId >= minContestId;
+      problem.contestId <= filter.maxContestId && problem.contestId >= filter.minContestId;
     let status = solveStatus.has(getState(problem));
 
     let searchIncluded = true;
-    let text = search.toLowerCase().trim();
+    let text = filter.search.toLowerCase().trim();
     if (text.length)
       searchIncluded =
         problem.name.toLowerCase().includes(text) ||
@@ -99,12 +115,12 @@ const ProblemPage = () => {
   };
 
   useEffect(() => {
-    setPerPage(state.appState.problemPage.perPage);
+    saveObj(ProblemSave.PROBLEM_FILTER,filter);
 
-    if (search.trim().length)
+    if (filter.search.trim().length)
       history.push({
         pathname: PROBLEMS,
-        search: "?" + SEARCH + "=" + search.trim(),
+        search: "?" + SEARCH + "=" + filter.search.trim(),
       });
     else
       history.push({
@@ -134,7 +150,7 @@ const ProblemPage = () => {
     }
     setRandomProblem(-1);
     setSelected(0);
-  }, [state, filterState, search, solveStatus]);
+  }, [state, filterState,filter, filter.search, solveStatus]);
 
   const sortList = (sortBy) => {
     if (filterState.sortBy === sortBy)
@@ -156,8 +172,8 @@ const ProblemPage = () => {
   };
 
   const paginate = () => {
-    let lo = selected * perPage;
-    let high = Math.min(problemList.problems.length, lo + perPage);
+    let lo = selected * filter.perPage;
+    let high = Math.min(problemList.problems.length, lo + filter.perPage);
 
     if (lo > high) return [];
     return problemList.problems.slice(lo, high);
@@ -176,175 +192,152 @@ const ProblemPage = () => {
   };
 
   return (
-    <div>
-      <Filter
-        search={search}
-        searchName="problemSearch"
-        searchPlaceHolder="Problem Name or Id"
-        name="Problem"
-        onSearch={(e) => {
-          setSearch(e);
-          changeAppState(dispatch, AppReducerType.CHANGE_QUERY, e, false);
-        }}
-        length={problemList.problems.length}
-        perPage={perPage}
-        selected={selected}
-        setRandom={(num) => {
-          setRandomProblem(num);
-        }}
-        theme={state.appState.theme}>
-        <CustomModal title="Filter" theme={state.appState.theme}>
-          <CheckList
-            items={SOLVEBUTTONS}
-            present={solveStatus}
-            onClick={(newSet) => {
-              setSolveStatus(newSet);
-            }}
-            theme={state.appState.theme}
-          />
-          <InputRange
-            min={state.appState.minRating}
-            max={state.appState.maxRating}
-            minValue={minRating}
-            maxValue={maxRating}
-            name="Rating"
-            step={100}
-            minTitle="Set 0 to show Unrated Problems"
-            className="p-2 pb-0"
-            onMinChange={(num: number) => {
-              setMinRating(num);
-              if (num !== null && num !== undefined)
-                changeAppState(
-                  dispatch,
-                  AppReducerType.CHANGE_MIN_RATING,
-                  num,
-                  false
-                );
-            }}
-            onMaxChange={(num: number) => {
-              setMaxRating(num);
-              if (num !== null && num !== undefined)
-                changeAppState(
-                  dispatch,
-                  AppReducerType.CHANGE_MAX_RATING,
-                  num,
-                  false
-                );
-            }}
-          />
-          <InputRange
-            min={state.appState.minContestId}
-            max={state.appState.maxContestId}
-            minValue={minContestId}
-            maxValue={maxContestId}
-            name="ContestId"
-            step={1}
-            className="p-2"
-            onMinChange={(num: number) => {
-              setMinContestId(num);
-              if (num !== null && num !== undefined)
-                changeAppState(
-                  dispatch,
-                  AppReducerType.CHANGE_MIN_CONTESTID,
-                  num,
-                  false
-                );
-            }}
-            onMaxChange={(num: number) => {
-              setMaxContestId(num);
-              if (num !== null && num !== undefined)
-                changeAppState(
-                  dispatch,
-                  AppReducerType.CHANGE_MAX_CONTESTID,
-                  num,
-                  false
-                );
-            }}
-          />
-          <CheckList
-            items={tagList.tags}
-            present={filterState.tags}
-            onClick={(newSet) => {
-              let myFilterState = { ...filterState };
-              myFilterState.tags = newSet;
-              setFilterState(myFilterState);
-            }}
-          />
-        </CustomModal>
-      </Filter>
+    <>
+      <div>
+        <Filter
+          search={filter.search}
+          searchName="problemSearch"
+          searchPlaceHolder="Problem Name or Id"
+          name="Problem"
+          onSearch={(e) => {
+            setFilter({...filter,search:e})
+          }}
+          length={problemList.problems.length}
+          perPage={filter.perPage}
+          selected={selected}
+          setRandom={(num) => {
+            setRandomProblem(num);
+          }}
+          theme={state.appState.theme}>
+          <CustomModal title="Filter" theme={state.appState.theme}>
+            <CheckList
+              items={SOLVEBUTTONS}
+              present={solveStatus}
+              name={"Solve Status"}
+              onClick={(newSet) => {
+                setSolveStatus(newSet);
+                saveSet(ProblemSave.PROBLEM_SOLVE_STATUS, newSet);
+              }}
+              theme={state.appState.theme}
+            />
+            <InputRange
+              min={state.appState.minRating}
+              max={state.appState.maxRating}
+              minValue={filter.minRating}
+              maxValue={filter.maxRating}
+              name="Rating"
+              step={100}
+              minTitle="Set 0 to show Unrated Problems"
+              className="p-2 pb-0"
+              onMinChange={(num: number) => {
+                setFilter({...filter,minRating:num})
+              }}
+              onMaxChange={(num: number) => {
+                setFilter({...filter,maxRating:num})
+              }}
+            />
+            <InputRange
+              min={state.appState.minContestId}
+              max={state.appState.maxContestId}
+              minValue={filter.minContestId}
+              maxValue={filter.maxContestId}
+              name="ContestId"
+              step={1}
+              className="p-2"
+              onMinChange={(num: number) => {
+                setFilter({...filter,minContestId:num})
+              }}
+              onMaxChange={(num: number) => {
+                setFilter({...filter,maxContestId:num})
+              }}
+            />
+            <CheckList
+              items={tagList.tags}
+              present={filterState.tags}
+              name={"Tags"}
+              onClick={(newSet) => {
+                let myFilterState = { ...filterState };
+                myFilterState.tags = newSet;
+                setFilterState(myFilterState);
+                saveSet(ProblemSave.PROBLEM_TAGS, newSet);
+              }}
+            />
+          </CustomModal>
+        </Filter>
 
-      <div className={"container p-0 pt-3 pb-3 " + state.appState.theme.bg}>
-        <div className={"h-100 text-center pb-3 " + state.appState.theme.bg}>
-          <table
-            className={
-              "table table-bordered m-0 " + state.appState.theme.table
-            }>
-            <thead className={state.appState.theme.thead}>
-              <tr>
-                <th scope="col">#</th>
-                <th scope="col">ID</th>
-                <th scope="col">Name</th>
-                <th
-                  scope="col"
-                  role="button"
-                  onClick={() => sortList(SORT_BY_RATING)}>
-                  <div className="d-flex justify-content-between">
-                    <div>Rating</div>
-                    <div>
-                      {filterState.sortBy === SORT_BY_RATING
-                        ? filterState.order === ASCENDING
-                          ? less()
-                          : greater()
-                        : nuetral()}
+        <div className={"container p-0 pt-3 pb-3 " + state.appState.theme.bg}>
+          <div className={"h-100 text-center pb-3 " + state.appState.theme.bg}>
+            <table
+              className={
+                "table table-bordered m-0 " + state.appState.theme.table
+              }>
+              <thead className={state.appState.theme.thead}>
+                <tr>
+                  <th scope="col">#</th>
+                  <th scope="col">ID</th>
+                  <th scope="col">Name</th>
+                  <th
+                    scope="col"
+                    role="button"
+                    onClick={() => sortList(SORT_BY_RATING)}>
+                    <div className="d-flex justify-content-between">
+                      <div>Rating</div>
+                      <div>
+                        {filterState.sortBy === SORT_BY_RATING
+                          ? filterState.order === ASCENDING
+                            ? less()
+                            : greater()
+                          : nuetral()}
+                      </div>
                     </div>
-                  </div>
-                </th>
-                <th
-                  scope="col"
-                  role="button"
-                  onClick={() => sortList(SORT_BY_SOLVE)}>
-                  <div className="d-flex justify-content-between">
-                    <div>Solve Count</div>
-                    <div>
-                      {filterState.sortBy === SORT_BY_SOLVE
-                        ? filterState.order === ASCENDING
-                          ? less()
-                          : greater()
-                        : nuetral()}
+                  </th>
+                  <th
+                    scope="col"
+                    role="button"
+                    onClick={() => sortList(SORT_BY_SOLVE)}>
+                    <div className="d-flex justify-content-between">
+                      <div>Solve Count</div>
+                      <div>
+                        {filterState.sortBy === SORT_BY_SOLVE
+                          ? filterState.order === ASCENDING
+                            ? less()
+                            : greater()
+                          : nuetral()}
+                      </div>
                     </div>
-                  </div>
-                </th>
-              </tr>
-            </thead>
-            <tbody className={state.appState.theme.bg}>
-              <ProblemList
-                problems={
-                  randomProblem === -1
-                    ? paginate()
-                    : [problemList.problems[randomProblem]]
-                }
-                perPage={perPage}
-                pageSelected={selected}
-                theme={state.appState.theme}
-              />
-            </tbody>
-          </table>
+                  </th>
+                </tr>
+              </thead>
+              <tbody className={state.appState.theme.bg}>
+                <ProblemList
+                  problems={
+                    randomProblem === -1
+                      ? paginate()
+                      : [problemList.problems[randomProblem]]
+                  }
+                  perPage={filter.perPage}
+                  pageSelected={selected}
+                  theme={state.appState.theme}
+                />
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
+
       <footer className={"pt-2 " + state.appState.theme.bg}>
         <Pagination
           totalCount={problemList.problems.length}
-          perPage={perPage}
+          perPage={filter.perPage}
           selected={selected}
           theme={state.appState.theme}
           pageSelected={(e) => setSelected(e)}
-          pageSize={(e) => {
-            setPerPage(e);
-            changeAppState(dispatch, AppReducerType.CHANGE_PER_PAGE, e, false);
+          pageSize={(num) => {
+            setFilter({...filter,perPage:num})
           }}
         />
       </footer>
-    </div>
+    </>
   );
 };
 

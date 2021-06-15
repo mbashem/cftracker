@@ -19,8 +19,8 @@ export default class Contest {
   country?: string;
   city?: string;
   season?: string;
-  solveCount: number;
-  attempCount: number;
+  solveCount: number = 0;
+  attempCount: number = 0;
   count: number;
   problemList: Record<string, Problem[]>;
 
