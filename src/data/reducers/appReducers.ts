@@ -1,4 +1,3 @@
-import { ParticipantType } from "../../util/DataTypes/Party";
 import Theme, { ThemesType } from "../../util/Theme";
 import { AppPayloadType } from "../actions/fetchActions";
 import { AppReducerType } from "../actions/types";

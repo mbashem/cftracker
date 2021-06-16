@@ -19,7 +19,7 @@ import {
 import { AppReducerType } from "../data/actions/types";
 import { fetchUserSubmissions, fetchUsers } from "../data/actions/userActions";
 import { RootStateType } from "../data/store";
-import { PROBLEMS, CONTESTS } from "../util/constants";
+import { Path } from "../util/constants";
 import { ThemesType } from "../util/Theme";
 
 const Menu = (): JSX.Element => {
@@ -93,13 +93,18 @@ const Menu = (): JSX.Element => {
         className="collapse navbar-collapse d-flex justify-content-end"
         id="navbarTogglerDemo03">
         <ul className="navbar-nav ml-auto mt-2 mt-lg-0">
+        <li className="nav-item active">
+            <Link to={Path.Stats} className="nav-link" href="#">
+              Stats
+            </Link>
+          </li>
           <li className="nav-item active">
-            <Link to={PROBLEMS} className="nav-link" href="#">
+            <Link to={Path.PROBLEMS} className="nav-link" href="#">
               Problem List
             </Link>
           </li>
           <li className="nav-item">
-            <Link to={CONTESTS} className="nav-link" href="#">
+            <Link to={Path.CONTESTS} className="nav-link" href="#">
               Contest
             </Link>
           </li>

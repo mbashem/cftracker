@@ -10,9 +10,9 @@ import {
   REMOVE_USER,
 } from "../actions/types";
 
-import Submission, { Verdict } from "../../util/DataTypes/Submission";
+import Submission from "../../util/DataTypes/Submission";
 
-import { sortByCompare, sortSubmissions } from "../../util/sortMethods";
+import { sortByCompare } from "../../util/sortMethods";
 
 const userInitialState = {
   handles: [],

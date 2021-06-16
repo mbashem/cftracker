@@ -7,9 +7,10 @@ import Menu from "./components/Menu";
 import ProblemPage from "./components/problem/ProblemPage";
 import ContestPage from "./components/contest/ContestPage";
 import HomePage from "./components/home/HomePage";
-import { PROBLEMS, CONTESTS } from "./util/constants";
+import {  Path } from "./util/constants";
 import { RootStateType } from "./data/store";
 import { ThemesType } from "./util/Theme";
+import StatPage from "./components/stats/StatPage";
 
 function App() {
   const state: RootStateType = useSelector((state) => state);
@@ -48,8 +49,9 @@ function App() {
         style={{ minHeight: "calc(100vh - 60px)" }}>
         <Switch>
           <Route exact path="/" component={HomePage} />
-          <Route path={PROBLEMS} component={ProblemPage} />
-          <Route strict path={CONTESTS} component={ContestPage} />
+          <Route path={Path.PROBLEMS} component={ProblemPage} />
+          <Route strict path={Path.CONTESTS} component={ContestPage} />
+          <Route strict path={Path.Stats} component={StatPage} />
         </Switch>
       </div>
     </div>

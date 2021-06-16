@@ -5,11 +5,9 @@ import {
   charInc,
   getContestUrl,
 } from "../../util/bashforces";
-import Contest from "../../util/DataTypes/Contest";
+import Contest, { ContestCat } from "../../util/DataTypes/Contest";
 import Problem from "../../util/DataTypes/Problem";
-import  {
-  Verdict,
-} from "../../util/DataTypes/Submission";
+import { Verdict } from "../../util/DataTypes/Submission";
 import Theme from "../../util/Theme";
 
 interface PropsType {
@@ -22,10 +20,13 @@ interface PropsType {
   theme: Theme;
   showRating: boolean;
   showColor: boolean;
+  category: ContestCat;
   submissions: Map<number, Map<Verdict, Set<string>>>;
 }
 
 const ContestList = (props: PropsType) => {
+  let short = props.category !== ContestCat.ALL;
+
   const getStatus = (problem: Problem) => {
     if (!props.submissions.get(problem.contestId)) return Verdict.UNSOLVED;
 
@@ -194,29 +195,37 @@ const ContestList = (props: PropsType) => {
             {props.pageSelected * props.perPage + index + 1}
           </div>
         </td>
+        {short ? (
+          ""
+        ) : (
+          <td
+            scope="row"
+            className={
+              "w-id p-2 second-column " + (solved ? props.theme.bgSuccess : " ")
+            }
+            title={
+              "Solve Count: " + contest.solveCount + " , Total:" + contest.count
+            }>
+            <div className="d-inline-block">{contest.id}</div>
+          </td>
+        )}
         <td
-          scope="row"
           className={
-            "w-id p-2 second-column " + (solved ? props.theme.bgSuccess : " ")
-          }
-          title={
-            "Solve Count: " + contest.solveCount + " , Total:" + contest.count
+            "w-contest p-0 " +
+            (solved ? props.theme.bgSuccess : " ") +
+            (short ? " short" : " ")
           }>
-          <div className="d-inline-block">{contest.id}</div>
-        </td>
-        <td
-          className={"w-contest p-0 " + (solved ? props.theme.bgSuccess : " ")}>
           <div className="d-inline-block name">
             <a
               className={
-                "text-decoration-none wrap font-bold w-contest pt-2 pb-2 ps-2 pe-1 " +
+                "text-decoration-none wrap d-inline-block font-bold pt-2 pb-2 ps-2 pe-1 w-100 " +
                 props.theme.text
               }
               target="_blank"
               rel="noreferrer"
-              title={formateDate(contest.startTimeSeconds)}
+              title={contest.name}
               href={getContestUrl(contest.id)}>
-              {contest.name}
+              {short ? contest.short : contest.name}
             </a>
           </div>
           {props.showDate ? (

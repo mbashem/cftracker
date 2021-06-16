@@ -57,6 +57,12 @@
   /* padding: 4px !important; */
 }
 
+.w-contest.short {
+  width: 110px !important;
+  min-width: 110px !important;
+  max-width: 140px !important;
+}
+
 /* .w-problem .w-100, */
 .w-problem {
   width: 130px !important;
