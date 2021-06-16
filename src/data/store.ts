@@ -24,7 +24,6 @@ import Submission, {
   Verdict,
 } from "../util/DataTypes/Submission";
 import { Compared } from "../util/Comparator";
-import upperBound from "../util/upperBound";
 
 const middlewre = [thunk, logger];
 
@@ -182,9 +181,9 @@ const addSharedToSubmissions = (
         newS.index = problem.index;
 
         if (
-          newS.index != problem.index ||
-          newS.problem.index != problem.index ||
-          newS.contestId != problem.contestId
+          newS.index !== problem.index ||
+          newS.problem.index !== problem.index ||
+          newS.contestId !== problem.contestId
         ) {
           console.log(newS);
         }

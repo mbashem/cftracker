@@ -2,32 +2,50 @@ import Theme from "../../Theme";
 
 interface PropsType {
   items: string[];
-  present: Set<string>;
-  onClick: (a: Set<string>) => void;
+  active: Set<string>;
+  onClickSet?: (a: Set<string>) => void;
+  onClick?: (a: string) => void;
   theme?: Theme;
   name: string;
+  activeClass?: string;
+  inactiveClass?: string;
+  btnClass?: string;
 }
 
 const CheckList = (props: PropsType) => {
+  let activeClass = props.activeClass;
+  let inactiveClass = props.inactiveClass;
+  let btnClass = props.btnClass;
+
+  if (!btnClass) btnClass = "m-1 btn text-light";
+  if (!inactiveClass) inactiveClass = "btn-secondary active";
+  if (!activeClass) activeClass = "btn-success active";
+
   return (
     <div className="d-flex flex-column">
-      <div className="">{props.name}</div>
+      {props.name.length ? <div className="">{props.name}</div> : ""}
       <div
-        className="btn-group btn-group-sm d-flex flex-wrap"
+        className="btn-group rounded-0 btn-group d-flex flex-wrap"
         role="group"
         aria-label="First group">
         {props.items.map((item) => (
           <button
             className={
-              (props.present.has(item) ? "btn bg-success" : "btn bg-dark") +
-              " m-1 text-light"
+              btnClass +
+              " " +
+              (props.active.has(item) ? activeClass : inactiveClass)
             }
             key={item}
             onClick={() => {
-              let newSet = new Set<string>(props.present);
-              if (newSet.has(item)) newSet.delete(item);
-              else newSet.add(item);
-              props.onClick(newSet);
+              if (props.onClickSet) {
+                let newSet = new Set<string>(props.active);
+                if (newSet.has(item)) newSet.delete(item);
+                else newSet.add(item);
+                props.onClickSet(newSet);
+              }
+              if (props.onClick) {
+                props.onClick(item);
+              }
             }}>
             {item}
           </button>

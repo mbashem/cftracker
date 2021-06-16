@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { parseQuery } from "../../util/bashforces";
 import { sortByRating, sortBySolveCount } from "../../util/sortMethods";
-import { SEARCH, PROBLEMS } from "../../util/constants";
+import { Path, SEARCH } from "../../util/constants";
 import Pagination from "../../util/Components/Pagination";
 import ProblemList from "./ProblemList";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -37,9 +37,9 @@ const ProblemPage = () => {
   enum ProblemSave {
     PROBLEM_SOLVE_STATUS = "PROBLEM_SOLVE_STATUS",
     PROBLEM_TAGS = "PROBLEM_TAGS",
-    PROBLEM_FILTER = "PROBLEM_FILTER"
+    PROBLEM_FILTER = "PROBLEM_FILTER",
   }
-  
+
   const query = parseQuery(history.location.search.trim());
 
   interface filt {
@@ -50,9 +50,9 @@ const ProblemPage = () => {
     minContestId: number;
     maxContestId: number;
     search: string;
-  };
+  }
 
-  const defaultFilt : filt = {
+  const defaultFilt: filt = {
     perPage: 20,
     minRating: state.appState.minRating,
     maxRating: state.appState.maxRating,
@@ -65,7 +65,6 @@ const ProblemPage = () => {
   const [filter, setFilter] = useState<filt>(
     getObj(ProblemSave.PROBLEM_FILTER, defaultFilt)
   );
-
 
   const SOLVEBUTTONS = [Verdict.SOLVED, Verdict.ATTEMPTED, Verdict.UNSOLVED];
 
@@ -99,7 +98,8 @@ const ProblemPage = () => {
       problem.rating <= filter.maxRating && problem.rating >= filter.minRating;
 
     let contestIdInside =
-      problem.contestId <= filter.maxContestId && problem.contestId >= filter.minContestId;
+      problem.contestId <= filter.maxContestId &&
+      problem.contestId >= filter.minContestId;
     let status = solveStatus.has(getState(problem));
 
     let searchIncluded = true;
@@ -115,16 +115,16 @@ const ProblemPage = () => {
   };
 
   useEffect(() => {
-    saveObj(ProblemSave.PROBLEM_FILTER,filter);
+    saveObj(ProblemSave.PROBLEM_FILTER, filter);
 
     if (filter.search.trim().length)
       history.push({
-        pathname: PROBLEMS,
+        pathname: Path.PROBLEMS,
         search: "?" + SEARCH + "=" + filter.search.trim(),
       });
     else
       history.push({
-        pathname: PROBLEMS,
+        pathname: Path.PROBLEMS,
       });
     if (state.problemList.problems !== undefined) {
       let newState = { problems: [] };
@@ -150,7 +150,7 @@ const ProblemPage = () => {
     }
     setRandomProblem(-1);
     setSelected(0);
-  }, [state, filterState,filter, filter.search, solveStatus]);
+  }, [state, filterState, filter, filter.search, solveStatus]);
 
   const sortList = (sortBy) => {
     if (filterState.sortBy === sortBy)
@@ -200,7 +200,7 @@ const ProblemPage = () => {
           searchPlaceHolder="Problem Name or Id"
           name="Problem"
           onSearch={(e) => {
-            setFilter({...filter,search:e})
+            setFilter({ ...filter, search: e });
           }}
           length={problemList.problems.length}
           perPage={filter.perPage}
@@ -212,9 +212,9 @@ const ProblemPage = () => {
           <CustomModal title="Filter" theme={state.appState.theme}>
             <CheckList
               items={SOLVEBUTTONS}
-              present={solveStatus}
+              active={solveStatus}
               name={"Solve Status"}
-              onClick={(newSet) => {
+              onClickSet={(newSet) => {
                 setSolveStatus(newSet);
                 saveSet(ProblemSave.PROBLEM_SOLVE_STATUS, newSet);
               }}
@@ -230,10 +230,10 @@ const ProblemPage = () => {
               minTitle="Set 0 to show Unrated Problems"
               className="p-2 pb-0"
               onMinChange={(num: number) => {
-                setFilter({...filter,minRating:num})
+                setFilter({ ...filter, minRating: num });
               }}
               onMaxChange={(num: number) => {
-                setFilter({...filter,maxRating:num})
+                setFilter({ ...filter, maxRating: num });
               }}
             />
             <InputRange
@@ -245,17 +245,17 @@ const ProblemPage = () => {
               step={1}
               className="p-2"
               onMinChange={(num: number) => {
-                setFilter({...filter,minContestId:num})
+                setFilter({ ...filter, minContestId: num });
               }}
               onMaxChange={(num: number) => {
-                setFilter({...filter,maxContestId:num})
+                setFilter({ ...filter, maxContestId: num });
               }}
             />
             <CheckList
               items={tagList.tags}
-              present={filterState.tags}
+              active={filterState.tags}
               name={"Tags"}
-              onClick={(newSet) => {
+              onClickSet={(newSet) => {
                 let myFilterState = { ...filterState };
                 myFilterState.tags = newSet;
                 setFilterState(myFilterState);
@@ -333,7 +333,7 @@ const ProblemPage = () => {
           theme={state.appState.theme}
           pageSelected={(e) => setSelected(e)}
           pageSize={(num) => {
-            setFilter({...filter,perPage:num})
+            setFilter({ ...filter, perPage: num });
           }}
         />
       </footer>

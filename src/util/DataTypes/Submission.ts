@@ -39,7 +39,7 @@ export class SubmissionLite implements Comparator<SubmissionLite> {
 
   compareTo = (a: SubmissionLite): number => {
     if (this.contestId === a.contestId) {
-      if (this.index == a.index) {
+      if (this.index === a.index) {
         if (this.verdict === a.verdict) return Compared.EQUAL;
         if (this.verdict === Verdict.OK) return Compared.LESS;
         else if (a.verdict === Verdict.OK) return Compared.GREATER;

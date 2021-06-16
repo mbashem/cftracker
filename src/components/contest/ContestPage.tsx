@@ -2,21 +2,18 @@ import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { charInc, parseQuery, stringToArray } from "../../util/bashforces";
 import ContestList from "./ContestList";
-import {
-  CONTESTS,
-  SEARCH,
-} from "../../util/constants";
+import { Path, SEARCH } from "../../util/constants";
 import Pagination from "../../util/Components/Pagination";
 import { useHistory } from "react-router";
 import { RootStateType } from "../../data/store";
-import Contest from "../../util/DataTypes/Contest";
+import Contest, { ContestCat } from "../../util/DataTypes/Contest";
 import InputChecked from "../../util/Components/Forms/InputChecked";
 import CustomModal from "../../util/Components/CustomModal";
 import CheckList from "../../util/Components/Forms/CheckList";
 import Filter from "../../util/Components/Filter";
 import InputRange from "../../util/Components/Forms/InputRange";
 import { getObj, getSet, saveObj, saveSet } from "../../util/save";
-import  { Verdict } from "../../util/DataTypes/Submission";
+import { Verdict } from "../../util/DataTypes/Submission";
 import { ParticipantType } from "../../util/DataTypes/Party";
 
 const ContestPage = () => {
@@ -37,6 +34,7 @@ const ContestPage = () => {
     showRating: boolean;
     showColor: boolean;
     search: string;
+    category: ContestCat;
   }
 
   const defaultFilt: filt = {
@@ -46,6 +44,7 @@ const ContestPage = () => {
     minIndex: 1,
     showRating: false,
     showColor: true,
+    category: ContestCat.DIV2,
     search: SEARCH in query ? query[SEARCH] : "",
   };
 
@@ -93,19 +92,27 @@ const ContestPage = () => {
         contest.name.toLowerCase().includes(text) ||
         contest.id.toString().includes(text);
 
-    return status && searchIncluded && contest.count != 0;
+    let catIn = false;
+
+    if (
+      filter.category === ContestCat.ALL ||
+      filter.category === contest.category
+    )
+      catIn = true;
+
+    return status && searchIncluded && contest.count !== 0 && catIn;
   };
 
   useEffect(() => {
     saveObj(ContestSave.CONTEST_FILTER, filter);
     if (filter.search.trim().length)
       history.push({
-        pathname: CONTESTS,
+        pathname: Path.CONTESTS,
         search: "?" + SEARCH + "=" + filter.search.trim(),
       });
     else
       history.push({
-        pathname: CONTESTS,
+        pathname: Path.CONTESTS,
       });
     let contests = state.contestList.contests;
 
@@ -208,24 +215,37 @@ const ContestPage = () => {
             </div>
             <CheckList
               items={SOLVEBUTTONS}
-              present={solveStatus}
+              active={solveStatus}
               name={"Solve Status"}
-              onClick={(newSet) => {
+              onClickSet={(newSet) => {
                 setSolveStatus(newSet);
                 saveSet(ContestSave.CONTEST_SOLVE_STATUS, newSet);
               }}
             />
             <CheckList
               items={PARTICIPANTSTYPE}
-              present={participant}
+              active={participant}
               name={"Participant Type"}
-              onClick={(newSet) => {
+              onClickSet={(newSet) => {
                 setParticipant(newSet);
                 saveSet(ContestSave.PARTICIPANT_TYPE, newSet);
               }}
             />
           </CustomModal>
         </Filter>
+        <div className="pt-2 ps-3" style={{ width: "800px" }}>
+          <CheckList
+            items={Object.values(ContestCat)}
+            active={new Set([filter.category])}
+            name={""}
+            onClick={(str) => {
+              setFilter({ ...filter, category: str as ContestCat });
+            }}
+            activeClass="btn-secondary active"
+            inactiveClass="btn-secondary"
+            btnClass="p-1 btn"
+          />
+        </div>
         <div
           className={"ps-3 pe-3 pt-3 pb-3 " + state.appState.theme.bg}
           // style={{ height: "calc(100vh - 175px)" }}
@@ -243,13 +263,22 @@ const ContestPage = () => {
                     style={{ width: "20px" }}>
                     #
                   </th>
+                  {filter.category !== ContestCat.ALL ? "" : 
+                  (
                   <th
                     scope="col"
                     className="w-id second-column"
                     style={{ width: "50px" }}>
                     ID
                   </th>
-                  <th scope="col" className="w-contest third-column">
+                  )
+                  }
+                  <th
+                    scope="col"
+                    className={
+                      "w-contest third-column" +
+                      (filter.category !== ContestCat.ALL ? " short" : "")
+                    }>
                     Contest Name
                   </th>
                   {[...Array(filter.maxIndex - filter.minIndex + 1)].map(
@@ -276,6 +305,7 @@ const ContestPage = () => {
                       ? paginate()
                       : [contestList.contests[randomContest]]
                   }
+                  category={filter.category}
                   submissions={submissions}
                   showColor={filter.showColor}
                   showDate={filter.showDate}
