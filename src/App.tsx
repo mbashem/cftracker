@@ -1,16 +1,17 @@
 import "./App.css";
-import { useEffect } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { Switch, Route } from "react-router-dom";
 import { useSelector } from "react-redux";
 
 import Menu from "./components/Menu";
-import ProblemPage from "./components/problem/ProblemPage";
-import ContestPage from "./components/contest/ContestPage";
-import HomePage from "./components/home/HomePage";
-import {  Path } from "./util/constants";
+import { Path } from "./util/constants";
 import { RootStateType } from "./data/store";
 import { ThemesType } from "./util/Theme";
-import StatPage from "./components/stats/StatPage";
+
+const HomePage = lazy(()=> import("./components/home/HomePage"));
+const ProblemPage = lazy(()=> import("./components/problem/ProblemPage"));
+const ContestPage = lazy(()=> import("./components/contest/ContestPage"));
+const StatPage = lazy(()=> import("./components/stats/StatPage"));
 
 function App() {
   const state: RootStateType = useSelector((state) => state);
@@ -47,12 +48,14 @@ function App() {
       <div
         className="d-flex flex-column justify-content-between"
         style={{ minHeight: "calc(100vh - 60px)" }}>
-        <Switch>
-          <Route exact path="/" component={HomePage} />
-          <Route path={Path.PROBLEMS} component={ProblemPage} />
-          <Route strict path={Path.CONTESTS} component={ContestPage} />
-          <Route strict path={Path.Stats} component={StatPage} />
-        </Switch>
+        <Suspense fallback={<div>Loading...</div>}>
+          <Switch>
+            <Route exact path="/" component={HomePage} />
+            <Route path={Path.PROBLEMS} component={ProblemPage} />
+            <Route strict path={Path.CONTESTS} component={ContestPage} />
+            <Route strict path={Path.Stats} component={StatPage} />
+          </Switch>
+        </Suspense>
       </div>
     </div>
   );

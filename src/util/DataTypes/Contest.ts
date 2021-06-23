@@ -124,8 +124,7 @@ export default class Contest {
       }
 
       if (this.category)
-        this.short =
-          this.category + "#" + this.name.substr(hashS, hashE - hashS + 1);
+        this.short = "CF#" + this.name.substr(hashS, hashE - hashS + 1);
     }
 
     if (firstS !== -1 && !this.category) {
@@ -136,8 +135,7 @@ export default class Contest {
       if (global !== -1) {
         this.category = ContestCat.GLOBAL;
       }
-      this.short =
-        this.category + "#" + this.name.substr(firstS, firstE - firstS + 1);
+      this.short = this.category +"#" + this.name.substr(firstS, firstE - firstS + 1);
     }
 
     if (!this.category) {
