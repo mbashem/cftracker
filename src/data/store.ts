@@ -57,7 +57,6 @@ export class RootStateForSave {
 const addSharedToProblems = (
   problemList: Problem[],
   sharedProblems: ProblemShared[],
-  userSubmissions: SubmissionStateType,
   contestList: Contest[]
 ): Contest[] => {
   let addProblems: Problem[] = new Array<Problem>();
@@ -103,33 +102,6 @@ const addSharedToProblems = (
   });
 
   for (let problem of newProblems) {
-    problem.solved = false;
-    problem.attempted = false;
-
-    let lb: number = lowerBound(
-      userSubmissions.submissions,
-      new SubmissionLite(problem.contestId, problem.index, Verdict.OK)
-    );
-    // let ub: number = upperBound(
-    //   userSubmissions.submissions,
-    //   new SubmissionLite(problem.contestId, problem.index, Verdict.OK)
-    // );
-
-    if (lb < userSubmissions.submissions.length) {
-      if (
-        userSubmissions.submissions[lb].contestId === problem.contestId &&
-        userSubmissions.submissions[lb].index === problem.index
-      ) {
-        if (userSubmissions.submissions[lb].verdict === Verdict.OK) {
-          problem.solved = true;
-          problem.attempted = false;
-        } else {
-          problem.solved = false;
-          problem.attempted = true;
-        }
-      }
-    }
-
     if (rec[problem.contestId] !== undefined)
       newConestList[rec[problem.contestId]].addProblem(problem);
   }
@@ -212,7 +184,6 @@ const newCombinedReducers = (state: any, action: any): RootStateType => {
   intermediateReducer.contestList.contests = addSharedToProblems(
     intermediateReducer.problemList.problems,
     intermediateReducer.sharedProblems.problems,
-    intermediateReducer.userSubmissions,
     intermediateReducer.contestList.contests
   );
 

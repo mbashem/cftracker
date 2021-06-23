@@ -23,7 +23,7 @@ const Filter = (props: PropsType) => {
 
   return (
     <div className="menu">
-      <ul className="navbar w-100 pt-3 mb-0 container d-flex justify-content-between list-unstyled">
+      <ul className="navbar w-100 pt-3 mb-0 p-0 container d-flex justify-content-between list-unstyled">
         <li className="nav-item col-6">
           <input
             className={"form-control mr-sm-2 " + props.theme.bgText}

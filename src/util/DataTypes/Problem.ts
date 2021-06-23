@@ -59,8 +59,6 @@ export default class Problem extends ProblemLite {
   rating?: number;
   tags: string[];
   solvedCount?: number;
-  solved?: boolean;
-  attempted?: boolean;
 
   constructor(
     contestId: number,
@@ -80,8 +78,6 @@ export default class Problem extends ProblemLite {
     this.tags = [...tags];
     if (solvedCount) this.solvedCount = solvedCount;
     else this.solvedCount = 0;
-
-    this.solved = this.attempted = false;
   }
 
   setTags = (tags: string[]): void => {
@@ -101,10 +97,6 @@ export default class Problem extends ProblemLite {
       this.rating,
       this.tags
     );
-
-    clonedProblem.attempted = this.attempted;
-    clonedProblem.solved = this.solved;
-
     return clonedProblem;
   };
 }

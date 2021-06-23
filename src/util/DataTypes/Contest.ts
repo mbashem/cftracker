@@ -95,20 +95,20 @@ export default class Contest {
           global = i;
       }
 
+      if (hashS === -1 && this.name[i] === "#") {
+        hashS = i;
+        hashE = i;
+      }
+
+      if (hashE === i - 1 && this.name[i] !== " ") hashE = i;
+
       if (this.name[i] >= "0" && this.name[i] <= "9") {
         if (firstS === -1) {
           firstS = i;
           firstE = i;
         }
 
-        if (i - 1 >= 0 && hashS === -1 && this.name[i - 1] === "#") {
-          hashS = i;
-          hashE = i;
-        }
-
         if (firstE === i - 1) firstE = i;
-
-        if (hashE === i - 1) hashE = i;
       }
     }
 
@@ -124,7 +124,7 @@ export default class Contest {
       }
 
       if (this.category)
-        this.short = "CF#" + this.name.substr(hashS, hashE - hashS + 1);
+        this.short = "CF" + this.name.substr(hashS, hashE - hashS + 1);
     }
 
     if (firstS !== -1 && !this.category) {
@@ -135,7 +135,8 @@ export default class Contest {
       if (global !== -1) {
         this.category = ContestCat.GLOBAL;
       }
-      this.short = this.category +"#" + this.name.substr(firstS, firstE - firstS + 1);
+      this.short =
+        this.category + "#" + this.name.substr(firstS, firstE - firstS + 1);
     }
 
     if (!this.category) {
@@ -171,18 +172,12 @@ export default class Contest {
 
     for (let i = 0; i < this.problemList[ind].length; i++) {
       if (problem.getId() === this.problemList[ind][i].getId()) {
-        if (this.problemList[ind][i].solved) this.solveCount--;
-        else if (this.problemList[ind][i].attempted) this.attempCount--;
-        if (problem.solved) this.solveCount++;
-        else if (problem.attempted) this.attempCount++;
         this.problemList[ind][i] = problem;
         return false;
       }
     }
 
     this.count++;
-    if (problem.solved) this.solveCount++;
-    else if (problem.attempted) this.attempCount++;
     this.problemList[ind].push(problem);
     this.problemList[ind].sort(sortByContestId);
     return true;

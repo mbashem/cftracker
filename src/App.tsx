@@ -8,10 +8,10 @@ import { Path } from "./util/constants";
 import { RootStateType } from "./data/store";
 import { ThemesType } from "./util/Theme";
 
-const HomePage = lazy(()=> import("./components/home/HomePage"));
-const ProblemPage = lazy(()=> import("./components/problem/ProblemPage"));
-const ContestPage = lazy(()=> import("./components/contest/ContestPage"));
-const StatPage = lazy(()=> import("./components/stats/StatPage"));
+const HomePage = lazy(() => import("./components/home/HomePage"));
+const ProblemPage = lazy(() => import("./components/problem/ProblemPage"));
+const ContestPage = lazy(() => import("./components/contest/ContestPage"));
+const StatPage = lazy(() => import("./components/stats/StatPage"));
 
 function App() {
   const state: RootStateType = useSelector((state) => state);
@@ -48,7 +48,12 @@ function App() {
       <div
         className="d-flex flex-column justify-content-between"
         style={{ minHeight: "calc(100vh - 60px)" }}>
-        <Suspense fallback={<div>Loading...</div>}>
+        <Suspense
+          fallback={
+            <div className="spinner-border text-secondary" role="status">
+              <span className="sr-only">Loading...</span>
+            </div>
+          }>
           <Switch>
             <Route exact path="/" component={HomePage} />
             <Route path={Path.PROBLEMS} component={ProblemPage} />
