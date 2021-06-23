@@ -24,15 +24,11 @@ import { Verdict } from "../../util/DataTypes/Submission";
 const ProblemPage = () => {
   const state: RootStateType = useSelector((state) => state) as RootStateType;
   const history = useHistory();
-  const dispatch = useDispatch();
 
   const SORT_BY_RATING = 1,
     SORT_BY_SOLVE = 2,
     ASCENDING = 0,
     DESCENDING = 1;
-  const SOLVED = "SOLVED",
-    ATTEMPTED = "ATTEMPED",
-    UNSOLVED = "UNSOLVED";
 
   enum ProblemSave {
     PROBLEM_SOLVE_STATUS = "PROBLEM_SOLVE_STATUS",
@@ -83,6 +79,8 @@ const ProblemPage = () => {
   const [selected, setSelected] = useState(0);
 
   const [filterState, setFilterState] = useState(initFilterState);
+  const [solved, setSolved] = useState(new Set<string>());
+  const [attempted, setAttempted] = useState(new Set<string>());
 
   const filterProblem = (problem: Problem) => {
     let containTags = false;
@@ -112,6 +110,12 @@ const ProblemPage = () => {
     return (
       status && ratingInside && containTags && searchIncluded && contestIdInside
     );
+  };
+
+  const getState = (problem: Problem) => {
+    if (solved.has(problem.getId())) return Verdict.SOLVED;
+    if (attempted.has(problem.getId())) return Verdict.ATTEMPTED;
+    return Verdict.UNSOLVED;
   };
 
   useEffect(() => {
@@ -152,6 +156,20 @@ const ProblemPage = () => {
     setSelected(0);
   }, [state, filterState, filter, filter.search, solveStatus]);
 
+  useEffect(() => {
+    let solv = new Set<string>();
+    let att = new Set<string>();
+
+    for (let submission of state.userSubmissions.submissions) {
+      if (submission.verdict === Verdict.OK)
+        solv.add(submission.contestId.toString() + submission.index);
+      else att.add(submission.contestId.toString() + submission.index);
+    }
+
+    setSolved(solv);
+    setAttempted(att);
+  }, [state.userSubmissions.submissions]);
+
   const sortList = (sortBy) => {
     if (filterState.sortBy === sortBy)
       setFilterState({ ...filterState, order: filterState.order ^ 1 });
@@ -163,12 +181,6 @@ const ProblemPage = () => {
           sortBy: sortBy,
         },
       });
-  };
-
-  const getState = (problem: Problem) => {
-    if (problem.solved) return SOLVED;
-    if (problem.attempted) return ATTEMPTED;
-    return UNSOLVED;
   };
 
   const paginate = () => {
@@ -315,6 +327,8 @@ const ProblemPage = () => {
                       ? paginate()
                       : [problemList.problems[randomProblem]]
                   }
+                  solved={solved}
+                  attempted={attempted}
                   perPage={filter.perPage}
                   pageSelected={selected}
                   theme={state.appState.theme}

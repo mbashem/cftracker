@@ -279,7 +279,7 @@ const ContestPage = () => {
                       "w-contest third-column" +
                       (filter.category !== ContestCat.ALL ? " short" : "")
                     }>
-                    Contest Name
+                    Contest
                   </th>
                   {[...Array(filter.maxIndex - filter.minIndex + 1)].map(
                     (x, i) => {
