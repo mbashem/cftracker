@@ -81,14 +81,15 @@ const ContestList = (props: PropsType) => {
 
     let name = problem.name;
     let id = problem.id;
-    // if (name.length > 10) name = name.substring(0, inside ? 9 : 14) + "...";
 
     let className =
       (solved ? props.theme.bgSuccess : attempted ? props.theme.bgDanger : "") +
       (inside ? " w-50 " : " w-100 ");
 
     return (
-      <div className={className + " p-2"} key={id}>
+      <div
+        className={className + " p-2" + (inside ? " border-end" : "")}
+        key={id}>
         <a
           className={
             "text-decoration-none wrap font-bold d-inline-block text-truncate " +

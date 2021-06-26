@@ -50,8 +50,10 @@ function App() {
         style={{ minHeight: "calc(100vh - 60px)" }}>
         <Suspense
           fallback={
-            <div className="spinner-border text-secondary" role="status">
-              <span className="sr-only">Loading...</span>
+            <div className="d-flex justify-content-center">
+              <div className="spinner-border text-secondary" role="status">
+                <span className="sr-only">Loading...</span>
+              </div>
             </div>
           }>
           <Switch>

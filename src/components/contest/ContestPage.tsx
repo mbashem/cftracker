@@ -40,7 +40,7 @@ const ContestPage = () => {
   const defaultFilt: filt = {
     perPage: 20,
     showDate: false,
-    maxIndex: 8,
+    maxIndex: 7,
     minIndex: 1,
     showRating: false,
     showColor: true,
@@ -233,7 +233,7 @@ const ContestPage = () => {
             />
           </CustomModal>
         </Filter>
-        <div className="pt-2 ps-3" style={{ width: "800px" }}>
+        <div className="pt-3 ps-3" style={{ width: "800px" }}>
           <CheckList
             items={Object.values(ContestCat)}
             active={new Set([filter.category])}

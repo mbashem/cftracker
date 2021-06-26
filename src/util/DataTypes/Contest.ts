@@ -100,7 +100,13 @@ export default class Contest {
         hashE = i;
       }
 
-      if (hashE === i - 1 && this.name[i] !== " ") hashE = i;
+      if (
+        hashE === i - 1 &&
+        ((this.name[i] >= "0" && this.name[i] <= "9") ||
+          (this.name[i] >= "A" && this.name[i] <= "Z") ||
+          (this.name[i] >= "a" && this.name[i] <= "z"))
+      )
+        hashE = i;
 
       if (this.name[i] >= "0" && this.name[i] <= "9") {
         if (firstS === -1) {
@@ -136,7 +142,9 @@ export default class Contest {
         this.category = ContestCat.GLOBAL;
       }
       this.short =
-        this.category + "#" + this.name.substr(firstS, firstE - firstS + 1);
+        (edu !== -1 ? this.category : "Edu") +
+        "#" +
+        this.name.substr(firstS, firstE - firstS + 1);
     }
 
     if (!this.category) {
