@@ -93,7 +93,7 @@ const Menu = (): JSX.Element => {
         className="collapse navbar-collapse d-flex justify-content-end"
         id="navbarTogglerDemo03">
         <ul className="navbar-nav ml-auto mt-2 mt-lg-0">
-        <li className="nav-item active">
+          <li className="nav-item active">
             <Link to={Path.Stats} className="nav-link" href="#">
               Stats
             </Link>
@@ -121,7 +121,7 @@ const Menu = (): JSX.Element => {
                   <PopoverTitle as="h3" className={state.appState.theme.bgText}>
                     <div className="d-flex align-items-center">
                       <span className={state.appState.theme.bgText}>
-                        CFTracker (Created by
+                        CFTracker (Created by {" "}
                         <a
                           href="https://codeforces.com/profile/bashem"
                           className={" " + state.appState.theme.text}
@@ -132,7 +132,7 @@ const Menu = (): JSX.Element => {
                       </span>
                     </div>
                   </PopoverTitle>
-                  <PopoverContent>
+                  <PopoverContent className={state.appState.theme.bgText}>
                     <ul>
                       <li>
                         On Contest Page To see rating hover over problem Name
@@ -201,7 +201,7 @@ const Menu = (): JSX.Element => {
               }}>
               <input
                 name="handle"
-                className="form-control mr-sm-2"
+                className="form-control bg-light"
                 type="text"
                 placeholder="handle1,handle2,.."
                 aria-label="handles"

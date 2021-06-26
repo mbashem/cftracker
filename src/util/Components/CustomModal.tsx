@@ -25,7 +25,7 @@ const CustomModal = (props: PropsType) => {
         {<FontAwesomeIcon icon={faFilter} />}
       </button>
       <Modal className="modal" show={show} onHide={handleClose}>
-        <Modal.Header className="modal-header">
+        <Modal.Header className={"modal-header " + props.theme.bgText}>
           <Modal.Title>{props.title}</Modal.Title>
           <button
             type="button"
@@ -34,7 +34,7 @@ const CustomModal = (props: PropsType) => {
             aria-label="Close"
             onClick={() => handleClose()}></button>
         </Modal.Header>
-        <Modal.Body>{props.children}</Modal.Body>
+        <Modal.Body className={props.theme.bgText}>{props.children}</Modal.Body>
       </Modal>
     </>
   );
