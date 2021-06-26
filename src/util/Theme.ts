@@ -14,6 +14,7 @@ export default class Theme {
   thead: string;
   bgSuccess: string;
   bgDanger: string;
+  themeType: ThemesType;
 
   constructor(selected?: ThemesType) {
     switch (selected) {
@@ -27,6 +28,7 @@ export default class Theme {
         this.thead = "thead-dark";
         this.bgSuccess = "bg-success";
         this.bgDanger = "bg-danger";
+        this.themeType = ThemesType.DARK;
         break;
       case ThemesType.LIGHT:
       default:
@@ -39,6 +41,7 @@ export default class Theme {
         this.thead = "thead-light";
         this.bgSuccess = "bg-success-light";
         this.bgDanger = "bg-danger-light";
+        this.themeType = ThemesType.LIGHT;
         break;
     }
 

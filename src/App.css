@@ -29,6 +29,10 @@
   background-color: #ffe3e3 !important;
 }
 
+.border-dark {
+  border-color: #373b3e !important;
+}
+
 /* .first-column {
   position: sticky;
   left: 0px;

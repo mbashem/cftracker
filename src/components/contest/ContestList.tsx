@@ -8,7 +8,7 @@ import {
 import Contest, { ContestCat } from "../../util/DataTypes/Contest";
 import Problem from "../../util/DataTypes/Problem";
 import { Verdict } from "../../util/DataTypes/Submission";
-import Theme from "../../util/Theme";
+import Theme, { ThemesType } from "../../util/Theme";
 
 interface PropsType {
   contestlist: Contest[];
@@ -50,7 +50,7 @@ const ContestList = (props: PropsType) => {
     }
   };
 
-  const renderProblem = (problem: Problem, inside = false) => {
+  const renderProblem = (problem: Problem, inside = 0) => {
     let solved = false;
     let attempted = false;
 
@@ -88,7 +88,14 @@ const ContestList = (props: PropsType) => {
 
     return (
       <div
-        className={className + " p-2" + (inside ? " border-end" : "")}
+        className={
+          className +
+          " p-2" +
+          (inside === 1
+            ? " border-end" +
+              (props.theme.themeType === ThemesType.DARK ? " border-dark" : "")
+            : "")
+        }
         key={id}>
         <a
           className={
@@ -150,7 +157,7 @@ const ContestList = (props: PropsType) => {
               : "")
           }
           key={contestId + index.charAt(0) + "1"}>
-          {renderProblem(problems[0], false)}
+          {renderProblem(problems[0])}
         </td>
       );
     }
@@ -159,8 +166,8 @@ const ContestList = (props: PropsType) => {
       return (
         <td className={"p-0 " + "w-problem "} key={contestId + index.charAt(0)}>
           <div className="d-flex">
-            {problems.map((element) =>
-              renderProblem(element, problems.length !== 1)
+            {problems.map((element, index) =>
+              renderProblem(element, problems.length === 0 ? 0 : index + 1)
             )}
           </div>
         </td>

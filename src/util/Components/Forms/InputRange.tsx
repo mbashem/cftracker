@@ -26,6 +26,7 @@ const InputRange = (props: PropsType) => {
         step={props.step}
         title={props.minTitle}
         className="pe-1"
+        inputClass="bg-light"
         onChange={(num) => {
           props.onMinChange(num);
         }}
@@ -39,6 +40,7 @@ const InputRange = (props: PropsType) => {
         title={props.maxTitle}
         step={props.step}
         className="ps-1"
+        inputClass="bg-light"
         onChange={(num) => {
           props.onMaxChange(num);
         }}
