@@ -142,7 +142,7 @@ export default class Contest {
         this.category = ContestCat.GLOBAL;
       }
       this.short =
-        (edu !== -1 ? this.category : "Edu") +
+        (edu === -1 ? this.category : "Edu") +
         "#" +
         this.name.substr(firstS, firstE - firstS + 1);
     }
