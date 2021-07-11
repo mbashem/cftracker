@@ -7,10 +7,13 @@ import Menu from "./components/Menu";
 import { Path } from "./util/constants";
 import { RootStateType } from "./data/store";
 import { ThemesType } from "./util/Theme";
+import HomePage from "./components/home/HomePage";
+import ProblemPage from "./components/problem/ProblemPage";
+import ContestPage from "./components/contest/ContestPage";
 
-const HomePage = lazy(() => import("./components/home/HomePage"));
-const ProblemPage = lazy(() => import("./components/problem/ProblemPage"));
-const ContestPage = lazy(() => import("./components/contest/ContestPage"));
+// const HomePage = lazy(() => import("./components/home/HomePage"));
+// const ProblemPage = lazy(() => import("./components/problem/ProblemPage"));
+// const ContestPage = lazy(() => import("./components/contest/ContestPage"));
 const StatPage = lazy(() => import("./components/stats/StatPage"));
 
 function App() {
@@ -50,7 +53,7 @@ function App() {
         style={{ minHeight: "calc(100vh - 60px)" }}>
         <Suspense
           fallback={
-            <div className="d-flex justify-content-center">
+            <div className="d-flex justify-content-center pt-5 mt-5">
               <div className="spinner-border text-secondary" role="status">
                 <span className="sr-only">Loading...</span>
               </div>

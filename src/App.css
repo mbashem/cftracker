@@ -94,10 +94,12 @@
 
 .w-id {
   width: 50px;
+  vertical-align: middle;
 }
 
 .w-sl {
   width: 20px;
+  vertical-align: middle;
 }
 
 footer {
@@ -181,5 +183,5 @@ footer {
 }
 
 .dark-rating-legendary::first-letter {
-  color: black !important;
+  color: #f8f9fa !important;
 }

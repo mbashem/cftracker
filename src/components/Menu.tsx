@@ -3,6 +3,8 @@ import { faInfo, faSun, faSync } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useEffect, useState } from "react";
 import {
+  Nav,
+  Navbar,
   OverlayTrigger,
   Popover,
   PopoverContent,
@@ -71,28 +73,19 @@ const Menu = (): JSX.Element => {
   };
 
   return (
-    <nav
+    <Navbar
       className={
         "navbar navbar-expand-lg p-2 ps-4 pe-4 " + state.appState.theme.navbar
-      }>
-      <button
-        className="navbar-toggler"
-        type="button"
-        data-toggle="collapse"
-        data-target="#navbarTogglerDemo03"
-        aria-controls="navbarTogglerDemo03"
-        aria-expanded="false"
-        aria-label="Toggle navigation">
-        <span className="navbar-toggler-icon"></span>
-      </button>
+      } expand="md">
       <Link to="/" className="navbar-brand" href="#">
         CFTracker
       </Link>
+      <Navbar.Toggle aria-controls="basic-navbar-nav" />
 
-      <div
-        className="collapse navbar-collapse d-flex justify-content-end"
-        id="navbarTogglerDemo03">
-        <ul className="navbar-nav ml-auto mt-2 mt-lg-0">
+      <Navbar.Collapse
+        className="d-flex justify-content-end"
+        id="basic-navbar-nav">
+        <Nav className="ml-auto mt-2 mt-lg-0">
           <li className="nav-item active">
             <Link to={Path.Stats} className="nav-link" href="#">
               Stats
@@ -210,9 +203,9 @@ const Menu = (): JSX.Element => {
               />
             </form>
           </li>
-        </ul>
-      </div>
-    </nav>
+        </Nav>
+      </Navbar.Collapse>
+    </Navbar>
   );
 };
 
