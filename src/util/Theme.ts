@@ -20,7 +20,7 @@ export default class Theme {
     switch (selected) {
       case ThemesType.DARK:
         this.btn = "btn-dark";
-        this.navbar = "navbar-light bg-light";
+        this.navbar = "navbar-dark bg-secondary";
         this.bg = "bg-dark";
         this.text = "text-light";
         this.name = "dark";
