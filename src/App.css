@@ -33,6 +33,10 @@
   border-color: #373b3e !important;
 }
 
+.navbar-dark.bg-secondary {
+  background-color: #313438 !important;
+}
+
 /* .first-column {
   position: sticky;
   left: 0px;
@@ -170,7 +174,7 @@ footer {
 }
 
 .dark-rating-violet {
-  color: #d25ad2 !important;
+  color: #ec78ec !important;
 }
 
 .dark-rating-orange {
