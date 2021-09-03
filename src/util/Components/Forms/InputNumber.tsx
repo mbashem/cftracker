@@ -18,12 +18,14 @@ const InputNumber = (props: PropsType) => {
   return (
     <div
       className={"input-group " + (props.className ? props.className : "")}
-      title={props.title ? props.title : ""}>
+      title={props.title ? props.title : ""}
+    >
       <span
         className={
           "input-group-text " + (props.textClass ? props.textClass : "")
         }
-        id={props.name + "-input"}>
+        id={props.name + "-input"}
+      >
         {props.header}
       </span>
       <input

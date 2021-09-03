@@ -1,4 +1,5 @@
 import React from "react";
+import { OverlayTrigger, Tooltip } from "react-bootstrap";
 import {
   getProblemUrl,
   formateDate,
@@ -92,11 +93,25 @@ const ContestList = (props: PropsType) => {
           className +
           " p-2" +
           (inside === 1
-            ? " border-end" +
+            ? " pe-0 border-end" +
               (props.theme.themeType === ThemesType.DARK ? " border-dark" : "")
             : "")
         }
-        key={id}>
+        key={id}
+      >
+        {/* <OverlayTrigger
+          placement={"top"}
+          key={`p-${problem.id}`}
+          overlay={
+            <Tooltip id={`p-${problem.id}`}>
+              <div className="d-flex flex-column">
+                <div>{problem.name}</div>
+                <div>Rating:{problem.rating}</div>
+                <div>{problem.solvedCount}</div>
+              </div>
+            </Tooltip>
+          }
+        > */}
         <a
           className={
             "text-decoration-none wrap font-bold d-inline-block text-truncate " +
@@ -115,7 +130,8 @@ const ContestList = (props: PropsType) => {
           data-bs-html="true"
           data-bs-toggle="tooltip"
           data-bs-placement="top"
-          href={getProblemUrl(problem.contestId, problem.index)}>
+          href={getProblemUrl(problem.contestId, problem.index)}
+        >
           {problem.index + ". "}
           {name}
           {props.showRating ? (
@@ -126,6 +142,7 @@ const ContestList = (props: PropsType) => {
             ""
           )}
         </a>
+        {/* </OverlayTrigger> */}
       </div>
     );
   };
@@ -156,7 +173,8 @@ const ContestList = (props: PropsType) => {
               ? props.theme.bgDanger
               : "")
           }
-          key={contestId + index.charAt(0) + "1"}>
+          key={contestId + index.charAt(0) + "1"}
+        >
           {renderProblem(problems[0])}
         </td>
       );
@@ -198,7 +216,8 @@ const ContestList = (props: PropsType) => {
           scope="row"
           className={
             "w-sl p-2 first-column " + (solved ? props.theme.bgSuccess : " ")
-          }>
+          }
+        >
           <div className="d-inline-block">
             {props.pageSelected * props.perPage + index + 1}
           </div>
@@ -213,7 +232,8 @@ const ContestList = (props: PropsType) => {
             }
             title={
               "Solve Count: " + contest.solveCount + " , Total:" + contest.count
-            }>
+            }
+          >
             <div className="d-inline-block">{contest.id}</div>
           </td>
         )}
@@ -222,19 +242,37 @@ const ContestList = (props: PropsType) => {
             "w-contest p-0 " +
             (solved ? props.theme.bgSuccess : " ") +
             (short ? " short" : " ")
-          }>
-          <div className="d-inline-block name">
-            <a
-              className={
-                "text-decoration-none wrap d-inline-block font-bold pt-2 pb-2 ps-2 pe-1 w-100 " +
-                props.theme.text
+          }
+        >
+          <div className="d-inline-block w-100 name">
+            <OverlayTrigger
+              placement={"top"}
+              key={`contest-name-${contest.id.toString()}`}
+              overlay={
+                <Tooltip id={`contest-name-${contest.id.toString()}`}>
+                  <p
+                    className="text-center text-wrap pe-1"
+                    // style={{ minWidth: "300px" }}
+                  >
+                    {contest.name}
+                  </p>
+                </Tooltip>
               }
-              target="_blank"
-              rel="noreferrer"
-              title={contest.name}
-              href={getContestUrl(contest.id)}>
-              {short ? contest.short : contest.name}
-            </a>
+            >
+              <a
+                className={
+                  "text-decoration-none wrap d-inline-block pt-2 pb-2 ps-2 pe-1 mw-100 " +
+                  props.theme.text +
+                  (short ? " text-truncate" : " ")
+                }
+                target="_blank"
+                rel="noreferrer"
+                //title={contest.name}
+                href={getContestUrl(contest.id)}
+              >
+                {short ? contest.short : contest.name}
+              </a>
+            </OverlayTrigger>
           </div>
           {props.showDate ? (
             <div className="time ps-2">

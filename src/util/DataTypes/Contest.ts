@@ -118,10 +118,13 @@ export default class Contest {
       }
     }
 
+    
+
     if (hashS !== -1) {
       if (div2 !== -1 && div1 !== -1) {
         this.category = ContestCat.DIV12;
-      } else if (div1 !== -1) {
+      } 
+      else if (div1 !== -1) {
         this.category = ContestCat.DIV1;
       } else if (div2 !== -1) {
         this.category = ContestCat.DIV2;
@@ -148,8 +151,12 @@ export default class Contest {
     }
 
     if (!this.category) {
-      this.category = ContestCat.OTHERS;
       this.short = this.name;
+      if (div2 !== -1 && div1 !== -1) {
+        this.category = ContestCat.DIV12;
+      } else {
+        this.category = ContestCat.OTHERS;
+      }
     }
   }
 
