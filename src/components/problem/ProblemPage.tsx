@@ -237,6 +237,7 @@ const ProblemPage = () => {
               max={state.appState.maxRating}
               minValue={filter.minRating}
               maxValue={filter.maxRating}
+              theme={state.appState.theme}
               name="Rating"
               step={100}
               minTitle="Set 0 to show Unrated Problems"
@@ -253,6 +254,7 @@ const ProblemPage = () => {
               max={state.appState.maxContestId}
               minValue={filter.minContestId}
               maxValue={filter.maxContestId}
+              theme={state.appState.theme}
               name="ContestId"
               step={1}
               className="p-2"

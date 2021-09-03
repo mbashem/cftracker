@@ -169,23 +169,25 @@ const ContestPage = () => {
             <div className="group">
               <div className="d-flex flex-column justify-content-between pb-2 w-100">
                 <div className="d-flex row justify-content-between pt-1">
-                  <div className="col-3">
+                  <div className="col-4">
                     <InputChecked
                       header="Date"
                       name="showDate"
                       checked={filter.showDate}
                       title={"Show Date?"}
+                      theme={state.appState.theme}
                       onChange={(val) => {
                         setFilter({ ...filter, showDate: !filter.showDate });
                       }}
                     />
                   </div>
-                  <div className="col-3">
+                  <div className="col-4">
                     <InputChecked
                       header="Rating"
                       name="showRating"
                       checked={filter.showRating}
                       title={"Show Rating?"}
+                      theme={state.appState.theme}
                       onChange={(val) => {
                         setFilter({
                           ...filter,
@@ -194,12 +196,13 @@ const ContestPage = () => {
                       }}
                     />
                   </div>
-                  <div className="col-3">
+                  <div className="col-4">
                     <InputChecked
                       header="Color"
                       name="showColor"
                       checked={filter.showColor}
                       title={"Show Color?"}
+                      theme={state.appState.theme}
                       onChange={(val) => {
                         setFilter({ ...filter, showColor: !filter.showColor });
                       }}
@@ -214,6 +217,7 @@ const ContestPage = () => {
                     step={1}
                     minValue={filter.minIndex}
                     maxValue={filter.maxIndex}
+                    theme={state.appState.theme}
                     onMaxChange={(num) => {
                       setFilter({ ...filter, maxIndex: num });
                     }}

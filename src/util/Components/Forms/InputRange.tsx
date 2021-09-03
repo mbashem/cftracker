@@ -1,3 +1,4 @@
+import Theme from "../../Theme";
 import InputNumber from "./InputNumber";
 
 interface PropsType {
@@ -12,6 +13,7 @@ interface PropsType {
   minTitle?: string;
   maxTitle?: string;
   className?: string;
+  theme: Theme;
 }
 
 const InputRange = (props: PropsType) => {
@@ -25,8 +27,9 @@ const InputRange = (props: PropsType) => {
         name={"min" + props.name}
         step={props.step}
         title={props.minTitle}
-        className="pe-1"
-        inputClass="bg-light"
+        className={"ps-1 " + props.theme.bgText}
+        inputClass={props.theme.bgText}
+        textClass={props.theme.bgText}
         onChange={(num) => {
           props.onMinChange(num);
         }}
@@ -39,8 +42,9 @@ const InputRange = (props: PropsType) => {
         name={"max" + props.name}
         title={props.maxTitle}
         step={props.step}
-        className="ps-1"
-        inputClass="bg-light"
+        className={"ps-1 " + props.theme.bgText}
+        textClass={props.theme.bgText}
+        inputClass={props.theme.bgText}
         onChange={(num) => {
           props.onMaxChange(num);
         }}
