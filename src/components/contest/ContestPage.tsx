@@ -33,6 +33,7 @@ const ContestPage = () => {
     minIndex: number;
     showRating: boolean;
     showColor: boolean;
+    autoIndex: boolean;
     search: string;
     category: ContestCat;
   }
@@ -44,6 +45,7 @@ const ContestPage = () => {
     minIndex: 1,
     showRating: false,
     showColor: true,
+    autoIndex: false,
     category: ContestCat.DIV2,
     search: SEARCH in query ? query[SEARCH] : "",
   };
@@ -240,6 +242,7 @@ const ContestPage = () => {
             name={""}
             onClick={(str) => {
               setFilter({ ...filter, category: str as ContestCat });
+              setSelected(0);
             }}
             activeClass="btn-secondary active"
             inactiveClass="btn-secondary"

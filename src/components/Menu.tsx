@@ -1,15 +1,9 @@
 import { faMoon } from "@fortawesome/free-regular-svg-icons";
 import { faInfo, faSun, faSync } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import Button from "@restart/ui/esm/Button";
 import { useEffect, useState } from "react";
-import {
-  Nav,
-  Navbar,
-  OverlayTrigger,
-  Popover,
-  PopoverContent,
-  PopoverTitle,
-} from "react-bootstrap";
+import { Nav, Navbar, OverlayTrigger, Popover, Tooltip } from "react-bootstrap";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import {
@@ -76,7 +70,9 @@ const Menu = (): JSX.Element => {
     <Navbar
       className={
         "navbar navbar-expand-lg p-2 ps-4 pe-4 " + state.appState.theme.navbar
-      } expand="md">
+      }
+      expand="md"
+    >
       <Link to="/" className="navbar-brand" href="#">
         CFTracker
       </Link>
@@ -84,7 +80,8 @@ const Menu = (): JSX.Element => {
 
       <Navbar.Collapse
         className="d-flex justify-content-end"
-        id="basic-navbar-nav">
+        id="basic-navbar-nav"
+      >
         <Nav className="ml-auto mt-2 mt-lg-0">
           <li className="nav-item active">
             <Link to={Path.Stats} className="nav-link" href="#">
@@ -110,35 +107,42 @@ const Menu = (): JSX.Element => {
               overlay={
                 <Popover
                   id="popover-basic"
-                  className={state.appState.theme.bgText}>
-                  <PopoverTitle as="h3" className={state.appState.theme.bgText}>
+                  className={state.appState.theme.bgText}
+                >
+                  <Popover.Header
+                    as="h3"
+                    className={state.appState.theme.bgText}
+                  >
                     <div className="d-flex align-items-center">
                       <span className={state.appState.theme.bgText}>
-                        CFTracker (Created by {" "}
+                        CFTracker (Created by{" "}
                         <a
                           href="https://codeforces.com/profile/bashem"
                           className={" " + state.appState.theme.text}
-                          target="__blank">
+                          target="__blank"
+                        >
                           Bashem
                         </a>
                         )
                       </span>
                     </div>
-                  </PopoverTitle>
-                  <PopoverContent className={state.appState.theme.bgText}>
+                  </Popover.Header>
+                  <Popover.Body className={state.appState.theme.bgText}>
                     <ul>
                       <li>
                         On Contest Page To see rating hover over problem Name
                       </li>
                     </ul>
-                  </PopoverContent>
+                  </Popover.Body>
                 </Popover>
-              }>
+              }
+            >
               <a
                 href="#"
                 onClick={(e) => e.preventDefault()}
                 className="nav-link"
-                title="Created by Bashem">
+                title="Created by Bashem"
+              >
                 <FontAwesomeIcon icon={faInfo} />
               </a>
             </OverlayTrigger>
@@ -163,7 +167,8 @@ const Menu = (): JSX.Element => {
                     AppReducerType.CHANGE_THEME,
                     ThemesType.DARK
                   );
-              }}>
+              }}
+            >
               <FontAwesomeIcon
                 icon={
                   state.appState.themeMod === ThemesType.DARK ? faMoon : faSun
@@ -180,7 +185,8 @@ const Menu = (): JSX.Element => {
                 sync();
               }}
               title="Refresh Submissions"
-              href="#">
+              href="#"
+            >
               <FontAwesomeIcon icon={faSync} />
             </a>
           </li>
@@ -191,10 +197,11 @@ const Menu = (): JSX.Element => {
               onSubmit={(e) => {
                 e.preventDefault();
                 submitUser();
-              }}>
+              }}
+            >
               <input
                 name="handle"
-                className="form-control bg-light"
+                className={"form-control " + state.appState.theme.bgText}
                 type="text"
                 placeholder="handle1,handle2,.."
                 aria-label="handles"

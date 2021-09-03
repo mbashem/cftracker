@@ -16,6 +16,12 @@
   background-color: #b3b3b3;
 }
 
+
+/* Italic is not imported in public, only 400,300,700 is imported */
+body {
+  font-family: 'Roboto', sans-serif;
+}
+
 .sticky-col {
   position: -webkit-sticky;
   position: sticky;
@@ -37,24 +43,18 @@
   background-color: #313438 !important;
 }
 
-/* .first-column {
-  position: sticky;
-  left: 0px;
-  border-left: 1px;
-  border-right: 1px;
+.bg-dark {
+  background-color: #22272e !important;
 }
 
-.second-column {
-  position: sticky;
-  left: 20px;
-  border-left: 1px;
-  border-right: 1px;
+.bg-secondary {
+  background-color: #2d333b !important;
 }
 
-.third-column {
-  position: sticky;
-  left: 70px;
-} */
+.table-dark td,
+.table-dark th {
+  background-color: #22272e !important;
+}
 
 .w-contest {
   width: 270px !important;
@@ -68,7 +68,7 @@
 .w-contest.short {
   width: 110px !important;
   min-width: 110px !important;
-  max-width: 140px !important;
+  max-width: 110px !important;
 }
 
 /* .w-problem .w-100, */
