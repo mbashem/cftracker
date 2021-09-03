@@ -163,39 +163,48 @@ const ContestPage = () => {
           setRandom={(num) => {
             setRandomContest(num);
           }}
-          theme={state.appState.theme}>
+          theme={state.appState.theme}
+        >
           <CustomModal title="filter" theme={state.appState.theme}>
             <div className="group">
               <div className="d-flex flex-column justify-content-between pb-2 w-100">
-                <div className="d-flex justify-content-between pt-1">
-                  <InputChecked
-                    header="Show Date"
-                    name="showDate"
-                    checked={filter.showDate}
-                    title={"Show Date?"}
-                    onChange={(val) => {
-                      setFilter({ ...filter, showDate: !filter.showDate });
-                    }}
-                  />
-                  <InputChecked
-                    header="Show Rating"
-                    name="showRating"
-                    checked={filter.showRating}
-                    title={"Show Rating?"}
-                    onChange={(val) => {
-                      setFilter({ ...filter, showRating: !filter.showRating });
-                    }}
-                  />
-
-                  <InputChecked
-                    header="Show Color"
-                    name="showColor"
-                    checked={filter.showColor}
-                    title={"Show Color?"}
-                    onChange={(val) => {
-                      setFilter({ ...filter, showColor: !filter.showColor });
-                    }}
-                  />
+                <div className="d-flex row justify-content-between pt-1">
+                  <div className="col-3">
+                    <InputChecked
+                      header="Date"
+                      name="showDate"
+                      checked={filter.showDate}
+                      title={"Show Date?"}
+                      onChange={(val) => {
+                        setFilter({ ...filter, showDate: !filter.showDate });
+                      }}
+                    />
+                  </div>
+                  <div className="col-3">
+                    <InputChecked
+                      header="Rating"
+                      name="showRating"
+                      checked={filter.showRating}
+                      title={"Show Rating?"}
+                      onChange={(val) => {
+                        setFilter({
+                          ...filter,
+                          showRating: !filter.showRating,
+                        });
+                      }}
+                    />
+                  </div>
+                  <div className="col-3">
+                    <InputChecked
+                      header="Color"
+                      name="showColor"
+                      checked={filter.showColor}
+                      title={"Show Color?"}
+                      onChange={(val) => {
+                        setFilter({ ...filter, showColor: !filter.showColor });
+                      }}
+                    />
+                  </div>
                 </div>
                 <div className="pt-2">
                   <InputRange
@@ -257,31 +266,35 @@ const ContestPage = () => {
             <table
               className={
                 "table table-bordered m-0 " + state.appState.theme.table
-              }>
+              }
+            >
               <thead className={state.appState.theme.thead}>
                 <tr>
                   <th
                     scope="col"
                     className="w-sl first-column"
-                    style={{ width: "20px" }}>
+                    style={{ width: "20px" }}
+                  >
                     #
                   </th>
-                  {filter.category !== ContestCat.ALL ? "" : 
-                  (
-                  <th
-                    scope="col"
-                    className="w-id second-column"
-                    style={{ width: "50px" }}>
-                    ID
-                  </th>
-                  )
-                  }
+                  {filter.category !== ContestCat.ALL ? (
+                    ""
+                  ) : (
+                    <th
+                      scope="col"
+                      className="w-id second-column"
+                      style={{ width: "50px" }}
+                    >
+                      ID
+                    </th>
+                  )}
                   <th
                     scope="col"
                     className={
                       "w-contest third-column" +
                       (filter.category !== ContestCat.ALL ? " short" : "")
-                    }>
+                    }
+                  >
                     Contest
                   </th>
                   {[...Array(filter.maxIndex - filter.minIndex + 1)].map(
@@ -293,7 +306,8 @@ const ContestPage = () => {
                             "problem-index-" +
                             charInc("A", i + filter.minIndex - 1)
                           }
-                          className={"w-problem"}>
+                          className={"w-problem"}
+                        >
                           {charInc("A", i + filter.minIndex - 1)}
                         </th>
                       );
