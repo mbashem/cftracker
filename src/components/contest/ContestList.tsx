@@ -250,7 +250,12 @@ const ContestList = (props: PropsType) => {
               key={`contest-name-${contest.id.toString()}`}
               overlay={
                 <Tooltip id={`contest-name-${contest.id.toString()}`}>
-                  <div className="w-100">{contest.name}</div>
+                  <p
+                    className="text-center text-wrap pe-1"
+                    // style={{ minWidth: "300px" }}
+                  >
+                    {contest.name}
+                  </p>
                 </Tooltip>
               }
             >
