@@ -37,6 +37,7 @@ export default class Contest {
   short?: string;
 
   problemList: Record<string, Problem[]>;
+  mxInd : number = 0;
 
   constructor(
     id: number,
@@ -181,6 +182,8 @@ export default class Contest {
 
   addProblem = (problem: Problem): boolean => {
     let ind: string = problem.index.charAt(0);
+    let indnum: number = problem.index.charCodeAt(0)-('A').charCodeAt(0)+1;
+    if(indnum > this.mxInd) this.mxInd = indnum;
     if (this.problemList[ind] === undefined)
       this.problemList[ind] = new Array<Problem>();
     if (this.problemList[ind].length > 2) return false;

@@ -16,6 +16,7 @@ interface PropsType {
   showDate: boolean;
   minIndex: number;
   maxIndex: number;
+  autoIndex: boolean;
   perPage: number;
   pageSelected: number;
   theme: Theme;
@@ -27,6 +28,28 @@ interface PropsType {
 
 const ContestList = (props: PropsType) => {
   let short = props.category !== ContestCat.ALL;
+  let mxInd: number = 0;
+
+  if (props.autoIndex) {
+    for (let contest of props.contestlist) {
+      if (contest.mxInd > mxInd) {
+        mxInd = contest.mxInd;
+      }
+    }
+  }
+
+  interface indInt {
+    minIndex: number;
+    maxIndex: number;
+  }
+
+  let ind: indInt = {
+    minIndex: props.autoIndex ? 1 : props.minIndex,
+    maxIndex: props.autoIndex ? mxInd : props.maxIndex,
+  };
+
+  // console.log(ind.minIndex);
+  // console.log(ind.maxIndex);
 
   const getStatus = (problem: Problem) => {
     if (!props.submissions.get(problem.contestId)) return Verdict.UNSOLVED;
@@ -222,7 +245,7 @@ const ContestList = (props: PropsType) => {
             {props.pageSelected * props.perPage + index + 1}
           </div>
         </td>
-        {short ? (
+        {/* {short ? (
           ""
         ) : (
           <td
@@ -236,7 +259,7 @@ const ContestList = (props: PropsType) => {
           >
             <div className="d-inline-block">{contest.id}</div>
           </td>
-        )}
+        )} */}
         <td
           className={
             "w-contest p-0 " +
@@ -254,7 +277,8 @@ const ContestList = (props: PropsType) => {
                     className="text-center text-wrap pe-1"
                     // style={{ minWidth: "300px" }}
                   >
-                    {contest.name}
+                    <div>{contest.name}</div>
+                    <div>ID: {contest.id}</div>
                   </p>
                 </Tooltip>
               }
@@ -282,7 +306,7 @@ const ContestList = (props: PropsType) => {
             ""
           )}
         </td>
-        {[...Array(props.maxIndex - props.minIndex + 1)].map((x, i) => {
+        {[...Array(ind.maxIndex - ind.minIndex + 1)].map((x, i) => {
           return getInfo(contest, charInc("A", i + props.minIndex - 1));
         })}
       </tr>
@@ -291,9 +315,55 @@ const ContestList = (props: PropsType) => {
 
   return (
     <React.Fragment>
-      {props.contestlist.map((contest: Contest, index: number) => {
-        return contestCard(contest, index);
-      })}
+      <table className={"table table-bordered m-0 " + props.theme.table}>
+        <thead className={props.theme.thead}>
+          <tr>
+            <th
+              scope="col"
+              className="w-sl first-column"
+              style={{ width: "20px" }}
+            >
+              #
+            </th>
+            {/* {props.category !== ContestCat.ALL ? (
+              ""
+            ) : (
+              <th
+                scope="col"
+                className="w-id second-column"
+                style={{ width: "50px" }}
+              >
+                ID
+              </th>
+            )} */}
+            <th
+              scope="col"
+              className={
+                "w-contest third-column" +
+                (props.category !== ContestCat.ALL ? " short" : "")
+              }
+            >
+              Contest
+            </th>
+            {[...Array(ind.maxIndex - ind.minIndex + 1)].map((x, i) => {
+              return (
+                <th
+                  scope="col"
+                  key={"problem-index-" + charInc("A", i + props.minIndex - 1)}
+                  className={"w-problem"}
+                >
+                  {charInc("A", i + props.minIndex - 1)}
+                </th>
+              );
+            })}
+          </tr>
+        </thead>
+        <tbody className={props.theme.bg}>
+          {props.contestlist.map((contest: Contest, index: number) => {
+            return contestCard(contest, index);
+          })}
+        </tbody>
+      </table>
     </React.Fragment>
   );
 };
