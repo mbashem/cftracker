@@ -36,6 +36,7 @@ const ContestPage = () => {
     autoIndex: boolean;
     search: string;
     category: ContestCat;
+    // ShowContestId: boolean;
   }
 
   const defaultFilt: filt = {
@@ -43,9 +44,10 @@ const ContestPage = () => {
     showDate: false,
     maxIndex: 7,
     minIndex: 1,
-    showRating: false,
+    showRating: true,
     showColor: true,
-    autoIndex: false,
+    autoIndex: true,
+    // ShowContestId: false,
     category: ContestCat.DIV2,
     search: SEARCH in query ? query[SEARCH] : "",
   };
@@ -208,6 +210,18 @@ const ContestPage = () => {
                       }}
                     />
                   </div>
+                  <div className="col-5 mt-1">
+                    <InputChecked
+                      header="Auto Index"
+                      name="Auto Index"
+                      checked={filter.autoIndex}
+                      title={"Auto Index?"}
+                      theme={state.appState.theme}
+                      onChange={(val) => {
+                        setFilter({ ...filter, autoIndex: !filter.autoIndex });
+                      }}
+                    />
+                  </div>
                 </div>
                 <div className="pt-2">
                   <InputRange
@@ -267,65 +281,14 @@ const ContestPage = () => {
           // style={{ height: "calc(100vh - 175px)" }}
         >
           <div className={"h-100 m-0 pb-2 " + state.appState.theme.bg}>
-            <table
-              className={
-                "table table-bordered m-0 " + state.appState.theme.table
-              }
-            >
-              <thead className={state.appState.theme.thead}>
-                <tr>
-                  <th
-                    scope="col"
-                    className="w-sl first-column"
-                    style={{ width: "20px" }}
-                  >
-                    #
-                  </th>
-                  {filter.category !== ContestCat.ALL ? (
-                    ""
-                  ) : (
-                    <th
-                      scope="col"
-                      className="w-id second-column"
-                      style={{ width: "50px" }}
-                    >
-                      ID
-                    </th>
-                  )}
-                  <th
-                    scope="col"
-                    className={
-                      "w-contest third-column" +
-                      (filter.category !== ContestCat.ALL ? " short" : "")
-                    }
-                  >
-                    Contest
-                  </th>
-                  {[...Array(filter.maxIndex - filter.minIndex + 1)].map(
-                    (x, i) => {
-                      return (
-                        <th
-                          scope="col"
-                          key={
-                            "problem-index-" +
-                            charInc("A", i + filter.minIndex - 1)
-                          }
-                          className={"w-problem"}
-                        >
-                          {charInc("A", i + filter.minIndex - 1)}
-                        </th>
-                      );
-                    }
-                  )}
-                </tr>
-              </thead>
-              <tbody className={state.appState.theme.bg}>
+            
                 <ContestList
                   contestlist={
                     randomContest === -1
                       ? paginate()
                       : [contestList.contests[randomContest]]
                   }
+                  autoIndex={filter.autoIndex}
                   category={filter.category}
                   submissions={submissions}
                   showColor={filter.showColor}
@@ -337,8 +300,7 @@ const ContestPage = () => {
                   pageSelected={selected}
                   theme={state.appState.theme}
                 />
-              </tbody>
-            </table>
+            
           </div>
         </div>
       </div>
