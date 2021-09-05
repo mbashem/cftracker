@@ -30,9 +30,11 @@ const ContestList = (props: PropsType) => {
   let short = props.category !== ContestCat.ALL;
   let mxInd: number = 0;
 
-  for (let contest of props.contestlist) {
-    if (contest.mxInd > mxInd) {
-      mxInd = contest.mxInd;
+  if (props.autoIndex) {
+    for (let contest of props.contestlist) {
+      if (contest.mxInd > mxInd) {
+        mxInd = contest.mxInd;
+      }
     }
   }
 
