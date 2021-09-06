@@ -14,9 +14,6 @@ import Theme, { ThemesType } from "../../util/Theme";
 interface PropsType {
   contestlist: Contest[];
   showDate: boolean;
-  minIndex: number;
-  maxIndex: number;
-  autoIndex: boolean;
   perPage: number;
   pageSelected: number;
   theme: Theme;
@@ -30,22 +27,19 @@ const ContestList = (props: PropsType) => {
   let short = props.category !== ContestCat.ALL;
   let mxInd: number = 0;
 
-  if (props.autoIndex) {
-    for (let contest of props.contestlist) {
-      if (contest.mxInd > mxInd) {
-        mxInd = contest.mxInd;
-      }
+  for (let contest of props.contestlist) {
+    if (contest.mxInd > mxInd) {
+      mxInd = contest.mxInd;
     }
   }
-
   interface indInt {
     minIndex: number;
     maxIndex: number;
   }
 
   let ind: indInt = {
-    minIndex: props.autoIndex ? 1 : props.minIndex,
-    maxIndex: props.autoIndex ? mxInd : props.maxIndex,
+    minIndex: 1,
+    maxIndex: mxInd,
   };
 
   // console.log(ind.minIndex);
@@ -307,7 +301,7 @@ const ContestList = (props: PropsType) => {
           )}
         </td>
         {[...Array(ind.maxIndex - ind.minIndex + 1)].map((x, i) => {
-          return getInfo(contest, charInc("A", i + props.minIndex - 1));
+          return getInfo(contest, charInc("A", i));
         })}
       </tr>
     );
@@ -349,10 +343,10 @@ const ContestList = (props: PropsType) => {
               return (
                 <th
                   scope="col"
-                  key={"problem-index-" + charInc("A", i + props.minIndex - 1)}
+                  key={"problem-index-" + charInc("A", i)}
                   className={"w-problem"}
                 >
-                  {charInc("A", i + props.minIndex - 1)}
+                  {charInc("A", i)}
                 </th>
               );
             })}
