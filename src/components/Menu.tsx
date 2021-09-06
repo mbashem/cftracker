@@ -73,145 +73,144 @@ const Menu = (): JSX.Element => {
       }
       expand="md"
     >
-      <Link to="/" className="navbar-brand" href="#">
-        CFTracker
-      </Link>
-      <Navbar.Toggle aria-controls="basic-navbar-nav" />
+      <div className="container p-0">
+        <Link to="/" className="navbar-brand" href="#">
+          CFTracker
+        </Link>
+        <Navbar.Toggle aria-controls="basic-navbar-nav" />
 
-      <Navbar.Collapse
-        className="d-flex justify-content-end"
-        id="basic-navbar-nav"
-      >
-        <Nav className="ml-auto mt-2 mt-lg-0">
-          <li className="nav-item active">
-            <Link to={Path.Stats} className="nav-link" href="#">
-              Stats
-            </Link>
-          </li>
-          <li className="nav-item active">
-            <Link to={Path.PROBLEMS} className="nav-link" href="#">
-              Problem List
-            </Link>
-          </li>
-          <li className="nav-item">
-            <Link to={Path.CONTESTS} className="nav-link" href="#">
-              Contest
-            </Link>
-          </li>
+        <Navbar.Collapse id="basic-navbar-nav">
+          <Nav className="ms-auto mt-2 mt-lg-0">
+            <li className="nav-item active">
+              <Link to={Path.Stats} className="nav-link" href="#">
+                Stats
+              </Link>
+            </li>
+            <li className="nav-item active">
+              <Link to={Path.PROBLEMS} className="nav-link" href="#">
+                Problem List
+              </Link>
+            </li>
+            <li className="nav-item">
+              <Link to={Path.CONTESTS} className="nav-link" href="#">
+                Contest
+              </Link>
+            </li>
 
-          <li className="nav-item">
-            <OverlayTrigger
-              trigger="click"
-              placement="bottom"
-              key="bottom"
-              overlay={
-                <Popover
-                  id="popover-basic"
-                  className={state.appState.theme.bgText}
-                >
-                  <Popover.Header
-                    as="h3"
+            <li className="nav-item">
+              <OverlayTrigger
+                trigger="click"
+                placement="bottom"
+                key="bottom"
+                overlay={
+                  <Popover
+                    id="popover-basic"
                     className={state.appState.theme.bgText}
                   >
-                    <div className="d-flex align-items-center">
-                      <span className={state.appState.theme.bgText}>
-                        CFTracker (Created by{" "}
-                        <a
-                          href="https://codeforces.com/profile/bashem"
-                          className={" " + state.appState.theme.text}
-                          target="__blank"
-                        >
-                          Bashem
-                        </a>
-                        )
-                      </span>
-                    </div>
-                  </Popover.Header>
-                  <Popover.Body className={state.appState.theme.bgText}>
-                    <ul>
-                      <li>
-                        On Contest Page To see rating hover over problem Name
-                      </li>
-                    </ul>
-                  </Popover.Body>
-                </Popover>
-              }
-            >
-              <a
-                href="#"
-                onClick={(e) => e.preventDefault()}
-                className="nav-link"
-                title="Created by Bashem"
-              >
-                <FontAwesomeIcon icon={faInfo} />
-              </a>
-            </OverlayTrigger>
-          </li>
-
-          <li className="nav-item">
-            <a
-              className={"nav-link"}
-              href="#"
-              title="Change Theme"
-              onClick={(e) => {
-                e.preventDefault();
-                if (state.appState.themeMod === ThemesType.DARK)
-                  changeAppState(
-                    dispatch,
-                    AppReducerType.CHANGE_THEME,
-                    ThemesType.LIGHT
-                  );
-                else
-                  changeAppState(
-                    dispatch,
-                    AppReducerType.CHANGE_THEME,
-                    ThemesType.DARK
-                  );
-              }}
-            >
-              <FontAwesomeIcon
-                icon={
-                  state.appState.themeMod === ThemesType.DARK ? faMoon : faSun
+                    <Popover.Header
+                      as="h3"
+                      className={state.appState.theme.bgText}
+                    >
+                      <div className="d-flex align-items-center">
+                        <span className={state.appState.theme.bgText}>
+                          CFTracker (Created by{" "}
+                          <a
+                            href="https://codeforces.com/profile/bashem"
+                            className={" " + state.appState.theme.text}
+                            target="__blank"
+                          >
+                            Bashem
+                          </a>
+                          )
+                        </span>
+                      </div>
+                    </Popover.Header>
+                    <Popover.Body className={state.appState.theme.bgText}>
+                      <ul>
+                        <li>
+                          On Contest Page To see rating hover over problem Name
+                        </li>
+                      </ul>
+                    </Popover.Body>
+                  </Popover>
                 }
-              />
-            </a>
-          </li>
+              >
+                <a
+                  href="#"
+                  onClick={(e) => e.preventDefault()}
+                  className="nav-link"
+                  title="Created by Bashem"
+                >
+                  <FontAwesomeIcon icon={faInfo} />
+                </a>
+              </OverlayTrigger>
+            </li>
 
-          <li className="nav-item">
-            <a
-              className="nav-link"
-              onClick={(e) => {
-                e.preventDefault();
-                sync();
-              }}
-              title="Refresh Submissions"
-              href="#"
-            >
-              <FontAwesomeIcon icon={faSync} />
-            </a>
-          </li>
+            <li className="nav-item">
+              <a
+                className={"nav-link"}
+                href="#"
+                title="Change Theme"
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (state.appState.themeMod === ThemesType.DARK)
+                    changeAppState(
+                      dispatch,
+                      AppReducerType.CHANGE_THEME,
+                      ThemesType.LIGHT
+                    );
+                  else
+                    changeAppState(
+                      dispatch,
+                      AppReducerType.CHANGE_THEME,
+                      ThemesType.DARK
+                    );
+                }}
+              >
+                <FontAwesomeIcon
+                  icon={
+                    state.appState.themeMod === ThemesType.DARK ? faMoon : faSun
+                  }
+                />
+              </a>
+            </li>
 
-          <li className="nav-item">
-            <form
-              className="form-inline d-flex my-2 my-lg-0 nav-item"
-              onSubmit={(e) => {
-                e.preventDefault();
-                submitUser();
-              }}
-            >
-              <input
-                name="handle"
-                className={"form-control " + state.appState.theme.bgText}
-                type="text"
-                placeholder="handle1,handle2,.."
-                aria-label="handles"
-                value={handle}
-                onChange={(e) => setHandle(e.target.value)}
-              />
-            </form>
-          </li>
-        </Nav>
-      </Navbar.Collapse>
+            <li className="nav-item">
+              <a
+                className="nav-link"
+                onClick={(e) => {
+                  e.preventDefault();
+                  sync();
+                }}
+                title="Refresh Submissions"
+                href="#"
+              >
+                <FontAwesomeIcon icon={faSync} />
+              </a>
+            </li>
+
+            <li className="nav-item">
+              <form
+                className="form-inline d-flex my-2 my-lg-0 nav-item"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  submitUser();
+                }}
+              >
+                <input
+                  name="handle"
+                  className={"form-control " + state.appState.theme.bgText}
+                  type="text"
+                  placeholder="handle1,handle2,.."
+                  aria-label="handles"
+                  value={handle}
+                  onChange={(e) => setHandle(e.target.value)}
+                />
+              </form>
+            </li>
+          </Nav>
+        </Navbar.Collapse>
+      </div>
     </Navbar>
   );
 };

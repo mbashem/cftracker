@@ -29,11 +29,8 @@ const ContestPage = () => {
   interface filt {
     perPage: number;
     showDate: boolean;
-    maxIndex: number;
-    minIndex: number;
     showRating: boolean;
     showColor: boolean;
-    autoIndex: boolean;
     search: string;
     category: ContestCat;
     // ShowContestId: boolean;
@@ -42,11 +39,8 @@ const ContestPage = () => {
   const defaultFilt: filt = {
     perPage: 20,
     showDate: false,
-    maxIndex: 7,
-    minIndex: 1,
     showRating: true,
     showColor: true,
-    autoIndex: true,
     // ShowContestId: false,
     category: ContestCat.DIV2,
     search: SEARCH in query ? query[SEARCH] : "",
@@ -210,35 +204,6 @@ const ContestPage = () => {
                       }}
                     />
                   </div>
-                  <div className="col-5 mt-1">
-                    <InputChecked
-                      header="Auto Index"
-                      name="Auto Index"
-                      checked={filter.autoIndex}
-                      title={"Auto Index?"}
-                      theme={state.appState.theme}
-                      onChange={(val) => {
-                        setFilter({ ...filter, autoIndex: !filter.autoIndex });
-                      }}
-                    />
-                  </div>
-                </div>
-                <div className="pt-2">
-                  <InputRange
-                    name="Index"
-                    min={1}
-                    max={26}
-                    step={1}
-                    minValue={filter.minIndex}
-                    maxValue={filter.maxIndex}
-                    theme={state.appState.theme}
-                    onMaxChange={(num) => {
-                      setFilter({ ...filter, maxIndex: num });
-                    }}
-                    onMinChange={(num) => {
-                      setFilter({ ...filter, minIndex: num });
-                    }}
-                  />
                 </div>
               </div>
             </div>
@@ -288,13 +253,10 @@ const ContestPage = () => {
                       ? paginate()
                       : [contestList.contests[randomContest]]
                   }
-                  autoIndex={filter.autoIndex}
                   category={filter.category}
                   submissions={submissions}
                   showColor={filter.showColor}
                   showDate={filter.showDate}
-                  maxIndex={filter.maxIndex}
-                  minIndex={filter.minIndex}
                   showRating={filter.showRating}
                   perPage={filter.perPage}
                   pageSelected={selected}
