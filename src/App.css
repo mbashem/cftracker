@@ -16,10 +16,9 @@
   background-color: #b3b3b3;
 }
 
-
 /* Italic is not imported in public, only 400,300,700 is imported */
 body {
-  font-family: 'Roboto', sans-serif;
+  font-family: "Roboto", sans-serif;
 }
 
 .sticky-col {
@@ -51,8 +50,8 @@ body {
   background-color: #2d333b !important;
 }
 
-.table-dark td,
-.table-dark th {
+.table-dark td:not(.bg-success),
+.table-dark th:not(.bg-success) {
   background-color: #22272e !important;
 }
 

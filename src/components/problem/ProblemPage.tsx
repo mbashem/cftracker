@@ -49,7 +49,7 @@ const ProblemPage = () => {
   }
 
   const defaultFilt: filt = {
-    perPage: 20,
+    perPage: 100,
     minRating: state.appState.minRating,
     maxRating: state.appState.maxRating,
     showUnrated: true,

@@ -37,7 +37,7 @@ const ContestPage = () => {
   }
 
   const defaultFilt: filt = {
-    perPage: 20,
+    perPage: 100,
     showDate: false,
     showRating: true,
     showColor: true,
