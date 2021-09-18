@@ -88,12 +88,12 @@ const Menu = (): JSX.Element => {
             </li>
             <li className="nav-item active">
               <Link to={Path.PROBLEMS} className="nav-link" href="#">
-                Problem List
+                Problems
               </Link>
             </li>
             <li className="nav-item">
               <Link to={Path.CONTESTS} className="nav-link" href="#">
-                Contest
+                Contests
               </Link>
             </li>
 
