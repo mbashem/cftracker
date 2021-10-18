@@ -119,7 +119,7 @@ const Menu = (): JSX.Element => {
                             className={" " + state.appState.theme.text}
                             target="__blank"
                           >
-                            Bashem
+                            bashem
                           </a>
                           )
                         </span>
