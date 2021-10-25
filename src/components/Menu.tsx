@@ -1,5 +1,11 @@
-import { faMoon } from "@fortawesome/free-regular-svg-icons";
-import { faInfo, faSun, faSync } from "@fortawesome/free-solid-svg-icons";
+import { faGithub } from "@fortawesome/free-brands-svg-icons";
+import { faListAlt, faMoon } from "@fortawesome/free-regular-svg-icons";
+import {
+  faBars,
+  faInfo,
+  faSun,
+  faSync,
+} from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Button from "@restart/ui/esm/Button";
 import { useEffect, useState } from "react";
@@ -81,19 +87,24 @@ const Menu = (): JSX.Element => {
 
         <Navbar.Collapse id="basic-navbar-nav">
           <Nav className="ms-auto mt-2 mt-lg-0">
-            <li className="nav-item active">
+            {/* <li className="nav-item active">
               <Link to={Path.Stats} className="nav-link" href="#">
-                Stats
+                <span className="pe-1">
+                  {<FontAwesomeIcon icon={faChartBar} />}
+                </span>
+                <span>Stats</span>
               </Link>
-            </li>
+            </li> */}
             <li className="nav-item active">
               <Link to={Path.PROBLEMS} className="nav-link" href="#">
-                Problems
+                {/* <span className="p-1">{<FontAwesomeIcon icon={faBars} />}</span> */}
+                <span>Problems</span>
               </Link>
             </li>
             <li className="nav-item">
               <Link to={Path.CONTESTS} className="nav-link" href="#">
-                Contests
+                {/*  <span className="p-1">  {<FontAwesomeIcon icon={faListAlt} />}  </span>*/}
+                <span>Contests</span>
               </Link>
             </li>
 
@@ -126,9 +137,20 @@ const Menu = (): JSX.Element => {
                       </div>
                     </Popover.Header>
                     <Popover.Body className={state.appState.theme.bgText}>
-                      <ul>
-                        <li>
-                          On Contest Page To see rating hover over problem Name
+                      <ul className="list-group list-group-flush">
+                        <li
+                          className={
+                            "list-group-item " + state.appState.theme.bgText
+                          }
+                        >
+                          <span className="pe-2">Source Code</span>
+                          <a
+                            href="https://github.com/mbashem/codeforces-contest-solve-tracker"
+                            className="text-secondary pt-1 fs-5"
+                            target="__blank"
+                          >
+                            {<FontAwesomeIcon icon={faGithub} />}
+                          </a>
                         </li>
                       </ul>
                     </Popover.Body>
