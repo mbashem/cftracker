@@ -10,16 +10,23 @@ import { ThemesType } from "./util/Theme";
 import HomePage from "./components/home/HomePage";
 import ProblemPage from "./components/problem/ProblemPage";
 import ContestPage from "./components/contest/ContestPage";
+import usePageTracking from "./usePageTracking";
+
 
 // const HomePage = lazy(() => import("./components/home/HomePage"));
 // const ProblemPage = lazy(() => import("./components/problem/ProblemPage"));
 // const ContestPage = lazy(() => import("./components/contest/ContestPage"));
 const StatPage = lazy(() => import("./components/stats/StatPage"));
 
-function App() {
-  const state: RootStateType = useSelector((state) => state);
 
+
+function App() {
+  const state: RootStateType = useSelector((state) => state) as RootStateType;
+  usePageTracking();
+  
   useEffect(() => {
+    console.log(window.location.pathname);
+
     if (state.appState.themeMod === ThemesType.DARK) {
       document.body.classList.add("bg-dark");
       document.body.classList.remove("bg-light");

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useSelector, useDispatch } from "react-redux";
+import { useSelector } from "react-redux";
 import { parseQuery } from "../../util/bashforces";
 import { sortByRating, sortBySolveCount } from "../../util/sortMethods";
 import { Path, SEARCH } from "../../util/constants";
@@ -22,6 +22,7 @@ import { getObj, getSet, saveObj, saveSet } from "../../util/save";
 import { Verdict } from "../../util/DataTypes/Submission";
 
 const ProblemPage = () => {
+  
   const state: RootStateType = useSelector((state) => state) as RootStateType;
   const history = useHistory();
 
