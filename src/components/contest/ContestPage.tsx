@@ -11,13 +11,12 @@ import InputChecked from "../../util/Components/Forms/InputChecked";
 import CustomModal from "../../util/Components/CustomModal";
 import CheckList from "../../util/Components/Forms/CheckList";
 import Filter from "../../util/Components/Filter";
-import InputRange from "../../util/Components/Forms/InputRange";
 import { getObj, getSet, saveObj, saveSet } from "../../util/save";
 import { Verdict } from "../../util/DataTypes/Submission";
 import { ParticipantType } from "../../util/DataTypes/Party";
 
 const ContestPage = () => {
-  const state: RootStateType = useSelector((state) => state);
+  const state: RootStateType = useSelector((state) => state) as RootStateType;
 
   const history = useHistory();
 

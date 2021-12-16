@@ -27,7 +27,7 @@ import { ThemesType } from "../util/Theme";
 const Menu = (): JSX.Element => {
   const dispatch = useDispatch();
 
-  const state: RootStateType = useSelector((state) => state);
+  const state: RootStateType = useSelector((state) => state) as RootStateType;
 
   const [handle, setHandle] = useState(
     state.userList.handles.length ? state.userList.handles.toString() : ""
