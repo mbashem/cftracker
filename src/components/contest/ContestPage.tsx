@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { charInc, parseQuery, stringToArray } from "../../util/bashforces";
+import { charInc, parseQuery, stringToArray } from "../../util/util";
 import ContestList from "./ContestList";
 import { Path, SEARCH } from "../../util/constants";
 import Pagination from "../../util/Components/Pagination";

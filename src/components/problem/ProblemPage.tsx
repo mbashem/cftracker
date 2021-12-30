@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { parseQuery } from "../../util/bashforces";
+import { parseQuery } from "../../util/util";
 import { sortByRating, sortBySolveCount } from "../../util/sortMethods";
 import { Path, SEARCH } from "../../util/constants";
 import Pagination from "../../util/Components/Pagination";

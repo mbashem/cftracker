@@ -68,7 +68,7 @@ const Menu = (): JSX.Element => {
     //   pauseOnHover: true,
     //   draggable: true,
     //   progress: undefined,
-    // });
+    // }); 
     fetchUsers(dispatch, handle);
   };
 
