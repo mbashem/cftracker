@@ -1,4 +1,4 @@
-import { processNumber } from "../../bashforces";
+import { processNumber } from "../../util";
 
 interface PropsType {
   header: string;

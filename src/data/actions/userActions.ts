@@ -2,7 +2,7 @@ import {
   delay,
   getUserSubmissionsURL,
   stringToArray,
-} from "../../util/bashforces";
+} from "../../util/util";
 import Submission from "../../util/DataTypes/Submission";
 import { AppDispatch } from "../store";
 import { load, createDispatch } from "./fetchActions";

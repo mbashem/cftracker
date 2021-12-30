@@ -1,4 +1,4 @@
-import { processNumber } from "../bashforces";
+import { processNumber } from "../util";
 import Theme from "../Theme";
 import InputNumber from "./Forms/InputNumber";
 

@@ -1,6 +1,6 @@
 import { faRandom, faRedo } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { getRandomInteger } from "../bashforces";
+import { getRandomInteger } from "../util";
 import Theme from "../Theme";
 
 interface PropsType {

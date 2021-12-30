@@ -5,7 +5,7 @@ import {
   formateDate,
   charInc,
   getContestUrl,
-} from "../../util/bashforces";
+} from "../../util/util";
 import Contest, { ContestCat } from "../../util/DataTypes/Contest";
 import Problem from "../../util/DataTypes/Problem";
 import { Verdict } from "../../util/DataTypes/Submission";
@@ -319,17 +319,6 @@ const ContestList = (props: PropsType) => {
             >
               #
             </th>
-            {/* {props.category !== ContestCat.ALL ? (
-              ""
-            ) : (
-              <th
-                scope="col"
-                className="w-id second-column"
-                style={{ width: "50px" }}
-              >
-                ID
-              </th>
-            )} */}
             <th
               scope="col"
               className={

@@ -19,7 +19,6 @@
     "@typescript-eslint/eslint-plugin": "^4.21.0",
     "@typescript-eslint/parser": "^4.21.0",
     "bootstrap": "^5.1.0",
-    "localforage": "^1.9.0",
     "lodash": "^4.17.21",
     "react": "^17.0.1",
     "react-bootstrap": "^2.0.0-beta.6",
