@@ -54,12 +54,16 @@ export const fetchUserSubmissions = async (
     return;
   }
 
-  if (wait) await delay(500);
+  if (wait) await delay(1000);
+
+  let cnt = 0;
 
   for (let handle of handles) {
     dispatch(load(LOADING_USER_SUBMISSIONS));
 
-    await delay(500);
+    if (cnt !== 0)
+      await delay(1000);
+    cnt++;
 
     fetch(getUserSubmissionsURL(handle))
       .then((res) => res.json())
