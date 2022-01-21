@@ -1,7 +1,9 @@
 name: Cache Contests Api Response
 
-on: 
-  workflow_dispatch
+on:
+  schedule:
+    - cron: "0 17 * * *"
+  workflow_dispatch:
 
 jobs:
   setup:
@@ -11,24 +13,24 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v2
         with:
-          node-version: '14'
+          node-version: "14"
       - name: Run Scripts
         working-directory: ./scripts
         run: |
-              npm install node-fetch
-              node --experimental-modules fetch_contests.mjs
-      
+          npm install node-fetch
+          node --experimental-modules fetch_contests.mjs
+
       - name: Check for modified files
         id: git-check
         run: echo ::set-output name=modified::$(if [ -n "$(git status --porcelain)" ]; then echo "true"; else echo "false"; fi)
-        
+
       - name: Commit files
         if: steps.git-check.outputs.modified == 'true'
         run: |
           git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
           git diff --quiet && git diff --staged --quiet || git commit -am "Bot: data upd"
-          
+
       - name: Push changes
         uses: ad-m/github-push-action@master
         with:
