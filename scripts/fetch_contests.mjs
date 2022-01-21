@@ -17,19 +17,25 @@ const update_contest_list = async () => {
 		console.log(response.status);
 		const body = await response.json();
 
-		if(response.status == 200 && body["status"] == "OK"){
-      
-      let writable =  "export const contests_data=" + JSON.stringify(body);
+		if (response.status == 200 && body["status"] == "OK") {
 
-			fs.writeFile ("contests_data.ts", writable, function(err) {
-				if (err){
-					console.error("Error Writing to filesystem:" );
+			body["result"].forEach(obj => {
+				if (obj.hasOwnProperty('relativeTimeSeconds'))
+					delete obj.relativeTimeSeconds;
+				}
+			);
+
+			let writable = "export const contests_data=" + JSON.stringify(body);
+
+			fs.writeFile("contests_data.ts", writable, function (err) {
+				if (err) {
+					console.error("Error Writing to filesystem:");
 					throw err;
 				}
 				else console.log('complete');
-				}
-		);
-		}else {
+			}
+			);
+		} else {
 			console.error("Failed");
 		}
 
