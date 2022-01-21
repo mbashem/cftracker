@@ -6,7 +6,6 @@ import {
   FETCH_CONTEST_LIST,
   FETCH_PROBLEM_LIST,
   FETCH_SHARED_PROBLEMS,
-  FINISHED,
   LOADING_CONTEST_LIST,
   LOADING_PROBLEM_LIST,
 } from "./types";
@@ -22,6 +21,8 @@ import { ThemesType } from "../../util/Theme";
 
 const allContestURL = "https://codeforces.com/api/contest.list?lang=en";
 const problemSetURL = "https://codeforces.com/api/problemset.problems?lang=en";
+const SAVED_CONTEST_URL = "../saved_api/contests_data.json";
+const SAVED_SHARED_CONTEST_URL = "../jsons/related";
 
 export const createDispatch = (type: any, message: any) => {
   return {
@@ -126,7 +127,7 @@ export const fetchProblemList = (dispatch: AppDispatch) => {
     });
 };
 
-export const fetchSharedProblemList = (dispatch) => {
+export const fetchSharedProblemList = async (dispatch) => {
   import("../jsons/related")
     .then(
       (data) => {
@@ -169,18 +170,19 @@ export const fetchSharedProblemList = (dispatch) => {
     });
 };
 
-export const fetchContestList = (dispatch: AppDispatch) => {
+export const fetchContestList = async (dispatch: AppDispatch) => {
   dispatch(load(LOADING_CONTEST_LIST));
-  fetch(allContestURL)
-    .then((res) => res.json())
+  import("../saved_api/contests_data")
+    // .then((res) => res.json())
     .then(
-      (result) => {
+      (data) => {
+        let result = data.contests_data;
         if (result.status !== "OK")
           return dispatch(createDispatch(ERROR_FETCHING_CONTEST_LIST, "Eroor"));
         let contests: Contest[] = [];
 
         for (let contest of result.result) {
-          if (contest.phase === FINISHED && contest.id)
+          if (contest.id)
             contests.push(
               new Contest(
                 contest.id,

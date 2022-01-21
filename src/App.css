@@ -50,8 +50,8 @@ body {
   background-color: #2d333b !important;
 }
 
-.table-dark td:not(.bg-success),
-.table-dark th:not(.bg-success) {
+.table-dark td:not(.bg-success, .bg-danger),
+.table-dark th:not(.bg-success, .bg-danger) {
   background-color: #22272e !important;
 }
 
