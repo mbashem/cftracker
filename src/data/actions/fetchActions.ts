@@ -18,7 +18,6 @@ import Problem, {
 import { AppDispatch } from "../store";
 import Contest from "../../util/DataTypes/Contest";
 import { ThemesType } from "../../util/Theme";
-import axios from "axios";
 
 const allContestURL = "https://codeforces.com/api/contest.list?lang=en";
 const problemSetURL = "https://codeforces.com/api/problemset.problems?lang=en";
