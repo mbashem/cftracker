@@ -5,7 +5,7 @@ import fs from "fs";
 
 
 const ALL_CONTEST_URL = "https://codeforces.com/api/contest.list?lang=en";
-const problemSetURL = "https://codeforces.com/api/problemset.problems?lang=en";
+// const problemSetURL = "https://codeforces.com/api/problemset.problems?lang=en";
 
 const update_contest_list = async () => {
 	console.log("FFF:");
@@ -27,7 +27,7 @@ const update_contest_list = async () => {
 
 			let writable = "export const contests_data=" + JSON.stringify(body);
 
-			fs.writeFile("contests_data.ts", writable, function (err) {
+			fs.writeFile("../src/data/saved_api/contests_data.ts", writable, function (err) {
 				if (err) {
 					console.error("Error Writing to filesystem:");
 					throw err;
