@@ -10,4 +10,5 @@ export enum Path {
   PROBLEMS = "/problems",
   CONTESTS = "/contests",
   Stats = "/stats",
+  Issues = "/comments"
 }

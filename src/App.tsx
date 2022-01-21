@@ -17,6 +17,7 @@ import usePageTracking from "./usePageTracking";
 // const ProblemPage = lazy(() => import("./components/problem/ProblemPage"));
 // const ContestPage = lazy(() => import("./components/contest/ContestPage"));
 const StatPage = lazy(() => import("./components/stats/StatPage"));
+const IssuePage = lazy(() => import("./components/comment/CommentPage"));
 
 
 
@@ -71,6 +72,7 @@ function App() {
             <Route path={Path.PROBLEMS} component={ProblemPage} />
             <Route strict path={Path.CONTESTS} component={ContestPage} />
             <Route strict path={Path.Stats} component={StatPage} />
+            <Route strict path={Path.Issues} component={IssuePage} />
           </Switch>
         </Suspense>
       </div>
