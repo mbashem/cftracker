@@ -19,6 +19,7 @@ jobs:
         run: |
           npm install node-fetch
           node --experimental-modules fetch_contests.mjs
+          node --experimental-modules fetch_problems.mjs
 
       - name: Check for modified files
         id: git-check
