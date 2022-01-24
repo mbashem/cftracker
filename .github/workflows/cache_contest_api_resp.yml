@@ -31,6 +31,7 @@ jobs:
           git status
           git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
+          git add -u
           git diff --quiet && git diff --staged --quiet || git commit -am "Bot: data upd"
 
       - name: Push changes
