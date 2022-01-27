@@ -141,7 +141,7 @@ const Menu = (): JSX.Element => {
                         >
                           <span className="pe-2">Source Code</span>
                           <a
-                            href="https://github.com/mbashem/codeforces-contest-solve-tracker"
+                            href="https://github.com/mbashem/cftracker"
                             className="text-secondary pt-1 fs-5"
                             target="__blank"
                           >
