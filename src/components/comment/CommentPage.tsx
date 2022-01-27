@@ -16,7 +16,7 @@ const ContestPage = () => {
   return (
     <>
       <UtterancesComments
-        repo="mbashem/codeforces-contest-solve-tracker"
+        repo="mbashem/cftracker"
         issue_term="pathname"
         theme={
           state.appState.themeMod === ThemesType.DARK

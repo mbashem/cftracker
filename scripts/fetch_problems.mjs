@@ -20,7 +20,7 @@ const update_problems_list = async () => {
 
 			let writable = "export const problem_data=" + JSON.stringify(body);
 
-			fs.writeFile("../src/data/saved_api/porblems_data.ts", writable,  function (err) {
+			fs.writeFile("../src/data/saved_api/problems_data.ts", writable,  function (err) {
 				if (err) {
 					console.error("Error Writing to filesystem:");
 					throw err;
