@@ -23,6 +23,9 @@ const get_short_and_category = (name: string): [string, ContestCat] => {
 		hashE = -1,
 		global = -1;
 
+	name = name.replace("Div.2", ContestCat.DIV2);
+	name = name.replace("Div.1", ContestCat.DIV1);
+
 	let short: string = null;
 	let category: ContestCat = null;
 
