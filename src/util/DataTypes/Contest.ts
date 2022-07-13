@@ -5,6 +5,7 @@ export enum ContestCat {
 	DIV1 = "Div. 1",
 	DIV2 = "Div. 2",
 	DIV3 = "Div. 3",
+	DIV4 = "Div. 4",
 	EDUCATIONAL = "Educational",
 	DIV12 = "Div. 1 + Div. 2",
 	GLOBAL = "Global",
@@ -16,6 +17,7 @@ const get_short_and_category = (name: string): [string, ContestCat] => {
 	let div2 = -1;
 	let div1 = -1;
 	let div3 = -1;
+	let div4 = -1;
 	let edu = -1;
 	let firstS = -1,
 		firstE = -1,
@@ -41,6 +43,9 @@ const get_short_and_category = (name: string): [string, ContestCat] => {
 				name.substr(i, ContestCat.DIV1.length) === ContestCat.DIV3
 			) {
 				div3 = i;
+			}else if(name.substring(i,i+ContestCat.DIV1.length) === ContestCat.DIV4)
+			{
+				div4 = i;
 			}
 		}
 
@@ -90,6 +95,8 @@ const get_short_and_category = (name: string): [string, ContestCat] => {
 			category = ContestCat.DIV2;
 		} else if (div3 !== -1) {
 			category = ContestCat.DIV3;
+		}else if(div4 !== -1){
+			category = ContestCat.DIV4;
 		}
 
 		if (category)
