@@ -9,6 +9,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "node-fetch": "^3.2.8"
+    "node-fetch": "^3.2.9"
   }
 }
