@@ -76,6 +76,16 @@ const Menu = (): JSX.Element => {
   };
 
   const submitUser = () => {
+    toast(`Handles entered: ${handle}`, {
+      position: "bottom-right",
+      autoClose: 500,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      progress: undefined,
+      theme: "dark",
+    });
     fetchUsers(dispatch, handle);
   };
 

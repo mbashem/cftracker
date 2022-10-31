@@ -104,6 +104,7 @@ export const userSubmissionsReducer = (
         return currentState;
       }
       currentState.loading = new_loading;
+      currentState.error = "";
 
       action.payload.result.forEach((element) => {
         currentState.submissions.push(new Submission(element));
@@ -119,6 +120,7 @@ export const userSubmissionsReducer = (
       return currentState;
     case LOADING_USER_SUBMISSIONS:
       currentState = initState.clone();
+      currentState.error = "";
       currentState.loading += 1;
       return currentState;
     default:
