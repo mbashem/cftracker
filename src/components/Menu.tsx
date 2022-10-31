@@ -40,7 +40,7 @@ const Menu = (): JSX.Element => {
       return;
     }
     console.log(message);
-    toast(message, {
+    toast.error(message, {
       position: "top-right",
       autoClose: 3000,
       hideProgressBar: false,
