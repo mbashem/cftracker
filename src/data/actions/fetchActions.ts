@@ -73,7 +73,7 @@ export const fetchProblemList = (dispatch: AppDispatch) => {
       (result) => {
         if (result.status !== "OK")
           return dispatch(
-            createDispatch(ERROR_FETCHING_PROBLEMS, "Problem Status Failed")
+            createDispatch(ERROR_FETCHING_PROBLEMS, "Failed to fetch Problems list from CF API")
           );
         //   console.log(result);
         let problems: Problem[] = result.result.problems as Problem[];
@@ -114,7 +114,7 @@ export const fetchProblemList = (dispatch: AppDispatch) => {
         return dispatch(
           createDispatch(
             ERROR_FETCHING_PROBLEMS,
-            "ERROR in PROBLEM LIST " + error
+            "Failed to fetch Problems list from CF API."
           )
         );
       }
@@ -122,7 +122,7 @@ export const fetchProblemList = (dispatch: AppDispatch) => {
     .catch((e) => {
       //  console.log(e);
       return dispatch(
-        createDispatch(ERROR_FETCHING_PROBLEMS, "ERROR in PROBLEM LIST")
+        createDispatch(ERROR_FETCHING_PROBLEMS, "Failed to fetch Problems list from CF API.")
       );
     });
 };
