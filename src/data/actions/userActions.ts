@@ -73,7 +73,7 @@ export const fetchUserSubmissions = async (
             return dispatch(
               createDispatch(
                 ERROR_FETCHING_USER_SUBMISSIONS,
-                "Failed To fetch Submissions for User with handle " + handle
+                "Failed To fetch Submissions for User with handle:" + handle
               )
             );
 
@@ -95,7 +95,7 @@ export const fetchUserSubmissions = async (
           return dispatch(
             createDispatch(
               ERROR_FETCHING_USER_SUBMISSIONS,
-              "Failed To fetch Submissions for User" + handle
+              "Failed To fetch Submissions for User:" + handle
             )
           );
         }
@@ -105,7 +105,7 @@ export const fetchUserSubmissions = async (
         return dispatch(
           createDispatch(
             ERROR_FETCHING_USER_SUBMISSIONS,
-            "Failed To fetch Submissions for User" + handle
+            "Failed To fetch Submissions for User:" + handle
           )
         );
       });

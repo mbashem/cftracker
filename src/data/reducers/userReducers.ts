@@ -59,14 +59,14 @@ export const userReducer = (initState = userInitialState, action) => {
 
 export class SubmissionStateType {
   error: string;
-  loading: boolean;
+  loading: number;
   id: number;
   submissions: Submission[];
 
   constructor() {
     this.submissions = new Array<Submission>();
     this.error = "";
-    this.loading = false;
+    this.loading = 0;
     this.id = 0;
   }
 
@@ -93,11 +93,17 @@ export const userSubmissionsReducer = (
     case CLEAR_USERS_SUBMISSIONS:
       return new SubmissionStateType();
     case FETCH_USER_SUBMISSIONS:
+      let new_loading = initState.loading - 1;
       if (action.payload.id === initState.id) currentState = initState.clone();
       else if (action.payload.id > initState.id) {
         currentState = new SubmissionStateType();
         currentState.id = action.payload.id;
-      } else return initState;
+      } else {
+        currentState = initState.clone();
+        currentState.loading = new_loading;
+        return currentState;
+      }
+      currentState.loading = new_loading;
 
       action.payload.result.forEach((element) => {
         currentState.submissions.push(new Submission(element));
@@ -107,13 +113,13 @@ export const userSubmissionsReducer = (
 
       return currentState;
     case ERROR_FETCHING_USER_SUBMISSIONS:
-      return {
-        ...initState,
-        ...{ error: "Error Fetching Submissions", loading: false },
-      };
+      currentState = initState.clone();
+      currentState.error = action.payload;
+      currentState.loading -= 1;
+      return currentState;
     case LOADING_USER_SUBMISSIONS:
       currentState = initState.clone();
-      currentState.loading = true;
+      currentState.loading += 1;
       return currentState;
     default:
       return initState;

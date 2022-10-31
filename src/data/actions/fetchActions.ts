@@ -62,6 +62,11 @@ export const load = (type) => {
 export const fetchProblemList = (dispatch: AppDispatch) => {
   dispatch(load(LOADING_PROBLEM_LIST));
   //fetchSharedProblemList(dispatch);
+  // import("../saved_api/problems_data")
+  //   // .then((res) => res.json())
+  //   .then(
+  //     (data) => {
+  //       let result = data.problem_data;
   fetch(problemSetURL)
     .then((res) => res.json())
     .then(
@@ -71,9 +76,9 @@ export const fetchProblemList = (dispatch: AppDispatch) => {
             createDispatch(ERROR_FETCHING_PROBLEMS, "Problem Status Failed")
           );
         //   console.log(result);
-        let problems: Problem[] = result.result.problems;
+        let problems: Problem[] = result.result.problems as Problem[];
         let problemStatistics: ProblemStatistics[] =
-          result.result.problemStatistics;
+          result.result.problemStatistics as ProblemStatistics[];
 
         problems = problems.filter((problem) =>
           problem.contestId ? true : false
@@ -83,23 +88,18 @@ export const fetchProblemList = (dispatch: AppDispatch) => {
           problem.contestId ? true : false
         );
 
+        const finalProblemArray: Problem[] = [];
         for (let i = 0; i < problems.length; i++) {
           problems[i].rating = problems[i].rating ?? 0;
-          problems[i].solvedCount = problemStatistics[i].solvedCount;
-          problems[i].id = problems[i].contestId.toString() + problems[i].index;
-        }
-
-        const finalProblemArray: Problem[] = [];
-        for (let problem of problems) {
           finalProblemArray.push(
             new Problem(
-              problem.contestId,
-              problem.index,
-              problem.name,
-              problem.type,
-              problem.rating,
-              problem.tags,
-              problem.solvedCount
+              problems[i].contestId,
+              problems[i].index,
+              problems[i].name,
+              problems[i].type,
+              problems[i].rating,
+              problems[i].tags,
+              problemStatistics[i].solvedCount
             )
           );
         }

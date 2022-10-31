@@ -1,15 +1,12 @@
 import { faGithub } from "@fortawesome/free-brands-svg-icons";
 import { faMoon } from "@fortawesome/free-regular-svg-icons";
-import {
-  faInfo,
-  faSun,
-  faSync,
-} from "@fortawesome/free-solid-svg-icons";
+import { faInfo, faSun, faSync } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useEffect, useState } from "react";
 import { Nav, Navbar, OverlayTrigger, Popover, Tooltip } from "react-bootstrap";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
+import { toast, ToastContainer } from "react-toastify";
 import {
   changeAppState,
   fetchContestList,
@@ -21,6 +18,7 @@ import { fetchUserSubmissions, fetchUsers } from "../data/actions/userActions";
 import { RootStateType } from "../data/store";
 import { Path } from "../util/constants";
 import { ThemesType } from "../util/Theme";
+import "react-toastify/dist/ReactToastify.css";
 
 const Menu = (): JSX.Element => {
   const dispatch = useDispatch();
@@ -36,6 +34,31 @@ const Menu = (): JSX.Element => {
     fetchContestList(dispatch);
     fetchSharedProblemList(dispatch);
   }, []);
+
+  const InvokeErrorToast = (message: string) => {
+    if (message.length === 0) {
+      return;
+    }
+    console.log(message);
+    toast(message, {
+      position: "top-right",
+      autoClose: 3000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      progress: undefined,
+      theme: "dark",
+    });
+  };
+
+  useEffect(() => {
+    InvokeErrorToast(state.userSubmissions.error);
+  }, [state.userSubmissions.error]);
+
+  useEffect(() => {
+    InvokeErrorToast(state.problemList.error);
+  }, [state.problemList.error]);
 
   // useEffect(() => {
   //   if (!state.contestList.loading && !state.problemList.loading) sync(true);
@@ -53,20 +76,6 @@ const Menu = (): JSX.Element => {
   };
 
   const submitUser = () => {
-    // Notification.info({
-    //   title: "User submitted!",
-    //   duration: 200,
-    //   description: "hh",
-    // });
-    // toast.error("🦄 Wow so easy!", {
-    //   position: "bottom-right",
-    //   autoClose: 2001,
-    //   hideProgressBar: false,
-    //   closeOnClick: true,
-    //   pauseOnHover: true,
-    //   draggable: true,
-    //   progress: undefined,
-    // }); 
     fetchUsers(dispatch, handle);
   };
 
@@ -229,6 +238,7 @@ const Menu = (): JSX.Element => {
           </Nav>
         </Navbar.Collapse>
       </div>
+      <ToastContainer />
     </Navbar>
   );
 };
