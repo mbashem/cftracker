@@ -247,7 +247,7 @@ const ContestPage = () => {
           // style={{ height: "calc(100vh - 175px)" }}
         >
           <div className={"h-100 m-0 pb-2 " + state.appState.theme.bg}>
-            {state.problemList.loading ? (
+            {/* {/* {state.problemList.loading ? (
               <ThreeDots
                 height="80"
                 width="80"
@@ -257,9 +257,10 @@ const ContestPage = () => {
                 ariaLabel="three-dots-loading"
                 visible={true}
               />
-            ) : state.problemList.error.length > 0 ? (
+            ) : */}
+            {state.problemList.error.length > 0 ? (
               <Alert key={"danger"} variant={"danger"}>
-                {state.problemList.error}
+                {state.problemList.error} Most probably because CF API is down. API link: https://codeforces.com/api/problemset.problems
               </Alert>
             ) : (
               <ContestList
