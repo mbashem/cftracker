@@ -46,7 +46,7 @@ export const problemListReducer = (initState = problemListState, action) => {
       };
 
     case ERROR_FETCHING_PROBLEMS:
-      return { ...problemListState, error: action.payload as string };
+      return { ...problemListState, error: action.payload as string, loading: false };
 
     case LOADING_PROBLEM_LIST:
       return { ...problemListState, loading: true };

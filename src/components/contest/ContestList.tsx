@@ -68,7 +68,7 @@ const ContestList = (props: PropsType) => {
     }
   };
 
-  const renderProblem = (problem: Problem, inside = 0) => {
+  const renderProblem = (problem: Problem, inside = 0, len = 0) => {
     let solved = false;
     let attempted = false;
 
@@ -102,36 +102,25 @@ const ContestList = (props: PropsType) => {
 
     let className =
       (solved ? props.theme.bgSuccess : attempted ? props.theme.bgDanger : "") +
-      (inside ? " w-50 " : " w-100 ");
+      (inside ? (len == 3 ? "w-100 pb-3 ps-1 pe-0 " : " w-50 ") : " w-100 ");
 
     return (
       <div
         className={
           className +
-          " p-2" +
-          (inside === 1
+          " p-2 " +
+          ((inside !== len && inside !== 0)
             ? " pe-0 border-end" +
               (props.theme.themeType === ThemesType.DARK ? " border-dark" : "")
             : "")
         }
         key={id}
       >
-        {/* <OverlayTrigger
-          placement={"top"}
-          key={`p-${problem.id}`}
-          overlay={
-            <Tooltip id={`p-${problem.id}`}>
-              <div className="d-flex flex-column">
-                <div>{problem.name}</div>
-                <div>Rating:{problem.rating}</div>
-                <div>{problem.solvedCount}</div>
-              </div>
-            </Tooltip>
-          }
-        > */}
         <a
           className={
-            "text-decoration-none wrap font-bold d-inline-block text-truncate " +
+
+            (len !== 3 ? "text-truncate ": "") + 
+            "text-decoration-none wrap font-bold d-inline-block  " +
             (props.showColor
               ? props.theme.color(problem.rating)
               : props.theme.text)
@@ -149,11 +138,13 @@ const ContestList = (props: PropsType) => {
           data-bs-placement="top"
           href={getProblemUrl(problem.contestId, problem.index)}
         >
-          {problem.index + ". "}
-          {name}
+          <span>
+            {problem.index}
+            {len == 3 ? "" : ". " + name}
+          </span>
           {props.showRating ? (
             <span className="fs-6">
-              <br />({problem.rating ? problem.rating : "Not Rated"})
+              <br />{len == 3 ? "": "("}{problem.rating ? problem.rating : "N/A"}{len == 3 ? "": ")"}
             </span>
           ) : (
             ""
@@ -197,12 +188,16 @@ const ContestList = (props: PropsType) => {
       );
     }
 
-    if (problems.length <= 2) {
+    if (problems.length <= 3) {
       return (
         <td className={"p-0 " + "w-problem "} key={contestId + index.charAt(0)}>
           <div className="d-flex">
             {problems.map((element, index) =>
-              renderProblem(element, problems.length === 0 ? 0 : index + 1)
+              renderProblem(
+                element,
+                problems.length === 0 ? 0 : index + 1,
+                problems.length
+              )
             )}
           </div>
         </td>
