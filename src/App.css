@@ -81,6 +81,11 @@ body {
   min-width: 50% !important;
   max-width: 50% !important;
 }
+.w-problem .w-33 {
+  width: 33% !important;
+  min-width: 33% !important;
+  max-width: 33% !important;
+}
 
 .w-problem a {
   display: block;
