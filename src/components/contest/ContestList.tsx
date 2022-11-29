@@ -102,7 +102,7 @@ const ContestList = (props: PropsType) => {
 
     let className =
       (solved ? props.theme.bgSuccess : attempted ? props.theme.bgDanger : "") +
-      (inside ? (len == 3 ? "w-100 pb-3 ps-1 pe-0 " : " w-50 ") : " w-100 ");
+      (inside ? (len == 3 ? " w-100 pb-3 ps-1 pe-0 " : " w-50 ") : " w-100 ");
 
     return (
       <div
@@ -206,7 +206,7 @@ const ContestList = (props: PropsType) => {
 
     return (
       <td className={"inside p-0 " + "w-problem "} key={contestId + index}>
-        More than 2
+        More than 3
       </td>
     );
   };
