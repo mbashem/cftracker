@@ -260,7 +260,7 @@ const ContestPage = () => {
             ) : */}
             {state.problemList.error.length > 0 ? (
               <Alert key={"danger"} variant={"danger"}>
-                {state.problemList.error} Most probably because CF API is down. API link: https://codeforces.com/api/problemset.problems
+                {state.problemList.error} Most probably because CF API is down. Try reloading after few minutes. API link: https://codeforces.com/api/problemset.problems . 
               </Alert>
             ) : (
               <ContestList
