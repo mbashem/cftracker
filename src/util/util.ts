@@ -72,3 +72,9 @@ export const processNumber = (
   if (num > max) return max;
   return num;
 };
+
+export const isNumber = (value: string | number): boolean => {
+  return ((value != null) &&
+    (value !== '') &&
+    !isNaN(Number(value.toString())));
+}
