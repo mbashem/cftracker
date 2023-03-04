@@ -51,9 +51,7 @@ const get_short_and_category = (name: string): [string, ContestCat] => {
 		else if (global === -1)
 			cf = -1;
 	}
-
-	console.log(split_name, cf, lst, found_round);
-
+	// console.log(split_name, cf, lst, found_round);
 	if (edu !== -1) {
 		category = ContestCat.EDUCATIONAL;
 		short = "Edu " + lst;
