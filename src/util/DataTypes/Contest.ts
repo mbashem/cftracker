@@ -1,4 +1,5 @@
 import { sortByContestId } from "../sortMethods";
+import { isNumber } from "../util";
 import Problem from "./Problem";
 
 export enum ContestCat {
@@ -14,116 +15,81 @@ export enum ContestCat {
 }
 
 const get_short_and_category = (name: string): [string, ContestCat] => {
-	let div2 = -1;
-	let div1 = -1;
-	let div3 = -1;
-	let div4 = -1;
-	let edu = -1;
-	let firstS = -1,
-		firstE = -1,
-		hashS = -1,
-		hashE = -1,
-		global = -1;
-
+	let CODEFORCES: string = "Codeforces";
 	name = name.replace("Div.2", ContestCat.DIV2);
 	name = name.replace("Div.1", ContestCat.DIV1);
 
-	let short: string = null;
+	let short: string = "";
 	let category: ContestCat = null;
+	// returns -1 if not found
+	let div1 = name.indexOf(ContestCat.DIV1);
+	let div2 = name.indexOf(ContestCat.DIV2);
+	let div3 = name.indexOf(ContestCat.DIV3);
+	let div4 = name.indexOf(ContestCat.DIV4);
+	let edu = name.indexOf(ContestCat.EDUCATIONAL);
+	let global = name.indexOf(ContestCat.GLOBAL);
 
-	for (let i = 0; i < name.length; i++) {
-		if (i + ContestCat.DIV1.length - 1 < name.length) {
-			if (name.substr(i, ContestCat.DIV1.length) === ContestCat.DIV1) {
-				div1 = i;
-			} else if (
-				name.substr(i, ContestCat.DIV1.length) === ContestCat.DIV2
-			) {
-				div2 = i;
-			} else if (
-				name.substr(i, ContestCat.DIV1.length) === ContestCat.DIV3
-			) {
-				div3 = i;
-			}else if(name.substring(i,i+ContestCat.DIV1.length) === ContestCat.DIV4)
-			{
-				div4 = i;
-			}
+	let split_name = name.split(" ");
+	let lst = "";
+	let cf = -1;
+	let found_round = false;
+
+	for (let i = 0; i < split_name.length; i++) {
+		split_name[i] = split_name[i].replace(/[^0-9a-z]/gi, '');
+		let curr = split_name[i];
+		if (curr.length === 0) continue;
+		if (curr === CODEFORCES) {
+			cf = i;
+			continue;
 		}
-
-		if (i + ContestCat.EDUCATIONAL.length - 1 < name.length) {
-			if (
-				name.substr(i, ContestCat.EDUCATIONAL.length) ===
-				ContestCat.EDUCATIONAL
-			)
-				edu = i;
+		if (found_round) {
+			lst = curr;
+			break;
 		}
-
-		if (i + ContestCat.GLOBAL.length - 1 < name.length) {
-			if (name.substr(i, ContestCat.GLOBAL.length) === ContestCat.GLOBAL)
-				global = i;
-		}
-
-		if (hashS === -1 && name[i] === "#") {
-			hashS = i;
-			hashE = i;
-		}
-
-		if (
-			hashE === i - 1 &&
-			((name[i] >= "0" && name[i] <= "9") ||
-				(name[i] >= "A" && name[i] <= "Z") ||
-				(name[i] >= "a" && name[i] <= "z"))
-		)
-			hashE = i;
-
-		if (name[i] >= "0" && name[i] <= "9") {
-			if (firstS === -1) {
-				firstS = i;
-				firstE = i;
-			}
-
-			if (firstE === i - 1) firstE = i;
-		}
+		if (cf !== -1 && curr == "Round")
+			found_round = true;
+		else if (global === -1)
+			cf = -1;
 	}
 
-	if (hashS !== -1) {
-		if (div2 !== -1 && div1 !== -1) {
-			category = ContestCat.DIV12;
-		}
-		else if (div1 !== -1) {
-			category = ContestCat.DIV1;
-		} else if (div2 !== -1) {
-			category = ContestCat.DIV2;
-		} else if (div3 !== -1) {
-			category = ContestCat.DIV3;
-		}else if(div4 !== -1){
-			category = ContestCat.DIV4;
-		}
+	console.log(split_name, cf, lst, found_round);
 
-		if (category)
-			short = "CF" + name.substr(hashS, hashE - hashS + 1);
+	if (edu !== -1) {
+		category = ContestCat.EDUCATIONAL;
+		short = "Edu " + lst;
+	} else if (global !== -1) {
+		category = ContestCat.GLOBAL;
+		short = "Global " + lst;
 	}
+	else if (div2 !== -1 && div1 !== -1)
+		category = ContestCat.DIV12;
+	else if (div1 !== -1)
+		category = ContestCat.DIV1;
+	else if (div2 !== -1)
+		category = ContestCat.DIV2;
+	else if (div3 !== -1)
+		category = ContestCat.DIV3;
+	else if (div4 !== -1)
+		category = ContestCat.DIV4;
 
-	if (firstS !== -1 && !category) {
-		if (edu !== -1) {
-			category = ContestCat.EDUCATIONAL;
-		}
+	if (short.length === 0) {
+		if (lst.length > 0 && cf !== -1) {
+			if (lst[0] == '#')
+				short = "CF";
+			else
+				short = "CF ";
 
-		if (global !== -1) {
-			category = ContestCat.GLOBAL;
-		}
-		short =
-			(edu === -1 ? category : "Edu") +
-			"#" +
-			name.substr(firstS, firstE - firstS + 1);
-	}
-
-	if (!category) {
-		short = name;
-		if ((div2 !== -1 && div1 !== -1) || name.includes("Good Bye") || name.includes("Hello")) {
-			category = ContestCat.DIV12;
+			short += lst;
 		} else {
-			category = ContestCat.OTHERS;
+			short = name;
+			short = short.replace(" Round", "");
 		}
+	}
+	if (!category) {
+		if ((div2 !== -1 && div1 !== -1) || name.includes("Good Bye") || name.includes("Hello"))
+			category = ContestCat.DIV12;
+		else
+			category = ContestCat.OTHERS;
 	}
 
 	return [short, category];
