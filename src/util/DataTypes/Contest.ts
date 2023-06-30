@@ -18,6 +18,7 @@ const get_short_and_category = (name: string): [string, ContestCat] => {
 	let CODEFORCES: string = "Codeforces";
 	name = name.replace("Div.2", ContestCat.DIV2);
 	name = name.replace("Div.1", ContestCat.DIV1);
+	name = name.replace("Div 2", ContestCat.DIV2);
 
 	let short: string = "";
 	let category: ContestCat = null;
