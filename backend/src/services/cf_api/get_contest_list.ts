@@ -1,19 +1,20 @@
-import { contest_list_url } from "../../util/cf/cf_api";
-import Contest from "../../util/DataTypes/Contest";
-import { fetch_json } from "../../util/util";
+// import { contest_list_url } from "../../util/cf/cf_api";
+// import Contest from "../../util/DataTypes/Contest";
+// import { fetch_json } from "../../util/util";
 
-const get_contest_list = async () : Promise<Contest[]>  => {
-	let response = await fetch_json(contest_list_url());
+// const get_contest_list = async () : Promise<Contest[]>  => {
+// 	let response = await fetch_json(contest_list_url());
 
-	let contests  : Contest[] = [];
+// 	let contests  : Contest[] = [];
 
-	//console.log(response)
+// 	//console.log(response)
 
-	for(let contest of response.result){
-		contests.push(new Contest(contest.id,contest.name,contest.type,contest.phase,contest.durationSeconds,contest.startTimeSeconds));
-	}
+// 	for(let contest of response.result){
+// 		contests.push(new Contest(contest.id,contest.name,contest.type,contest.phase,contest.durationSeconds,contest.startTimeSeconds));
+// 	}
 
-	return contests;
-}	
+// 	return contests;
+// }	
 
-export default get_contest_list;
+// export default get_contest_list;
+export {}
