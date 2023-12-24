@@ -1,4 +1,5 @@
-import { createSharedContest, getAllSharedContests } from "@/app/shared-contests/sharedContestsService";
+
+import { createOrUpdateSharedContest, getAllSharedContests } from "@/features/shared-contests/services/SharedContestsService";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
@@ -15,7 +16,7 @@ export async function POST(req: NextRequest) {
 	let contestId = data["contestId"] as number;
 	let parentId = data["parentId"] as number;
 
-	await createSharedContest(contestId, parentId);
+	await createOrUpdateSharedContest(contestId, parentId);
 
 	return NextResponse.json(res);
 }

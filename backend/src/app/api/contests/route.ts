@@ -1,4 +1,4 @@
-import { getAllContests, getContestByIdFromCF } from "@/app/cf-api/CFApiService";
+import { getAllContests, getContestByIdFromCF } from "@/features/cf-api/CFApiService";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {

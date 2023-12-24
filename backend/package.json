@@ -2,6 +2,9 @@
   "name": "backend",
   "version": "0.1.0",
   "private": true,
+  "prisma": {
+    "schema": "src/prisma/schema.prisma"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -11,6 +14,7 @@
   "dependencies": {
     "@emotion/cache": "^11.11.0",
     "@mui/material-nextjs": "^5.15.0",
+    "@prisma/client": "^5.7.1",
     "axios": "^1.6.2",
     "next": "14.0.3",
     "react": "^18",
