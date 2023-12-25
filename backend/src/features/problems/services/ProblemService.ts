@@ -1,4 +1,6 @@
+import { getContestWithProblemByIdFromCF } from "@/features/cf-api/CFApiService";
 import prismaClient from "@/prisma/prismaClient";
+import { Contest } from "@prisma/client";
 
 export async function createOrUpdateProblem(contestId: number, index: string, name: string) {
 	if (await getProblem(contestId, index)) {
@@ -43,4 +45,15 @@ export async function deleteProblem(contestId: number, index: string) {
 
 export async function getAllProblems() {
 	return await prismaClient.problem.findMany();
+}
+
+export async function fetchAndSaveProblems(contests: Contest[]) {
+	for (const contest of contests) {
+		const { problems } = await getContestWithProblemByIdFromCF(contest.contestId);
+		for (const problem of problems) {
+			await createOrUpdateProblem(contest.contestId, problem.index, problem.name);
+		}
+
+		await sleep(2000);
+	}
 }

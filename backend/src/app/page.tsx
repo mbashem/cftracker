@@ -1,7 +1,17 @@
-import Image from 'next/image'
-import styles from './page.module.css'
+import Image from "next/image";
+import styles from "./page.module.css";
+import { fetchAndSaveAllContests } from "@/features/contests/services/ContestService";
+import { Button } from "@mui/material";
 
 export default function Home() {
+  const fetchContestFromCF = async (formData: FormData) => {
+    "use server";
+    console.log("Server: fethcing contest from CF");
+
+    const contestList = await fetchAndSaveAllContests();
+
+    console.log(contestList);
+  };
   return (
     <main className={styles.main}>
       <div className={styles.description}>
@@ -15,7 +25,7 @@ export default function Home() {
             target="_blank"
             rel="noopener noreferrer"
           >
-            By{' '}
+            By{" "}
             <Image
               src="/vercel.svg"
               alt="Vercel Logo"
@@ -26,6 +36,12 @@ export default function Home() {
             />
           </a>
         </div>
+      </div>
+
+      <div className={styles.grid}>
+        <form action={fetchContestFromCF}>
+          <Button type="submit">Fetch All Contest From CF</Button>
+        </form>
       </div>
 
       <div className={styles.center}>
@@ -91,5 +107,5 @@ export default function Home() {
         </a>
       </div>
     </main>
-  )
+  );
 }

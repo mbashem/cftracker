@@ -1,4 +1,6 @@
 import prismaClient from "@/prisma/prismaClient";
+import { getAllContestsFromCF } from "@/features/cf-api/CFApiService";
+import { Contest } from "@prisma/client";
 
 export async function createOrUpdateContest(contestId: number, name: string) {
 	if (await getContest(contestId)) {
@@ -39,4 +41,16 @@ export async function deleteContest(contestId: number) {
 
 export async function getAllContests() {
 	return await prismaClient.contest.findMany();
+}
+
+export async function fetchAndSaveAllContests(gym = false) {
+	const contests = await getAllContestsFromCF(gym);
+	const contestsList: Contest[] = [];
+
+	for (const contest of contests) {
+		const createdContest = await createOrUpdateContest(contest.id, contest.name);
+		contestsList.push(createdContest);
+	}
+
+	return contestsList;
 }
