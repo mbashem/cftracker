@@ -52,3 +52,17 @@ export async function getSharedContest(contestId: number) {
 export async function getAllSharedContests() {
 	return await prismaClient.sharedContest.findMany();
 }
+
+export async function getAllSharedContestGroupByParent() {
+	const allContests = await getAllSharedContests();
+	return (await prismaClient.sharedContest.groupBy({
+		by: ["parentContestId"],
+		orderBy: {
+			parentContestId: "desc"
+		}
+	})).map((item) => {
+		return allContests.filter((contest) => {
+			return contest.parentContestId == item.parentContestId;
+		});
+	});
+}
