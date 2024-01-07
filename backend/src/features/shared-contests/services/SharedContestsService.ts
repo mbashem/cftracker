@@ -55,6 +55,7 @@ export async function getAllSharedContests() {
 
 export async function getAllSharedContestGroupByParent() {
 	const allContests = await getAllSharedContests();
+	console.log("Here");
 	return (await prismaClient.sharedContest.groupBy({
 		by: ["parentContestId"],
 		orderBy: {
