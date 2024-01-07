@@ -59,10 +59,10 @@ export async function fetchAndSaveProblems(contests: Contest[]) {
 }
 
 export async function getFetchedProblemsContestIdList() {
-	return (await prismaClient.problem.groupBy({
-		by: ["contestId"],
-		orderBy: {
-			contestId: "desc"
-		}
+	return (await prismaClient.problem.findMany({
+		select: {
+			contestId: true,
+		},
+		distinct: ['contestId'],
 	})).map(item => item.contestId);
 }
