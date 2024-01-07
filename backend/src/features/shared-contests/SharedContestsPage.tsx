@@ -18,6 +18,15 @@ export default async function SharedContestsPage() {
   const contestsData = await fetch("http://localhost:3000/api/contests", {
     cache: "no-store",
   });
+
+  const fetchedContestsData = await fetch(
+    "http://localhost:3000/api/contests/fetched",
+    {
+      cache: "no-store",
+    }
+  );
+
+  const fetchedContests = await fetchedContestsData.json();
   const contests = await contestsData.json();
 
   return (
@@ -25,7 +34,11 @@ export default async function SharedContestsPage() {
       <form action={groupContests}>
         <Button type="submit">Group Contests</Button>
       </form>
-      <SharedContestList sharedContests={sharedContests} contests={contests} />
+      <SharedContestList
+        sharedContests={sharedContests}
+        contests={contests}
+        fetchedContests={fetchedContests}
+      />
     </Container>
   );
 }

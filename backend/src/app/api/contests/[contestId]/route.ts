@@ -1,6 +1,6 @@
 import { getContestByIdFromCF } from "@/features/cf-api/CFApiService";
 import { createOrUpdateContest } from "@/features/contests/services/ContestService";
-import { createOrUpdateProblem } from "@/features/problems/services/ProblemService";
+import { createOrUpdateProblem } from "@/features/problems/services/ProblemDBService";
 import { Problem } from "@/features/problems/types/problemsTypes";
 import { NextRequest, NextResponse } from "next/server";
 

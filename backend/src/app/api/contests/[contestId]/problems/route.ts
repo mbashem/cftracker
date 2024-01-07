@@ -1,6 +1,7 @@
 import { getContestWithProblemByIdFromCF } from "@/features/cf-api/CFApiService";
 import { createOrUpdateContest } from "@/features/contests/services/ContestService";
-import { createOrUpdateProblem } from "@/features/problems/services/ProblemService";
+import { createOrUpdateProblem } from "@/features/problems/services/ProblemDBService";
+import { fetchAndSaveProblemsByContestId } from "@/features/problems/services/ProblemService";
 import { Problem } from "@/features/problems/types/problemsTypes";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -8,14 +9,8 @@ export async function GET(req: NextRequest, context: { params: { contestId: numb
 	const res = await getContestWithProblemByIdFromCF(context.params.contestId);
 
 	try {
-		const insertedContest = await createOrUpdateContest(res.contest.id, res.contest.name);
-
-		const problemsList: Problem[] = [];
-
-		for (const problem of res.problems) {
-			const insertedProblem = await createOrUpdateProblem(problem.contestId, problem.index, problem.name);
-			problemsList.push(insertedProblem);
-		}
+		const { insertedContest, problemsList } = await fetchAndSaveProblemsByContestId(context.params.contestId);
+		
 		return NextResponse.json({
 			contest: insertedContest,
 			problems: problemsList,

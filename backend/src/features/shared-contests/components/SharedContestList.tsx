@@ -17,14 +17,24 @@ import {
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import SelectContest from "./SelectContest";
-import { deleteSharedContestAction } from "../actions/DeleteActions";
+import {
+  deleteSharedContestAction,
+  fetchAndSaveProblems,
+} from "../actions/SharedContestActions";
+import CachedIcon from "@mui/icons-material/Cached";
+import CheckIcon from "@mui/icons-material/Check";
 
 interface Props {
   sharedContests: SharedContest[][];
   contests: Contest[];
+  fetchedContests: number[];
 }
 
-export default function SharedContestList({ sharedContests, contests }: Props) {
+export default function SharedContestList({
+  sharedContests,
+  contests,
+  fetchedContests,
+}: Props) {
   const contestNameMap = useMemo(() => {
     const map = new Map<number, string>();
     contests.forEach((contest) => {
@@ -113,6 +123,30 @@ export default function SharedContestList({ sharedContests, contests }: Props) {
                       </TableCell>
                       <TableCell>
                         <Stack direction="row" justifyContent={"flex-end"}>
+                          {fetchedContests.includes(subRow.contestId) ? (
+                            <IconButton
+                              aria-label="actions"
+                              aria-controls="menu"
+                              aria-haspopup="true"
+                              onClick={() => {}}
+                            >
+                              <CheckIcon />
+                            </IconButton>
+                          ) : (
+                            <IconButton
+                              aria-label="actions"
+                              aria-controls="menu"
+                              aria-haspopup="true"
+                              onClick={async () => {
+                                const res = await fetchAndSaveProblems(
+                                  subRow.contestId
+                                );
+                                console.log(res);
+                              }}
+                            >
+                              <CachedIcon />
+                            </IconButton>
+                          )}
                           <IconButton
                             aria-label="actions"
                             aria-controls="menu"
