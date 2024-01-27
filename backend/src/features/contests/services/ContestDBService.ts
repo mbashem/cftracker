@@ -54,3 +54,7 @@ export async function fetchAndSaveAllContests(gym = false) {
 
 	return contestsList;
 }
+
+export async function deleteAllContests() {
+	return await prismaClient.contest.deleteMany({});
+}

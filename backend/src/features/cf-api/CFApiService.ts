@@ -1,6 +1,6 @@
 import axios from "axios";
 import { CFAPIContest, CFAPIResult } from "./CFApiTypes";
-import { createOrUpdateContest } from "../contests/services/ContestService";
+import { createOrUpdateContest } from "../contests/services/ContestDBService";
 
 export async function getContestWithProblemByIdFromCF(contestID: number) {
   const res = await axios.get(

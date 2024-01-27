@@ -1,5 +1,6 @@
 import { getContestWithProblemByIdFromCF } from "@/features/cf-api/CFApiService";
 import prismaClient from "@/prisma/prismaClient";
+import { sleep } from "@/utils/utils";
 import { Contest } from "@prisma/client";
 
 export async function createOrUpdateProblem(contestId: number, index: string, name: string) {
@@ -65,4 +66,8 @@ export async function getFetchedProblemsContestIdList() {
 		},
 		distinct: ['contestId'],
 	})).map(item => item.contestId);
+}
+
+export async function deleteAllProblems() {
+	return await prismaClient.problem.deleteMany({});
 }

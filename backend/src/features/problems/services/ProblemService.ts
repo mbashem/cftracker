@@ -1,5 +1,5 @@
 import { getContestWithProblemByIdFromCF } from "@/features/cf-api/CFApiService";
-import { createOrUpdateContest } from "@/features/contests/services/ContestService";
+import { createOrUpdateContest } from "@/features/contests/services/ContestDBService";
 import { createOrUpdateProblem } from "./ProblemDBService";
 import { Problem } from "@prisma/client";
 
@@ -19,3 +19,4 @@ export async function fetchAndSaveProblemsByContestId(contestId: number) {
 		problemsList,
 	}
 }
+

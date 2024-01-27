@@ -1,4 +1,4 @@
-import { fetchAndSaveAllContests } from "@/features/contests/services/ContestService";
+import { fetchAndSaveAllContests } from "@/features/contests/services/ContestDBService";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {

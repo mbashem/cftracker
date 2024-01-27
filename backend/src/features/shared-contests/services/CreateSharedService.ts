@@ -1,7 +1,7 @@
 import { SharedContest } from "@prisma/client";
 import { ProblemShared, ProblemType } from "../types/ProblemShared";
 import { getAllProblems } from "@/features/problems/services/ProblemDBService";
-import { getAllSharedContestGroupByParent } from "./SharedContestsService";
+import { getAllSharedContestGroupByParent } from "./SharedContestsDBService";
 
 export function createShared(problems: ProblemType[], sharedContests: SharedContest[][]): ProblemShared[] {
 	let res: ProblemShared[] = [];

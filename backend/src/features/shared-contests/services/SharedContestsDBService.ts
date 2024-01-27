@@ -67,3 +67,7 @@ export async function getAllSharedContestGroupByParent() {
 		});
 	});
 }
+
+export async function deleteAllSharedContests() {
+	return await prismaClient.sharedContest.deleteMany({});
+}

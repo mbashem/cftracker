@@ -1,5 +1,5 @@
 import { Contest } from "@prisma/client";
-import { createOrUpdateSharedContest } from "./SharedContestsService";
+import { createOrUpdateSharedContest } from "./SharedContestsDBService";
 
 const check = (child_name: string, parent_name: string): boolean => {
 	// if (name1.includes(name2)) return true;

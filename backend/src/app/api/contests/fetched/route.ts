@@ -1,4 +1,4 @@
-import { getAllContests } from "@/features/contests/services/ContestService";
+import { getAllContests } from "@/features/contests/services/ContestDBService";
 import { getFetchedProblemsContestIdList } from "@/features/problems/services/ProblemDBService";
 import { NextRequest, NextResponse } from "next/server";
 

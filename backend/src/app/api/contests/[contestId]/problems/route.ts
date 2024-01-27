@@ -1,5 +1,5 @@
 import { getContestWithProblemByIdFromCF } from "@/features/cf-api/CFApiService";
-import { createOrUpdateContest } from "@/features/contests/services/ContestService";
+import { createOrUpdateContest } from "@/features/contests/services/ContestDBService";
 import { createOrUpdateProblem } from "@/features/problems/services/ProblemDBService";
 import { fetchAndSaveProblemsByContestId } from "@/features/problems/services/ProblemService";
 import { Problem } from "@/features/problems/types/problemsTypes";
@@ -10,7 +10,7 @@ export async function GET(req: NextRequest, context: { params: { contestId: numb
 
 	try {
 		const { insertedContest, problemsList } = await fetchAndSaveProblemsByContestId(context.params.contestId);
-		
+
 		return NextResponse.json({
 			contest: insertedContest,
 			problems: problemsList,

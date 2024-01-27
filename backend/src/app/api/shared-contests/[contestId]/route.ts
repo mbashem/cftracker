@@ -1,4 +1,4 @@
-import { deleteSharedContest, getSharedContest } from "@/features/shared-contests/services/SharedContestsService";
+import { deleteSharedContest, getSharedContest } from "@/features/shared-contests/services/SharedContestsDBService";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest, context: { params: { contestId: number } }) {

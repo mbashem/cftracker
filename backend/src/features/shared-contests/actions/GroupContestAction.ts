@@ -1,7 +1,7 @@
 "use server";
-import { getAllContests } from "@/features/contests/services/ContestService";
+import { getAllContests } from "@/features/contests/services/ContestDBService";
 import groupContestAsShared from "@/features/shared-contests/services/GroupContestService"
-import { createOrUpdateSharedContest } from "../services/SharedContestsService";
+import { createOrUpdateSharedContest } from "../services/SharedContestsDBService";
 import { revalidatePath } from "next/cache";
 
 export async function groupContests() {

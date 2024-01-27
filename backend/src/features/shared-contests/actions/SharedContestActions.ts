@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { deleteSharedContest } from "../services/SharedContestsService";
+import { deleteSharedContest } from "../services/SharedContestsDBService";
 import { fetchAndSaveProblemsByContestId } from "@/features/problems/services/ProblemService";
 
 export async function deleteSharedContestAction(contestId: number) {

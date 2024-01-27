@@ -1,5 +1,5 @@
 
-import { createOrUpdateSharedContest, getAllSharedContestGroupByParent } from "@/features/shared-contests/services/SharedContestsService";
+import { createOrUpdateSharedContest, getAllSharedContestGroupByParent } from "@/features/shared-contests/services/SharedContestsDBService";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
