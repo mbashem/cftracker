@@ -1,0 +1,17 @@
+version: '3.8'
+services:
+  database:
+    image: 'bitnami/mongodb:latest'
+    environment:
+      - MONGODB_ADVERTISED_HOSTNAME=127.0.0.1
+      - MONGODB_REPLICA_SET_MODE=primary
+      - MONGODB_ROOT_USER=admin
+      - MONGODB_ROOT_PASSWORD=admin
+      - MONGODB_REPLICA_SET_KEY=replicasetkey123
+    ports:
+      - '27069:27017'
+    volumes:
+      - 'mongo-db:/bitnami/mongodb'
+
+volumes:
+  mongo-db:
