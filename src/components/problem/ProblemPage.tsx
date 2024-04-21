@@ -22,7 +22,6 @@ import { getObj, getSet, saveObj, saveSet } from "../../util/save";
 import { Verdict } from "../../util/DataTypes/Submission";
 
 const ProblemPage = () => {
-  
   const state: RootStateType = useSelector((state) => state) as RootStateType;
   const history = useHistory();
 
@@ -56,7 +55,7 @@ const ProblemPage = () => {
     showUnrated: true,
     minContestId: state.appState.minContestId,
     maxContestId: state.appState.maxContestId,
-    search: SEARCH in query ? query[SEARCH] : "",
+    search: SEARCH in query ? (query[SEARCH] as string) : "",
   };
 
   const [filter, setFilter] = useState<filt>(
@@ -221,7 +220,8 @@ const ProblemPage = () => {
           setRandom={(num) => {
             setRandomProblem(num);
           }}
-          theme={state.appState.theme}>
+          theme={state.appState.theme}
+        >
           <CustomModal title="Filter" theme={state.appState.theme}>
             <CheckList
               items={SOLVEBUTTONS}
@@ -285,7 +285,8 @@ const ProblemPage = () => {
             <table
               className={
                 "table table-bordered m-0 " + state.appState.theme.table
-              }>
+              }
+            >
               <thead className={state.appState.theme.thead}>
                 <tr>
                   <th scope="col">#</th>
@@ -294,7 +295,8 @@ const ProblemPage = () => {
                   <th
                     scope="col"
                     role="button"
-                    onClick={() => sortList(SORT_BY_RATING)}>
+                    onClick={() => sortList(SORT_BY_RATING)}
+                  >
                     <div className="d-flex justify-content-between">
                       <div>Rating</div>
                       <div>
@@ -309,7 +311,8 @@ const ProblemPage = () => {
                   <th
                     scope="col"
                     role="button"
-                    onClick={() => sortList(SORT_BY_SOLVE)}>
+                    onClick={() => sortList(SORT_BY_SOLVE)}
+                  >
                     <div className="d-flex justify-content-between">
                       <div>Solve Count</div>
                       <div>
