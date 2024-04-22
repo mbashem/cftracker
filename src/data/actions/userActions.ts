@@ -28,7 +28,7 @@ export const fetchUsers = (dispatch, handle: string) => {
   dispatch(load(LOADING_USERS));
   let currentId = Date.now();
 
-  let handleArray: string[] = stringToArray(handle, ",");
+  let handleArray: string[] = stringToArray(handle, ",").map(handle => handle.trim());
   handleArray = handleArray.filter((handle) => handle.length);
 
   for (let handle of handleArray) {
