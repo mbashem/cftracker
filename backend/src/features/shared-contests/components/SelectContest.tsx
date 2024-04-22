@@ -25,14 +25,14 @@ const style = {
 };
 
 interface Props {
-  parentContestId: number;
+  parentContest: Contest | null;
   onClose: () => void;
   onSelect: (contestId: number) => void;
   contests: Contest[];
 }
 
 export default function SelectContest({
-  parentContestId,
+  parentContest,
   onClose,
   onSelect,
   contests,
@@ -45,9 +45,9 @@ export default function SelectContest({
   };
 
   useEffect(() => {
-    console.log("parentContestId", parentContestId);
-    if (parentContestId !== -2) handleOpen();
-  }, [parentContestId]);
+    console.log("parentContest: ", parentContest);
+    if (parentContest !== null) handleOpen();
+  }, [parentContest]);
 
   contests[0].contestId;
   const columns: GridColDef[] = [
@@ -68,13 +68,17 @@ export default function SelectContest({
           tabIndex={params.hasFocus ? 0 : -1}
           onClick={async () => {
             onSelect(params.row.contestId);
-            if (parentContestId === -1) {
+            if (parentContest?.contestId === -1) {
               await createSharedContest(
                 params.row.contestId,
                 params.row.contestId
               );
             } else {
-              await createSharedContest(parentContestId, params.row.contestId);
+              if (parentContest !== null)
+                await createSharedContest(
+                  parentContest.contestId,
+                  params.row.contestId
+                );
             }
             handleClose();
           }}
@@ -95,7 +99,7 @@ export default function SelectContest({
       >
         <Box sx={style}>
           <Typography id="parent-modal-title" variant="h6" component="h2">
-            Parent ID:{parentContestId}
+            Parent ID:{parentContest?.contestId} , Name: {parentContest?.name}
           </Typography>
           <Box>
             <DataGrid
