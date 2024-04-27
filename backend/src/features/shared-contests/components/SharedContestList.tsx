@@ -45,7 +45,8 @@ export default function SharedContestList({
 
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
-  const [selectedContest, setSelectedContest] = useState<number>(-2);
+  const [selectedContest, setSelectedContest] = useState<Contest | null>(null);
+  const [selectedContestName, setSelectedContestName] = useState<string>("");
 
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -58,17 +59,21 @@ export default function SharedContestList({
       <Button
         onClick={() => {
           console.log("set open");
-          setSelectedContest(-1);
+          setSelectedContest({ contestId: -1, name: "", id: "" } as Contest);
         }}
       >
         Create New Shared Contest
       </Button>
       <SelectContest
-        parentContestId={selectedContest}
+        parentContest={selectedContest}
         onClose={() => {
-          setSelectedContest(-2);
+          setSelectedContest(null);
         }}
-        contests={contests}
+        contests={contests.filter((contest) => {
+          return !sharedContests
+            .flatMap((rows) => rows.map((row) => row.contestId))
+            .includes(contest.contestId);
+        })}
         onSelect={() => {}}
       />
       <TableContainer component={Paper}>
@@ -98,19 +103,15 @@ export default function SharedContestList({
                           aria-controls="menu"
                           aria-haspopup="true"
                           onClick={() => {
-                            setSelectedContest(rows[0].parentContestId);
+                            setSelectedContest(
+                              contests.find(
+                                (value) => value.contestId === rows[0].contestId
+                              ) ?? null
+                            );
                           }}
                         >
                           <EditIcon />
                         </IconButton>
-                        {/* <IconButton
-                          aria-label="actions"
-                          aria-controls="menu"
-                          aria-haspopup="true"
-                          onClick={handleClick}
-                        >
-                          <DeleteIcon />
-                        </IconButton> */}
                       </Stack>
                     </TableCell>
                   </TableRow>
