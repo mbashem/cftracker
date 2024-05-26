@@ -11,5 +11,5 @@ func RegisterRoutes(server *gin.Engine) {
 	userServer.Use(middlewares.Authenticate)
 	userServer.GET("/profile", getProfile)
 	userServer.PUT("/cfhandle", UpdateCFHandle)
-
+	
 }
