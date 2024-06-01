@@ -60,7 +60,7 @@ func (user *User) Update() error {
 func (user *User) UpdateCFHandle(cfHandle string) error {
 	query := `
 		UPDATE users
-		SET cf_handle = $2
+		SET cf_handle = $2, cf_verified = false
 		WHERE id = $1
 		RETURNING id;
 	`

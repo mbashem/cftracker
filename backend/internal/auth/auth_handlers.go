@@ -68,7 +68,7 @@ func (h *AuthHandler) GitHubCallback(ginContext *gin.Context) {
 		}
 		err = user.Save()
 		if err != nil {
-			ginContext.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save user", "err": err})
+			ginContext.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save user", "err": err})               
 			return
 		}
 	} else {

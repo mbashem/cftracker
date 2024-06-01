@@ -17,27 +17,27 @@ var tokenStore = VerificationTokenStore{
 }
 
 // SetToken stores a token for a user with an expiration time
-func (s *VerificationTokenStore) SetToken(userID int64, token string, duration time.Duration) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+func (store *VerificationTokenStore) SetToken(userID int64, token string, duration time.Duration) {
+	store.mu.Lock()
+	defer store.mu.Unlock()
 
-	s.tokens[userID] = token
-	s.expiries[userID] = time.Now().Add(duration)
+	store.tokens[userID] = token
+	store.expiries[userID] = time.Now().Add(duration)
 }
 
 // GetToken retrieves the token for a user
-func (s *VerificationTokenStore) GetToken(userID int64) (string, bool) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+func (store *VerificationTokenStore) GetToken(userID int64) (string, bool) {
+	store.mu.Lock()
+	defer store.mu.Unlock()
 
-	token, exists := s.tokens[userID]
+	token, exists := store.tokens[userID]
 	if !exists {
 		return "", false
 	}
 
-	if time.Now().After(s.expiries[userID]) {
-		delete(s.tokens, userID)
-		delete(s.expiries, userID)
+	if time.Now().After(store.expiries[userID]) {
+		delete(store.tokens, userID)
+		delete(store.expiries, userID)
 		return "", false
 	}
 
@@ -45,10 +45,10 @@ func (s *VerificationTokenStore) GetToken(userID int64) (string, bool) {
 }
 
 // DeleteToken removes the token for a user
-func (s *VerificationTokenStore) DeleteToken(userID int64) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+func (store *VerificationTokenStore) DeleteToken(userID int64) {
+	store.mu.Lock()
+	defer store.mu.Unlock()
 
-	delete(s.tokens, userID)
-	delete(s.expiries, userID)
+	delete(store.tokens, userID)
+	delete(store.expiries, userID)
 }
