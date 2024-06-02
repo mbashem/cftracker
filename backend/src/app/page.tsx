@@ -51,6 +51,14 @@ export default function Home() {
 
   const syncDB = async () => {
     "use server";
+    const contests = JSON.parse(
+      readFileSync("src/saved-db/contests.json", "utf-8")
+    ) as Contest[];
+
+    for (let contest of contests) {
+      await createOrUpdateContest(contest.contestId, contest.name);
+    }
+
     const problems = JSON.parse(
       readFileSync("src/saved-db/problems.json", "utf-8")
     ) as Problem[];
@@ -61,14 +69,6 @@ export default function Home() {
         problem.index,
         problem.name
       );
-    }
-
-    const contests = JSON.parse(
-      readFileSync("src/saved-db/contests.json", "utf-8")
-    ) as Contest[];
-
-    for (let contest of contests) {
-      await createOrUpdateContest(contest.contestId, contest.name);
     }
 
     const sharedContests = JSON.parse(
