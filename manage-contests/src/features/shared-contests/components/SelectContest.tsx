@@ -49,7 +49,6 @@ export default function SelectContest({
     if (parentContest !== null) handleOpen();
   }, [parentContest]);
 
-  contests[0].contestId;
   const columns: GridColDef[] = [
     { field: "contestId", headerName: "contestId", width: 90 },
     {
@@ -104,6 +103,7 @@ export default function SelectContest({
           <Box>
             <DataGrid
               rows={contests}
+              getRowId={ row => row.contestId}
               columns={columns}
               initialState={{
                 pagination: {
