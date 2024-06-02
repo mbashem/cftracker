@@ -12,7 +12,7 @@ import (
 	"github.com/mbashem/cftracker/backend/internal/middlewares"
 )
 
-func getUserByID(context *gin.Context) {
+func getUserByIDHandler(context *gin.Context) {
 	id, err := strconv.ParseInt(context.Param("id"), 10, 64)
 	if err != nil {
 		context.JSON(http.StatusBadRequest, gin.H{"message": "Invalid user ID"})
@@ -26,7 +26,7 @@ func getUserByID(context *gin.Context) {
 	context.JSON(http.StatusOK, gin.H{"user": user})
 }
 
-func getProfile(context *gin.Context) {
+func getProfileHandler(context *gin.Context) {
 	id := context.GetInt64(middlewares.UserIdKey)
 
 	user, err := FindUserByID(id)
@@ -36,7 +36,7 @@ func getProfile(context *gin.Context) {
 	context.JSON(http.StatusOK, gin.H{"user": user})
 }
 
-func UpdateCFHandle(context *gin.Context) {
+func UpdateCFHandleHandler(context *gin.Context) {
 	id := context.GetInt64(middlewares.UserIdKey)
 
 	var cfHandle struct {
@@ -64,7 +64,7 @@ func UpdateCFHandle(context *gin.Context) {
 	context.JSON(http.StatusOK, gin.H{"message": "CF Handle updated"})
 }
 
-func getCFVerificationToken(context *gin.Context) {
+func getCFVerificationTokenHandler(context *gin.Context) {
 	id := context.GetInt64(middlewares.UserIdKey)
 
 	user, err := FindUserByID(id)
@@ -91,7 +91,7 @@ func getCFVerificationToken(context *gin.Context) {
 	context.JSON(http.StatusOK, gin.H{"token": token})
 }
 
-func verifyCFVerificationToken(context *gin.Context) {
+func verifyCFVerificationTokenHandler(context *gin.Context) {
 	id := context.GetInt64(middlewares.UserIdKey)
 
 	user, err := FindUserByID(id)

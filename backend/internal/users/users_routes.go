@@ -9,8 +9,8 @@ func RegisterRoutes(server *gin.Engine) {
 	// server.GET("/user/:id", getUserByID)
 	userServer := server.Group("/user")
 	userServer.Use(middlewares.Authenticate)
-	userServer.GET("/profile", getProfile)
-	userServer.PUT("/cfhandle", UpdateCFHandle)
-	userServer.GET("/cfverification-token", getCFVerificationToken)
-	userServer.GET("/verify-cftoken", verifyCFVerificationToken)
+	userServer.GET("/profile", getProfileHandler)
+	userServer.PUT("/cfhandle", UpdateCFHandleHandler)
+	userServer.GET("/cfverification-token", getCFVerificationTokenHandler)
+	userServer.GET("/verify-cftoken", verifyCFVerificationTokenHandler)
 }

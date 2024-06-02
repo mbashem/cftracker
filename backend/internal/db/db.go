@@ -26,6 +26,7 @@ func InitDB() {
 
 func createTables() {
 	createUsersTable()
+	createListsTables()
 
 	log.Println("Database setup completed successfully")
 }

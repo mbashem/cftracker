@@ -84,4 +84,6 @@ func createUsersTable() {
 	} else {
 		log.Println("Trigger update_user_updated_at already exists.")
 	}
+
+	log.Println("Users Table setup completed successfully")
 }
