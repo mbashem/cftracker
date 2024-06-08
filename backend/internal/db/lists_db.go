@@ -16,13 +16,13 @@ func createListsTables() {
 
 	createListItemsTable := `
 		CREATE TABLE IF NOT EXISTS list_items (
-			id SERIAL PRIMARY KEY,
 			list_id INT NOT NULL,
 			problem_id INT NOT NULL,
 			position INT NOT NULL,
 			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 			updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 			CONSTRAINT fk_list FOREIGN KEY(list_id) REFERENCES lists(id) ON DELETE CASCADE
+			PRIMARY KEY (list_id, problem_id)
 		);
 	`
 
