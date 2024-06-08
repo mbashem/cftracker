@@ -6,13 +6,15 @@ import (
 )
 
 func RegisterRoutes(server *gin.Engine) {
-	// server.GET("/user/:id", getUserByID)
 	listServer := server.Group("/lists")
 	listServer.Use(middlewares.Authenticate)
-	listServer.POST("/") // create list
-	listServer.DELETE("/:listID") // delete list
-	listServer.PUT("/:listID/item") // add to list
-	listServer.DELETE("/:listID/item/:problemID") // remove from list
+	listServer.GET("/", getAllLists)                          // get all lists
+	listServer.POST("/", createListHandler)                   // create list
+	listServer.GET("/:listID", getListHandler)                // get list (with items)
+	listServer.PUT("/:listID", updateListNameHandler)         // update list name
+	listServer.DELETE("/:listID", deleteListHandler)          // delete list
+	listServer.PUT("/:listID/item", addToListHandler)         // add to list
+	listServer.DELETE("/:listID/item", deleteFromListHandler) // remove from list
 	// reorder problems
-	listServer.GET("/:listID/item/reorder-problems")
+	// listServer.GET("/:listID/item/reorder-problems")
 }
