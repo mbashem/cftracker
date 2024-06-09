@@ -21,6 +21,7 @@ const (
 
 	invalidListID   API_MESSAGE = "Invalid list ID"
 	invalidListItem API_MESSAGE = "Invalid list item"
+	invalidFormat   API_MESSAGE = "Invalid format"
 
 	listDoesNotExist API_MESSAGE = "List does not exist"
 
@@ -37,7 +38,7 @@ func createListHandler(context *gin.Context) {
 	var list List
 	if err := context.ShouldBindJSON(&list); err != nil {
 		log.Println("Error: ", err)
-		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		context.JSON(http.StatusBadRequest, gin.H{"error": invalidFormat})
 		return
 	}
 
@@ -47,7 +48,7 @@ func createListHandler(context *gin.Context) {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": failedToCreateList})
 		return
 	}
-	context.JSON(http.StatusOK, gin.H{"message": listCreated, "list": list})
+	context.JSON(http.StatusCreated, gin.H{"message": listCreated, "list": list})
 }
 
 // Update list name
@@ -59,14 +60,15 @@ func updateListNameHandler(context *gin.Context) {
 	}
 
 	if err := context.ShouldBindJSON(&form); err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		log.Println("Error: ", err)
+		context.JSON(http.StatusBadRequest, gin.H{"error": invalidFormat})
 		return
 	}
 
 	list, err := getListByID(listID)
 
 	if err != nil || list.UserID != userID {
-		context.JSON(http.StatusForbidden, gin.H{"error": listDoesNotExist})
+		context.JSON(http.StatusNotFound, gin.H{"error": listDoesNotExist})
 		return
 	}
 
@@ -87,7 +89,7 @@ func deleteListHandler(context *gin.Context) {
 	list, err := getListByID(listID)
 
 	if err != nil || list.UserID != userID {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": listDoesNotExist})
+		context.JSON(http.StatusNotFound, gin.H{"error": listDoesNotExist})
 		return
 	}
 
@@ -116,12 +118,12 @@ func addToListHandler(context *gin.Context) {
 
 	var item ListItem
 	if err := context.ShouldBindJSON(&item); err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{"error": ""})
+		context.JSON(http.StatusBadRequest, gin.H{"error": invalidFormat})
 		return
 	}
 
 	if list, err := item.getList(); err != nil || list.UserID != userID {
-		context.JSON(http.StatusForbidden, gin.H{"error": listDoesNotExist})
+		context.JSON(http.StatusNotFound, gin.H{"error": listDoesNotExist})
 		return
 	}
 
@@ -130,7 +132,7 @@ func addToListHandler(context *gin.Context) {
 		return
 	}
 
-	context.JSON(http.StatusOK, gin.H{"message": "Successfully added item to list", "item": item})
+	context.JSON(http.StatusCreated, gin.H{"message": "Successfully added item to list", "item": item})
 }
 
 func deleteFromListHandler(context *gin.Context) {
@@ -142,7 +144,7 @@ func deleteFromListHandler(context *gin.Context) {
 	}
 
 	if list, err := item.getList(); err != nil || list.UserID != userID {
-		context.JSON(http.StatusForbidden, gin.H{"error": listDoesNotExist})
+		context.JSON(http.StatusNotFound, gin.H{"error": listDoesNotExist})
 		return
 	}
 
@@ -161,7 +163,8 @@ func getListHandler(context *gin.Context) {
 	listID, _ := strconv.ParseInt(context.Param("id"), 10, 64)
 	list, err := getListByID(listID)
 	if err != nil || list.UserID != userID {
-		context.JSON(http.StatusForbidden, gin.H{"error": listDoesNotExist})
+		log.Println("Error: ", err)
+		context.JSON(http.StatusNotFound, gin.H{"error": listDoesNotExist})
 		return
 	}
 	items, err := list.getItems()
