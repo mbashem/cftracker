@@ -9,15 +9,20 @@ import (
 type List struct {
 	ID        int64     `json:"id"`
 	UserID    int64     `json:"user_id"`
-	Name      string    `json:"name"`
+	Name      string    `json:"name" validate:"required"`
 	CreatedAt time.Time `json:"created_at"`
 }
 
 type ListItem struct {
-	ListID    int64     `json:"list_id"`
-	ProblemID string    `json:"problem_id"`
+	ListID    int64     `json:"list_id" validate:"required"`
+	ProblemID string    `json:"problem_id" validate:"required"`
 	Position  int       `json:"position"`
 	CreatedAt time.Time `json:"created_at"`
+}
+
+type ListWithItem struct {
+	List
+	Items []ListItem `json:"items"`
 }
 
 // Create a new list
@@ -86,7 +91,7 @@ func getListByID(listID int64) (*List, error) {
 
 // Get all lists of a user
 func getAllListByUserID(userID int64) ([]List, error) {
-	var lists []List
+	lists := []List{}
 	query := `SELECT id, user_id, name, created_at FROM lists WHERE user_id = $1`
 	rows, err := db.DB.Query(query, userID)
 	if err != nil {
@@ -105,7 +110,7 @@ func getAllListByUserID(userID int64) ([]List, error) {
 
 // Get all problems in a list
 func getListItems(listID int64) ([]ListItem, error) {
-	var items []ListItem
+	items := []ListItem{}
 	query := `SELECT list_id, problem_id, position, created_at FROM list_items WHERE list_id = $1`
 	rows, err := db.DB.Query(query, listID)
 	if err != nil {
