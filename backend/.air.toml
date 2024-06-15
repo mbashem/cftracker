@@ -1,51 +1,28 @@
-root = "/Users/bashem/Projects/cftracker/backend/cmd/backend/"
-testdata_dir = "testdata"
-tmp_dir = "tmp"
+# Config file for air - https://github.com/cosmtrek/air
 
 [build]
-  args_bin = []
-  bin = "./tmp/main"
-  cmd = "go build -o ./tmp/main ."
-  delay = 1000
-  exclude_dir = ["assets", "tmp", "vendor", "testdata"]
-  exclude_file = []
-  exclude_regex = ["_test.go"]
-  exclude_unchanged = false
-  follow_symlink = false
-  full_bin = ""
-  include_dir = []
-  include_ext = ["go", "tpl", "tmpl", "html"]
-  include_file = []
-  kill_delay = "0s"
-  log = "build-errors.log"
-  poll = false
-  poll_interval = 0
-  post_cmd = []
-  pre_cmd = []
-  rerun = false
-  rerun_delay = 500
-  send_interrupt = false
-  stop_on_error = false
+# Working directory for the binary
+bin = "tmp/app"
+# Command to build the project
+cmd = "go build -o ./tmp/app ./cmd/backend"
+# Path to the main Go file
+include_ext = ["go", "tpl", "html", "js", "css"]
+exclude_dir = ["assets", "tmp", "vendor"]
+exclude_file = ["air.*"]
+full_bin = ""
 
-[color]
-  app = ""
-  build = "yellow"
-  main = "magenta"
-  runner = "green"
-  watcher = "cyan"
+# Specify directories to watch for changes
+include_dir = ["cmd/backend", "internal", "configs"]
 
 [log]
-  main_only = false
-  time = false
+file = ""
+level = "debug"
+color = true
 
-[misc]
-  clean_on_exit = false
+[dev]
+# Force reload template interval
+reload_interval = 500
 
-[proxy]
-  app_port = 0
-  enabled = false
-  proxy_port = 0
-
-[screen]
-  clear_on_rebuild = false
-  keep_scroll = true
+[cmds]
+# Command to set execute permissions after building the binary
+before = ["chmod +x ./tmp/app"]

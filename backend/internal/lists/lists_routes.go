@@ -6,7 +6,7 @@ import (
 )
 
 func RegisterRoutes(server *gin.Engine) {
-	listServer := server.Group("/lists")
+	listServer := server.Group("/api/lists")
 	listServer.Use(middlewares.Authenticate)
 	listServer.GET("/", getAllLists)                          // get all lists
 	listServer.POST("/", createListHandler)                   // create list
