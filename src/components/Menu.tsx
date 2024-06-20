@@ -99,7 +99,7 @@ const Menu = (): JSX.Element => {
     >
       <div className="container p-0">
         <Link to="/" className="navbar-brand mt-2" href="#">
-        <img src={siteLogo} alt="haule" width={30} height={25}className="me-2 mb-2" />
+        <img src={siteLogo} alt="img" width={30} height={25}className="me-2 mb-2" />
         CFTracker
         </Link>
         <Navbar.Toggle aria-controls="basic-navbar-nav" />
