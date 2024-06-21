@@ -20,6 +20,7 @@ import Filter from "../../util/Components/Filter";
 import InputRange from "../../util/Components/Forms/InputRange";
 import { getObj, getSet, saveObj, saveSet } from "../../util/save";
 import { Verdict } from "../../util/DataTypes/Submission";
+import { Spinner } from "react-bootstrap";
 
 const ProblemPage = () => {
   const state: RootStateType = useSelector((state) => state) as RootStateType;
@@ -282,7 +283,7 @@ const ProblemPage = () => {
 
         <div className={"container p-0 pt-3 pb-3 " + state.appState.theme.bg}>
           <div className={"h-100 text-center pb-3 " + state.appState.theme.bg}>
-            <table
+            {problemList?.problems?.length ? <table
               className={
                 "table table-bordered m-0 " + state.appState.theme.table
               }
@@ -340,7 +341,10 @@ const ProblemPage = () => {
                   theme={state.appState.theme}
                 />
               </tbody>
-            </table>
+            </table> :
+              <Spinner className="my-5" animation="border" role="status">
+                <span className="visually-hidden">Loading...</span>
+              </Spinner>}
           </div>
         </div>
       </div>
