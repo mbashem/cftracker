@@ -19,6 +19,7 @@ import { RootStateType } from "../data/store";
 import { Path } from "../util/constants";
 import { ThemesType } from "../util/Theme";
 import "react-toastify/dist/ReactToastify.css";
+import siteLogo from '../util/assets/siteLogo.png'
 
 const Menu = (): JSX.Element => {
   const dispatch = useDispatch();
@@ -97,8 +98,9 @@ const Menu = (): JSX.Element => {
       expand="md"
     >
       <div className="container p-0">
-        <Link to="/" className="navbar-brand" href="#">
-          CFTracker
+        <Link to="/" className="navbar-brand mt-2" href="#">
+          <img src={siteLogo} alt="logo" width={30} height={25} className="me-2 mb-2" />
+          <span>CFTracker</span>
         </Link>
         <Navbar.Toggle aria-controls="basic-navbar-nav" />
 
