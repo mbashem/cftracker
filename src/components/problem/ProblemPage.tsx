@@ -20,7 +20,7 @@ import Filter from "../../util/Components/Filter";
 import InputRange from "../../util/Components/Forms/InputRange";
 import { getObj, getSet, saveObj, saveSet } from "../../util/save";
 import { Verdict } from "../../util/DataTypes/Submission";
-import { Spinner } from "react-bootstrap";
+import { ThreeDots } from "react-loader-spinner";
 
 const ProblemPage = () => {
   const state: RootStateType = useSelector((state) => state) as RootStateType;
@@ -342,9 +342,15 @@ const ProblemPage = () => {
                 />
               </tbody>
             </table> :
-              <Spinner className="my-5" animation="border" role="status">
-                <span className="visually-hidden">Loading...</span>
-              </Spinner>}
+              <ThreeDots
+                height="80"
+                width="80"
+                radius="8"
+                color="grey"
+                wrapperClass={"d-flex justify-content-center"}
+                ariaLabel="three-dots-loading"
+                visible={true}
+              />}
           </div>
         </div>
       </div>
