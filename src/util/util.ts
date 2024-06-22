@@ -79,20 +79,3 @@ export const isNumber = (value: string | number): boolean => {
   return value != null && value !== "" && !isNaN(Number(value.toString()));
 };
 
-export const useDebounce = (value: any, delay: number) => {
-  const [time, setTime] = useState(value);
-
-  useEffect(() => {
-    const handle = setTimeout(() => {
-      setTime(value);
-    }, delay);
-    return () => {
-      clearTimeout(handle);
-    };
-  }, [value, delay]);
-
-  return time;
-};
-
-export default useDebounce;
-

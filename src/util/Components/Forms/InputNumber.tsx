@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { processNumber, useDebounce } from "../../util";
+import { useState, useEffect, useRef } from "react";
+import { processNumber } from "../../util";
 
 interface PropsType {
   header: string;
@@ -17,7 +17,6 @@ interface PropsType {
 
 const InputNumber = (props: PropsType) => {
   const [inputValue, setInputValue] = useState<string>(props.value.toString());
-  const debouncedSearch = useDebounce(inputValue, 500);
 
   const validateAndUpdate = () => {
     let num: number = parseInt(inputValue);
@@ -28,9 +27,11 @@ const InputNumber = (props: PropsType) => {
     }
   };
 
+  const firstTime = useRef(true);
   useEffect(() => {
-    validateAndUpdate();
-  }, [debouncedSearch]);
+    if (firstTime.current) firstTime.current = false;
+    else validateAndUpdate();
+  }, [inputValue]);
 
   return (
     <div
@@ -52,7 +53,14 @@ const InputNumber = (props: PropsType) => {
         value={inputValue}
         name={props.name}
         step={props.step ? props.step : 1}
-        onChange={(e) => setInputValue(e.target.value)}
+        onChange={(e) => {
+          setInputValue(e.target.value);
+          let num: number = parseInt(e.target.value);
+
+          num = processNumber(num, props.min, props.max);
+
+          props.onChange(num);
+        }}
       />
     </div>
   );
