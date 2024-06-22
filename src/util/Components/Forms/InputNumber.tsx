@@ -55,11 +55,6 @@ const InputNumber = (props: PropsType) => {
         step={props.step ? props.step : 1}
         onChange={(e) => {
           setInputValue(e.target.value);
-          let num: number = parseInt(e.target.value);
-
-          num = processNumber(num, props.min, props.max);
-
-          props.onChange(num);
         }}
       />
     </div>

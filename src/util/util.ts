@@ -1,5 +1,3 @@
-import { useEffect, useState } from "react";
-
 export const formateDate = (time) => {
   const date = new Date(time * 1000);
   //console.log(date);
@@ -67,7 +65,7 @@ export const delay = (ms) => new Promise((res) => setTimeout(res, ms));
 export const processNumber = (
   num: number,
   min: number,
-  max: number,
+  max: number
 ): number => {
   if (isNaN(num)) return min;
   if (num < min) return min;
@@ -78,4 +76,3 @@ export const processNumber = (
 export const isNumber = (value: string | number): boolean => {
   return value != null && value !== "" && !isNaN(Number(value.toString()));
 };
-
