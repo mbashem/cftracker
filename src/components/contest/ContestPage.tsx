@@ -244,10 +244,10 @@ const ContestPage = () => {
         </div>
         <div
           className={"ps-3 pe-3 pt-3 pb-3 " + state.appState.theme.bg}
-          // style={{ height: "calc(100vh - 175px)" }}
+        // style={{ height: "calc(100vh - 175px)" }}
         >
           <div className={"h-100 m-0 pb-2 " + state.appState.theme.bg}>
-            {/* {/* {state.problemList.loading ? (
+            {state.problemList.loading ? (
               <ThreeDots
                 height="80"
                 width="80"
@@ -257,29 +257,32 @@ const ContestPage = () => {
                 ariaLabel="three-dots-loading"
                 visible={true}
               />
-            ) : */}
-            {state.problemList.error.length > 0 ? (
-              <Alert key={"danger"} variant={"danger"}>
-                {state.problemList.error} Most probably because CF API is down.
-                Try reloading after few minutes. API link:
-                https://codeforces.com/api/problemset.problems .
-              </Alert>
             ) : (
-              <ContestList
-                contestlist={
-                  randomContest === -1
-                    ? paginate()
-                    : [contestList.contests[randomContest]]
-                }
-                category={filter.category}
-                submissions={submissions}
-                showColor={filter.showColor}
-                showDate={filter.showDate}
-                showRating={filter.showRating}
-                perPage={filter.perPage}
-                pageSelected={selected}
-                theme={state.appState.theme}
-              />
+              <>
+                {state.problemList.error.length > 0 ? (
+                  <Alert key={"danger"} variant={"danger"}>
+                    {state.problemList.error} Most probably because CF API is
+                    down. Try reloading after few minutes. API link:
+                    https://codeforces.com/api/problemset.problems .
+                  </Alert>
+                ) : (
+                  <ContestList
+                    contestlist={
+                      randomContest === -1
+                        ? paginate()
+                        : [contestList.contests[randomContest]]
+                    }
+                    category={filter.category}
+                    submissions={submissions}
+                    showColor={filter.showColor}
+                    showDate={filter.showDate}
+                    showRating={filter.showRating}
+                    perPage={filter.perPage}
+                    pageSelected={selected}
+                    theme={state.appState.theme}
+                  />
+                )}
+              </>
             )}
           </div>
         </div>
