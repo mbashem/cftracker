@@ -283,65 +283,7 @@ const ProblemPage = () => {
 
         <div className={"container p-0 pt-3 pb-3 " + state.appState.theme.bg}>
           <div className={"h-100 text-center pb-3 " + state.appState.theme.bg}>
-            {problemList?.problems?.length ? <table
-              className={
-                "table table-bordered m-0 " + state.appState.theme.table
-              }
-            >
-              <thead className={state.appState.theme.thead}>
-                <tr>
-                  <th scope="col">#</th>
-                  <th scope="col">ID</th>
-                  <th scope="col">Name</th>
-                  <th
-                    scope="col"
-                    role="button"
-                    onClick={() => sortList(SORT_BY_RATING)}
-                  >
-                    <div className="d-flex justify-content-between">
-                      <div>Rating</div>
-                      <div>
-                        {filterState.sortBy === SORT_BY_RATING
-                          ? filterState.order === ASCENDING
-                            ? less()
-                            : greater()
-                          : nuetral()}
-                      </div>
-                    </div>
-                  </th>
-                  <th
-                    scope="col"
-                    role="button"
-                    onClick={() => sortList(SORT_BY_SOLVE)}
-                  >
-                    <div className="d-flex justify-content-between">
-                      <div>Solve Count</div>
-                      <div>
-                        {filterState.sortBy === SORT_BY_SOLVE
-                          ? filterState.order === ASCENDING
-                            ? less()
-                            : greater()
-                          : nuetral()}
-                      </div>
-                    </div>
-                  </th>
-                </tr>
-              </thead>
-              <tbody className={state.appState.theme.bg}>
-                <ProblemList
-                  problems={
-                    randomProblem === -1
-                      ? paginate()
-                      : [problemList.problems[randomProblem]]
-                  }
-                  solved={solved}
-                  attempted={attempted}
-                  perPage={filter.perPage}
-                  pageSelected={selected}
-                  theme={state.appState.theme}
-                />
-              </tbody>
-            </table> :
+            {state.problemList.loading ? (
               <ThreeDots
                 height="80"
                 width="80"
@@ -350,7 +292,67 @@ const ProblemPage = () => {
                 wrapperClass={"d-flex justify-content-center"}
                 ariaLabel="three-dots-loading"
                 visible={true}
-              />}
+              />) : (
+              <table
+                className={
+                  "table table-bordered m-0 " + state.appState.theme.table
+                }
+              >
+                <thead className={state.appState.theme.thead}>
+                  <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">ID</th>
+                    <th scope="col">Name</th>
+                    <th
+                      scope="col"
+                      role="button"
+                      onClick={() => sortList(SORT_BY_RATING)}
+                    >
+                      <div className="d-flex justify-content-between">
+                        <div>Rating</div>
+                        <div>
+                          {filterState.sortBy === SORT_BY_RATING
+                            ? filterState.order === ASCENDING
+                              ? less()
+                              : greater()
+                            : nuetral()}
+                        </div>
+                      </div>
+                    </th>
+                    <th
+                      scope="col"
+                      role="button"
+                      onClick={() => sortList(SORT_BY_SOLVE)}
+                    >
+                      <div className="d-flex justify-content-between">
+                        <div>Solve Count</div>
+                        <div>
+                          {filterState.sortBy === SORT_BY_SOLVE
+                            ? filterState.order === ASCENDING
+                              ? less()
+                              : greater()
+                            : nuetral()}
+                        </div>
+                      </div>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className={state.appState.theme.bg}>
+                  <ProblemList
+                    problems={
+                      randomProblem === -1
+                        ? paginate()
+                        : [problemList.problems[randomProblem]]
+                    }
+                    solved={solved}
+                    attempted={attempted}
+                    perPage={filter.perPage}
+                    pageSelected={selected}
+                    theme={state.appState.theme}
+                  />
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
       </div>
