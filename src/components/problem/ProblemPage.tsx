@@ -292,7 +292,8 @@ const ProblemPage = () => {
                 wrapperClass={"d-flex justify-content-center"}
                 ariaLabel="three-dots-loading"
                 visible={true}
-              />) : (
+              />
+            ) : (
               <table
                 className={
                   "table table-bordered m-0 " + state.appState.theme.table
