@@ -10,9 +10,9 @@ Created using
 
 ## Prerequisites 
 
-- node v14 or above 
+- node v14 or above ( for [windows](https://nodejs.org/en/download/prebuilt-installer))
   ```bash
-  sudo apt install npm #for linux 
+  sudo apt install node #for linux 
   ```
 - npm v9 or above
   ```bash

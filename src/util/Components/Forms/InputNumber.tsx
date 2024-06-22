@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef } from "react";
 import { processNumber } from "../../util";
 
 interface PropsType {
@@ -15,6 +16,23 @@ interface PropsType {
 }
 
 const InputNumber = (props: PropsType) => {
+  const [inputValue, setInputValue] = useState<string>(props.value.toString());
+
+  const validateAndUpdate = () => {
+    let num: number = parseInt(inputValue);
+    if (!isNaN(num)) {
+      num = processNumber(num, props.min, props.max);
+      setInputValue(num + ""); // converting num to string
+      props.onChange(num);
+    }
+  };
+
+  const firstTime = useRef(true);
+  useEffect(() => {
+    if (firstTime.current) firstTime.current = false;
+    else validateAndUpdate();
+  }, [inputValue]);
+
   return (
     <div
       className={"input-group " + (props.className ? props.className : "")}
@@ -29,19 +47,13 @@ const InputNumber = (props: PropsType) => {
         {props.header}
       </span>
       <input
-        className={"form-control " + props.inputClass}
+        className={"form-control " + (props.inputClass || "")}
         type="number"
         placeholder="Max Rating"
-        value={props.value}
+        value={inputValue}
         name={props.name}
         step={props.step ? props.step : 1}
-        onChange={(e) => {
-          let num: number = parseInt(e.target.value);
-
-          num = processNumber(num, props.min, props.max);
-
-          props.onChange(num);
-        }}
+        onChange={(e) => setInputValue(e.target.value)}
       />
     </div>
   );
