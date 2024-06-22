@@ -54,7 +54,6 @@ const InputNumber = (props: PropsType) => {
         name={props.name}
         step={props.step ? props.step : 1}
         onChange={(e) => setInputValue(e.target.value)}
-          setInputValue(e.target.value);
       />
     </div>
   );
