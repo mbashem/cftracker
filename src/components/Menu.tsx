@@ -76,7 +76,24 @@ const Menu = (): JSX.Element => {
     fetchUserSubmissions(dispatch, state.userList.handles, wait);
   };
 
+  //codeforces username can contain only alpanumeric characters, underscore, hyphen and length can be between [3, 24] only
+  const isValidCodeforcesUsername = (username) => {
+    const regex = /^[a-zA-Z0-9_-]{3,24}$/;
+    return regex.test(username);
+  };
+
   const submitUser = () => {
+    //validate and filter the valid username handles before passing to API
+    const handleList = handle.split(",");
+    let filteredHandleList = handleList.filter(
+      (str) => (str = str.trim() != "" && isValidCodeforcesUsername(str))
+    );
+    setHandle(filteredHandleList.toLocaleString());
+    if (!filteredHandleList || filteredHandleList.length == 0) {
+      InvokeErrorToast("Please enter a valid handle");
+      return;
+    }
+
     toast(`Handles entered: ${handle}`, {
       position: "bottom-right",
       autoClose: 500,
@@ -87,6 +104,7 @@ const Menu = (): JSX.Element => {
       progress: undefined,
       theme: "dark",
     });
+
     fetchUsers(dispatch, handle);
   };
 
@@ -99,7 +117,13 @@ const Menu = (): JSX.Element => {
     >
       <div className="container p-0">
         <Link to="/" className="navbar-brand mt-2" href="#">
-          <img src={siteLogo} alt="logo" width={30} height={25} className="me-2 mb-2" />
+          <img
+            src={siteLogo}
+            alt="logo"
+            width={30}
+            height={25}
+            className="me-2 mb-2"
+          />
           <span>CFTracker</span>
         </Link>
         <Navbar.Toggle aria-controls="basic-navbar-nav" />
