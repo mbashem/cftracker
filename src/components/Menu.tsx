@@ -76,17 +76,11 @@ const Menu = (): JSX.Element => {
     fetchUserSubmissions(dispatch, state.userList.handles, wait);
   };
 
-  //codeforces username can contain only alpanumeric characters, underscore, hyphen and length can be between [3, 24] only
-  const isValidCodeforcesUsername = (username) => {
-    const regex = /^[a-zA-Z0-9_-]{3,24}$/;
-    return regex.test(username);
-  };
-
   const submitUser = () => {
-    //validate and filter the valid username handles before passing to API
+    //filter and remove the username which has spaces or empty string
     const handleList = handle.split(",");
     let filteredHandleList = handleList.filter(
-      (str) => (str = str.trim() != "" && isValidCodeforcesUsername(str))
+      (str) => (str = str.trim() != "")
     );
     setHandle(filteredHandleList.toLocaleString());
     if (!filteredHandleList || filteredHandleList.length == 0) {
