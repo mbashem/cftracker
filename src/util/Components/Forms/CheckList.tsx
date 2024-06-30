@@ -1,5 +1,4 @@
 import Theme from "../../Theme";
-import { getSet } from "../../../util/save";
 
 interface PropsType {
   items: string[];
@@ -24,15 +23,6 @@ const CheckList = (props: PropsType) => {
   if (!inactiveClass) inactiveClass = "btn-secondary active";
   if (!activeClass) activeClass = "btn-success active";
 
-  const selectAll = () => {
-    let newSet:string;
-    props.onClickSet(getSet(newSet, props.items));
-  };
-  const deselectAll = () => {
-    let newSet = new Set<string>();
-    props.onClickSet(newSet);
-  };
-
   return (
     <div className="d-flex flex-column">
       <div className="d-inline-flex gap-2 align-items-center">
@@ -40,7 +30,9 @@ const CheckList = (props: PropsType) => {
         {props.selectAll ? (
           <button
             className={btnClass + " btn btn-secondary"}
-            onClick={() => selectAll()}
+            onClick={() => {
+              props.onClickSet(new Set<string>(props.items));
+            }}
           >
             Select All
           </button>
@@ -48,7 +40,12 @@ const CheckList = (props: PropsType) => {
           ""
         )}
         {props.deselectAll != null ? (
-          <button className="btn btn-secondary" onClick={() => deselectAll()}>
+          <button
+            className="btn btn-secondary"
+            onClick={() => {
+              props.onClickSet(new Set<string>());
+            }}
+          >
             Deselect All
           </button>
         ) : (
