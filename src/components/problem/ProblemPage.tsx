@@ -277,6 +277,8 @@ const ProblemPage = () => {
                 setFilterState(myFilterState);
                 saveSet(ProblemSave.PROBLEM_TAGS, newSet);
               }}
+              selectAll={true}
+              deselectAll={true}
             />
           </CustomModal>
         </Filter>
