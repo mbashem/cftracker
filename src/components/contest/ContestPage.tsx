@@ -161,7 +161,6 @@ const ContestPage = () => {
           setRandom={(num) => {
             setRandomContest(num);
             setIsRandomClicked(true);
-            setFilter({ ...filter, perPage: 1 }); // Set page size to 1 when random contest is selected
           }}
           theme={state.appState.theme}
         >
