@@ -82,6 +82,7 @@ const ProblemPage = () => {
   const [filterState, setFilterState] = useState(initFilterState);
   const [solved, setSolved] = useState(new Set<string>());
   const [attempted, setAttempted] = useState(new Set<string>());
+  const [isRandomClicked, setIsRandomClicked] = useState(false);
 
   const filterProblem = (problem: Problem) => {
     let containTags = false;
@@ -220,6 +221,7 @@ const ProblemPage = () => {
           selected={selected}
           setRandom={(num) => {
             setRandomProblem(num);
+            setIsRandomClicked(true);
           }}
           theme={state.appState.theme}
         >
@@ -359,7 +361,7 @@ const ProblemPage = () => {
           </div>
         </div>
       </div>
-
+    {!isRandomClicked && (
       <footer className={"pt-2 " + state.appState.theme.bg}>
         <Pagination
           totalCount={problemList.problems.length}
@@ -372,6 +374,7 @@ const ProblemPage = () => {
           }}
         />
       </footer>
+    )}
     </>
   );
 };
