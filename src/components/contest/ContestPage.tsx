@@ -26,6 +26,7 @@ const ContestPage = () => {
 
   const [contestList, setContestList] = useState({ contests: [], error: "" });
   const [randomContest, setRandomContest] = useState(-1);
+  const [isRandomClicked, setIsRandomClicked] = useState(false);
 
   interface filt {
     perPage: number;
@@ -159,6 +160,8 @@ const ContestPage = () => {
           name="Contest"
           setRandom={(num) => {
             setRandomContest(num);
+            setIsRandomClicked(true);
+            setFilter({ ...filter, perPage: 1 }); // Set page size to 1 when random contest is selected
           }}
           theme={state.appState.theme}
         >
@@ -244,7 +247,7 @@ const ContestPage = () => {
         </div>
         <div
           className={"ps-3 pe-3 pt-3 pb-3 " + state.appState.theme.bg}
-        // style={{ height: "calc(100vh - 175px)" }}
+          // style={{ height: "calc(100vh - 175px)" }}
         >
           <div className={"h-100 m-0 pb-2 " + state.appState.theme.bg}>
             {state.problemList.loading ? (
@@ -287,18 +290,20 @@ const ContestPage = () => {
           </div>
         </div>
       </div>
-      <footer className={"pt-2 " + state.appState.theme.bg}>
-        <Pagination
-          pageSelected={(e) => setSelected(e)}
-          perPage={filter.perPage}
-          selected={selected}
-          theme={state.appState.theme}
-          totalCount={contestList.contests.length}
-          pageSize={(e) => {
-            setFilter({ ...filter, perPage: e });
-          }}
-        />
-      </footer>
+      {!isRandomClicked && (
+        <footer className={"pt-2 " + state.appState.theme.bg}>
+          <Pagination
+            pageSelected={(e) => setSelected(e)}
+            perPage={filter.perPage}
+            selected={selected}
+            theme={state.appState.theme}
+            totalCount={contestList.contests.length}
+            pageSize={(e) => {
+              setFilter({ ...filter, perPage: e });
+            }}
+          />
+        </footer>
+      )}
     </>
   );
 };
