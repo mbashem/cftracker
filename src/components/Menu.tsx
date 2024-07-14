@@ -29,7 +29,7 @@ const Menu = (): JSX.Element => {
   const [handle, setHandle] = useState(
     state.userList.handles.length ? state.userList.handles.toString() : ""
   );
-  console.log(state.userList.handles.toString());
+
   useEffect(() => {
     fetchProblemList(dispatch);
     fetchContestList(dispatch);

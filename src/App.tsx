@@ -1,6 +1,6 @@
 import "./App.css";
 import { lazy, Suspense, useEffect } from "react";
-import { Switch, Route } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 import { useSelector } from "react-redux";
 
 import Menu from "./components/Menu";
@@ -12,19 +12,16 @@ import ProblemPage from "./components/problem/ProblemPage";
 import ContestPage from "./components/contest/ContestPage";
 import usePageTracking from "./usePageTracking";
 
-
 // const HomePage = lazy(() => import("./components/home/HomePage"));
 // const ProblemPage = lazy(() => import("./components/problem/ProblemPage"));
 // const ContestPage = lazy(() => import("./components/contest/ContestPage"));
 const StatPage = lazy(() => import("./components/stats/StatPage"));
 const IssuePage = lazy(() => import("./components/comment/CommentPage"));
 
-
-
 function App() {
   const state: RootStateType = useSelector((state) => state) as RootStateType;
   usePageTracking();
-  
+
   useEffect(() => {
     console.log(window.location.pathname);
 
@@ -52,13 +49,15 @@ function App() {
       className={
         "App container-fluid p-0 min-vh-100 d-flex  flex-column " +
         state.appState.theme.bgText
-      }>
+      }
+    >
       <div className="menu w-100">
         <Menu />
       </div>
       <div
         className="d-flex flex-column justify-content-between"
-        style={{ minHeight: "calc(100vh - 60px)" }}>
+        style={{ minHeight: "calc(100vh - 60px)" }}
+      >
         <Suspense
           fallback={
             <div className="d-flex justify-content-center pt-5 mt-5">
@@ -66,14 +65,15 @@ function App() {
                 <span className="sr-only">Loading...</span>
               </div>
             </div>
-          }>
-          <Switch>
-            <Route exact path="/" component={HomePage} />
-            <Route path={Path.PROBLEMS} component={ProblemPage} />
-            <Route strict path={Path.CONTESTS} component={ContestPage} />
-            <Route strict path={Path.Stats} component={StatPage} />
-            <Route strict path={Path.Issues} component={IssuePage} />
-          </Switch>
+          }
+        >
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path={Path.PROBLEMS} element={<ProblemPage />} />
+            <Route path={Path.CONTESTS} element={<ContestPage />} />
+            <Route path={Path.Stats} element={<StatPage />} />
+            <Route path={Path.Issues} element={<IssuePage />} />
+          </Routes>
         </Suspense>
       </div>
     </div>

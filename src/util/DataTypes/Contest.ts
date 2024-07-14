@@ -1,5 +1,4 @@
 import { sortByContestId } from "../sortMethods";
-import { isNumber } from "../util";
 import Problem from "./Problem";
 
 export enum ContestCat {
