@@ -31,7 +31,7 @@ const CheckList = (props: PropsType) => {
           <button
             className={btnClass + " btn btn-secondary"}
             onClick={() => {
-              props.onClickSet(new Set<string>(props.items));
+              props.onClickSet?.(new Set<string>(props.items));
             }}
           >
             Select All
@@ -43,7 +43,7 @@ const CheckList = (props: PropsType) => {
           <button
             className="btn btn-secondary"
             onClick={() => {
-              props.onClickSet(new Set<string>());
+              props.onClickSet?.(new Set<string>());
             }}
           >
             Deselect All

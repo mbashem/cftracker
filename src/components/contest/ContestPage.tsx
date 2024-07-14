@@ -1,10 +1,8 @@
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { charInc, parseQuery, stringToArray } from "../../util/util";
 import ContestList from "./ContestList";
-import { Path, SEARCH } from "../../util/constants";
+import { SEARCH } from "../../util/constants";
 import Pagination from "../../util/Components/Pagination";
-import { useHistory } from "react-router";
 import { RootStateType } from "../../data/store";
 import Contest, { ContestCat } from "../../util/DataTypes/Contest";
 import InputChecked from "../../util/Components/Forms/InputChecked";
@@ -14,15 +12,14 @@ import Filter from "../../util/Components/Filter";
 import { getObj, getSet, saveObj, saveSet } from "../../util/save";
 import { Verdict } from "../../util/DataTypes/Submission";
 import { ParticipantType } from "../../util/DataTypes/Party";
-import { Alert, Spinner } from "react-bootstrap";
+import { Alert } from "react-bootstrap";
 import { ThreeDots } from "react-loader-spinner";
+import { useSearchParams } from "react-router-dom";
 
 const ContestPage = () => {
   const state: RootStateType = useSelector((state) => state) as RootStateType;
 
-  const history = useHistory();
-
-  const query = parseQuery(history.location.search.trim());
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [contestList, setContestList] = useState({ contests: [], error: "" });
   const [randomContest, setRandomContest] = useState(-1);
@@ -44,7 +41,7 @@ const ContestPage = () => {
     showColor: true,
     // ShowContestId: false,
     category: ContestCat.DIV2,
-    search: SEARCH in query ? (query[SEARCH] as string) : "",
+    search: searchParams.get(SEARCH) ?? "",
   };
 
   enum ContestSave {
@@ -105,14 +102,8 @@ const ContestPage = () => {
   useEffect(() => {
     saveObj(ContestSave.CONTEST_FILTER, filter);
     if (filter.search.trim().length)
-      history.push({
-        pathname: Path.CONTESTS,
-        search: "?" + SEARCH + "=" + filter.search.trim(),
-      });
-    else
-      history.push({
-        pathname: Path.CONTESTS,
-      });
+      setSearchParams({ [SEARCH]: filter.search.trim() });
+    else setSearchParams();
     let contests = state.contestList.contests;
 
     const newContestList = contests.filter((contest) => filterContest(contest));
@@ -244,7 +235,7 @@ const ContestPage = () => {
         </div>
         <div
           className={"ps-3 pe-3 pt-3 pb-3 " + state.appState.theme.bg}
-        // style={{ height: "calc(100vh - 175px)" }}
+          // style={{ height: "calc(100vh - 175px)" }}
         >
           <div className={"h-100 m-0 pb-2 " + state.appState.theme.bg}>
             {state.problemList.loading ? (

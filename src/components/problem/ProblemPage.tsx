@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { parseQuery } from "../../util/util";
 import { sortByRating, sortBySolveCount } from "../../util/sortMethods";
 import { Path, SEARCH } from "../../util/constants";
 import Pagination from "../../util/Components/Pagination";
@@ -11,7 +10,6 @@ import {
   faSortDown,
   faSortUp,
 } from "@fortawesome/free-solid-svg-icons";
-import { useHistory } from "react-router";
 import { RootStateType } from "../../data/store";
 import Problem from "../../util/DataTypes/Problem";
 import CustomModal from "../../util/Components/CustomModal";
@@ -21,10 +19,11 @@ import InputRange from "../../util/Components/Forms/InputRange";
 import { getObj, getSet, saveObj, saveSet } from "../../util/save";
 import { Verdict } from "../../util/DataTypes/Submission";
 import { ThreeDots } from "react-loader-spinner";
+import { useSearchParams } from "react-router-dom";
 
 const ProblemPage = () => {
   const state: RootStateType = useSelector((state) => state) as RootStateType;
-  const history = useHistory();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const SORT_BY_RATING = 1,
     SORT_BY_SOLVE = 2,
@@ -36,8 +35,6 @@ const ProblemPage = () => {
     PROBLEM_TAGS = "PROBLEM_TAGS",
     PROBLEM_FILTER = "PROBLEM_FILTER",
   }
-
-  const query = parseQuery(history.location.search.trim());
 
   interface filt {
     perPage: number;
@@ -56,7 +53,7 @@ const ProblemPage = () => {
     showUnrated: true,
     minContestId: state.appState.minContestId,
     maxContestId: state.appState.maxContestId,
-    search: SEARCH in query ? (query[SEARCH] as string) : "",
+    search: searchParams.get(SEARCH) ?? "",
   };
 
   const [filter, setFilter] = useState<filt>(
@@ -75,7 +72,7 @@ const ProblemPage = () => {
     getSet(ProblemSave.PROBLEM_SOLVE_STATUS, SOLVEBUTTONS)
   );
   const [problemList, setProblemList] = useState({ problems: [], error: "" });
-  const [tagList, setTagList] = useState({ tags: [] });
+  const [tagList, setTagList] = useState({ tags: Array<string>() });
   const [randomProblem, setRandomProblem] = useState(-1);
   const [selected, setSelected] = useState(0);
 
@@ -123,14 +120,8 @@ const ProblemPage = () => {
     saveObj(ProblemSave.PROBLEM_FILTER, filter);
 
     if (filter.search.trim().length)
-      history.push({
-        pathname: Path.PROBLEMS,
-        search: "?" + SEARCH + "=" + filter.search.trim(),
-      });
-    else
-      history.push({
-        pathname: Path.PROBLEMS,
-      });
+      setSearchParams({ [SEARCH]: filter.search.trim() });
+    else setSearchParams();
     if (state.problemList.problems !== undefined) {
       let newState = { problems: [] };
       newState.problems = state.problemList.problems;
@@ -171,7 +162,8 @@ const ProblemPage = () => {
     setAttempted(att);
   }, [state.userSubmissions.submissions]);
 
-  const sortList = (sortBy) => {
+  // TOOD: Convert to enum
+  const sortList = (sortBy: number) => {
     if (filterState.sortBy === sortBy)
       setFilterState({ ...filterState, order: filterState.order ^ 1 });
     else

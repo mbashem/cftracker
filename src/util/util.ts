@@ -1,4 +1,4 @@
-export const formateDate = (time) => {
+export const formateDate = (time: number) => {
   const date = new Date(time * 1000);
   //console.log(date);
   return (
@@ -14,11 +14,11 @@ export const formateDate = (time) => {
   );
 };
 
-export const getContestUrl = (contestId) => {
+export const getContestUrl = (contestId: number) => {
   return "https://codeforces.com/contest/" + contestId;
 };
 
-export const getProblemUrl = (contestId, index) => {
+export const getProblemUrl = (contestId: number, index: string) => {
   return getContestUrl(contestId) + "/problem/" + index;
 };
 
@@ -30,7 +30,7 @@ export const getUserSubmissionsURL = (handle: string, limit?: number) => {
   );
 };
 
-export const getUserInfoURL = (handle) => {
+export const getUserInfoURL = (handle: string) => {
   handle = handle.trim().replace(/,/g, ";");
   return "https://codeforces.com/api/user.info?handles=" + handle;
 };
@@ -39,17 +39,17 @@ export const stringToArray = (s: string, separator: string): string[] => {
   return s.trim().split(separator);
 };
 
-export const charInc = (c, number) => {
-  return String.fromCharCode(c.charCodeAt() + number);
+export const charInc = (c: string, number : number) => {
+  return String.fromCharCode(c.charCodeAt(0) + number);
 };
 
-export const getRandomInteger = (min, max) => {
+export const getRandomInteger = (min: number, max: number) => {
   return Math.floor(Math.random() * (max - min)) + min;
 };
 
-export const parseQuery = (queryString) => {
+export const parseQuery = (queryString: string) => {
   queryString = queryString.trim();
-  var query = {};
+  var query: Record<string, string> = {};
   var pairs = (
     queryString[0] === "?" ? queryString.substr(1) : queryString
   ).split("&");
@@ -60,7 +60,7 @@ export const parseQuery = (queryString) => {
   return query;
 };
 
-export const delay = (ms) => new Promise((res) => setTimeout(res, ms));
+export const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
 export const processNumber = (
   num: number,
