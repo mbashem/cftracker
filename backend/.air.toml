@@ -1,0 +1,28 @@
+# Config file for air - https://github.com/cosmtrek/air
+
+[build]
+# Working directory for the binary
+bin = "tmp/app"
+# Command to build the project
+cmd = "go build -o ./tmp/app ./cmd/backend"
+# Path to the main Go file
+include_ext = ["go", "tpl", "html", "js", "css"]
+exclude_dir = ["assets", "tmp", "vendor"]
+exclude_file = ["air.*"]
+full_bin = ""
+
+# Specify directories to watch for changes
+include_dir = ["cmd/backend", "internal", "configs"]
+
+[log]
+file = ""
+level = "debug"
+color = true
+
+[dev]
+# Force reload template interval
+reload_interval = 500
+
+[cmds]
+# Command to set execute permissions after building the binary
+before = ["chmod +x ./tmp/app"]

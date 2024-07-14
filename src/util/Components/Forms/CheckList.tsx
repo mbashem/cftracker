@@ -3,6 +3,8 @@ import Theme from "../../Theme";
 interface PropsType {
   items: string[];
   active: Set<string>;
+  selectAll?: boolean;
+  deselectAll?: boolean;
   onClickSet?: (a: Set<string>) => void;
   onClick?: (a: string) => void;
   theme?: Theme;
@@ -23,11 +25,38 @@ const CheckList = (props: PropsType) => {
 
   return (
     <div className="d-flex flex-column">
-      {props.name.length ? <div className="">{props.name}</div> : ""}
+      <div className="d-inline-flex gap-2 align-items-center">
+        {props.name.length ? <div className="">{props.name}</div> : ""}
+        {props.selectAll ? (
+          <button
+            className={btnClass + " btn btn-secondary"}
+            onClick={() => {
+              props.onClickSet?.(new Set<string>(props.items));
+            }}
+          >
+            Select All
+          </button>
+        ) : (
+          ""
+        )}
+        {props.deselectAll != null ? (
+          <button
+            className="btn btn-secondary"
+            onClick={() => {
+              props.onClickSet?.(new Set<string>());
+            }}
+          >
+            Deselect All
+          </button>
+        ) : (
+          ""
+        )}
+      </div>
       <div
         className="btn-group rounded-0 btn-group d-flex flex-wrap"
         role="group"
-        aria-label="First group">
+        aria-label="First group"
+      >
         {props.items.map((item) => (
           <button
             className={
@@ -46,7 +75,8 @@ const CheckList = (props: PropsType) => {
               if (props.onClick) {
                 props.onClick(item);
               }
-            }}>
+            }}
+          >
             {item}
           </button>
         ))}

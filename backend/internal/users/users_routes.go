@@ -7,7 +7,7 @@ import (
 
 func RegisterRoutes(server *gin.Engine) {
 	// server.GET("/user/:id", getUserByID)
-	userServer := server.Group("/user")
+	userServer := server.Group("/api/user")
 	userServer.Use(middlewares.Authenticate)
 	userServer.GET("/profile", getProfileHandler)
 	userServer.PUT("/cfhandle", UpdateCFHandleHandler)

@@ -1,18 +1,29 @@
 package lists
 
 import (
+	"database/sql"
+
 	"github.com/gin-gonic/gin"
+	"github.com/mbashem/cftracker/backend/internal/lists/items"
 	"github.com/mbashem/cftracker/backend/internal/middlewares"
 )
 
 func RegisterRoutes(server *gin.Engine) {
-	// server.GET("/user/:id", getUserByID)
-	listServer := server.Group("/lists")
+	listServer := server.Group("/api/lists")
 	listServer.Use(middlewares.Authenticate)
-	listServer.POST("/") // create list
-	listServer.DELETE("/:listID") // delete list
-	listServer.PUT("/:listID/item") // add to list
-	listServer.DELETE("/:listID/item/:problemID") // remove from list
+
+	listRepository := NewRepository(&sql.DB{})
+	listItemRepository := items.NewRepository(&sql.DB{})
+
+	api := NewAPI(listRepository, listItemRepository)
+
+	listServer.GET("/", api.GetAllLists)                          // get all lists
+	listServer.POST("/", api.CreateListHandler)                   // create list
+	listServer.GET("/:listID", api.GetListHandler)                // get list (with items)
+	listServer.PUT("/:listID", api.UpdateListNameHandler)         // update list name
+	listServer.DELETE("/:listID", api.DeleteListHandler)          // delete list
+	listServer.PUT("/:listID/item", api.AddToListHandler)         // add to list
+	listServer.DELETE("/:listID/item", api.DeleteFromListHandler) // remove from list
 	// reorder problems
-	listServer.GET("/:listID/item/reorder-problems")
+	// listServer.GET("/:listID/item/reorder-problems")
 }
