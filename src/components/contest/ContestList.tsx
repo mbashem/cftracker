@@ -46,22 +46,22 @@ const ContestList = (props: PropsType) => {
   // console.log(ind.maxIndex);
 
   const getStatus = (problem: Problem) => {
-    if (!props.submissions.get(problem.contestId)) return Verdict.UNSOLVED;
+    if (problem.contestId === undefined || !props.submissions.get(problem.contestId)) return Verdict.UNSOLVED;
 
-    if (props.submissions.get(problem.contestId).has(Verdict.SOLVED)) {
+    if (props.submissions.get(problem.contestId)!.has(Verdict.SOLVED)) {
       if (
         props.submissions
-          .get(problem.contestId)
-          .get(Verdict.SOLVED)
+          .get(problem.contestId)!
+          .get(Verdict.SOLVED)!
           .has(problem.index)
       )
         return Verdict.SOLVED;
     }
-    if (props.submissions.get(problem.contestId).has(Verdict.ATTEMPTED)) {
+    if (props.submissions.get(problem.contestId)!.has(Verdict.ATTEMPTED)) {
       if (
         props.submissions
-          .get(problem.contestId)
-          .get(Verdict.ATTEMPTED)
+          .get(problem.contestId)!
+          .get(Verdict.ATTEMPTED)!
           .has(problem.index)
       )
         return Verdict.ATTEMPTED;
@@ -69,6 +69,7 @@ const ContestList = (props: PropsType) => {
   };
 
   const renderProblem = (problem: Problem, inside = 0, len = 0) => {
+    if(problem.contestId === undefined) return;
     let solved = false;
     let attempted = false;
 
@@ -77,20 +78,20 @@ const ContestList = (props: PropsType) => {
     if (v === Verdict.ATTEMPTED) attempted = true;
 
     if (props.submissions.has(problem.contestId)) {
-      if (props.submissions.get(problem.contestId).has(Verdict.SOLVED)) {
+      if (props.submissions.get(problem.contestId)!.has(Verdict.SOLVED)) {
         if (
           props.submissions
-            .get(problem.contestId)
-            .get(Verdict.SOLVED)
+            .get(problem.contestId)!
+            .get(Verdict.SOLVED)!
             .has(problem.index)
         )
           solved = true;
       }
-      if (props.submissions.get(problem.contestId).has(Verdict.ATTEMPTED)) {
+      if (props.submissions.get(problem.contestId)!.has(Verdict.ATTEMPTED)) {
         if (
           props.submissions
-            .get(problem.contestId)
-            .get(Verdict.ATTEMPTED)
+            .get(problem.contestId)!
+            .get(Verdict.ATTEMPTED)!
             .has(problem.index)
         )
           attempted = true;
@@ -122,7 +123,7 @@ const ContestList = (props: PropsType) => {
             (len !== 3 ? "text-truncate ": "") + 
             "text-decoration-none wrap font-bold d-inline-block  " +
             (props.showColor
-              ? props.theme.color(problem.rating)
+              ? props.theme.color(problem.rating ?? 0)
               : props.theme.text)
           }
           target="_blank"
@@ -131,12 +132,12 @@ const ContestList = (props: PropsType) => {
           title={
             problem.name +
             ",Rating:" +
-            (problem.rating > 0 ? problem.rating : "Not Rated")
+            (problem.rating ?? 0 > 0 ? problem.rating : "Not Rated")
           }
           data-bs-html="true"
           data-bs-toggle="tooltip"
           data-bs-placement="top"
-          href={getProblemUrl(problem.contestId, problem.index)}
+          href={getProblemUrl(problem.contestId!, problem.index)}
         >
           <span>
             {problem.index}
@@ -155,7 +156,7 @@ const ContestList = (props: PropsType) => {
     );
   };
 
-  const getInfo = (contest: Contest, index) => {
+  const getInfo = (contest: Contest, index: string) => {
     const EMPTY = "EMPTY " + props.theme.bg;
 
     let contestId = contest.id;
@@ -216,8 +217,8 @@ const ContestList = (props: PropsType) => {
 
     if (
       props.submissions.has(contest.id) &&
-      props.submissions.get(contest.id).has(Verdict.SOLVED) &&
-      props.submissions.get(contest.id).get(Verdict.SOLVED).size ===
+      props.submissions.get(contest.id)!.has(Verdict.SOLVED) &&
+      props.submissions.get(contest.id)!.get(Verdict.SOLVED)!.size ===
         contest.count
     )
       solved = true;
@@ -289,7 +290,7 @@ const ContestList = (props: PropsType) => {
           </div>
           {props.showDate ? (
             <div className="time ps-2">
-              {formateDate(contest.startTimeSeconds)}
+              {formateDate(contest.startTimeSeconds ?? 0)}
             </div>
           ) : (
             ""
@@ -323,7 +324,7 @@ const ContestList = (props: PropsType) => {
             >
               Contest
             </th>
-            {[...Array(ind.maxIndex - ind.minIndex + 1)].map((x, i) => {
+            {[...Array(ind.maxIndex - ind.minIndex + 1)].map((_x, i) => {
               return (
                 <th
                   scope="col"

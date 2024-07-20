@@ -15,7 +15,7 @@ import {
 } from "../data/actions/fetchActions";
 import { AppReducerType } from "../data/actions/types";
 import { fetchUserSubmissions, fetchUsers } from "../data/actions/userActions";
-import { RootStateType } from "../data/store";
+import { RootStateType, useAppSelector } from "../data/store";
 import { Path } from "../util/constants";
 import { ThemesType } from "../util/Theme";
 import "react-toastify/dist/ReactToastify.css";
@@ -24,7 +24,7 @@ import siteLogo from '../util/assets/siteLogo.png'
 const Menu = (): JSX.Element => {
   const dispatch = useDispatch();
 
-  const state: RootStateType = useSelector((state) => state) as RootStateType;
+  const state = useAppSelector((state) => state);
 
   const [handle, setHandle] = useState(
     state.userList.handles.length ? state.userList.handles.toString() : ""
@@ -98,7 +98,7 @@ const Menu = (): JSX.Element => {
       expand="md"
     >
       <div className="container p-0">
-        <Link to="/" className="navbar-brand mt-2" href="#">
+        <Link to="/" className="navbar-brand mt-2">
           <img src={siteLogo} alt="logo" width={30} height={25} className="me-2 mb-2" />
           <span>CFTracker</span>
         </Link>
@@ -107,19 +107,19 @@ const Menu = (): JSX.Element => {
         <Navbar.Collapse id="basic-navbar-nav">
           <Nav className="ms-auto mt-2 mt-lg-0">
             <li className="nav-item active">
-              <Link to={Path.Issues} className="nav-link" href="#">
+              <Link to={Path.Issues} className="nav-link">
                 {/* <span className="p-1">{<FontAwesomeIcon icon={faBars} />}</span> */}
                 <span>Issues</span>
               </Link>
             </li>
             <li className="nav-item active">
-              <Link to={Path.PROBLEMS} className="nav-link" href="#">
+              <Link to={Path.PROBLEMS} className="nav-link">
                 {/* <span className="p-1">{<FontAwesomeIcon icon={faBars} />}</span> */}
                 <span>Problems</span>
               </Link>
             </li>
             <li className="nav-item">
-              <Link to={Path.CONTESTS} className="nav-link" href="#">
+              <Link to={Path.CONTESTS} className="nav-link">
                 {/*  <span className="p-1">  {<FontAwesomeIcon icon={faListAlt} />}  </span>*/}
                 <span>Contests</span>
               </Link>

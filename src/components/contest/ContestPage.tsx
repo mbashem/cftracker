@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
 import ContestList from "./ContestList";
 import { SEARCH } from "../../util/constants";
 import Pagination from "../../util/Components/Pagination";
-import { RootStateType } from "../../data/store";
+import { useAppSelector } from "../../data/store";
 import Contest, { ContestCat } from "../../util/DataTypes/Contest";
 import InputChecked from "../../util/Components/Forms/InputChecked";
 import CustomModal from "../../util/Components/CustomModal";
@@ -15,13 +14,25 @@ import { ParticipantType } from "../../util/DataTypes/Party";
 import { Alert } from "react-bootstrap";
 import { ThreeDots } from "react-loader-spinner";
 import { useSearchParams } from "react-router-dom";
+import useSubmissionsStore from "../../data/hooks/useSubmissionsStore";
+import useContestStore from "../../data/hooks/useContestStore";
 
 const ContestPage = () => {
-  const state: RootStateType = useSelector((state) => state) as RootStateType;
+  const state = useAppSelector((state) => {
+    return {
+      appState: state.appState,
+      problemList: state.problemList,
+    };
+  });
 
   const [searchParams, setSearchParams] = useSearchParams();
+  const { submissions: userSubmissions } = useSubmissionsStore();
+  const { contests } = useContestStore();
 
-  const [contestList, setContestList] = useState({ contests: [], error: "" });
+  const [contestList, setContestList] = useState<{
+    contests: Contest[];
+    error: string;
+  }>({ contests: [], error: "" });
   const [randomContest, setRandomContest] = useState(-1);
 
   interface filt {
@@ -72,7 +83,7 @@ const ContestPage = () => {
 
   const contestStatus = (contest: Contest) => {
     if (!submissions.has(contest.id)) return Verdict.UNSOLVED;
-    if (submissions.get(contest.id).has(Verdict.SOLVED)) return Verdict.SOLVED;
+    if (submissions.get(contest.id)?.has(Verdict.SOLVED)) return Verdict.SOLVED;
     return Verdict.ATTEMPTED;
   };
 
@@ -104,27 +115,31 @@ const ContestPage = () => {
     if (filter.search.trim().length)
       setSearchParams({ [SEARCH]: filter.search.trim() });
     else setSearchParams();
-    let contests = state.contestList.contests;
 
     const newContestList = contests.filter((contest) => filterContest(contest));
 
     setContestList({ ...contestList, contests: newContestList });
     setRandomContest(-1);
-  }, [state, filter, solveStatus]);
+  }, [state.problemList.problems, filter, solveStatus]);
 
   useEffect(() => {
     let currRec: Map<number, Map<Verdict, Set<string>>> = new Map();
-    for (let sub of state.userSubmissions.submissions) {
-      if (!participant.has(sub.author.participantType)) continue;
+    for (let sub of userSubmissions) {
+      if (
+        sub.contestId === undefined ||
+        sub.index === undefined ||
+        !participant.has(sub.author.participantType)
+      )
+        continue;
       let ver = sub.verdict === Verdict.OK ? Verdict.SOLVED : Verdict.ATTEMPTED;
       if (!currRec.has(sub.contestId))
         currRec.set(sub.contestId, new Map<Verdict, Set<string>>());
-      if (!currRec.get(sub.contestId).has(ver))
-        currRec.get(sub.contestId).set(ver, new Set());
-      currRec.get(sub.contestId).get(ver).add(sub.index);
+      if (!currRec.get(sub.contestId)!.has(ver))
+        currRec.get(sub.contestId)!.set(ver, new Set());
+      currRec.get(sub.contestId)!.get(ver)!.add(sub.index);
     }
     setSubmissions(currRec);
-  }, [state.userSubmissions.submissions, participant]);
+  }, [userSubmissions, participant]);
 
   const paginate = () => {
     let lo = selected * filter.perPage;
@@ -164,7 +179,7 @@ const ContestPage = () => {
                       checked={filter.showDate}
                       title={"Show Date?"}
                       theme={state.appState.theme}
-                      onChange={(val) => {
+                      onChange={() => {
                         setFilter({ ...filter, showDate: !filter.showDate });
                       }}
                     />
@@ -176,7 +191,7 @@ const ContestPage = () => {
                       checked={filter.showRating}
                       title={"Show Rating?"}
                       theme={state.appState.theme}
-                      onChange={(val) => {
+                      onChange={() => {
                         setFilter({
                           ...filter,
                           showRating: !filter.showRating,
@@ -191,7 +206,7 @@ const ContestPage = () => {
                       checked={filter.showColor}
                       title={"Show Color?"}
                       theme={state.appState.theme}
-                      onChange={(val) => {
+                      onChange={() => {
                         setFilter({ ...filter, showColor: !filter.showColor });
                       }}
                     />
