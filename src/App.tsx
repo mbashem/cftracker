@@ -1,11 +1,10 @@
 import "./App.css";
 import { lazy, Suspense, useEffect } from "react";
 import { Route, Routes } from "react-router-dom";
-import { useSelector } from "react-redux";
 
 import Menu from "./components/Menu";
 import { Path } from "./util/constants";
-import { RootStateType } from "./data/store";
+import { RootStateType, useAppSelector } from "./data/store";
 import { ThemesType } from "./util/Theme";
 import HomePage from "./components/home/HomePage";
 import ProblemPage from "./components/problem/ProblemPage";
@@ -19,13 +18,19 @@ const StatPage = lazy(() => import("./components/stats/StatPage"));
 const IssuePage = lazy(() => import("./components/comment/CommentPage"));
 
 function App() {
-  const state: RootStateType = useSelector((state) => state) as RootStateType;
+  const appState = useAppSelector((state) => {
+    return {
+      themeMod: state.appState.themeMod,
+      theme: state.appState.theme,
+    };
+  });
+
   usePageTracking();
 
   useEffect(() => {
     console.log(window.location.pathname);
 
-    if (state.appState.themeMod === ThemesType.DARK) {
+    if (appState.themeMod === ThemesType.DARK) {
       document.body.classList.add("bg-dark");
       document.body.classList.remove("bg-light");
     } else {
@@ -35,20 +40,20 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (state.appState.themeMod === ThemesType.DARK) {
+    if (appState.themeMod === ThemesType.DARK) {
       document.body.classList.add("bg-dark");
       document.body.classList.remove("bg-light");
     } else {
       document.body.classList.add("bg-light");
       document.body.classList.remove("bg-dark");
     }
-  }, [state.appState.themeMod]);
+  }, [appState.themeMod]);
 
   return (
     <div
       className={
         "App container-fluid p-0 min-vh-100 d-flex  flex-column " +
-        state.appState.theme.bgText
+        appState.theme.bgText
       }
     >
       <div className="menu w-100">

@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
 import { sortByRating, sortBySolveCount } from "../../util/sortMethods";
-import { Path, SEARCH } from "../../util/constants";
+import { SEARCH } from "../../util/constants";
 import Pagination from "../../util/Components/Pagination";
 import ProblemList from "./ProblemList";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -10,7 +9,7 @@ import {
   faSortDown,
   faSortUp,
 } from "@fortawesome/free-solid-svg-icons";
-import { RootStateType } from "../../data/store";
+import { useAppSelector } from "../../data/store";
 import Problem from "../../util/DataTypes/Problem";
 import CustomModal from "../../util/Components/CustomModal";
 import CheckList from "../../util/Components/Forms/CheckList";
@@ -20,10 +19,18 @@ import { getObj, getSet, saveObj, saveSet } from "../../util/save";
 import { Verdict } from "../../util/DataTypes/Submission";
 import { ThreeDots } from "react-loader-spinner";
 import { useSearchParams } from "react-router-dom";
+import useSubmissionsStore from "../../data/hooks/useSubmissionsStore";
 
 const ProblemPage = () => {
-  const state: RootStateType = useSelector((state) => state) as RootStateType;
+  const state = useAppSelector((state) => {
+    return {
+      appState: state.appState,
+      problemList: state.problemList,
+    };
+  });
+
   const [searchParams, setSearchParams] = useSearchParams();
+  const { submissions } = useSubmissionsStore();
 
   const SORT_BY_RATING = 1,
     SORT_BY_SOLVE = 2,
@@ -146,13 +153,20 @@ const ProblemPage = () => {
     }
     setRandomProblem(-1);
     setSelected(0);
-  }, [state, filterState, filter, filter.search, solveStatus]);
+  }, [
+    state.problemList.problems,
+    state.problemList.tags,
+    filterState,
+    filter,
+    filter.search,
+    solveStatus,
+  ]);
 
   useEffect(() => {
     let solv = new Set<string>();
     let att = new Set<string>();
 
-    for (let submission of state.userSubmissions.submissions) {
+    for (let submission of submissions) {
       if (submission.verdict === Verdict.OK)
         solv.add(submission.contestId.toString() + submission.index);
       else att.add(submission.contestId.toString() + submission.index);
@@ -160,7 +174,7 @@ const ProblemPage = () => {
 
     setSolved(solv);
     setAttempted(att);
-  }, [state.userSubmissions.submissions]);
+  }, [submissions]);
 
   // TOOD: Convert to enum
   const sortList = (sortBy: number) => {

@@ -62,15 +62,15 @@ export const load = (type) => {
 export const fetchProblemList = (dispatch: AppDispatch) => {
   dispatch(load(LOADING_PROBLEM_LIST));
   //fetchSharedProblemList(dispatch);
-  // import("../saved_api/problems_data")
-  //   // .then((res) => res.json())
-  //   .then(
-  //     (data) => {
-  //       let result = data.problem_data;
-  fetch(problemSetURL)
-    .then((res) => res.json())
+  import("../saved_api/problems_data")
+    // .then((res) => res.json())
     .then(
-      (result) => {
+      (data) => {
+        let result = data.problem_data;
+        // fetch(problemSetURL)
+        //   .then((res) => res.json())
+        //   .then(
+        //     (result) => {
         if (result.status !== "OK")
           return dispatch(
             createDispatch(ERROR_FETCHING_PROBLEMS, "Failed to fetch Problems list from CF API")
