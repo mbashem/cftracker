@@ -11,4 +11,5 @@ export enum Path {
   CONTESTS = "/contests",
   Stats = "/stats",
   Issues = "/comments"
+  Comments = "https://github.com/mbashem/cftracker/issues"
 }

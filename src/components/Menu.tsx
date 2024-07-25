@@ -106,6 +106,13 @@ const Menu = (): JSX.Element => {
 
         <Navbar.Collapse id="basic-navbar-nav">
           <Nav className="ms-auto mt-2 mt-lg-0">
+          <li className="nav-item active">
+              <Link target="_blank" to={Path.Comments} className="nav-link" href="#">
+                {/* <span className="p-1">{<FontAwesomeIcon icon={faBars} />}</span> */}
+                <span>Issues</span>
+              </Link>
+              
+            </li>
             <li className="nav-item active">
               <Link to={Path.Issues} className="nav-link" href="#">
                 {/* <span className="p-1">{<FontAwesomeIcon icon={faBars} />}</span> */}
