@@ -32,7 +32,6 @@
     "react-router-dom": "^6.24.1",
     "react-toastify": "^10.0.5",
     "react-tooltip": "^5.27.1",
-    "redux": "^5.0.1",
     "redux-logger": "^3.0.6",
     "redux-thunk": "^3.1.0",
     "sass": "^1.77.8",
