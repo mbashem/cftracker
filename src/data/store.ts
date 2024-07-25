@@ -1,5 +1,4 @@
-import { combineReducers } from "redux";
-import { configureStore } from '@reduxjs/toolkit'
+import { combineReducers, configureStore } from '@reduxjs/toolkit'
 import logger from "redux-logger";
 import { thunk } from "redux-thunk";
 import {

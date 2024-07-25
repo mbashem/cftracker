@@ -78,7 +78,13 @@ const ProblemPage = () => {
   const [solveStatus, setSolveStatus] = useState(
     getSet(ProblemSave.PROBLEM_SOLVE_STATUS, SOLVEBUTTONS)
   );
-  const [problemList, setProblemList] = useState({ problems: [], error: "" });
+  const [problemList, setProblemList] = useState<{
+    problems: Problem[];
+    error: string;
+  }>({
+    problems: [],
+    error: "",
+  });
   const [tagList, setTagList] = useState({ tags: Array<string>() });
   const [randomProblem, setRandomProblem] = useState(-1);
   const [selected, setSelected] = useState(0);
