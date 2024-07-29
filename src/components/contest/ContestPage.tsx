@@ -23,6 +23,7 @@ const ContestPage = () => {
 
   const [contestList, setContestList] = useState({ contests: [], error: "" });
   const [randomContest, setRandomContest] = useState(-1);
+  const [isRandomClicked, setIsRandomClicked] = useState(false);
 
   interface filt {
     perPage: number;
@@ -150,6 +151,7 @@ const ContestPage = () => {
           name="Contest"
           setRandom={(num) => {
             setRandomContest(num);
+            setIsRandomClicked(true);
           }}
           theme={state.appState.theme}
         >
@@ -278,18 +280,20 @@ const ContestPage = () => {
           </div>
         </div>
       </div>
-      <footer className={"pt-2 " + state.appState.theme.bg}>
-        <Pagination
-          pageSelected={(e) => setSelected(e)}
-          perPage={filter.perPage}
-          selected={selected}
-          theme={state.appState.theme}
-          totalCount={contestList.contests.length}
-          pageSize={(e) => {
-            setFilter({ ...filter, perPage: e });
-          }}
-        />
-      </footer>
+      {!isRandomClicked && (
+        <footer className={"pt-2 " + state.appState.theme.bg}>
+          <Pagination
+            pageSelected={(e) => setSelected(e)}
+            perPage={filter.perPage}
+            selected={selected}
+            theme={state.appState.theme}
+            totalCount={contestList.contests.length}
+            pageSize={(e) => {
+              setFilter({ ...filter, perPage: e });
+            }}
+          />
+        </footer>
+      )}
     </>
   );
 };
