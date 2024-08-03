@@ -4,31 +4,27 @@ import { faInfo, faSun, faSync } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useEffect, useState } from "react";
 import { Nav, Navbar, OverlayTrigger, Popover, Tooltip } from "react-bootstrap";
-import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import {
-  changeAppState,
   fetchContestList,
   fetchProblemList,
   fetchSharedProblemList,
 } from "../data/actions/fetchActions";
-import { AppReducerType } from "../data/actions/types";
 import { fetchUserSubmissions, fetchUsers } from "../data/actions/userActions";
-import { RootStateType, useAppSelector } from "../data/store";
+import { useAppDispatch, useAppSelector } from "../data/store";
 import { Path } from "../util/constants";
 import { ThemesType } from "../util/Theme";
 import "react-toastify/dist/ReactToastify.css";
-import siteLogo from '../util/assets/siteLogo.png'
+import siteLogo from "../util/assets/siteLogo.png";
+import { changeTheme } from "../data/reducers/appSlice";
 
 const Menu = (): JSX.Element => {
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
 
   const state = useAppSelector((state) => state);
 
-  const [handle, setHandle] = useState(
-    state.userList.handles.length ? state.userList.handles.toString() : ""
-  );
+  const [handle, setHandle] = useState(state.userList.handles.length ? state.userList.handles.toString() : "");
 
   useEffect(() => {
     fetchProblemList(dispatch);
@@ -91,12 +87,7 @@ const Menu = (): JSX.Element => {
   };
 
   return (
-    <Navbar
-      className={
-        "navbar navbar-expand-lg p-2 ps-4 pe-4 " + state.appState.theme.navbar
-      }
-      expand="md"
-    >
+    <Navbar className={"navbar navbar-expand-lg p-2 ps-4 pe-4 " + state.appState.theme.navbar} expand="md">
       <div className="container p-0">
         <Link to="/" className="navbar-brand mt-2">
           <img src={siteLogo} alt="logo" width={30} height={25} className="me-2 mb-2" />
@@ -131,14 +122,8 @@ const Menu = (): JSX.Element => {
                 placement="bottom"
                 key="bottom"
                 overlay={
-                  <Popover
-                    id="popover-basic"
-                    className={state.appState.theme.bgText}
-                  >
-                    <Popover.Header
-                      as="h3"
-                      className={state.appState.theme.bgText}
-                    >
+                  <Popover id="popover-basic" className={state.appState.theme.bgText}>
+                    <Popover.Header as="h3" className={state.appState.theme.bgText}>
                       <div className="d-flex align-items-center">
                         <span className={state.appState.theme.bgText}>
                           CFTracker (Created by{" "}
@@ -155,11 +140,7 @@ const Menu = (): JSX.Element => {
                     </Popover.Header>
                     <Popover.Body className={state.appState.theme.bgText}>
                       <ul className="list-group list-group-flush">
-                        <li
-                          className={
-                            "list-group-item " + state.appState.theme.bgText
-                          }
-                        >
+                        <li className={"list-group-item " + state.appState.theme.bgText}>
                           <span className="pe-2">Source Code</span>
                           <a
                             href="https://github.com/mbashem/cftracker"
@@ -174,12 +155,7 @@ const Menu = (): JSX.Element => {
                   </Popover>
                 }
               >
-                <a
-                  href="#"
-                  onClick={(e) => e.preventDefault()}
-                  className="nav-link"
-                  title="Created by Bashem"
-                >
+                <a href="#" onClick={(e) => e.preventDefault()} className="nav-link" title="Created by Bashem">
                   <FontAwesomeIcon icon={faInfo} />
                 </a>
               </OverlayTrigger>
@@ -192,25 +168,11 @@ const Menu = (): JSX.Element => {
                 title="Change Theme"
                 onClick={(e) => {
                   e.preventDefault();
-                  if (state.appState.themeMod === ThemesType.DARK)
-                    changeAppState(
-                      dispatch,
-                      AppReducerType.CHANGE_THEME,
-                      ThemesType.LIGHT
-                    );
-                  else
-                    changeAppState(
-                      dispatch,
-                      AppReducerType.CHANGE_THEME,
-                      ThemesType.DARK
-                    );
+                  if (state.appState.themeMod === ThemesType.DARK) dispatch(changeTheme(ThemesType.LIGHT));
+                  else dispatch(changeTheme(ThemesType.DARK));
                 }}
               >
-                <FontAwesomeIcon
-                  icon={
-                    state.appState.themeMod === ThemesType.DARK ? faMoon : faSun
-                  }
-                />
+                <FontAwesomeIcon icon={state.appState.themeMod === ThemesType.DARK ? faMoon : faSun} />
               </a>
             </li>
 

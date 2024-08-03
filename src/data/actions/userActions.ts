@@ -5,7 +5,6 @@ import {
 } from "../../util/util";
 import Submission from "../../util/DataTypes/Submission";
 import { AppDispatch } from "../store";
-import { load, createDispatch } from "./fetchActions";
 import {
   ADD_USER,
   CLEAR_USERS,
@@ -16,15 +15,26 @@ import {
   CLEAR_USERS_SUBMISSIONS,
 } from "./types";
 
-export const clearUsers = (dispatch) =>
-  new Promise<void>((resolve, reject) => {
+const createDispatch = (type: any, message: any) => {
+  return {
+    type: type,
+    payload: message,
+  };
+};
+
+const load = (type: string) => {
+  return { type: type };
+};
+
+export const clearUsers = (dispatch: AppDispatch) =>
+  new Promise<void>((resolve, _reject) => {
     dispatch({
       type: CLEAR_USERS,
     });
     resolve();
   });
 
-export const fetchUsers = (dispatch, handle: string) => {
+export const fetchUsers = (dispatch: AppDispatch, handle: string) => {
   dispatch(load(LOADING_USERS));
   let currentId = Date.now();
 
@@ -37,7 +47,7 @@ export const fetchUsers = (dispatch, handle: string) => {
   }
 };
 
-export const clearUsersSubmissions = (dispatch) => {
+export const clearUsersSubmissions = (dispatch: AppDispatch) => {
   dispatch({
     type: CLEAR_USERS_SUBMISSIONS,
   });
@@ -91,7 +101,7 @@ export const fetchUserSubmissions = async (
         // Note: it's important to handle errors here
         // instead of a catch() block so that we don't swallow
         // exceptions from actual bugs in components.
-        (error) => {
+        (_error) => {
           return dispatch(
             createDispatch(
               ERROR_FETCHING_USER_SUBMISSIONS,
@@ -100,7 +110,7 @@ export const fetchUserSubmissions = async (
           );
         }
       )
-      .catch((e) => {
+      .catch((_e) => {
         // console.log(e);
         return dispatch(
           createDispatch(
