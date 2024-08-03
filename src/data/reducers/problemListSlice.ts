@@ -2,14 +2,14 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import Problem from "../../util/DataTypes/Problem";
 import { sortByContestId } from "../../util/sortMethods";
 
-export interface ProblemListStateInterface {
+export interface ProblemListState {
 	problems: Problem[];
 	error: string;
 	tags: string[];
 	loading: boolean;
 }
 
-const initialState: ProblemListStateInterface = {
+const initialState: ProblemListState = {
 	problems: [],
 	error: "",
 	tags: [],
@@ -17,7 +17,7 @@ const initialState: ProblemListStateInterface = {
 };
 
 const problemListSlice = createSlice({
-	name: "problem-list",
+	name: "problemList",
 	initialState,
 	reducers: {
 		addProblems(state, action: PayloadAction<{ problems: Problem[] }>) {
@@ -47,4 +47,6 @@ const problemListSlice = createSlice({
 	}
 })
 
-export default problemListSlice
+export const { addProblems, errorFetchingProblems, loadingProblems } = problemListSlice.actions
+
+export default problemListSlice.reducer

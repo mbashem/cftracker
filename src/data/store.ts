@@ -1,40 +1,24 @@
 import { combineReducers, configureStore } from '@reduxjs/toolkit'
 import logger from "redux-logger";
-import { thunk } from "redux-thunk";
-import {
-  problemListReducer,
-  contestReducer,
-  sharedProblemsReducer,
-  ContestListStateInterface,
-  ProblemListStateInterface,
-} from "./reducers/fetchReducers";
-import {
-  userSubmissionsReducer,
-  userReducer,
-  SubmissionStateType,
-} from "./reducers/userReducers";
-import { AppReducer, AppStateType } from "./reducers/appReducers";
-import { TypedUseSelectorHook, useSelector } from "react-redux";
+import { TypedUseSelectorHook, useDispatch, useSelector } from "react-redux";
 
-const combinedReducers = combineReducers({
-  userSubmissions: userSubmissionsReducer,
-  problemList: problemListReducer,
-  contestList: contestReducer,
-  userList: userReducer,
-  sharedProblems: sharedProblemsReducer,
-  appState: AppReducer,
+import problemList from './reducers/problemListSlice';
+import sharedProblems from './reducers/sharedProblemsSlice';
+import contestList from './reducers/contestListSlice';
+import userSubmissions from './reducers/userSubmissionsSlice';
+import appSlice from './reducers/appSlice';
+import userSlice from './reducers/userSlice';
+
+const rootReducer = combineReducers({
+  appState: appSlice,
+  contestList,
+  problemList,
+  sharedProblems,
+  userList: userSlice,
+  userSubmissions,
 });
 
-export interface RootStateType {
-  userSubmissions: SubmissionStateType;
-  problemList: ProblemListStateInterface;
-  contestList: ContestListStateInterface;
-  userList: any;
-  sharedProblems: any;
-  appState: AppStateType;
-}
-
-const saveToLocalStorage = (state: RootStateType) => {
+const saveToLocalStorage = (state: RootState) => {
   try {
     const newState = {
       userList: state.userList,
@@ -54,7 +38,7 @@ const loadFromLocalStorage = (): any => {
     if (serialLizedState == null) return {};
     const persedData = JSON.parse(serialLizedState);
 
-    let appState = new AppStateType();
+    let appState = new AppState();
     if (persedData.appState) {
       appState.init(persedData.appState);
     }
@@ -68,18 +52,19 @@ const loadFromLocalStorage = (): any => {
 };
 
 const store = configureStore({
-  reducer: combinedReducers,
-  middleware: (getDefaultMiddleware) => getDefaultMiddleware({ serializableCheck: false }).concat(thunk, logger),
-  preloadedState: loadFromLocalStorage()
+  reducer: rootReducer,
+  middleware: (getDefaultMiddleware) => getDefaultMiddleware({ serializableCheck: false }).concat(logger),
+  // preloadedState: loadFromLocalStorage()
 })
 
-store.subscribe(() => saveToLocalStorage(store.getState()));
+// store.subscribe(() => saveToLocalStorage(store.getState()));
 
 // Infer the `RootState` and `AppDispatch` types from the store itself
-export type RootState = ReturnType<typeof store.getState>;
-// Inferred type: {posts: PostsState, comments: CommentsState, users: UsersState}
+export type RootState = ReturnType<typeof rootReducer>;
+
 export type AppDispatch = typeof store.dispatch;
 
 export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector
+export const useAppDispatch = useDispatch.withTypes<AppDispatch>()
 
 export default store;
