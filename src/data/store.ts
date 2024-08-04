@@ -38,11 +38,11 @@ const loadFromLocalStorage = (): any => {
     if (serialLizedState == null) return {};
     const persedData = JSON.parse(serialLizedState);
 
-    let appState = new AppState();
-    if (persedData.appState) {
-      appState.init(persedData.appState);
-    }
-    persedData.appState = appState;
+    // let appState = new AppState();
+    // if (persedData.appState) {
+    //   appState.init(persedData.appState);
+    // }
+    // persedData.appState = appState;
     console.log(persedData);
     return persedData;
   } catch (e) {
@@ -54,10 +54,10 @@ const loadFromLocalStorage = (): any => {
 const store = configureStore({
   reducer: rootReducer,
   middleware: (getDefaultMiddleware) => getDefaultMiddleware({ serializableCheck: false }).concat(logger),
-  // preloadedState: loadFromLocalStorage()
+  preloadedState: loadFromLocalStorage()
 })
 
-// store.subscribe(() => saveToLocalStorage(store.getState()));
+store.subscribe(() => saveToLocalStorage(store.getState()));
 
 // Infer the `RootState` and `AppDispatch` types from the store itself
 export type RootState = ReturnType<typeof rootReducer>;

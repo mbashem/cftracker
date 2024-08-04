@@ -39,7 +39,7 @@ const userSlice = createSlice({
       state.error = '';
       state.loading = false;
     },
-    clearUsers(state) {
+    removeAllUser(state) {
       state.handles = [];
       state.error = '';
       state.loading = false;
@@ -47,6 +47,6 @@ const userSlice = createSlice({
   },
 });
 
-export const { loadingUsers, addUser, removeUser, errorFetchingUser, clearUsers } = userSlice.actions;
+export const { loadingUsers, addUser, removeUser, errorFetchingUser, removeAllUser } = userSlice.actions;
 
 export default userSlice.reducer;

@@ -1,4 +1,4 @@
-import { sortByContestId } from "../sortMethods";
+import { sortByContestId } from "../util/sortMethods";
 import Problem from "./Problem";
 
 export enum ContestCat {

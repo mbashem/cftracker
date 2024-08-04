@@ -1,6 +1,6 @@
 import { createSelector } from "@reduxjs/toolkit";
-import Contest from "../../util/DataTypes/Contest";
-import Problem, { ProblemLite, ProblemShared } from "../../util/DataTypes/Problem";
+import Contest from "../../types/Contest";
+import Problem, { ProblemLite, ProblemShared } from "../../types/Problem";
 import lowerBound from "../../util/lowerBound";
 import { useAppSelector } from "../store";
 import { useMemo, useState } from "react";

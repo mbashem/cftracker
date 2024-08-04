@@ -2,8 +2,8 @@ import { createSelector } from "@reduxjs/toolkit";
 import { useAppSelector } from "../store";
 import { sortByCompare } from "../../util/sortMethods";
 import lowerBound from "../../util/lowerBound";
-import { ProblemShared } from "../../util/DataTypes/Problem";
-import Submission from "../../util/DataTypes/Submission";
+import { ProblemShared } from "../../types/Problem";
+import Submission from "../../types/Submission";
 import { Compared } from "../../util/Comparator";
 import { useMemo, useState } from "react";
 

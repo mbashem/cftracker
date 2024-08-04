@@ -1,7 +1,7 @@
 import { faRandom, faRedo } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { getRandomInteger } from "../util";
-import Theme from "../Theme";
+import Theme from "../../util/Theme";
+import { getRandomInteger } from "../../util/util";
 
 interface PropsType {
   children: React.ReactNode;

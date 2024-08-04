@@ -1,15 +1,10 @@
-import {
-  AppReducerType
-} from "./types";
-
 import Problem, {
   ProblemLite,
   ProblemShared,
   ProblemStatistics,
-} from "../../util/DataTypes/Problem";
+} from "../../types/Problem";
 import { AppDispatch } from "../store";
-import Contest from "../../util/DataTypes/Contest";
-import { ThemesType } from "../../util/Theme";
+import Contest from "../../types/Contest";
 import { addProblems, errorFetchingProblems, loadingProblems } from "../reducers/problemListSlice";
 import { addContestList, errorFetchingContestList, loadingContestList } from "../reducers/contestListSlice";
 import { addSharedProblems, errorFetchingSharedProblems } from "../reducers/sharedProblemsSlice";
@@ -82,7 +77,7 @@ export const fetchProblemList = (dispatch: AppDispatch) => {
 };
 
 export const fetchSharedProblemList = async (dispatch: AppDispatch) => {
-  import("../jsons/related")
+  import("../saved_api/related")
     .then(
       (data) => {
         const result = data.jsonData;

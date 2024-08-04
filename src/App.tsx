@@ -4,12 +4,12 @@ import { Route, Routes } from "react-router-dom";
 
 import Menu from "./components/Menu";
 import { Path } from "./util/constants";
-import { RootStateType, useAppSelector } from "./data/store";
 import { ThemesType } from "./util/Theme";
 import HomePage from "./components/home/HomePage";
 import ProblemPage from "./components/problem/ProblemPage";
 import ContestPage from "./components/contest/ContestPage";
 import usePageTracking from "./usePageTracking";
+import useTheme from "./data/hooks/useTheme";
 
 // const HomePage = lazy(() => import("./components/home/HomePage"));
 // const ProblemPage = lazy(() => import("./components/problem/ProblemPage"));
@@ -18,19 +18,14 @@ const StatPage = lazy(() => import("./components/stats/StatPage"));
 const IssuePage = lazy(() => import("./components/comment/CommentPage"));
 
 function App() {
-  const appState = useAppSelector((state) => {
-    return {
-      themeMod: state.appState.themeMod,
-      theme: state.appState.theme,
-    };
-  });
+  const { theme } = useTheme();
 
   usePageTracking();
 
   useEffect(() => {
     console.log(window.location.pathname);
 
-    if (appState.themeMod === ThemesType.DARK) {
+    if (theme.themeType === ThemesType.DARK) {
       document.body.classList.add("bg-dark");
       document.body.classList.remove("bg-light");
     } else {
@@ -40,29 +35,21 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (appState.themeMod === ThemesType.DARK) {
+    if (theme.themeType === ThemesType.DARK) {
       document.body.classList.add("bg-dark");
       document.body.classList.remove("bg-light");
     } else {
       document.body.classList.add("bg-light");
       document.body.classList.remove("bg-dark");
     }
-  }, [appState.themeMod]);
+  }, [theme.themeType]);
 
   return (
-    <div
-      className={
-        "App container-fluid p-0 min-vh-100 d-flex  flex-column " +
-        appState.theme.bgText
-      }
-    >
+    <div className={"App container-fluid p-0 min-vh-100 d-flex  flex-column " + theme.bgText}>
       <div className="menu w-100">
         <Menu />
       </div>
-      <div
-        className="d-flex flex-column justify-content-between"
-        style={{ minHeight: "calc(100vh - 60px)" }}
-      >
+      <div className="d-flex flex-column justify-content-between" style={{ minHeight: "calc(100vh - 60px)" }}>
         <Suspense
           fallback={
             <div className="d-flex justify-content-center pt-5 mt-5">

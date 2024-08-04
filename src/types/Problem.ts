@@ -1,8 +1,8 @@
-import Comparator, { Compared } from "../Comparator";
+import Comparator, { Compared } from "../util/Comparator";
 
 export class ProblemLite implements Comparator<ProblemLite> {
-  id?: string;
-  contestId?: number;
+  id: string;
+  contestId: number;
   index: string;
 
   constructor(contestId: number, index: string) {
@@ -44,7 +44,7 @@ export class ProblemStatistics extends ProblemLite {
 export class ProblemShared extends ProblemLite {
   shared?: ProblemLite[];
 
-  constructor(contestId?: number, index?: string, shared?: ProblemLite[]) {
+  constructor(contestId: number, index: string, shared?: ProblemLite[]) {
     super(contestId, index);
     if (shared) this.shared = [...shared];
     else this.shared = new Array<ProblemLite>();
