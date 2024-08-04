@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import Contest from "../../util/DataTypes/Contest";
+import Contest from "../../types/Contest";
 
 export interface ContestListState {
   contests: Contest[];
@@ -13,7 +13,6 @@ const contestListInitialState: ContestListState = {
   loading: true,
 };
 
-// Create the contest list slice
 const contestListSlice = createSlice({
   name: 'contestList',
   initialState: contestListInitialState,

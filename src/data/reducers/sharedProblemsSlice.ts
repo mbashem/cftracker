@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { ProblemShared } from "../../util/DataTypes/Problem";
+import { ProblemShared } from "../../types/Problem";
 import { sortByContestId } from "../../util/sortMethods";
 
 export interface SharedProblem {
@@ -14,7 +14,6 @@ const sharedProblemsInitialState: SharedProblem = {
 	loading: true,
 };
 
-// Create the shared problems slice
 const sharedProblemsSlice = createSlice({
 	name: 'sharedProblems',
 	initialState: sharedProblemsInitialState,

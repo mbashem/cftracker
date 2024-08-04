@@ -1,4 +1,4 @@
-import Theme from "../../Theme";
+import Theme from "../../../util/Theme";
 import InputNumber from "./InputNumber";
 
 interface PropsType {

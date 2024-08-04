@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { processNumber } from "../../util";
+import { processNumber } from "../../../util/util";
 
 interface PropsType {
   header: string;

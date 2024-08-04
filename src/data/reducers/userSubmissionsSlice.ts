@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import Submission from '../../util/DataTypes/Submission';
+import Submission from '../../types/Submission';
 import { sortByCompare } from '../../util/sortMethods';
 
 export interface SubmissionState {
@@ -9,7 +9,6 @@ export interface SubmissionState {
   submissions: Submission[];
 }
 
-// Initial state
 const submissionsInitialState: SubmissionState = {
   error: '',
   loading: 0,
@@ -17,12 +16,11 @@ const submissionsInitialState: SubmissionState = {
   submissions: [],
 };
 
-// Create a slice for user submissions
 const userSubmissionsSlice = createSlice({
   name: 'userSubmissions',
   initialState: submissionsInitialState,
   reducers: {
-    clearUsersSubmissions(state) {
+    clearAllUsersSubmissions(state) {
       state.error = '';
       state.loading = 0;
       state.id = 0;
@@ -32,13 +30,12 @@ const userSubmissionsSlice = createSlice({
       const { id, result } = action.payload;
       let newLoading = state.loading - 1;
 
-      if (id === state.id) {
-        state = { ...state };
+      if (id < state.id) {
+        return;
       } else if (id > state.id) {
-        state = { ...submissionsInitialState, id };
-      } else {
-        state.loading = newLoading;
-        return state;
+        state.submissions = []
+        state.error = ""
+        state.id = id
       }
 
       state.loading = newLoading;
@@ -54,6 +51,7 @@ const userSubmissionsSlice = createSlice({
       state.error = action.payload;
       state.loading -= 1;
     },
+    // TODO: Fix loading count. Currently loading count is not if user refreshes submissions. Adding id will be a easy fix.
     loadingUserSubmissions(state) {
       state.error = '';
       state.loading += 1;
@@ -63,7 +61,7 @@ const userSubmissionsSlice = createSlice({
 
 // Export actions and reducer
 export const {
-  clearUsersSubmissions,
+  clearAllUsersSubmissions,
   addUserSubmissions,
   errorFetchingUserSubmissions,
   loadingUserSubmissions,
