@@ -1,7 +1,7 @@
 import React from "react";
 import { getProblemUrl } from "../../util/util";
 import { ATTEMPTED_PROBLEMS, SOLVED_PROBLEMS } from "../../util/constants";
-import Problem from "../../util/DataTypes/Problem";
+import Problem from "../../types/Problem";
 import Theme from "../../util/Theme";
 
 interface ProblemListProps {
@@ -15,8 +15,8 @@ interface ProblemListProps {
 
 const ProblemList = (props: ProblemListProps): JSX.Element => {
   const getState = (problem: Problem) => {
-    if (props.solved.has(problem.getId())) return SOLVED_PROBLEMS;
-    if (props.attempted.has(problem.getId())) return ATTEMPTED_PROBLEMS;
+    if (props.solved.has(problem.id)) return SOLVED_PROBLEMS;
+    if (props.attempted.has(problem.id)) return ATTEMPTED_PROBLEMS;
     return "UNSOLVED";
   };
 

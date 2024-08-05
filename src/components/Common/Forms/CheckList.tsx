@@ -1,4 +1,4 @@
-import Theme from "../../Theme";
+import Theme from "../../../util/Theme";
 
 interface PropsType {
   items: string[];

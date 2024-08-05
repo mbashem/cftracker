@@ -3,29 +3,13 @@ import {
   getUserSubmissionsURL,
   stringToArray,
 } from "../../util/util";
-import Submission from "../../util/DataTypes/Submission";
+import Submission from "../../types/Submission";
 import { AppDispatch } from "../store";
-import { load, createDispatch } from "./fetchActions";
-import {
-  ADD_USER,
-  CLEAR_USERS,
-  LOADING_USERS,
-  ERROR_FETCHING_USER_SUBMISSIONS,
-  FETCH_USER_SUBMISSIONS,
-  LOADING_USER_SUBMISSIONS,
-  CLEAR_USERS_SUBMISSIONS,
-} from "./types";
+import { addUser, loadingUsers } from "../reducers/userSlice";
+import { addUserSubmissions, clearAllUsersSubmissions, errorFetchingUserSubmissions, loadingUserSubmissions } from "../reducers/userSubmissionsSlice";
 
-export const clearUsers = (dispatch) =>
-  new Promise<void>((resolve, reject) => {
-    dispatch({
-      type: CLEAR_USERS,
-    });
-    resolve();
-  });
-
-export const fetchUsers = (dispatch, handle: string) => {
-  dispatch(load(LOADING_USERS));
+export const fetchUsers = (dispatch: AppDispatch, handle: string) => {
+  dispatch(loadingUsers());
   let currentId = Date.now();
 
   let handleArray: string[] = stringToArray(handle, ",").map(handle => handle.trim());
@@ -33,14 +17,8 @@ export const fetchUsers = (dispatch, handle: string) => {
 
   for (let handle of handleArray) {
     if (handle.length === 0) continue;
-    dispatch({ type: ADD_USER, payload: { handle, id: currentId } });
+    dispatch(addUser({ handle, id: currentId }))
   }
-};
-
-export const clearUsersSubmissions = (dispatch) => {
-  dispatch({
-    type: CLEAR_USERS_SUBMISSIONS,
-  });
 };
 
 export const fetchUserSubmissions = async (
@@ -50,7 +28,7 @@ export const fetchUserSubmissions = async (
 ) => {
   let currentId = Date.now();
   if (handles.length === 0) {
-    clearUsersSubmissions(dispatch);
+    dispatch(clearAllUsersSubmissions());
     return;
   }
 
@@ -59,7 +37,7 @@ export const fetchUserSubmissions = async (
   let cnt = 0;
 
   for (let handle of handles) {
-    dispatch(load(LOADING_USER_SUBMISSIONS));
+    dispatch(loadingUserSubmissions());
 
     if (cnt !== 0)
       await delay(1000);
@@ -70,44 +48,27 @@ export const fetchUserSubmissions = async (
       .then(
         (result) => {
           if (result.status !== "OK")
-            return dispatch(
-              createDispatch(
-                ERROR_FETCHING_USER_SUBMISSIONS,
-                "Failed To fetch Submissions for User with handle:" + handle
-              )
-            );
+            return dispatch(errorFetchingUserSubmissions("Failed To fetch Submissions for User with handle:" + handle));
 
           let submissions: Submission[] = result.result;
 
           submissions = submissions.filter(
-            (submission) => submission.contestId
+            (submission) => submission.contestId !== undefined &&
+              submission.verdict !== undefined
           );
 
-          return dispatch({
-            type: FETCH_USER_SUBMISSIONS,
-            payload: { result: submissions, id: currentId },
-          });
+          return dispatch(addUserSubmissions({ result: submissions, id: currentId }));
         },
         // Note: it's important to handle errors here
         // instead of a catch() block so that we don't swallow
         // exceptions from actual bugs in components.
-        (error) => {
-          return dispatch(
-            createDispatch(
-              ERROR_FETCHING_USER_SUBMISSIONS,
-              "Failed To fetch Submissions for User:" + handle
-            )
-          );
+        (_error) => {
+          return dispatch(errorFetchingUserSubmissions("Failed To fetch Submissions for User:" + handle));
         }
       )
-      .catch((e) => {
+      .catch((_e) => {
         // console.log(e);
-        return dispatch(
-          createDispatch(
-            ERROR_FETCHING_USER_SUBMISSIONS,
-            "Failed To fetch Submissions for User:" + handle
-          )
-        );
+        return dispatch(errorFetchingUserSubmissions("Failed To fetch Submissions for User:" + handle));
       });
   }
 };

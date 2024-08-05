@@ -1,5 +1,5 @@
-import { processNumber } from "../util";
-import Theme from "../Theme";
+import Theme from "../../util/Theme";
+import { processNumber } from "../../util/util";
 import InputNumber from "./Forms/InputNumber";
 
 interface PaginationProps {
