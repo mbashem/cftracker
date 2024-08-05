@@ -1,22 +1,17 @@
 import Comparator, { Compared } from "../util/Comparator";
 
 export class ProblemLite implements Comparator<ProblemLite> {
-  id: string;
   contestId: number;
   index: string;
 
   constructor(contestId: number, index: string) {
     this.contestId = contestId;
     this.index = index;
-    this.id = this.contestId.toString() + index;
   }
 
-  getId = (): string => {
-    if (this.contestId && !this.id)
-      this.id = this.contestId.toString() + this.index;
-    if (!this.id) return this.index;
-    return this.id;
-  };
+  get id() {
+    return this.contestId.toString() + this.index;
+  }
 
   compareTo = (a: ProblemLite): number => {
     if (this.contestId < a.contestId) return Compared.LESS;

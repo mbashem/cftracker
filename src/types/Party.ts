@@ -8,7 +8,7 @@ export enum ParticipantType {
   OUT_OF_COMPETITION = "OUT_OF_COMPETITION",
 }
 
-export default class Party {
+export default interface Party {
   contestId?: number;
   members: Member[];
   participantType: ParticipantType;

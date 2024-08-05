@@ -111,8 +111,8 @@ const ProblemPage = () => {
   };
 
   const getState = (problem: Problem) => {
-    if (solved.has(problem.getId())) return Verdict.SOLVED;
-    if (attempted.has(problem.getId())) return Verdict.ATTEMPTED;
+    if (solved.has(problem.id)) return Verdict.SOLVED;
+    if (attempted.has(problem.id)) return Verdict.ATTEMPTED;
     return Verdict.UNSOLVED;
   };
 

@@ -24,7 +24,7 @@ const addSharedToProblems = (
 
     if (lb !== problemList.length && problemList[lb].equal(currentProblem)) {
       for (let sharedProblem of problem.shared ?? []) {
-        if (added.has(sharedProblem.getId())) continue;
+        if (added.has(sharedProblem.id)) continue;
         if (sharedProblem.contestId === undefined) continue;
         const newProblem: Problem = new Problem(
           sharedProblem.contestId,
@@ -37,7 +37,7 @@ const addSharedToProblems = (
         );
 
         addProblems.push(newProblem);
-        added.add(newProblem.getId());
+        added.add(newProblem.id);
       }
     }
   }

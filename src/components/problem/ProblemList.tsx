@@ -15,8 +15,8 @@ interface ProblemListProps {
 
 const ProblemList = (props: ProblemListProps): JSX.Element => {
   const getState = (problem: Problem) => {
-    if (props.solved.has(problem.getId())) return SOLVED_PROBLEMS;
-    if (props.attempted.has(problem.getId())) return ATTEMPTED_PROBLEMS;
+    if (props.solved.has(problem.id)) return SOLVED_PROBLEMS;
+    if (props.attempted.has(problem.id)) return ATTEMPTED_PROBLEMS;
     return "UNSOLVED";
   };
 

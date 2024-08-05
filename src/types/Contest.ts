@@ -173,7 +173,7 @@ export default class Contest {
 		if (this.problemList[ind].length > 2) return false;
 
 		for (let i = 0; i < this.problemList[ind].length; i++) {
-			if (problem.getId() === this.problemList[ind][i].getId()) {
+			if (problem.id === this.problemList[ind][i].id) {
 				this.problemList[ind][i] = problem;
 				return false;
 			}

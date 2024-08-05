@@ -53,7 +53,8 @@ export const fetchUserSubmissions = async (
           let submissions: Submission[] = result.result;
 
           submissions = submissions.filter(
-            (submission) => submission.contestId
+            (submission) => submission.contestId !== undefined &&
+              submission.verdict !== undefined
           );
 
           return dispatch(addUserSubmissions({ result: submissions, id: currentId }));
