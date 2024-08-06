@@ -16,14 +16,14 @@ const SAVED_SHARED_CONTEST_URL = "../jsons/related";
 
 export const fetchProblemList = (dispatch: AppDispatch) => {
   dispatch(loadingProblems());
-  import("../saved_api/problems_data")
+  // import("../saved_api/problems_data")
+  //   .then(
+  //     (data) => {
+  //       let result = data.problem_data;
+  fetch(problemSetURL)
+    .then((res) => res.json())
     .then(
-      (data) => {
-        let result = data.problem_data;
-        // fetch(problemSetURL)
-        //   .then((res) => res.json())
-        //   .then(
-        //     (result) => {
+      (result) => {
         if (result.status !== "OK")
           return dispatch(
             errorFetchingProblems({ error: "Failed to fetch Problems list from CF API" })
