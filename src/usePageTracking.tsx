@@ -1,13 +1,13 @@
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
-import ReactGA from "react-ga";
+import ReactGA from "react-ga4";
 
 const usePageTracking = () => {
   const location = useLocation();
 
   useEffect(() => {
-    ReactGA.initialize("UA-215542847-1");
-    ReactGA.pageview(location.pathname + location.search);
+    ReactGA.initialize("G-0DNH915N52");
+    ReactGA.send({ hitType: "pageview", page: location.pathname, title: location.search });
   }, [location]);
 };
 
