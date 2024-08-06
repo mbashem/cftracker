@@ -58,7 +58,7 @@ export default class Submission extends SubmissionLite {
   id: number;
   creationTimeSeconds: number;
   relativeTimeSeconds: number;
-  readonly problem: Problem;
+  problem: Problem;
   author: Party;
   programmingLanguage: string;
   testset?: string;
@@ -73,7 +73,14 @@ export default class Submission extends SubmissionLite {
     this.id = sub.id;
     this.creationTimeSeconds = sub.creationTimeSeconds;
     this.relativeTimeSeconds = sub.relativeTimeSeconds;
-    this.problem = new Problem(sub.problem.contestId, sub.problem.index, sub.problem.name, sub.problem.type, sub.problem.rating, sub.problem.tags);
+    this.problem = new Problem(
+      sub.problem.contestId,
+      sub.problem.index, sub.problem.name,
+      sub.problem.type,
+      sub.problem.rating,
+      sub.problem.tags,
+      sub.problem.solvedCount
+    );
     this.author = sub.author;
     this.programmingLanguage = sub.programmingLanguage;
     this.verdict = sub.verdict;
