@@ -7,7 +7,7 @@ const usePageTracking = () => {
 
   useEffect(() => {
     ReactGA.initialize("G-0DNH915N52");
-    ReactGA.send({ hitType: "pageview", page: location.pathname, title: location.search });
+    ReactGA.send({ hitType: "pageview", page: location.pathname, title: location.pathname + location.search });
   }, [location]);
 };
 
