@@ -8,6 +8,7 @@ import contestList from './reducers/contestListSlice';
 import userSubmissions from './reducers/userSubmissionsSlice';
 import appSlice from './reducers/appSlice';
 import userSlice from './reducers/userSlice';
+import { userApi } from './queries/userQuery';
 
 const rootReducer = combineReducers({
   appState: appSlice,
@@ -16,6 +17,7 @@ const rootReducer = combineReducers({
   sharedProblems,
   userList: userSlice,
   userSubmissions,
+  [userApi.reducerPath]: userApi.reducer
 });
 
 const saveToLocalStorage = (state: RootState) => {
@@ -38,11 +40,6 @@ const loadFromLocalStorage = (): any => {
     if (serialLizedState == null) return {};
     const persedData = JSON.parse(serialLizedState);
 
-    // let appState = new AppState();
-    // if (persedData.appState) {
-    //   appState.init(persedData.appState);
-    // }
-    // persedData.appState = appState;
     console.log(persedData);
     return persedData;
   } catch (e) {
@@ -53,7 +50,9 @@ const loadFromLocalStorage = (): any => {
 
 const store = configureStore({
   reducer: rootReducer,
-  middleware: (getDefaultMiddleware) => getDefaultMiddleware({ serializableCheck: false }).concat(logger),
+  middleware: (getDefaultMiddleware) => getDefaultMiddleware({ serializableCheck: false })
+    .concat(logger)
+    .concat([userApi.middleware]),
   preloadedState: loadFromLocalStorage()
 })
 

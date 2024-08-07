@@ -10,6 +10,7 @@ import ProblemPage from "./components/problem/ProblemPage";
 import ContestPage from "./components/contest/ContestPage";
 import usePageTracking from "./usePageTracking";
 import useTheme from "./data/hooks/useTheme";
+import useCallbackHandler from "./hooks/useCallbackHandler";
 
 // const HomePage = lazy(() => import("./components/home/HomePage"));
 // const ProblemPage = lazy(() => import("./components/problem/ProblemPage"));
@@ -21,6 +22,7 @@ function App() {
   const { theme } = useTheme();
 
   usePageTracking();
+  useCallbackHandler();
 
   useEffect(() => {
     console.log(window.location.pathname);

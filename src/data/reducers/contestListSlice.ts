@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import Contest from "../../types/Contest";
+import Contest from "../../types/CF/Contest";
 
 export interface ContestListState {
   contests: Contest[];

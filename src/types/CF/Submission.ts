@@ -1,4 +1,4 @@
-import Comparator, { Compared } from "../util/Comparator";
+import Comparator, { Compared } from "../../util/Comparator";
 import Party from "./Party";
 import Problem from "./Problem";
 

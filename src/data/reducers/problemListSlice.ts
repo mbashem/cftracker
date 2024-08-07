@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import Problem from "../../types/Problem";
+import Problem from "../../types/CF/Problem";
 import { sortByContestId } from "../../util/sortMethods";
 
 export interface ProblemListState {

@@ -1,6 +1,6 @@
 import Comparator from "./Comparator";
-import Problem, { ProblemLite } from "../types/Problem";
-import Submission, { Verdict } from "../types/Submission";
+import Problem, { ProblemLite } from "../types/CF/Problem";
+import Submission, { Verdict } from "../types/CF/Submission";
 
 export const sortByRating = (a: Problem, b: Problem): number => {
   if (a.rating < b.rating) return -1;

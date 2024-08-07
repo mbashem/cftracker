@@ -1,7 +1,7 @@
 import React from "react";
 import { getProblemUrl } from "../../util/util";
 import { ATTEMPTED_PROBLEMS, SOLVED_PROBLEMS } from "../../util/constants";
-import Problem from "../../types/Problem";
+import Problem from "../../types/CF/Problem";
 import Theme from "../../util/Theme";
 
 interface ProblemListProps {
