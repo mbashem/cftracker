@@ -2,9 +2,9 @@ import Problem, {
   ProblemLite,
   ProblemShared,
   ProblemStatistics,
-} from "../../types/Problem";
+} from "../../types/CF/Problem";
 import { AppDispatch } from "../store";
-import Contest from "../../types/Contest";
+import Contest from "../../types/CF/Contest";
 import { addProblems, errorFetchingProblems, loadingProblems } from "../reducers/problemListSlice";
 import { addContestList, errorFetchingContestList, loadingContestList } from "../reducers/contestListSlice";
 import { addSharedProblems, errorFetchingSharedProblems } from "../reducers/sharedProblemsSlice";
@@ -16,14 +16,14 @@ const SAVED_SHARED_CONTEST_URL = "../jsons/related";
 
 export const fetchProblemList = (dispatch: AppDispatch) => {
   dispatch(loadingProblems());
-  // import("../saved_api/problems_data")
-  //   .then(
-  //     (data) => {
-  //       let result = data.problem_data;
-  fetch(problemSetURL)
-    .then((res) => res.json())
+  import("../saved_api/problems_data")
     .then(
-      (result) => {
+      (data) => {
+        let result = data.problem_data;
+        // fetch(problemSetURL)
+        //   .then((res) => res.json())
+        //   .then(
+        //     (result) => {
         if (result.status !== "OK")
           return dispatch(
             errorFetchingProblems({ error: "Failed to fetch Problems list from CF API" })

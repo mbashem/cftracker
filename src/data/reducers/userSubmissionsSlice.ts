@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import Submission from '../../types/Submission';
+import Submission from '../../types/CF/Submission';
 import { sortByCompare } from '../../util/sortMethods';
 
 export interface SubmissionState {

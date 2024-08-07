@@ -28,7 +28,7 @@ func NewAuthHandler(oauthConf *oauth2.Config) *AuthHandler {
 }
 
 func (h *AuthHandler) GitHubLogin(ginContext *gin.Context) {
-	url := h.oauthConf.AuthCodeURL("state", oauth2.AccessTypeOffline)
+	url := h.oauthConf.AuthCodeURL("state")
 	ginContext.Redirect(http.StatusTemporaryRedirect, url)
 }
 

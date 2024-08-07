@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { ProblemShared } from "../../types/Problem";
+import { ProblemShared } from "../../types/CF/Problem";
 import { sortByContestId } from "../../util/sortMethods";
 
 export interface SharedProblem {

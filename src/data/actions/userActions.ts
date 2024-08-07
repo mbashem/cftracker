@@ -3,21 +3,23 @@ import {
   getUserSubmissionsURL,
   stringToArray,
 } from "../../util/util";
-import Submission from "../../types/Submission";
+import Submission from "../../types/CF/Submission";
 import { AppDispatch } from "../store";
-import { addUser, loadingUsers } from "../reducers/userSlice";
+import { addHandle, removeAllHandle } from "../reducers/userSlice";
 import { addUserSubmissions, clearAllUsersSubmissions, errorFetchingUserSubmissions, loadingUserSubmissions } from "../reducers/userSubmissionsSlice";
 
 export const fetchUsers = (dispatch: AppDispatch, handle: string) => {
-  dispatch(loadingUsers());
   let currentId = Date.now();
 
   let handleArray: string[] = stringToArray(handle, ",").map(handle => handle.trim());
   handleArray = handleArray.filter((handle) => handle.length);
+  if (handleArray.length === 0) {
+    dispatch(removeAllHandle());
+  }
 
   for (let handle of handleArray) {
     if (handle.length === 0) continue;
-    dispatch(addUser({ handle, id: currentId }))
+    dispatch(addHandle({ handle, id: currentId }))
   }
 };
 

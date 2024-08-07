@@ -1,4 +1,4 @@
-import Comparator, { Compared } from "../util/Comparator";
+import Comparator, { Compared } from "../../util/Comparator";
 
 export class ProblemLite implements Comparator<ProblemLite> {
   contestId: number;

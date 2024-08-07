@@ -1,4 +1,4 @@
-import { faGithub } from "@fortawesome/free-brands-svg-icons";
+import { faGithub, faGithubAlt } from "@fortawesome/free-brands-svg-icons";
 import { faMoon } from "@fortawesome/free-regular-svg-icons";
 import { faInfo, faSun, faSync } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -14,6 +14,7 @@ import { ThemesType } from "../util/Theme";
 import "react-toastify/dist/ReactToastify.css";
 import siteLogo from "../util/assets/siteLogo.png";
 import useTheme from "../data/hooks/useTheme";
+import { GITHUB_OAUTH_CLIENT_ID, GITHUB_OAUTH_REDIRECT_URI, IS_BACKEND_AVAILABLE } from "../util/env";
 
 const Menu = (): JSX.Element => {
   const dispatch = useAppDispatch();
@@ -211,6 +212,22 @@ const Menu = (): JSX.Element => {
                 />
               </form>
             </li>
+
+            {IS_BACKEND_AVAILABLE && (
+              <li className="nav-item">
+                <a
+                  className="nav-link"
+                  onClick={(e) => {
+                    // e.preventDefault();
+                    console.log(e);
+                  }}
+                  title="Refresh Submissions"
+                  href={`https://github.com/login/oauth/authorize?client_id=${GITHUB_OAUTH_CLIENT_ID}&redirect_uri=${GITHUB_OAUTH_REDIRECT_URI}&scope=user:email`}
+                >
+                  <FontAwesomeIcon icon={faGithubAlt} />
+                </a>
+              </li>
+            )}
           </Nav>
         </Navbar.Collapse>
       </div>

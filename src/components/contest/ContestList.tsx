@@ -1,9 +1,9 @@
 import React from "react";
 import { OverlayTrigger, Tooltip } from "react-bootstrap";
 import { getProblemUrl, formateDate, charInc, getContestUrl } from "../../util/util";
-import Contest, { ContestCat } from "../../types/Contest";
-import Problem from "../../types/Problem";
-import { Verdict } from "../../types/Submission";
+import Contest, { ContestCat } from "../../types/CF/Contest";
+import Problem from "../../types/CF/Problem";
+import { Verdict } from "../../types/CF/Submission";
 import Theme, { ThemesType } from "../../util/Theme";
 
 interface PropsType {
