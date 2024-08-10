@@ -1,20 +1,22 @@
-import { faGithub, faGithubAlt } from "@fortawesome/free-brands-svg-icons";
+import { faGithub } from "@fortawesome/free-brands-svg-icons";
 import { faMoon } from "@fortawesome/free-regular-svg-icons";
-import { faInfo, faSun, faSync } from "@fortawesome/free-solid-svg-icons";
+import { faInfo, faSignIn, faSignOut, faSun, faSync } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useEffect, useState } from "react";
 import { Nav, Navbar, OverlayTrigger, Popover } from "react-bootstrap";
 import { Link } from "react-router-dom";
-import { toast, ToastContainer } from "react-toastify";
+import { ToastContainer } from "react-toastify";
 import { fetchContestList, fetchProblemList, fetchSharedProblemList } from "../data/actions/fetchActions";
 import { fetchUserSubmissions, fetchUsers } from "../data/actions/userActions";
 import { useAppDispatch, useAppSelector } from "../data/store";
-import { Path } from "../util/constants";
+import { Path } from "../util/route/path";
 import { ThemesType } from "../util/Theme";
 import "react-toastify/dist/ReactToastify.css";
 import siteLogo from "../util/assets/siteLogo.png";
 import useTheme from "../data/hooks/useTheme";
 import { GITHUB_OAUTH_CLIENT_ID, GITHUB_OAUTH_REDIRECT_URI, IS_BACKEND_AVAILABLE } from "../util/env";
+import useToast from "../hooks/useToast";
+import useUser from "../hooks/useUser";
 
 const Menu = (): JSX.Element => {
   const dispatch = useAppDispatch();
@@ -30,6 +32,7 @@ const Menu = (): JSX.Element => {
     };
   });
   const { theme, changeThemeMod } = useTheme();
+  const { isAuthenticated, logout } = useUser();
 
   const [handle, setHandle] = useState(state.userList.handles.length ? state.userList.handles.toString() : "");
 
@@ -39,21 +42,14 @@ const Menu = (): JSX.Element => {
     fetchSharedProblemList(dispatch);
   }, []);
 
+  const { popErrorToast, popGeneralToast } = useToast();
+
   const InvokeErrorToast = (message: string) => {
     if (message.length === 0) {
       return;
     }
     console.log(message);
-    toast.error(message, {
-      position: "top-right",
-      autoClose: 3000,
-      hideProgressBar: false,
-      closeOnClick: true,
-      pauseOnHover: true,
-      draggable: true,
-      progress: undefined,
-      theme: "dark",
-    });
+    popErrorToast(message);
   };
 
   useEffect(() => {
@@ -80,16 +76,7 @@ const Menu = (): JSX.Element => {
   };
 
   const submitUser = () => {
-    toast(`Handles entered: ${handle}`, {
-      position: "bottom-right",
-      autoClose: 500,
-      hideProgressBar: false,
-      closeOnClick: true,
-      pauseOnHover: true,
-      draggable: true,
-      progress: undefined,
-      theme: "dark",
-    });
+    popGeneralToast(`Handles entered: ${handle}`);
     fetchUsers(dispatch, handle);
   };
 
@@ -110,6 +97,14 @@ const Menu = (): JSX.Element => {
                 <span>Issues</span>
               </Link>
             </li>
+            {IS_BACKEND_AVAILABLE && isAuthenticated && (
+              <li className="nav-item active">
+                <Link to={Path.Lists} className="nav-link">
+                  {/* <span className="p-1">{<FontAwesomeIcon icon={faBars} />}</span> */}
+                  <span>Lists</span>
+                </Link>
+              </li>
+            )}
             <li className="nav-item active">
               <Link to={Path.PROBLEMS} className="nav-link">
                 {/* <span className="p-1">{<FontAwesomeIcon icon={faBars} />}</span> */}
@@ -213,18 +208,28 @@ const Menu = (): JSX.Element => {
               </form>
             </li>
 
-            {IS_BACKEND_AVAILABLE && (
+            {IS_BACKEND_AVAILABLE && isAuthenticated ? (
               <li className="nav-item">
                 <a
                   className="nav-link"
                   onClick={(e) => {
-                    // e.preventDefault();
-                    console.log(e);
+                    e.preventDefault();
+                    logout();
                   }}
+                  title="Refresh Submissions"
+                  href="#"
+                >
+                  <FontAwesomeIcon icon={faSignOut} />
+                </a>
+              </li>
+            ) : (
+              <li className="nav-item">
+                <a
+                  className="nav-link"
                   title="Refresh Submissions"
                   href={`https://github.com/login/oauth/authorize?client_id=${GITHUB_OAUTH_CLIENT_ID}&redirect_uri=${GITHUB_OAUTH_REDIRECT_URI}&scope=user:email`}
                 >
-                  <FontAwesomeIcon icon={faGithubAlt} />
+                  <FontAwesomeIcon icon={faSignIn} />
                 </a>
               </li>
             )}

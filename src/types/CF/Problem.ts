@@ -51,9 +51,9 @@ export default class Problem extends ProblemLite {
   name: string;
   type: string;
   points?: number;
-  rating?: number;
+  rating: number;
   tags: string[];
-  solvedCount?: number;
+  solvedCount: number;
 
   constructor(
     contestId: number,

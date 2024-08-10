@@ -6,7 +6,6 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSort, faSortDown, faSortUp } from "@fortawesome/free-solid-svg-icons";
 import { useAppSelector } from "../../data/store";
 import Problem from "../../types/CF/Problem";
-import { getObj, getSet, saveObj, saveSet } from "../../util/localstorage";
 import { Verdict } from "../../types/CF/Submission";
 import { ThreeDots } from "react-loader-spinner";
 import { useSearchParams } from "react-router-dom";
@@ -17,6 +16,7 @@ import CustomModal from "../Common/CustomModal";
 import CheckList from "../Common/Forms/CheckList";
 import Pagination from "../Common/Pagination";
 import InputRange from "../Common/Forms/InputRange";
+import { StorageService } from "../../util/StorageService";
 
 const ProblemPage = () => {
   const state = useAppSelector((state) => {
@@ -62,17 +62,17 @@ const ProblemPage = () => {
     search: searchParams.get(SEARCH) ?? "",
   };
 
-  const [filter, setFilter] = useState<filt>(getObj(ProblemSave.PROBLEM_FILTER, defaultFilt));
+  const [filter, setFilter] = useState<filt>(StorageService.getObject(ProblemSave.PROBLEM_FILTER, defaultFilt));
 
   const SOLVEBUTTONS = [Verdict.SOLVED, Verdict.ATTEMPTED, Verdict.UNSOLVED];
 
   const initFilterState = {
-    tags: getSet(ProblemSave.PROBLEM_TAGS, []),
+    tags: StorageService.getSet(ProblemSave.PROBLEM_TAGS, Array<string>()),
     sortBy: SORT_BY_SOLVE,
     order: DESCENDING,
   };
 
-  const [solveStatus, setSolveStatus] = useState(getSet(ProblemSave.PROBLEM_SOLVE_STATUS, SOLVEBUTTONS));
+  const [solveStatus, setSolveStatus] = useState(StorageService.getSet(ProblemSave.PROBLEM_SOLVE_STATUS, SOLVEBUTTONS));
   const [problemList, setProblemList] = useState<{
     problems: Problem[];
     error: string;
@@ -118,7 +118,7 @@ const ProblemPage = () => {
   };
 
   useEffect(() => {
-    saveObj(ProblemSave.PROBLEM_FILTER, filter);
+    StorageService.saveObject(ProblemSave.PROBLEM_FILTER, filter);
 
     if (filter.search.trim().length) setSearchParams({ [SEARCH]: filter.search.trim() });
     else setSearchParams();
@@ -216,7 +216,7 @@ const ProblemPage = () => {
               name={"Solve Status"}
               onClickSet={(newSet) => {
                 setSolveStatus(newSet);
-                saveSet(ProblemSave.PROBLEM_SOLVE_STATUS, newSet);
+                StorageService.saveSet(ProblemSave.PROBLEM_SOLVE_STATUS, newSet);
               }}
               theme={theme}
             />
@@ -261,7 +261,7 @@ const ProblemPage = () => {
                 let myFilterState = { ...filterState };
                 myFilterState.tags = newSet;
                 setFilterState(myFilterState);
-                saveSet(ProblemSave.PROBLEM_TAGS, newSet);
+                StorageService.saveSet(ProblemSave.PROBLEM_TAGS, newSet);
               }}
               selectAll={true}
               deselectAll={true}

@@ -2,6 +2,8 @@ package lists
 
 import (
 	"time"
+
+	"github.com/mbashem/cftracker/backend/internal/lists/items"
 )
 
 type List struct {
@@ -11,14 +13,7 @@ type List struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
-type ListItem struct {
-	ListID    int64     `json:"list_id" validate:"required"`
-	ProblemID string    `json:"problem_id" validate:"required"`
-	Position  int       `json:"position"`
-	CreatedAt time.Time `json:"created_at"`
-}
-
 type ListWithItem struct {
 	List
-	Items []ListItem `json:"items"`
+	Items []items.ListItem `json:"items"`
 }

@@ -9,6 +9,7 @@ import userSubmissions from './reducers/userSubmissionsSlice';
 import appSlice from './reducers/appSlice';
 import userSlice from './reducers/userSlice';
 import { userApi } from './queries/userQuery';
+import { StorageService } from '../util/StorageService';
 
 const rootReducer = combineReducers({
   appState: appSlice,
@@ -26,8 +27,7 @@ const saveToLocalStorage = (state: RootState) => {
       userList: state.userList,
       appState: state.appState,
     };
-    const serializedState: string = JSON.stringify(newState);
-    localStorage.setItem("statev2", serializedState);
+    StorageService.saveObject("statev2", newState);
   } catch (e) {
     console.log(e);
   }
@@ -35,10 +35,7 @@ const saveToLocalStorage = (state: RootState) => {
 
 const loadFromLocalStorage = (): any => {
   try {
-    const serialLizedState = localStorage.getItem("statev2");
-    console.log(serialLizedState);
-    if (serialLizedState == null) return {};
-    const persedData = JSON.parse(serialLizedState);
+    const persedData = StorageService.getObject("statev2", {});
 
     console.log(persedData);
     return persedData;

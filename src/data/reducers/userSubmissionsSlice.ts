@@ -51,7 +51,7 @@ const userSubmissionsSlice = createSlice({
       state.error = action.payload;
       state.loading -= 1;
     },
-    // TODO: Fix loading count. Currently loading count is not if user refreshes submissions. Adding id will be a easy fix.
+    // FIXME: Fix loading count. Currently loading count is not correct if user refreshes submissions. Adding id will be a easy fix.
     loadingUserSubmissions(state) {
       state.error = '';
       state.loading += 1;

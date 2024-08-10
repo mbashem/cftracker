@@ -30,7 +30,7 @@ function useToast() {
 	return {
 		popGeneralToast,
 		popErrorToast
-	}
+	};
 }
 
 export default useToast;
