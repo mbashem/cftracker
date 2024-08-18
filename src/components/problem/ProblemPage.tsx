@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { sortByRating, sortBySolveCount } from "../../util/sortMethods";
+import { sortByContestId, sortByRating, sortBySolveCount } from "../../util/sortMethods";
 import { SEARCH } from "../../util/constants";
 import ProblemList from "./ProblemList";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -32,6 +32,7 @@ const ProblemPage = () => {
 
   const SORT_BY_RATING = 1,
     SORT_BY_SOLVE = 2,
+    SORT_BY_ID = 3,
     ASCENDING = 0,
     DESCENDING = 1;
 
@@ -127,6 +128,7 @@ const ProblemPage = () => {
       newProblemsList = newProblemsList.filter((problem: Problem) => filterProblem(problem));
 
       if (filterState.sortBy === SORT_BY_RATING) newProblemsList.sort(sortByRating);
+      else if(filterState.sortBy === SORT_BY_ID) newProblemsList.sort(sortByContestId);
       else newProblemsList.sort(sortBySolveCount);
       if (filterState.order === DESCENDING) newProblemsList.reverse();
 
@@ -284,7 +286,18 @@ const ProblemPage = () => {
                 <thead className={theme.thead}>
                   <tr>
                     <th scope="col">#</th>
-                    <th scope="col">ID</th>
+                    <th scope="col" role="button" onClick={() => sortList(SORT_BY_ID)}>
+                      <div className="d-flex justify-content-between">
+                        <div>ID</div>
+                        <div>
+                          {filterState.sortBy === SORT_BY_ID
+                            ? filterState.order === ASCENDING
+                              ? less
+                              : greater
+                            : nuetral}
+                        </div>
+                      </div>
+                    </th>
                     <th scope="col">Name</th>
                     <th scope="col" role="button" onClick={() => sortList(SORT_BY_RATING)}>
                       <div className="d-flex justify-content-between">
