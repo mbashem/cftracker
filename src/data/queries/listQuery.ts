@@ -3,7 +3,7 @@ import { createBaseQuery } from './baseQuery';
 import { List, ListWithItem } from '../../types/list';
 
 export const listApi = createApi({
-	reducerPath: 'userApi',
+	reducerPath: 'listApi',
 	baseQuery: createBaseQuery(),
 	endpoints: (builder) => ({
 		getAllLists: builder.query<List[], void>({
@@ -11,6 +11,9 @@ export const listApi = createApi({
 				url: `/lists`,
 				method: 'GET',
 			}),
+			transformResponse: (response: any) => {
+				return response.lists;
+			}
 		}),
 		createList: builder.mutation<List, Partial<List>>({
 			query: (body) => ({
@@ -56,4 +59,4 @@ export const listApi = createApi({
 	}),
 });
 
-export const { } = listApi;
+export const { useCreateListMutation, useGetListQuery } = listApi;

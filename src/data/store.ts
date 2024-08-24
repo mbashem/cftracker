@@ -1,4 +1,4 @@
-import { combineReducers, configureStore } from '@reduxjs/toolkit'
+import { combineReducers, configureStore } from '@reduxjs/toolkit';
 import logger from "redux-logger";
 import { TypedUseSelectorHook, useDispatch, useSelector } from "react-redux";
 
@@ -10,6 +10,7 @@ import appSlice from './reducers/appSlice';
 import userSlice from './reducers/userSlice';
 import { userApi } from './queries/userQuery';
 import { StorageService } from '../util/StorageService';
+import { listApi } from './queries/listQuery';
 
 const rootReducer = combineReducers({
   appState: appSlice,
@@ -18,7 +19,8 @@ const rootReducer = combineReducers({
   sharedProblems,
   userList: userSlice,
   userSubmissions,
-  [userApi.reducerPath]: userApi.reducer
+  [userApi.reducerPath]: userApi.reducer,
+  [listApi.reducerPath]: listApi.reducer
 });
 
 const saveToLocalStorage = (state: RootState) => {
@@ -49,9 +51,9 @@ const store = configureStore({
   reducer: rootReducer,
   middleware: (getDefaultMiddleware) => getDefaultMiddleware({ serializableCheck: false })
     .concat(logger)
-    .concat([userApi.middleware]),
+    .concat([userApi.middleware, listApi.middleware]),
   preloadedState: loadFromLocalStorage()
-})
+});
 
 store.subscribe(() => saveToLocalStorage(store.getState()));
 
@@ -60,7 +62,7 @@ export type RootState = ReturnType<typeof rootReducer>;
 
 export type AppDispatch = typeof store.dispatch;
 
-export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector
-export const useAppDispatch = useDispatch.withTypes<AppDispatch>()
+export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector;
+export const useAppDispatch = useDispatch.withTypes<AppDispatch>();
 
 export default store;

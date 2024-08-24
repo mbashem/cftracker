@@ -15,9 +15,9 @@ function useToast() {
 	}
 
 	function popErrorToast(message: string) {
-		toast(message, {
-			position: "bottom-right",
-			autoClose: 500,
+		toast.error(message, {
+			position: "top-right",
+			autoClose: 1000,
 			hideProgressBar: false,
 			closeOnClick: true,
 			pauseOnHover: true,

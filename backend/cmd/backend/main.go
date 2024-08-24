@@ -21,9 +21,11 @@ func main() {
 	db.InitDB()
 
 	router := gin.Default()
+
 	corsConfig := cors.DefaultConfig()
 	corsConfig.AllowOrigins = []string{"http://localhost:5173"}
-
+	corsConfig.AddAllowHeaders("Content-Type", "Authorization")
+	corsConfig.AllowCredentials = true
 	router.Use(cors.New(corsConfig))
 
 	routes.RegisterRoutes(router)
