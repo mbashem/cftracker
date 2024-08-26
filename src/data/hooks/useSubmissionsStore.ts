@@ -23,9 +23,6 @@ const addSharedToSubmissions = (
   let newUserSubmissions: Submission[] = []
   for (let submission of userSubmissions) {
     newUserSubmissions.push(new Submission(submission))
-    if (submission.index !== submission.problem.index) {
-      console.log(submission)
-    }
     let currentShared: ProblemShared = new ProblemShared(
       submission.contestId,
       submission.index

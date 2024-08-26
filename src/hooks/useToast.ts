@@ -1,7 +1,7 @@
 import { toast } from "react-toastify";
 
 function useToast() {
-	function popGeneralToast(message: string) {
+	function showGeneralToast(message: string) {
 		toast(message, {
 			position: "bottom-right",
 			autoClose: 500,
@@ -14,7 +14,7 @@ function useToast() {
 		});
 	}
 
-	function popErrorToast(message: string) {
+	function showErrorToast(message: string) {
 		toast.error(message, {
 			position: "top-right",
 			autoClose: 1000,
@@ -28,8 +28,8 @@ function useToast() {
 	}
 
 	return {
-		popGeneralToast,
-		popErrorToast
+		showGeneralToast,
+		showErrorToast
 	};
 }
 

@@ -1,24 +1,33 @@
+import useProblemsStore from "../../../data/hooks/useProblemsStore";
 import useTheme from "../../../data/hooks/useTheme";
 import { listApi } from "../../../data/queries/listQuery";
 
 interface Props {
-	id: number;
+	listId: number;
 }
 
-function useIndividualListPage({ id }: Props) {
+function useIndividualListPage({ listId }: Props) {
 	const { theme } = useTheme();
-	const {data: lists, isLoading, error} = listApi.useGetListQuery(id)
+	const { data: lists, isLoading, error, refetch } = listApi.useGetListQuery(listId);
+	const [deleteFromList] = listApi.useDeleteFromListMutation();
+	const { problemsById } = useProblemsStore();
 
-	function deleteButtonClicked(problemId: String) {
-		
+	async function deleteButtonClicked(problemId: string) {
+		try {
+			const res = await deleteFromList({ listId, problemId }).unwrap();
+			console.log(res);
+			refetch();
+		} catch (err) {
+			console.log(err);
+		}
 	}
 
 	return {
-		id,
 		theme,
 		lists,
 		isLoading,
 		error,
+		problemsById,
 		deleteButtonClicked
 	};
 }

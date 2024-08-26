@@ -4,11 +4,11 @@ import useIndividualListPage from "./useIndividualListPage";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
 
 interface Props {
-  id: number;
+  listId: number;
 }
 
-function IndividualListPage({ id }: Props) {
-  const { theme, lists, isLoading, error, deleteButtonClicked } = useIndividualListPage({ id });
+function IndividualListPage({ listId }: Props) {
+  const { theme, lists, isLoading, error, problemsById, deleteButtonClicked } = useIndividualListPage({ listId });
 
   return (
     <>
@@ -24,9 +24,9 @@ function IndividualListPage({ id }: Props) {
           </thead>
           <tbody className={theme.bg}>
             {lists?.items.map((item) => (
-              <tr key={item.listId}>
+              <tr key={item.problemId}>
                 <td>{item.problemId}</td>
-                <td>{item.name ?? ""}</td>
+                <td>{problemsById.get(item.problemId)?.name ?? ""}</td>
                 <td>
                   <button
                     type="button"

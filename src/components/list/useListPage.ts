@@ -1,20 +1,19 @@
 import { useState } from "react";
 import useTheme from "../../data/hooks/useTheme";
 import useToast from "../../hooks/useToast";
-import useList from "../../hooks/useList";
 import { List } from "../../types/list";
-import { listApi } from "../../data/queries/listQuery";
 import { SearchKeys } from "../../util/constants";
 import useAppSearchParams from "../../hooks/useSearchParam";
 import { useNavigate } from "react-router";
 import { Path } from "../../util/route/path";
+import useListApi from "../../data/hooks/useListApi";
 
 function useListPage() {
 	const { theme } = useTheme();
 	const [activeList, setActiveList] = useState<List | undefined>();
-	const { popGeneralToast, popErrorToast } = useToast();
-	const { createList } = useList();
-	const { data: lists, error, isLoading, refetch } = listApi.useGetAllListsQuery();
+	const { showGeneralToast, showErrorToast } = useToast();
+	const api = useListApi();
+	const { data: lists, error, isLoading, refetch } = api.useGetAllListsQuery();
 	const { searchParams, updateSearchParam, deleteSearchParam } = useAppSearchParams();
 	const navigate = useNavigate();
 
@@ -29,23 +28,49 @@ function useListPage() {
 
 	async function createNewList(listName: string) {
 		console.log(listName);
-		popGeneralToast(`Creating a list with name:${listName}.`);
+		showGeneralToast(`Creating a list with name:${listName}.`);
 
 		try {
-			const list = await createList(listName);
-			console.log(list);
-			// refetchList();
-		} catch (err: any) {
-			console.log(err);
-			popErrorToast(err?.message ?? "Failed to create the list!");
-			throw err;
+			let res = await api.createList(listName);
+			console.log(res);
+			refetch();
+		}
+		catch (err: any) {
+			showErrorToast(err?.message ?? "Failed to create the list!");
+		}
+	}
+
+	async function updateListName(newName: string) {
+		showGeneralToast(`Update list ${activeList?.name}, name to ${newName}`);
+		if (activeList === undefined) throw new Error("No active list!");
+
+		try {
+			let res = await api.updateListName(activeList.id, newName);
+			console.log(res);
+			refetch();
+			return;
+		}
+		catch (err: any) {
+			showErrorToast(err?.message ?? "Failed to update list name!");
 		}
 	}
 
 	function addButtonClicked() {
 		if (activeList === undefined) return;
-
 		navigate(Path.PROBLEMS + `?${SearchKeys.ListId}=${activeList.id}`);
+	}
+
+	async function deleteListButtonClicked() {
+		if (activeList === undefined) return;
+		try {
+			let res = await api.deleteList(activeList.id);
+			console.log(res);
+			showGeneralToast("List deleted");
+			deleteSearchParam(SearchKeys.ListId);
+			refetch();
+		} catch (err: any) {
+			showErrorToast(err?.message ?? "Failed to delete the list");
+		}
 	}
 
 	return {
@@ -56,7 +81,9 @@ function useListPage() {
 		createNewList,
 		error,
 		isLoading,
-		addButtonClicked
+		addButtonClicked,
+		updateListName,
+		deleteListButtonClicked,
 	};
 }
 

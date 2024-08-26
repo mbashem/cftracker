@@ -1,7 +1,6 @@
 package lists
 
 import (
-	"log"
 	"net/http"
 	"strconv"
 
@@ -18,13 +17,13 @@ type API struct {
 type API_MESSAGE string
 
 const (
-	failedToCreateList    API_MESSAGE = "Failed to create list"
-	failedToUpdateList    API_MESSAGE = "Failed to update list"
-	failedToFindList      API_MESSAGE = "Failed to find the list"
-	failedToDeleteList    API_MESSAGE = "Failed to delete list"
-	failedToAddItemToList API_MESSAGE = "Failed to add item to list"
-	failedToReorderItems  API_MESSAGE = "Failed to reorder items"
-	failedToGetListItems  API_MESSAGE = "Failed to get list items"
+	// failedToCreateList    API_MESSAGE = "Failed to create list"
+	// failedToUpdateList    API_MESSAGE = "Failed to update list"
+	// failedToFindList      API_MESSAGE = "Failed to find the list"
+	// failedToDeleteList    API_MESSAGE = "Failed to delete list"
+	// failedToAddItemToList API_MESSAGE = "Failed to add item to list"
+	// failedToReorderItems  API_MESSAGE = "Failed to reorder items"
+	// failedToGetListItems  API_MESSAGE = "Failed to get list items"
 
 	invalidListId   API_MESSAGE = "Invalid list Id"
 	invalidListItem API_MESSAGE = "Invalid list item"
@@ -69,14 +68,14 @@ func (api *API) CreateListHandler(context *gin.Context) {
 // Update list name
 func (api *API) UpdateListNameHandler(context *gin.Context) {
 	userId := context.GetInt64(middlewares.UserIdKey)
-	listId, _ := strconv.ParseInt(context.Param("id"), 10, 64)
+	listId, _ := strconv.ParseInt(context.Param("listId"), 10, 64)
 	var form struct {
 		Name string `json:"name"`
 	}
 
 	if err := context.ShouldBindJSON(&form); err != nil {
-		log.Println("Error: ", err)
-		context.JSON(http.StatusBadRequest, gin.H{"error": invalidFormat})
+		// context.JSON(http.StatusBadRequest, gin.H{"error": invalidFormat})
+		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -88,7 +87,8 @@ func (api *API) UpdateListNameHandler(context *gin.Context) {
 
 	list.Name = form.Name
 	if err := api.listRepository.UpdateName(list); err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": failedToUpdateList})
+		// context.JSON(http.StatusInternalServerError, gin.H{"error": failedToUpdateList})
+		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -98,16 +98,18 @@ func (api *API) UpdateListNameHandler(context *gin.Context) {
 // Delete a list
 func (api *API) DeleteListHandler(context *gin.Context) {
 	userId := context.GetInt64(middlewares.UserIdKey)
-	listId, _ := strconv.ParseInt(context.Param("id"), 10, 64)
+	listId, _ := strconv.ParseInt(context.Param("listId"), 10, 64)
 	list, err := api.listRepository.GetById(listId)
 
 	if err != nil || list.UserId != userId {
-		context.JSON(http.StatusNotFound, gin.H{"error": listDoesNotExist})
+		// context.JSON(http.StatusNotFound, gin.H{"error": listDoesNotExist})
+		context.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
 	}
 
 	if err := api.listRepository.Delete(listId); err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": failedToDeleteList})
+		// context.JSON(http.StatusInternalServerError, gin.H{"error": failedToDeleteList})
+		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -156,19 +158,25 @@ func (api *API) AddToListHandler(context *gin.Context) {
 // Delete a problem from a list
 func (api *API) DeleteFromListHandler(context *gin.Context) {
 	userId := context.GetInt64(middlewares.UserIdKey)
-	var item items.ListItem
-	if err := context.ShouldBindJSON(&item); err != nil {
-		// context.JSON(http.StatusBadRequest, gin.H{"error": invalidListItem})
-		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+
+	listId, listIdParseError := strconv.ParseInt(context.Param("listId"), 10, 64)
+	itemId := context.Param("itemId")
+
+	if listIdParseError != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"error": invalidListItem})
 		return
 	}
 
-	list, err := api.listRepository.GetById(item.ListId)
+	list, err := api.listRepository.GetById(listId)
 	if err != nil || list.UserId != userId {
 		// context.JSON(http.StatusNotFound, gin.H{"error": listDoesNotExist})
 		context.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
 	}
+
+	var item items.ListItem
+	item.ListId = listId
+	item.ProblemId = itemId
 
 	if err := api.listItemsRepository.Delete(&item); err != nil {
 		// context.JSON(http.StatusInternalServerError, gin.H{"error": failedToDeleteList})

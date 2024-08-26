@@ -22,7 +22,7 @@ func RegisterRoutes(server *gin.Engine) {
 	listServer.PUT("/:listId", api.UpdateListNameHandler)         // update list name
 	listServer.DELETE("/:listId", api.DeleteListHandler)          // delete list
 	listServer.PUT("/:listId/item", api.AddToListHandler)         // add to list
-	listServer.DELETE("/:listId/item", api.DeleteFromListHandler) // remove from list
+	listServer.DELETE("/:listId/item/:itemId", api.DeleteFromListHandler) // remove from list
 	// reorder problems
 	// listServer.GET("/:listID/item/reorder-problems")
 }

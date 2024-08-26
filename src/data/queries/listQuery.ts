@@ -9,14 +9,14 @@ enum ListApiTags {
 export const listApi = createApi({
 	reducerPath: 'listApi',
 	baseQuery: createBaseQuery(),
-	tagTypes: [ListApiTags.Lists],
+	// tagTypes: [ListApiTags.Lists],
 	endpoints: (builder) => ({
 		getAllLists: builder.query<List[], void>({
 			query: () => ({
 				url: `/lists`,
 				method: 'GET',
 			}),
-			providesTags: [ListApiTags.Lists],
+			// providesTags: [ListApiTags.Lists],
 			transformResponse: (response: any) => {
 				return response.lists.map((list: any) => jsonToList(list));
 			}
@@ -62,13 +62,12 @@ export const listApi = createApi({
 				method: 'PUT',
 				body: { "problem_id": problemId },
 			}),
-			invalidatesTags: [ListApiTags.Lists]
+			// invalidatesTags: [ListApiTags.Lists]
 		}),
-		deleteFromList: builder.mutation<void, { listId: number; problemID: string; }>({
-			query: ({ listId, problemID }) => ({
-				url: `/lists/${listId}/item`,
-				method: 'DELETE',
-				body: { problem_id: problemID },
+		deleteFromList: builder.mutation<void, { listId: number; problemId: string; }>({
+			query: ({ listId, problemId }) => ({
+				url: `/lists/${listId}/item/${problemId}`,
+				method: 'DELETE'
 			}),
 		}),
 

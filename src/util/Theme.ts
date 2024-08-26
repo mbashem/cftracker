@@ -9,6 +9,7 @@ export default class Theme {
   bgText: string;
   navbar: string;
   btn: string;
+  btnDanger: string;
   name: string;
   table: string;
   thead: string;
@@ -19,7 +20,6 @@ export default class Theme {
   constructor(selected?: ThemesType) {
     switch (selected) {
       case ThemesType.DARK:
-        this.btn = "btn-dark";
         this.navbar = "navbar-dark bg-secondary";
         this.bg = "bg-dark";
         this.text = "text-light";
@@ -27,7 +27,9 @@ export default class Theme {
         this.table = "table-dark";
         this.thead = "thead-dark";
         this.bgSuccess = "bg-success";
+        this.btn = "btn-dark";
         this.bgDanger = "bg-danger";
+        this.btnDanger = "btn-danger"
         this.themeType = ThemesType.DARK;
         break;
       case ThemesType.LIGHT:
@@ -35,6 +37,7 @@ export default class Theme {
         this.bg = "bg-light";
         this.text = "text-dark";
         this.btn = "btn-light";
+        this.btnDanger = "btn-danger"
         this.navbar = "navbar-dark bg-dark";
         this.name = "light";
         this.table = "table-light";

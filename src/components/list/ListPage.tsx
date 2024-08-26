@@ -2,18 +2,29 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import CustomModal from "../Common/CustomModal";
 import CheckList from "../Common/Forms/CheckList";
 import useListPage from "./useListPage";
-import { useState } from "react";
-import { faPlus } from "@fortawesome/free-solid-svg-icons";
+import { useEffect, useState } from "react";
+import { faPlus, faTrash } from "@fortawesome/free-solid-svg-icons";
 import IndividualListPage from "./individual-list/IndividualListPage";
 import { faEdit } from "@fortawesome/free-regular-svg-icons";
 
 function ListPage() {
-  const { theme, activeList, lists, listClicked, createNewList, addButtonClicked } = useListPage();
-  const [newListName, setNewListName] = useState<string>("");
+  const {
+    theme,
+    activeList,
+    lists,
+    listClicked,
+    createNewList,
+    addButtonClicked,
+    updateListName,
+    deleteListButtonClicked,
+  } = useListPage();
+  const [newListName, setNewListName] = useState("");
+  const [updateListNameValue, setUpdateListNameValue] = useState("");
+  useEffect(() => setUpdateListNameValue(activeList?.name ?? ""), [activeList]);
 
   return (
     <div className="container pt-3">
-      <div className="d-flex justify-content-center w-100">
+      <div className="d-flex align-items-center justify-content-between w-100">
         <div className="flex-fill">
           <CheckList
             items={lists.map((list) => list.name)}
@@ -25,7 +36,7 @@ function ListPage() {
             btnClass="p-1 btn"
           />
         </div>
-        
+
         <div className="flex-fill">
           <CustomModal title="Create New List" theme={theme} button={<FontAwesomeIcon icon={faPlus} />}>
             {({ closeModal }) => (
@@ -57,13 +68,54 @@ function ListPage() {
             )}
           </CustomModal>
         </div>
-        <div className="flex-fill">
-          <button type="button" className={"btn " + theme.btn} onClick={addButtonClicked}>
-            <FontAwesomeIcon icon={faEdit} />
-          </button>
-        </div>
+        {activeList && (
+          <div className="flex-fill d-flex justify-content-end">
+            <button type="button" className={"btn " + theme.btn} onClick={addButtonClicked}>
+              <FontAwesomeIcon icon={faPlus} /> Add Problem
+            </button>
+            <CustomModal title={`Update ${activeList?.name}:`} theme={theme} button={<FontAwesomeIcon icon={faEdit} />}>
+              {({ closeModal }) => (
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    updateListName(updateListNameValue).then(() => {
+                      closeModal();
+                    });
+                  }}
+                >
+                  <div className="form-group">
+                    <div className="d-flex align-items-center justify-content-between">
+                      <label htmlFor="listName">Enter New Name</label>
+                      <button
+                        type="button"
+                        className={"btn " + theme.btnDanger}
+                        onClick={() => {
+                          deleteListButtonClicked().then(() => closeModal());
+                        }}
+                      >
+                        <FontAwesomeIcon icon={faTrash} />
+                      </button>
+                    </div>
+                    <input
+                      type="text"
+                      className="form-control mt-1"
+                      id="listName"
+                      placeholder="Enter list name"
+                      value={updateListNameValue}
+                      onChange={(e) => setUpdateListNameValue(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <button type="submit" className="btn btn-primary mt-2">
+                    Update List
+                  </button>
+                </form>
+              )}
+            </CustomModal>
+          </div>
+        )}
       </div>
-      <div className="pt-3">{activeList && <IndividualListPage id={activeList.id} />}</div>
+      <div className="pt-3">{activeList && <IndividualListPage listId={activeList.id} />}</div>
     </div>
   );
 }

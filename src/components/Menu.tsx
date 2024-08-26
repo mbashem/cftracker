@@ -42,14 +42,14 @@ const Menu = (): JSX.Element => {
     fetchSharedProblemList(dispatch);
   }, []);
 
-  const { popErrorToast, popGeneralToast } = useToast();
+  const { showErrorToast, showGeneralToast } = useToast();
 
   const InvokeErrorToast = (message: string) => {
     if (message.length === 0) {
       return;
     }
     console.log(message);
-    popErrorToast(message);
+    showErrorToast(message);
   };
 
   useEffect(() => {
@@ -76,7 +76,7 @@ const Menu = (): JSX.Element => {
   };
 
   const submitUser = () => {
-    popGeneralToast(`Handles entered: ${handle}`);
+    showGeneralToast(`Handles entered: ${handle}`);
     fetchUsers(dispatch, handle);
   };
 

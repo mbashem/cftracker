@@ -8,7 +8,7 @@ import useUser from "./useUser";
 function useCallbackHandler() {
 	const { handleGithubCallback } = useUser();
 	const location = useLocation();
-	const { popErrorToast, popGeneralToast } = useToast();
+	const { showErrorToast, showGeneralToast } = useToast();
 	const navigate = useNavigate();
 
 	useEffect(() => {
@@ -16,9 +16,9 @@ function useCallbackHandler() {
 		const code = query.get('code');
 
 		if (matchPath(location.pathname, "/callback/auth-gh") && code !== null) {
-			popGeneralToast("Authenticating...");
+			showGeneralToast("Authenticating...");
 			handleGithubCallback(code)
-				.catch(err => popErrorToast(err?.message ?? "Authentication failed!"));
+				.catch(err => showErrorToast(err?.message ?? "Authentication failed!"));
 			navigate(Path.CONTESTS);
 		}
 
