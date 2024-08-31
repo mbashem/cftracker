@@ -4,7 +4,7 @@ import { ATTEMPTED_PROBLEMS, SOLVED_PROBLEMS } from "../../util/constants";
 import Problem from "../../types/CF/Problem";
 import Theme from "../../util/Theme";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faAdd } from "@fortawesome/free-solid-svg-icons";
+import { faAdd, faTrash } from "@fortawesome/free-solid-svg-icons";
 
 interface ProblemListProps {
   problems: Problem[];
@@ -14,7 +14,9 @@ interface ProblemListProps {
   solved: Set<string>;
   attempted: Set<string>;
   showAddToList: boolean;
+  problemsAddedToList: Set<string>;
   addToList: (id: string) => void;
+  deleteFromList: (id: string) => void;
 }
 
 const ProblemList = (props: ProblemListProps): JSX.Element => {
@@ -56,11 +58,24 @@ const ProblemList = (props: ProblemListProps): JSX.Element => {
         <td className={"rating p-2 " + classes}>{problem.rating > 0 ? problem.rating : "Not Rated(0)"}</td>
 
         <td className={"solvedCount p-2 " + classes}>{problem.solvedCount}</td>
-        <td className="p-2">
-          <button type="button" className={"btn " + props.theme.btn} onClick={() => props.addToList(problem.id)}>
-            <FontAwesomeIcon icon={faAdd} />
-          </button>
-        </td>
+        {props.showAddToList && (
+          <td className="p-2">
+            {" "}
+            {props.problemsAddedToList.has(problem.id) ? (
+              <button
+                type="button"
+                className={"btn " + props.theme.btnDanger}
+                onClick={() => props.deleteFromList(problem.id)}
+              >
+                <FontAwesomeIcon icon={faTrash} />
+              </button>
+            ) : (
+              <button type="button" className={"btn " + props.theme.btn} onClick={() => props.addToList(problem.id)}>
+                <FontAwesomeIcon icon={faAdd} />
+              </button>
+            )}
+          </td>
+        )}
       </tr>
     );
   };

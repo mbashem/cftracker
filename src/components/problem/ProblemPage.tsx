@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSort, faSortDown, faSortUp } from "@fortawesome/free-solid-svg-icons";
 import { sortByRating, sortBySolveCount, sortByContestId, SortOrder, SortProblemBy } from "../../util/sortMethods";
@@ -15,6 +15,7 @@ import { StorageService } from "../../util/StorageService";
 import useProblemPage from "./useProblemPage";
 import Loading from "../Common/Loading";
 
+// TODO: Convert whole Problem Page to hooks pattern
 const ProblemPage = () => {
   const state = useAppSelector((state) => {
     return {
@@ -23,7 +24,7 @@ const ProblemPage = () => {
     };
   });
 
-  const { theme, submissions, listId, searchText, setSearchText, addProblemToList } = useProblemPage();
+  const { theme, submissions, listId, searchText, setSearchText, addProblemToList, problemsAddedTolist, deleteProblemFromList } = useProblemPage();
 
   enum SaveProblem {
     SolveStatus = "PROBLEM_SOLVE_STATUS",
@@ -173,11 +174,9 @@ const ProblemPage = () => {
     return problemList.problems.slice(lo, high);
   };
 
-  const nuetral = <FontAwesomeIcon icon={faSort} />;
-
-  const less = <FontAwesomeIcon icon={faSortUp} />;
-
-  const greater = <FontAwesomeIcon icon={faSortDown} />;
+  const nuetral = useMemo(() => <FontAwesomeIcon icon={faSort} />, []);
+  const less = useMemo(() => <FontAwesomeIcon icon={faSortUp} />, []);
+  const greater = useMemo(() => <FontAwesomeIcon icon={faSortDown} />, []);
 
   return (
     <>
@@ -304,7 +303,7 @@ const ProblemPage = () => {
                         </div>
                       </div>
                     </th>
-                    {listId && <th scope="col">Add To List</th>}
+                    {listId !== undefined && <th scope="col">Add To List</th>}
                   </tr>
                 </thead>
                 <tbody className={theme.bg}>
@@ -317,6 +316,8 @@ const ProblemPage = () => {
                     theme={theme}
                     showAddToList={listId !== undefined}
                     addToList={(id) => addProblemToList(id)}
+                    problemsAddedToList={problemsAddedTolist}
+                    deleteFromList={deleteProblemFromList}
                   />
                 </tbody>
               </table>

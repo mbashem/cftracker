@@ -5,6 +5,19 @@ function useListApi() {
 	const [addProblemToListMutation] = listApi.useAddToListMutation();
 	const [deleteListMutation] = listApi.useDeleteListMutation();
 	const [updateListMutation] = listApi.useUpdateListNameMutation();
+	const [fetchIndividualListQuery] = listApi.useLazyGetListQuery();
+	const [deleteProblemFromListMutation] = listApi.useDeleteFromListMutation();
+
+	async function getList(listId: number) {
+		try {
+			const list = await fetchIndividualListQuery(listId).unwrap();
+			return list.items;
+		} catch (err: any) {
+			console.log(err);
+			let errorMessage = err?.data?.error ?? "Couldn't find the list";
+			throw new Error(errorMessage);
+		}
+	}
 
 	async function createList(listName: string) {
 		try {
@@ -23,7 +36,18 @@ function useListApi() {
 			return list;
 		} catch (err: any) {
 			console.log(err);
-			let errorMessage = err?.data?.error ?? "Failed to create a list!";
+			let errorMessage = err?.data?.error ?? "Failed to add to list!";
+			throw new Error(errorMessage);
+		}
+	}
+
+	async function deleteProblemFromList(listId: number, problemId: string) {
+		try {
+			await deleteProblemFromListMutation({ listId, problemId }).unwrap();
+			return;
+		} catch (err: any) {
+			console.log(err);
+			let errorMessage = err?.data?.error ?? "Failed to delete from list!";
 			throw new Error(errorMessage);
 		}
 	}
@@ -50,7 +74,7 @@ function useListApi() {
 		}
 	}
 
-	return { createList, addProblemToList, deleteList, updateListName, useGetAllListsQuery: listApi.useGetAllListsQuery };
+	return { getList, createList, addProblemToList, deleteProblemFromList, deleteList, updateListName, useGetAllListsQuery: listApi.useGetAllListsQuery, useGetListQuery: listApi.useGetListQuery };
 }
 
 export default useListApi;

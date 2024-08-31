@@ -29,7 +29,7 @@ export default class Theme {
         this.bgSuccess = "bg-success";
         this.btn = "btn-dark";
         this.bgDanger = "bg-danger";
-        this.btnDanger = "btn-danger"
+        this.btnDanger = "btn-danger";
         this.themeType = ThemesType.DARK;
         break;
       case ThemesType.LIGHT:
@@ -37,7 +37,7 @@ export default class Theme {
         this.bg = "bg-light";
         this.text = "text-dark";
         this.btn = "btn-light";
-        this.btnDanger = "btn-danger"
+        this.btnDanger = "btn-danger";
         this.navbar = "navbar-dark bg-dark";
         this.name = "light";
         this.table = "table-light";

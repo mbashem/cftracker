@@ -6,16 +6,30 @@ import useList from "../../data/hooks/useListApi";
 import useAppSearchParams from "../../hooks/useSearchParam";
 import useProblemsStore from "../../data/hooks/useProblemsStore";
 import { useAppSelector } from "../../data/store";
+import useToast from "../../hooks/useToast";
 
 function useProblemPage() {
 	const [searchText, setSearchTextInternal] = useState<string>("");
 	const { searchParams, updateSearchParam, deleteSearchParam } = useAppSearchParams();
-	const [listId, setListId] = useState<number | undefined>();
+	const [listId, setListId] = useState<number | undefined>(undefined);
 	const { submissions } = useSubmissionsStore();
 	const { theme } = useTheme();
-	const { addProblemToList: addProblemToListQuery } = useList();
+	const api = useList();
 	const { problemList } = useProblemsStore();
+	const [problemsAddedTolist, setProblemsAddedToList] = useState<Set<string>>(new Set());
 	const appState = useAppSelector((state) => state.appState);
+	const { showErrorToast } = useToast();
+
+	useEffect(() => {
+		if (listId === undefined) return;
+
+		api.getList(listId).then(res => {
+			setProblemsAddedToList(new Set(res.map(listItem => listItem.problemId)));
+		}).catch(err => {
+			showErrorToast(err?.message ?? "Failed to find allready added problems");
+		});
+
+	}, [listId]);
 
 	useEffect(() => {
 		let listIdString = searchParams.get(SearchKeys.ListId);
@@ -33,15 +47,32 @@ function useProblemPage() {
 	async function addProblemToList(problemId: string) {
 		if (listId === undefined) throw new Error("ListId is undefined");
 		try {
-			let res = await addProblemToListQuery(listId, problemId);
+			let res = await api.addProblemToList(listId, problemId);
 			console.log(res);
+			let newProblemsAddedToList = new Set(problemsAddedTolist);
+			newProblemsAddedToList.add(problemId);
+			setProblemsAddedToList(newProblemsAddedToList);
 			return;
 		} catch (err) {
 			throw err;
 		}
 	}
 
-	return { theme, searchText, listId, submissions, setSearchText, addProblemToList, appState, problemList };
+	async function deleteProblemFromList(problemId: string) {
+		if (listId === undefined) throw new Error("ListId is undefined");
+		try {
+			let res = await api.deleteProblemFromList(listId, problemId);
+			console.log(res);
+			let newProblemsAddedToList = new Set(problemsAddedTolist);
+			newProblemsAddedToList.delete(problemId);
+			setProblemsAddedToList(newProblemsAddedToList);
+			return;
+		} catch (err) {
+			throw err;
+		}
+	}
+
+	return { theme, searchText, listId, submissions, setSearchText, addProblemToList, appState, problemList, problemsAddedTolist, deleteProblemFromList };
 }
 
 export default useProblemPage;
