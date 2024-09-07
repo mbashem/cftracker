@@ -2,32 +2,32 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import CustomModal from "../Common/CustomModal";
 import CheckList from "../Common/Forms/CheckList";
 import useListPage from "./useListPage";
-import { faEdit } from "@fortawesome/free-regular-svg-icons";
 import { useState } from "react";
+import { faPlus } from "@fortawesome/free-solid-svg-icons";
+import IndividualListPage from "./individual-list/IndividualListPage";
+import { faEdit } from "@fortawesome/free-regular-svg-icons";
 
 function ListPage() {
-  const { theme, activeList, lists, listClicked, createNewList } = useListPage();
+  const { theme, activeList, lists, listClicked, createNewList, addButtonClicked } = useListPage();
   const [newListName, setNewListName] = useState<string>("");
 
   return (
     <div className="container pt-3">
-      <div className="row justify-content-center w-100">
-        <div className="col">
+      <div className="d-flex justify-content-center w-100">
+        <div className="flex-fill">
           <CheckList
             items={lists.map((list) => list.name)}
-            active={new Set<string>(activeList === undefined ? [] : [activeList])}
+            active={new Set<string>(activeList === undefined ? [] : [activeList.name])}
             name={""}
-            onClick={(str) => {
-              console.log(str);
-              listClicked(str);
-            }}
+            onClick={(str) => listClicked(str)}
             activeClass="btn-secondary active"
             inactiveClass="btn-secondary"
             btnClass="p-1 btn"
           />
         </div>
-        <div className="col">
-          <CustomModal title="Create New List" theme={theme} button={<FontAwesomeIcon icon={faEdit} />}>
+        
+        <div className="flex-fill">
+          <CustomModal title="Create New List" theme={theme} button={<FontAwesomeIcon icon={faPlus} />}>
             {({ closeModal }) => (
               <form
                 onSubmit={(e) => {
@@ -57,7 +57,13 @@ function ListPage() {
             )}
           </CustomModal>
         </div>
+        <div className="flex-fill">
+          <button type="button" className={"btn " + theme.btn} onClick={addButtonClicked}>
+            <FontAwesomeIcon icon={faEdit} />
+          </button>
+        </div>
       </div>
+      <div className="pt-3">{activeList && <IndividualListPage id={activeList.id} />}</div>
     </div>
   );
 }

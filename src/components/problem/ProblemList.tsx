@@ -3,6 +3,8 @@ import { getProblemUrl } from "../../util/util";
 import { ATTEMPTED_PROBLEMS, SOLVED_PROBLEMS } from "../../util/constants";
 import Problem from "../../types/CF/Problem";
 import Theme from "../../util/Theme";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faAdd } from "@fortawesome/free-solid-svg-icons";
 
 interface ProblemListProps {
   problems: Problem[];
@@ -11,6 +13,8 @@ interface ProblemListProps {
   theme: Theme;
   solved: Set<string>;
   attempted: Set<string>;
+  showAddToList: boolean;
+  addToList: (id: string) => void;
 }
 
 const ProblemList = (props: ProblemListProps): JSX.Element => {
@@ -24,19 +28,17 @@ const ProblemList = (props: ProblemListProps): JSX.Element => {
     let classes = props.theme.bg;
     let problemState = getState(problem);
     if (problemState === SOLVED_PROBLEMS) classes = props.theme.bgSuccess;
-    else if (problemState === ATTEMPTED_PROBLEMS)
-      classes = props.theme.bgDanger;
+    else if (problemState === ATTEMPTED_PROBLEMS) classes = props.theme.bgDanger;
     return (
       <tr key={problem.id}>
-        <td className={"id font-weight-bold p-2 " + classes}>
-          {props.pageSelected * props.perPage + index + 1}
-        </td>
+        <td className={"id font-weight-bold p-2 " + classes}>{props.pageSelected * props.perPage + index + 1}</td>
         <td className={"id font-weight-bold " + classes}>
           <a
             className={"text-decoration-none p-2 " + " " + props.theme.text}
             target="_blank"
             rel="noreferrer"
-            href={getProblemUrl(problem.contestId, problem.index)}>
+            href={getProblemUrl(problem.contestId, problem.index)}
+          >
             {problem.id}
           </a>
         </td>
@@ -46,15 +48,19 @@ const ProblemList = (props: ProblemListProps): JSX.Element => {
             target="_blank"
             rel="noreferrer"
             title={problem.tags.toString()}
-            href={getProblemUrl(problem.contestId, problem.index)}>
+            href={getProblemUrl(problem.contestId, problem.index)}
+          >
             {problem.name}
           </a>
         </td>
-        <td className={"rating p-2 " + classes}>
-          {problem.rating > 0 ? problem.rating : "Not Rated(0)"}
-        </td>
+        <td className={"rating p-2 " + classes}>{problem.rating > 0 ? problem.rating : "Not Rated(0)"}</td>
 
         <td className={"solvedCount p-2 " + classes}>{problem.solvedCount}</td>
+        <td className="p-2">
+          <button type="button" className={"btn " + props.theme.btn} onClick={() => props.addToList(problem.id)}>
+            <FontAwesomeIcon icon={faAdd} />
+          </button>
+        </td>
       </tr>
     );
   };

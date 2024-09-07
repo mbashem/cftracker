@@ -26,7 +26,7 @@ const (
 	failedToReorderItems  API_MESSAGE = "Failed to reorder items"
 	failedToGetListItems  API_MESSAGE = "Failed to get list items"
 
-	invalidListID   API_MESSAGE = "Invalid list ID"
+	invalidListId   API_MESSAGE = "Invalid list Id"
 	invalidListItem API_MESSAGE = "Invalid list item"
 	invalidFormat   API_MESSAGE = "Invalid format"
 
@@ -48,7 +48,7 @@ func NewAPI(listRepository *Repository, listItemsReposiotry *items.Repository) *
 
 // Create a new list
 func (api *API) CreateListHandler(context *gin.Context) {
-	userID := context.GetInt64(middlewares.UserIdKey)
+	userId := context.GetInt64(middlewares.UserIdKey)
 	var list List
 	if err := context.ShouldBindJSON(&list); err != nil {
 		// context.JSON(http.StatusBadRequest, gin.H{"error": invalidFormat})
@@ -57,7 +57,7 @@ func (api *API) CreateListHandler(context *gin.Context) {
 	}
 
 	// TODO: LIMIT number of list a user can create
-	list.UserID = userID
+	list.UserId = userId
 	if err := api.listRepository.Create(&list); err != nil {
 		// context.JSON(http.StatusInternalServerError, gin.H{"error": failedToCreateList})
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -68,8 +68,8 @@ func (api *API) CreateListHandler(context *gin.Context) {
 
 // Update list name
 func (api *API) UpdateListNameHandler(context *gin.Context) {
-	userID := context.GetInt64(middlewares.UserIdKey)
-	listID, _ := strconv.ParseInt(context.Param("id"), 10, 64)
+	userId := context.GetInt64(middlewares.UserIdKey)
+	listId, _ := strconv.ParseInt(context.Param("id"), 10, 64)
 	var form struct {
 		Name string `json:"name"`
 	}
@@ -80,8 +80,8 @@ func (api *API) UpdateListNameHandler(context *gin.Context) {
 		return
 	}
 
-	list, err := api.listRepository.GetByID(listID)
-	if err != nil || list.UserID != userID {
+	list, err := api.listRepository.GetById(listId)
+	if err != nil || list.UserId != userId {
 		context.JSON(http.StatusNotFound, gin.H{"error": listDoesNotExist})
 		return
 	}
@@ -97,16 +97,16 @@ func (api *API) UpdateListNameHandler(context *gin.Context) {
 
 // Delete a list
 func (api *API) DeleteListHandler(context *gin.Context) {
-	userID := context.GetInt64(middlewares.UserIdKey)
-	listID, _ := strconv.ParseInt(context.Param("id"), 10, 64)
-	list, err := api.listRepository.GetByID(listID)
+	userId := context.GetInt64(middlewares.UserIdKey)
+	listId, _ := strconv.ParseInt(context.Param("id"), 10, 64)
+	list, err := api.listRepository.GetById(listId)
 
-	if err != nil || list.UserID != userID {
+	if err != nil || list.UserId != userId {
 		context.JSON(http.StatusNotFound, gin.H{"error": listDoesNotExist})
 		return
 	}
 
-	if err := api.listRepository.Delete(listID); err != nil {
+	if err := api.listRepository.Delete(listId); err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": failedToDeleteList})
 		return
 	}
@@ -116,8 +116,8 @@ func (api *API) DeleteListHandler(context *gin.Context) {
 
 // Get all lists
 func (api *API) GetAllLists(context *gin.Context) {
-	userID := context.GetInt64(middlewares.UserIdKey)
-	lists, err := api.listRepository.GetAllListByUserID(userID)
+	userId := context.GetInt64(middlewares.UserIdKey)
+	lists, err := api.listRepository.GetAllListByUserId(userId)
 	if err != nil {
 		// context.JSON(http.StatusInternalServerError, gin.H{"error": failedToFindList})
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -128,20 +128,22 @@ func (api *API) GetAllLists(context *gin.Context) {
 
 // Add a problem to a list
 func (api *API) AddToListHandler(context *gin.Context) {
-	userID := context.GetInt64(middlewares.UserIdKey)
+	userId := context.GetInt64(middlewares.UserIdKey)
 
+	listId, _ := strconv.ParseInt(context.Param("listId"), 10, 64)
 	var item items.ListItem
 	if err := context.ShouldBindJSON(&item); err != nil {
 		context.JSON(http.StatusBadRequest, gin.H{"error": invalidFormat})
 		return
 	}
 
-	list, err := api.listRepository.GetByID(item.ListID)
-	if err != nil || list.UserID != userID {
+	list, err := api.listRepository.GetById(listId)
+	if err != nil || list.UserId != userId {
 		context.JSON(http.StatusNotFound, gin.H{"error": listDoesNotExist})
 		return
 	}
 
+	item.ListId = listId
 	if err := api.listItemsRepository.Create(&item); err != nil {
 		// context.JSON(http.StatusInternalServerError, gin.H{"error": failedToAddItemToList})
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -153,7 +155,7 @@ func (api *API) AddToListHandler(context *gin.Context) {
 
 // Delete a problem from a list
 func (api *API) DeleteFromListHandler(context *gin.Context) {
-	userID := context.GetInt64(middlewares.UserIdKey)
+	userId := context.GetInt64(middlewares.UserIdKey)
 	var item items.ListItem
 	if err := context.ShouldBindJSON(&item); err != nil {
 		// context.JSON(http.StatusBadRequest, gin.H{"error": invalidListItem})
@@ -161,8 +163,8 @@ func (api *API) DeleteFromListHandler(context *gin.Context) {
 		return
 	}
 
-	list, err := api.listRepository.GetByID(item.ListID)
-	if err != nil || list.UserID != userID {
+	list, err := api.listRepository.GetById(item.ListId)
+	if err != nil || list.UserId != userId {
 		// context.JSON(http.StatusNotFound, gin.H{"error": listDoesNotExist})
 		context.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
@@ -179,17 +181,17 @@ func (api *API) DeleteFromListHandler(context *gin.Context) {
 
 // Get list with items
 func (api *API) GetListHandler(context *gin.Context) {
-	userID := context.GetInt64(middlewares.UserIdKey)
-	listID, _ := strconv.ParseInt(context.Param("listID"), 10, 64)
-	list, err := api.listRepository.GetByID(listID)
-	if err != nil || list.UserID != userID {
+	userId := context.GetInt64(middlewares.UserIdKey)
+	listId, _ := strconv.ParseInt(context.Param("listId"), 10, 64)
+	list, err := api.listRepository.GetById(listId)
+	if err != nil || list.UserId != userId {
 		// log.Println("Error: ", err)
 		// context.JSON(http.StatusNotFound, gin.H{"error": listDoesNotExist})
 		context.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
 	}
 
-	items, err := api.listItemsRepository.GetItems(listID)
+	items, err := api.listItemsRepository.GetItems(listId)
 	if err != nil {
 		// context.JSON(http.StatusInternalServerError, gin.H{"error": failedToGetListItems})
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -201,13 +203,13 @@ func (api *API) GetListHandler(context *gin.Context) {
 
 // Reorder problems in a list
 // func reorderListItemsHandler(c *gin.Context) {
-// 	listID, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+// 	listId, _ := strconv.ParseInt(c.Param("id"), 10, 64)
 // 	var newOrder []int64
 // 	if err := c.ShouldBindJSON(&newOrder); err != nil {
 // 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 // 		return
 // 	}
-// 	if err := reorderListItems(listID, newOrder); err != nil {
+// 	if err := reorderListItems(listId, newOrder); err != nil {
 // 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to reorder items"})
 // 		return
 // 	}

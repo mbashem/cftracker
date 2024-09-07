@@ -2,15 +2,29 @@ import { useState } from "react";
 import useTheme from "../../data/hooks/useTheme";
 import useToast from "../../hooks/useToast";
 import useList from "../../hooks/useList";
+import { List } from "../../types/list";
+import { listApi } from "../../data/queries/listQuery";
+import { SearchKeys } from "../../util/constants";
+import useAppSearchParams from "../../hooks/useSearchParam";
+import { useNavigate } from "react-router";
+import { Path } from "../../util/route/path";
 
 function useListPage() {
 	const { theme } = useTheme();
-	const [activeList, setActiveList] = useState<string | undefined>();
+	const [activeList, setActiveList] = useState<List | undefined>();
 	const { popGeneralToast, popErrorToast } = useToast();
-	const { lists, isAllListLoading, refetchList, errorGettingAllList, createList } = useList();
+	const { createList } = useList();
+	const { data: lists, error, isLoading, refetch } = listApi.useGetAllListsQuery();
+	const { searchParams, updateSearchParam, deleteSearchParam } = useAppSearchParams();
+	const navigate = useNavigate();
 
 	function listClicked(listName: string) {
-		setActiveList(listName);
+		let list = lists?.find(list => list.name === listName);
+		setActiveList(list);
+		if (list !== undefined)
+			updateSearchParam(SearchKeys.ListId, list.id.toString());
+		else
+			deleteSearchParam(SearchKeys.ListId);
 	}
 
 	async function createNewList(listName: string) {
@@ -20,7 +34,7 @@ function useListPage() {
 		try {
 			const list = await createList(listName);
 			console.log(list);
-			refetchList();
+			// refetchList();
 		} catch (err: any) {
 			console.log(err);
 			popErrorToast(err?.message ?? "Failed to create the list!");
@@ -28,12 +42,21 @@ function useListPage() {
 		}
 	}
 
+	function addButtonClicked() {
+		if (activeList === undefined) return;
+
+		navigate(Path.PROBLEMS + `?${SearchKeys.ListId}=${activeList.id}`);
+	}
+
 	return {
-		lists,
+		lists: lists ?? [],
 		theme,
 		listClicked,
 		activeList,
-		createNewList
+		createNewList,
+		error,
+		isLoading,
+		addButtonClicked
 	};
 }
 

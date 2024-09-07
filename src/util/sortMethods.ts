@@ -2,6 +2,18 @@ import Comparator from "./Comparator";
 import Problem, { ProblemLite } from "../types/CF/Problem";
 import Submission, { Verdict } from "../types/CF/Submission";
 
+export enum SortOrder {
+  Ascending,
+  Descending
+}
+
+export enum SortProblemBy {
+  Rating,
+  SolveCount,
+  ContestId,
+  Id
+}
+
 export const sortByRating = (a: Problem, b: Problem): number => {
   if (a.rating < b.rating) return -1;
   if (a.rating > b.rating) return 1;

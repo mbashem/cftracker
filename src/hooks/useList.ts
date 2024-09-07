@@ -2,7 +2,8 @@ import { listApi } from "../data/queries/listQuery";
 
 function useList() {
 	const [createListQuery] = listApi.useCreateListMutation();
-	const { data: lists, error: errorGettingAllList, isLoading: isAllListLoading, refetch: refetchList } = listApi.useGetAllListsQuery();
+	const [addProblemToListQuery] = listApi.useAddToListMutation();
+
 
 	async function createList(listName: string) {
 		try {
@@ -15,7 +16,18 @@ function useList() {
 		}
 	}
 
-	return { createList, lists: lists ?? [], errorGettingAllList, isAllListLoading, refetchList };
+	async function addProblemToList(listId: number, problemId: string) {
+		try {
+			const list: any = await addProblemToListQuery({listId, problemId}).unwrap();
+			return list;
+		} catch (err: any) {
+			console.log(err);
+			let errorMessage = err?.data?.error ?? "Failed to create a list!";
+			throw new Error(errorMessage);
+		}
+	}
+
+	return { createList, addProblemToList };
 }
 
 export default useList;

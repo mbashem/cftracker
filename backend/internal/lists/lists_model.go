@@ -7,8 +7,8 @@ import (
 )
 
 type List struct {
-	ID        int64     `json:"id"`
-	UserID    int64     `json:"user_id"`
+	Id        int64     `json:"id"`
+	UserId    int64     `json:"user_id"`
 	Name      string    `json:"name" validate:"required"`
 	CreatedAt time.Time `json:"created_at"`
 }

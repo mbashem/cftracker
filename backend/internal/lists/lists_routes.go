@@ -18,11 +18,11 @@ func RegisterRoutes(server *gin.Engine) {
 
 	listServer.GET("", api.GetAllLists)                           // get all lists
 	listServer.POST("", api.CreateListHandler)                    // create list
-	listServer.GET("/:listID", api.GetListHandler)                // get list (with items)
-	listServer.PUT("/:listID", api.UpdateListNameHandler)         // update list name
-	listServer.DELETE("/:listID", api.DeleteListHandler)          // delete list
-	listServer.PUT("/:listID/item", api.AddToListHandler)         // add to list
-	listServer.DELETE("/:listID/item", api.DeleteFromListHandler) // remove from list
+	listServer.GET("/:listId", api.GetListHandler)                // get list (with items)
+	listServer.PUT("/:listId", api.UpdateListNameHandler)         // update list name
+	listServer.DELETE("/:listId", api.DeleteListHandler)          // delete list
+	listServer.PUT("/:listId/item", api.AddToListHandler)         // add to list
+	listServer.DELETE("/:listId/item", api.DeleteFromListHandler) // remove from list
 	// reorder problems
 	// listServer.GET("/:listID/item/reorder-problems")
 }

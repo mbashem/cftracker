@@ -18,7 +18,7 @@ const userSlice = createSlice({
   name: 'user',
   initialState: userInitialState,
   reducers: {
-    addHandle(state, action: PayloadAction<{ id: number; handle: string }>) {
+    addHandle(state, action: PayloadAction<{ id: number; handle: string; }>) {
       if (action.payload.id < state.id) {
         return;
       }
@@ -28,7 +28,7 @@ const userSlice = createSlice({
       state.handles.push(action.payload.handle);
       state.id = action.payload.id;
     },
-    removeHandle(state, action: PayloadAction<{ handle: string }>) {
+    removeHandle(state, action: PayloadAction<{ handle: string; }>) {
       state.handles = state.handles.filter((handle) => handle !== action.payload.handle);
     },
     removeAllHandle(state) {
@@ -37,11 +37,12 @@ const userSlice = createSlice({
     },
     setUser(state, action: PayloadAction<User>) {
       state.user = action.payload;
+      state.error = "";
     },
     removeUser(state) {
       state.user = undefined;
     },
-    errorAuthenticatingUser(state, action: PayloadAction<{ errorMessage: string }>) {
+    errorAuthenticatingUser(state, action: PayloadAction<{ errorMessage: string; }>) {
       state.error = action.payload.errorMessage;
     },
   },

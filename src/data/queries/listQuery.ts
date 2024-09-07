@@ -1,36 +1,51 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
 import { createBaseQuery } from './baseQuery';
-import { List, ListWithItem } from '../../types/list';
+import { jsonToList, jsonToListItem, List, ListWithItem } from '../../types/list';
+
+enum ListApiTags {
+	Lists = "Lists"
+}
 
 export const listApi = createApi({
 	reducerPath: 'listApi',
 	baseQuery: createBaseQuery(),
+	tagTypes: [ListApiTags.Lists],
 	endpoints: (builder) => ({
 		getAllLists: builder.query<List[], void>({
 			query: () => ({
 				url: `/lists`,
 				method: 'GET',
 			}),
+			providesTags: [ListApiTags.Lists],
 			transformResponse: (response: any) => {
-				return response.lists;
+				return response.lists.map((list: any) => jsonToList(list));
 			}
 		}),
-		createList: builder.mutation<List, Partial<List>>({
+		createList: builder.mutation<List, Partial<List> & Pick<List, 'name'>>({
 			query: (body) => ({
 				url: `/lists`,
 				method: 'POST',
 				body,
 			}),
+			transformResponse: (response: any) => {
+				return jsonToList(response.list);
+			}
 		}),
 		getList: builder.query<ListWithItem, number>({
 			query: (listID) => ({
 				url: `/lists/${listID}`,
 				method: 'GET',
 			}),
+			transformResponse: (response: any) => {
+				return {
+					...jsonToList(response.list),
+					items: response.items.map((item: any) => jsonToListItem(item))
+				};
+			}
 		}),
-		updateListName: builder.mutation<void, { listID: number; name: string; }>({
-			query: ({ listID, name }) => ({
-				url: `/lists/${listID}`,
+		updateListName: builder.mutation<void, { listId: number; name: string; }>({
+			query: ({ listId, name }) => ({
+				url: `/lists/${listId}`,
 				method: 'PUT',
 				body: { name },
 			}),
@@ -41,16 +56,17 @@ export const listApi = createApi({
 				method: 'DELETE',
 			}),
 		}),
-		addToList: builder.mutation<void, { listID: number; item: ListItem; }>({
-			query: ({ listID, item }) => ({
-				url: `/lists/${listID}/item`,
+		addToList: builder.mutation<void, { listId: number; problemId: string; }>({
+			query: ({ listId, problemId }) => ({
+				url: `/lists/${listId}/item`,
 				method: 'PUT',
-				body: item,
+				body: { "problem_id": problemId },
 			}),
+			invalidatesTags: [ListApiTags.Lists]
 		}),
-		deleteFromList: builder.mutation<void, { listID: number; problemID: string; }>({
-			query: ({ listID, problemID }) => ({
-				url: `/lists/${listID}/item`,
+		deleteFromList: builder.mutation<void, { listId: number; problemID: string; }>({
+			query: ({ listId, problemID }) => ({
+				url: `/lists/${listId}/item`,
 				method: 'DELETE',
 				body: { problem_id: problemID },
 			}),
