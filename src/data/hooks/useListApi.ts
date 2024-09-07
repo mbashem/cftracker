@@ -8,10 +8,10 @@ function useListApi() {
 	const [fetchIndividualListQuery] = listApi.useLazyGetListQuery();
 	const [deleteProblemFromListMutation] = listApi.useDeleteFromListMutation();
 
-	async function getList(listId: number) {
+	async function getListWithItems(listId: number) {
 		try {
 			const list = await fetchIndividualListQuery(listId).unwrap();
-			return list.items;
+			return list;
 		} catch (err: any) {
 			console.log(err);
 			let errorMessage = err?.data?.error ?? "Couldn't find the list";
@@ -74,7 +74,7 @@ function useListApi() {
 		}
 	}
 
-	return { getList, createList, addProblemToList, deleteProblemFromList, deleteList, updateListName, useGetAllListsQuery: listApi.useGetAllListsQuery, useGetListQuery: listApi.useGetListQuery };
+	return { getListWithItems, createList, addProblemToList, deleteProblemFromList, deleteList, updateListName, useGetAllListsQuery: listApi.useGetAllListsQuery, useGetListQuery: listApi.useGetListQuery };
 }
 
 export default useListApi;

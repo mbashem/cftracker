@@ -7,11 +7,13 @@ import useAppSearchParams from "../../hooks/useSearchParam";
 import useProblemsStore from "../../data/hooks/useProblemsStore";
 import { useAppSelector } from "../../data/store";
 import useToast from "../../hooks/useToast";
+import { List } from "../../types/list";
 
 function useProblemPage() {
 	const [searchText, setSearchTextInternal] = useState<string>("");
 	const { searchParams, updateSearchParam, deleteSearchParam } = useAppSearchParams();
 	const [listId, setListId] = useState<number | undefined>(undefined);
+	const [list, setList] = useState<List | undefined>(undefined);
 	const { submissions } = useSubmissionsStore();
 	const { theme } = useTheme();
 	const api = useList();
@@ -23,8 +25,9 @@ function useProblemPage() {
 	useEffect(() => {
 		if (listId === undefined) return;
 
-		api.getList(listId).then(res => {
-			setProblemsAddedToList(new Set(res.map(listItem => listItem.problemId)));
+		api.getListWithItems(listId).then(listWithItems => {
+			setList(listWithItems);
+			setProblemsAddedToList(new Set(listWithItems.items.map(listItem => listItem.problemId)));
 		}).catch(err => {
 			showErrorToast(err?.message ?? "Failed to find allready added problems");
 		});
@@ -72,7 +75,7 @@ function useProblemPage() {
 		}
 	}
 
-	return { theme, searchText, listId, submissions, setSearchText, addProblemToList, appState, problemList, problemsAddedTolist, deleteProblemFromList };
+	return { theme, searchText, listId, list, submissions, setSearchText, addProblemToList, appState, problemList, problemsAddedTolist, deleteProblemFromList };
 }
 
 export default useProblemPage;

@@ -10,7 +10,7 @@ import Filter from "../Common/Filter";
 import CustomModal from "../Common/CustomModal";
 import CheckList from "../Common/Forms/CheckList";
 import Pagination from "../Common/Pagination";
-import InputRange from "../Common/Forms/InputRange";
+import InputRange from "../Common/Forms/Input/InputRange";
 import { StorageService } from "../../util/StorageService";
 import useProblemPage from "./useProblemPage";
 import Loading from "../Common/Loading";
@@ -24,7 +24,17 @@ const ProblemPage = () => {
     };
   });
 
-  const { theme, submissions, listId, searchText, setSearchText, addProblemToList, problemsAddedTolist, deleteProblemFromList } = useProblemPage();
+  const {
+    theme,
+    submissions,
+    listId,
+    list,
+    searchText,
+    setSearchText,
+    addProblemToList,
+    problemsAddedTolist,
+    deleteProblemFromList,
+  } = useProblemPage();
 
   enum SaveProblem {
     SolveStatus = "PROBLEM_SOLVE_STATUS",
@@ -303,7 +313,7 @@ const ProblemPage = () => {
                         </div>
                       </div>
                     </th>
-                    {listId !== undefined && <th scope="col">Add To List</th>}
+                    {listId !== undefined && <th scope="col">Add To {list?.name}</th>}
                   </tr>
                 </thead>
                 <tbody className={theme.bg}>

@@ -13,7 +13,7 @@ function useListPage() {
 	const [activeList, setActiveList] = useState<List | undefined>();
 	const { showGeneralToast, showErrorToast } = useToast();
 	const api = useListApi();
-	const { data: lists, error, isLoading, refetch } = api.useGetAllListsQuery();
+	const { data: lists, error, isLoading } = api.useGetAllListsQuery();
 	const { searchParams, updateSearchParam, deleteSearchParam } = useAppSearchParams();
 	const navigate = useNavigate();
 
@@ -33,7 +33,6 @@ function useListPage() {
 		try {
 			let res = await api.createList(listName);
 			console.log(res);
-			refetch();
 		}
 		catch (err: any) {
 			showErrorToast(err?.message ?? "Failed to create the list!");
@@ -47,7 +46,6 @@ function useListPage() {
 		try {
 			let res = await api.updateListName(activeList.id, newName);
 			console.log(res);
-			refetch();
 			return;
 		}
 		catch (err: any) {
@@ -67,7 +65,6 @@ function useListPage() {
 			console.log(res);
 			showGeneralToast("List deleted");
 			deleteSearchParam(SearchKeys.ListId);
-			refetch();
 		} catch (err: any) {
 			showErrorToast(err?.message ?? "Failed to delete the list");
 		}

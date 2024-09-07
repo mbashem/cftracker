@@ -9,16 +9,17 @@ interface Props {
 function useIndividualListPage({ listId }: Props) {
 	const { theme } = useTheme();
 	const api = useListApi();
-	const { data: lists, isLoading, error, refetch } = api.useGetListQuery(listId);
+	const { data: lists, isLoading, error } = api.useGetListQuery(listId);
 	const { problemsById } = useProblemsStore();
 
 	async function deleteButtonClicked(problemId: string) {
 		try {
 			const res = await api.deleteProblemFromList(listId, problemId);
 			console.log(res);
-			refetch();
+			return
 		} catch (err) {
 			console.log(err);
+			throw err;
 		}
 	}
 

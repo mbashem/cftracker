@@ -17,6 +17,12 @@ export interface ListWithItem extends List {
 	items: ListItem[];
 }
 
+// export function listWithItemToListItem(listWithItem: ListWithItem): List {
+// 	return {
+// 		id: 
+// 	}
+// }
+
 export function jsonToList(json: any): List {
 	return {
 		id: json.id,

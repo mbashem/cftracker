@@ -10,7 +10,7 @@ import { Verdict } from "../../types/CF/Submission";
 import Contest, { ContestCat } from "../../types/CF/Contest";
 import { ParticipantType } from "../../types/CF/Party";
 import Filter from "../Common/Filter";
-import InputChecked from "../Common/Forms/InputChecked";
+import InputChecked from "../Common/Forms/Input/InputChecked";
 import CustomModal from "../Common/CustomModal";
 import CheckList from "../Common/Forms/CheckList";
 import Pagination from "../Common/Pagination";

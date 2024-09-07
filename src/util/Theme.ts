@@ -4,50 +4,63 @@ export enum ThemesType {
 }
 
 export default class Theme {
-  bg: string;
-  text: string;
-  bgText: string;
+  themeType: ThemesType;
   navbar: string;
-  btn: string;
-  btnDanger: string;
   name: string;
   table: string;
   thead: string;
+
+  text: string;
+  textDanger: string;
+  bgText: string;
+
+  bg: string;
   bgSuccess: string;
   bgDanger: string;
-  themeType: ThemesType;
+  btnPrimary: string;
+
+  btn: string;
+  btnDanger: string;
+  btnSuccess: string;
 
   constructor(selected?: ThemesType) {
     switch (selected) {
       case ThemesType.DARK:
+        this.themeType = ThemesType.DARK;
         this.navbar = "navbar-dark bg-secondary";
-        this.bg = "bg-dark";
         this.text = "text-light";
         this.name = "dark";
         this.table = "table-dark";
         this.thead = "thead-dark";
+
+        this.bg = "bg-dark";
         this.bgSuccess = "bg-success";
-        this.btn = "btn-dark";
         this.bgDanger = "bg-danger";
-        this.btnDanger = "btn-danger";
-        this.themeType = ThemesType.DARK;
+
+        this.btn = "btn btn-dark";
         break;
       case ThemesType.LIGHT:
       default:
-        this.bg = "bg-light";
+        this.themeType = ThemesType.LIGHT;
         this.text = "text-dark";
-        this.btn = "btn-light";
-        this.btnDanger = "btn-danger";
         this.navbar = "navbar-dark bg-dark";
         this.name = "light";
         this.table = "table-light";
         this.thead = "thead-light";
+
+        this.bg = "bg-light";
         this.bgSuccess = "bg-success-light";
         this.bgDanger = "bg-danger-light";
-        this.themeType = ThemesType.LIGHT;
+
+        this.btn = "btn btn-light";
         break;
     }
 
+    this.btnDanger = "btn btn-danger";
+    this.btnSuccess = "btn btn-success";
+    this.btnPrimary = "btn btn-primary";
+
+    this.textDanger = "text-danger"
     this.bgText = this.bg + " " + this.text;
   }
 

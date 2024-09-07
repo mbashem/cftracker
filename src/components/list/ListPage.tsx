@@ -86,15 +86,32 @@ function ListPage() {
                   <div className="form-group">
                     <div className="d-flex align-items-center justify-content-between">
                       <label htmlFor="listName">Enter New Name</label>
-                      <button
-                        type="button"
-                        className={"btn " + theme.btnDanger}
-                        onClick={() => {
-                          deleteListButtonClicked().then(() => closeModal());
-                        }}
+                      <CustomModal
+                        title={`Do you want to delete ${activeList.name}?`}
+                        theme={theme}
+                        button={<FontAwesomeIcon className={theme.textDanger} icon={faTrash} />}
                       >
-                        <FontAwesomeIcon icon={faTrash} />
-                      </button>
+                        {({ closeModal: closeDeleteAlertModal }) => (
+                          <div className="d-flex justify-content-start">
+                            <button
+                              type="button"
+                              className={theme.btnDanger + " me-2 "}
+                              onClick={() => {
+                                deleteListButtonClicked().then(() => {
+                                  closeDeleteAlertModal();
+                                  closeModal();
+                                });
+                              }}
+                            >
+                              Yes
+                            </button>
+
+                            <button type="button" className={theme.btnPrimary} onClick={() => closeDeleteAlertModal()}>
+                              No
+                            </button>
+                          </div>
+                        )}
+                      </CustomModal>
                     </div>
                     <input
                       type="text"
