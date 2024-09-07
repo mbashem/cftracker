@@ -8,4 +8,5 @@ func RegisterRoutes(server *gin.Engine) {
 
 	server.GET("/auth/github/login", authHandler.GitHubLogin)
 	server.GET("/auth/github/callback", authHandler.GitHubCallback)
+	server.GET("/api/auth/github/callback", authHandler.GitHubCallback)
 }

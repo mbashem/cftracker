@@ -1,4 +1,4 @@
-import { combineReducers, configureStore } from '@reduxjs/toolkit'
+import { combineReducers, configureStore } from '@reduxjs/toolkit';
 import logger from "redux-logger";
 import { TypedUseSelectorHook, useDispatch, useSelector } from "react-redux";
 
@@ -8,6 +8,9 @@ import contestList from './reducers/contestListSlice';
 import userSubmissions from './reducers/userSubmissionsSlice';
 import appSlice from './reducers/appSlice';
 import userSlice from './reducers/userSlice';
+import { userApi } from './queries/userQuery';
+import { StorageService } from '../util/StorageService';
+import { listApi } from './queries/listQuery';
 
 const rootReducer = combineReducers({
   appState: appSlice,
@@ -16,6 +19,8 @@ const rootReducer = combineReducers({
   sharedProblems,
   userList: userSlice,
   userSubmissions,
+  [userApi.reducerPath]: userApi.reducer,
+  [listApi.reducerPath]: listApi.reducer
 });
 
 const saveToLocalStorage = (state: RootState) => {
@@ -24,8 +29,7 @@ const saveToLocalStorage = (state: RootState) => {
       userList: state.userList,
       appState: state.appState,
     };
-    const serializedState: string = JSON.stringify(newState);
-    localStorage.setItem("statev2", serializedState);
+    StorageService.saveObject("statev2", newState);
   } catch (e) {
     console.log(e);
   }
@@ -33,16 +37,8 @@ const saveToLocalStorage = (state: RootState) => {
 
 const loadFromLocalStorage = (): any => {
   try {
-    const serialLizedState = localStorage.getItem("statev2");
-    console.log(serialLizedState);
-    if (serialLizedState == null) return {};
-    const persedData = JSON.parse(serialLizedState);
+    const persedData = StorageService.getObject("statev2", {});
 
-    // let appState = new AppState();
-    // if (persedData.appState) {
-    //   appState.init(persedData.appState);
-    // }
-    // persedData.appState = appState;
     console.log(persedData);
     return persedData;
   } catch (e) {
@@ -53,9 +49,11 @@ const loadFromLocalStorage = (): any => {
 
 const store = configureStore({
   reducer: rootReducer,
-  middleware: (getDefaultMiddleware) => getDefaultMiddleware({ serializableCheck: false }).concat(logger),
+  middleware: (getDefaultMiddleware) => getDefaultMiddleware({ serializableCheck: false })
+    .concat(logger)
+    .concat([userApi.middleware, listApi.middleware]),
   preloadedState: loadFromLocalStorage()
-})
+});
 
 store.subscribe(() => saveToLocalStorage(store.getState()));
 
@@ -64,7 +62,7 @@ export type RootState = ReturnType<typeof rootReducer>;
 
 export type AppDispatch = typeof store.dispatch;
 
-export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector
-export const useAppDispatch = useDispatch.withTypes<AppDispatch>()
+export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector;
+export const useAppDispatch = useDispatch.withTypes<AppDispatch>();
 
 export default store;

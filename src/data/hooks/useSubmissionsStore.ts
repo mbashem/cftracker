@@ -2,8 +2,8 @@ import { createSelector } from "@reduxjs/toolkit";
 import { useAppSelector } from "../store";
 import { sortByCompare } from "../../util/sortMethods";
 import lowerBound from "../../util/lowerBound";
-import Problem, { ProblemShared } from "../../types/Problem";
-import Submission from "../../types/Submission";
+import Problem, { ProblemShared } from "../../types/CF/Problem";
+import Submission from "../../types/CF/Submission";
 import { Compared } from "../../util/Comparator";
 import { useMemo, useState } from "react";
 
@@ -23,9 +23,6 @@ const addSharedToSubmissions = (
   let newUserSubmissions: Submission[] = []
   for (let submission of userSubmissions) {
     newUserSubmissions.push(new Submission(submission))
-    if (submission.index !== submission.problem.index) {
-      console.log(submission)
-    }
     let currentShared: ProblemShared = new ProblemShared(
       submission.contestId,
       submission.index

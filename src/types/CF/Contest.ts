@@ -1,4 +1,4 @@
-import { sortByContestId } from "../util/sortMethods";
+import { sortByContestId } from "../../util/sortMethods";
 import Problem from "./Problem";
 
 export enum ContestCat {
@@ -20,7 +20,7 @@ const get_short_and_category = (name: string): [string, ContestCat] => {
 	name = name.replace("Div 2", ContestCat.DIV2);
 
 	let short: string = "";
-	let category: ContestCat = null;
+	let category: ContestCat | null = null;
 	// returns -1 if not found
 	let div1 = name.indexOf(ContestCat.DIV1);
 	let div2 = name.indexOf(ContestCat.DIV2);
@@ -98,7 +98,8 @@ export default class Contest {
 	name: string;
 	type?: string;
 	phase: string;
-	frozen: boolean;
+	// FIXME: As of 10/8/2024 this wasn't used in the site. So commented this out as this wasn't initialized either.
+	// frozen: boolean;
 	durationSeconds?: number;
 	startTimeSeconds?: number;
 	relativeTimeSeconds?: number;
@@ -123,10 +124,10 @@ export default class Contest {
 	constructor(
 		id: number,
 		name: string,
-		type: string,
+		type: string | undefined,
 		phase: string,
-		durationSeconds: number,
-		startTimeSeconds: number
+		durationSeconds: number | undefined,
+		startTimeSeconds: number | undefined
 	) {
 		this.id = id;
 		this.name = name;

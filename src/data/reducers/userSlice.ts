@@ -1,16 +1,16 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import User from '../../types/User';
 
 export interface UserState {
   handles: string[];
   error: string;
-  loading: boolean;
   id: number;
+  user?: User;
 }
 
 const userInitialState: UserState = {
   handles: [],
   error: '',
-  loading: false,
   id: 0,
 };
 
@@ -18,10 +18,7 @@ const userSlice = createSlice({
   name: 'user',
   initialState: userInitialState,
   reducers: {
-    loadingUsers(state) {
-      state.loading = true;
-    },
-    addUser(state, action: PayloadAction<{ id: number; handle: string }>) {
+    addHandle(state, action: PayloadAction<{ id: number; handle: string; }>) {
       if (action.payload.id < state.id) {
         return;
       }
@@ -31,22 +28,27 @@ const userSlice = createSlice({
       state.handles.push(action.payload.handle);
       state.id = action.payload.id;
     },
-    removeUser(state, action: PayloadAction<{ handle: string }>) {
+    removeHandle(state, action: PayloadAction<{ handle: string; }>) {
       state.handles = state.handles.filter((handle) => handle !== action.payload.handle);
     },
-    errorFetchingUser(state) {
+    removeAllHandle(state) {
       state.handles = [];
       state.error = '';
-      state.loading = false;
     },
-    removeAllUser(state) {
-      state.handles = [];
-      state.error = '';
-      state.loading = false;
+    setUser(state, action: PayloadAction<User>) {
+      state.user = action.payload;
+      state.error = "";
+    },
+    removeUser(state) {
+      state.user = undefined;
+    },
+    errorAuthenticatingUser(state, action: PayloadAction<{ errorMessage: string; }>) {
+      state.error = action.payload.errorMessage;
     },
   },
 });
 
-export const { loadingUsers, addUser, removeUser, errorFetchingUser, removeAllUser } = userSlice.actions;
+export const { addHandle, removeHandle, removeAllHandle, setUser, removeUser, errorAuthenticatingUser } = userSlice.actions;
 
 export default userSlice.reducer;
+

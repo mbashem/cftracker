@@ -1,6 +1,6 @@
 import Theme from "../../util/Theme";
 import { processNumber } from "../../util/util";
-import InputNumber from "./Forms/InputNumber";
+import InputNumber from "./Forms/Input/InputNumber";
 
 interface PaginationProps {
   perPage: number;

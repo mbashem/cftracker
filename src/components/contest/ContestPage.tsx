@@ -1,22 +1,22 @@
 import { useEffect, useState } from "react";
-import ContestList from "./ContestList";
-import { SEARCH } from "../../util/constants";
-import { useAppSelector } from "../../data/store";
-import { getObj, getSet, saveObj, saveSet } from "../../util/save";
 import { Alert } from "react-bootstrap";
-import { ThreeDots } from "react-loader-spinner";
-import { useSearchParams } from "react-router-dom";
+import ContestList from "./ContestList";
+import { SearchKeys } from "../../util/constants";
+import { useAppSelector } from "../../data/store";
 import useSubmissionsStore from "../../data/hooks/useSubmissionsStore";
 import useContestStore from "../../data/hooks/useContestStore";
 import useTheme from "../../data/hooks/useTheme";
-import { Verdict } from "../../types/Submission";
-import Contest, { ContestCat } from "../../types/Contest";
-import { ParticipantType } from "../../types/Party";
+import { Verdict } from "../../types/CF/Submission";
+import Contest, { ContestCat } from "../../types/CF/Contest";
+import { ParticipantType } from "../../types/CF/Party";
 import Filter from "../Common/Filter";
-import InputChecked from "../Common/Forms/InputChecked";
+import InputChecked from "../Common/Forms/Input/InputChecked";
 import CustomModal from "../Common/CustomModal";
 import CheckList from "../Common/Forms/CheckList";
 import Pagination from "../Common/Pagination";
+import { StorageService } from "../../util/StorageService";
+import useAppSearchParams from "../../hooks/useSearchParam";
+import Loading from "../Common/Loading";
 
 const ContestPage = () => {
   const state = useAppSelector((state) => {
@@ -27,7 +27,7 @@ const ContestPage = () => {
   });
   const { theme } = useTheme();
 
-  const [searchParams, setSearchParams] = useSearchParams();
+  const { searchParams, updateSearchParam, deleteSearchParam } = useAppSearchParams();
   const { submissions: userSubmissions } = useSubmissionsStore();
   const { contests } = useContestStore();
 
@@ -54,24 +54,24 @@ const ContestPage = () => {
     showColor: true,
     // ShowContestId: false,
     category: ContestCat.DIV2,
-    search: searchParams.get(SEARCH) ?? "",
+    search: searchParams.get(SearchKeys.Search) ?? "",
   };
 
   enum ContestSave {
-    CONTEST_SOLVE_STATUS = "CONTEST_SOLVE_STATUS",
-    PARTICIPANT_TYPE = "PARTICIPANT_TYPE",
-    CONTEST_FILTER = "CONTEST_FILTER",
+    SolveStatus = "CONTEST_SOLVE_STATUS",
+    ParticipantType = "PARTICIPANT_TYPE",
+    Filter = "CONTEST_FILTER",
   }
 
-  const [filter, setFilter] = useState<filt>(getObj(ContestSave.CONTEST_FILTER, defaultFilt));
+  const [filter, setFilter] = useState<filt>(StorageService.getObject(ContestSave.Filter, defaultFilt));
 
   const SOLVEBUTTONS = [Verdict.SOLVED, Verdict.ATTEMPTED, Verdict.UNSOLVED];
 
   const PARTICIPANTSTYPE = Object.keys(ParticipantType);
 
   const [selected, setSelected] = useState(0);
-  const [solveStatus, setSolveStatus] = useState(getSet(ContestSave.CONTEST_SOLVE_STATUS, SOLVEBUTTONS));
-  const [participant, setParticipant] = useState(getSet(ContestSave.PARTICIPANT_TYPE, PARTICIPANTSTYPE));
+  const [solveStatus, setSolveStatus] = useState(StorageService.getSet(ContestSave.SolveStatus, SOLVEBUTTONS));
+  const [participant, setParticipant] = useState(StorageService.getSet(ContestSave.ParticipantType, PARTICIPANTSTYPE));
 
   const [submissions, setSubmissions] = useState<Map<number, Map<Verdict, Set<string>>>>(new Map());
 
@@ -98,9 +98,9 @@ const ContestPage = () => {
   };
 
   useEffect(() => {
-    saveObj(ContestSave.CONTEST_FILTER, filter);
-    if (filter.search.trim().length) setSearchParams({ [SEARCH]: filter.search.trim() });
-    else setSearchParams();
+    StorageService.saveObject(ContestSave.Filter, filter);
+    if (filter.search.trim().length) updateSearchParam(SearchKeys.Search, filter.search.trim());
+    else deleteSearchParam(SearchKeys.Search);
 
     const newContestList = contests.filter((contest) => filterContest(contest));
 
@@ -200,7 +200,7 @@ const ContestPage = () => {
               name={"Solve Status"}
               onClickSet={(newSet) => {
                 setSolveStatus(newSet);
-                saveSet(ContestSave.CONTEST_SOLVE_STATUS, newSet);
+                StorageService.saveSet(ContestSave.SolveStatus, newSet);
               }}
             />
             <CheckList
@@ -209,7 +209,7 @@ const ContestPage = () => {
               name={"Participant Type"}
               onClickSet={(newSet) => {
                 setParticipant(newSet);
-                saveSet(ContestSave.PARTICIPANT_TYPE, newSet);
+                StorageService.saveSet(ContestSave.ParticipantType, newSet);
               }}
             />
           </CustomModal>
@@ -234,15 +234,7 @@ const ContestPage = () => {
         >
           <div className={"h-100 m-0 pb-2 " + theme.bg}>
             {state.problemList.loading ? (
-              <ThreeDots
-                height="80"
-                width="80"
-                radius="8"
-                color="grey"
-                wrapperClass={"d-flex justify-content-center"}
-                ariaLabel="three-dots-loading"
-                visible={true}
-              />
+              <Loading />
             ) : (
               <>
                 {state.problemList.error.length > 0 ? (

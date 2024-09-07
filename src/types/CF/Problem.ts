@@ -1,4 +1,4 @@
-import Comparator, { Compared } from "../util/Comparator";
+import Comparator, { Compared } from "../../util/Comparator";
 
 export class ProblemLite implements Comparator<ProblemLite> {
   contestId: number;
@@ -51,9 +51,9 @@ export default class Problem extends ProblemLite {
   name: string;
   type: string;
   points?: number;
-  rating?: number;
+  rating: number;
   tags: string[];
-  solvedCount?: number;
+  solvedCount: number;
 
   constructor(
     contestId: number,

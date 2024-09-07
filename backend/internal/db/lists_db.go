@@ -18,7 +18,7 @@ func createListsTables() {
 	createListItemsTable := `
 		CREATE TABLE IF NOT EXISTS list_items (
 			list_id INT NOT NULL,
-			problem_id INT NOT NULL,
+			problem_id VARCHAR(100) NOT NULL,
 			position INT NOT NULL,
 			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 			updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
