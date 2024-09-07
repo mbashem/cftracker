@@ -223,15 +223,17 @@ const Menu = (): JSX.Element => {
                 </a>
               </li>
             ) : (
-              <li className="nav-item">
-                <a
-                  className="nav-link"
-                  title="Refresh Submissions"
-                  href={`https://github.com/login/oauth/authorize?client_id=${GITHUB_OAUTH_CLIENT_ID}&redirect_uri=${GITHUB_OAUTH_REDIRECT_URI}&scope=user:email`}
-                >
-                  <FontAwesomeIcon icon={faSignIn} />
-                </a>
-              </li>
+              IS_BACKEND_AVAILABLE && (
+                <li className="nav-item">
+                  <a
+                    className="nav-link"
+                    title="Refresh Submissions"
+                    href={`https://github.com/login/oauth/authorize?client_id=${GITHUB_OAUTH_CLIENT_ID}&redirect_uri=${GITHUB_OAUTH_REDIRECT_URI}&scope=user:email`}
+                  >
+                    <FontAwesomeIcon icon={faSignIn} />
+                  </a>
+                </li>
+              )
             )}
           </Nav>
         </Navbar.Collapse>
