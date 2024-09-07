@@ -18,7 +18,7 @@ func Authenticate(context *gin.Context) {
 	log.Println("Token: ", token)
 	if token == "" || !strings.Contains(token, "Bearer "){
 		log.Println("No token")
-		context.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "Unauthorized"})
+		context.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
 
@@ -27,7 +27,7 @@ func Authenticate(context *gin.Context) {
 	userId, err := utils.VerifyToken(token)
 	if err != nil {
 		log.Println(err)
-		context.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "Unauthorized"})
+		context.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
 

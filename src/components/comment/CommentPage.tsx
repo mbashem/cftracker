@@ -2,14 +2,8 @@ import { useAppSelector } from "../../data/store";
 import { ThemesType } from "../../util/Theme";
 import UtterancesComments from "./UtterancesComments";
 
-const ContestPage = () => {
+const CommentPage = () => {
   const themeMod = useAppSelector((state) => state.appState.themeMod);
-  // let [theme, set_theme] = useState("dark-blue");
-
-  // useEffect(() => {
-  //   if (state.appState.themeMod === ThemesType.DARK) set_theme("dark-blue");
-  //   else set_theme("github-light");
-  // }, [state.appState.theme]);
 
   return (
     <>
@@ -23,4 +17,4 @@ const ContestPage = () => {
   );
 };
 
-export default ContestPage;
+export default CommentPage;

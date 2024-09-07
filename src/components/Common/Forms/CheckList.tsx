@@ -1,12 +1,12 @@
 import Theme from "../../../util/Theme";
 
-interface PropsType {
-  items: string[];
-  active: Set<string>;
+interface PropsType<T> {
+  items: T[];
+  active: Set<T>;
   selectAll?: boolean;
   deselectAll?: boolean;
-  onClickSet?: (a: Set<string>) => void;
-  onClick?: (a: string) => void;
+  onClickSet?: (a: Set<T>) => void;
+  onClick?: (a: T) => void;
   theme?: Theme;
   name: string;
   activeClass?: string;
@@ -14,7 +14,7 @@ interface PropsType {
   btnClass?: string;
 }
 
-const CheckList = (props: PropsType) => {
+const CheckList = <T extends React.Key>(props: PropsType<T>) => {
   let activeClass = props.activeClass;
   let inactiveClass = props.inactiveClass;
   let btnClass = props.btnClass;
@@ -31,7 +31,7 @@ const CheckList = (props: PropsType) => {
           <button
             className={btnClass + " btn btn-secondary"}
             onClick={() => {
-              props.onClickSet?.(new Set<string>(props.items));
+              props.onClickSet?.(new Set(props.items));
             }}
           >
             Select All
@@ -43,7 +43,7 @@ const CheckList = (props: PropsType) => {
           <button
             className="btn btn-secondary"
             onClick={() => {
-              props.onClickSet?.(new Set<string>());
+              props.onClickSet?.(new Set());
             }}
           >
             Deselect All
@@ -52,22 +52,14 @@ const CheckList = (props: PropsType) => {
           ""
         )}
       </div>
-      <div
-        className="btn-group rounded-0 btn-group d-flex flex-wrap"
-        role="group"
-        aria-label="First group"
-      >
+      <div className="btn-group rounded-0 btn-group d-flex flex-wrap" role="group" aria-label="First group">
         {props.items.map((item) => (
           <button
-            className={
-              btnClass +
-              " " +
-              (props.active.has(item) ? activeClass : inactiveClass)
-            }
+            className={btnClass + " " + (props.active.has(item) ? activeClass : inactiveClass)}
             key={item}
             onClick={() => {
               if (props.onClickSet) {
-                let newSet = new Set<string>(props.active);
+                let newSet = new Set(props.active);
                 if (newSet.has(item)) newSet.delete(item);
                 else newSet.add(item);
                 props.onClickSet(newSet);
@@ -77,7 +69,7 @@ const CheckList = (props: PropsType) => {
               }
             }}
           >
-            {item}
+            <>{item}</>
           </button>
         ))}
       </div>

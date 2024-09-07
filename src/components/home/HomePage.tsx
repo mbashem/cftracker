@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router";
-import { Path } from "../../util/constants";
+import { Path } from "../../util/route/path";
 import { useEffect } from "react";
 
 const HomePage = () => {

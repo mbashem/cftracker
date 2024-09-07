@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { processNumber } from "../../../util/util";
+import { processNumber } from "../../../../util/util";
 
 interface PropsType {
   header: string;
@@ -23,7 +23,7 @@ const InputNumber = (props: PropsType) => {
     if (!isNaN(num)) {
       let processedNum = processNumber(num, props.min, props.max);
       if (processedNum != num) {
-        // TODO:- It causes infinite rendering
+        // FIXME:- It causes infinite rendering
         // setInputValue(processedNum.toString()); // converting num to string
       }
       props.onChange(num);

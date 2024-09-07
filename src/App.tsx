@@ -3,24 +3,28 @@ import { lazy, Suspense, useEffect } from "react";
 import { Route, Routes } from "react-router-dom";
 
 import Menu from "./components/Menu";
-import { Path } from "./util/constants";
+import { Path } from "./util/route/path";
 import { ThemesType } from "./util/Theme";
 import HomePage from "./components/home/HomePage";
 import ProblemPage from "./components/problem/ProblemPage";
 import ContestPage from "./components/contest/ContestPage";
 import usePageTracking from "./usePageTracking";
 import useTheme from "./data/hooks/useTheme";
+import useCallbackHandler from "./hooks/useCallbackHandler";
+import AuthGuard from "./util/route/AuthGuard";
 
 // const HomePage = lazy(() => import("./components/home/HomePage"));
 // const ProblemPage = lazy(() => import("./components/problem/ProblemPage"));
 // const ContestPage = lazy(() => import("./components/contest/ContestPage"));
 const StatPage = lazy(() => import("./components/stats/StatPage"));
 const IssuePage = lazy(() => import("./components/comment/CommentPage"));
+const ListPage = lazy(() => import("./components/list/ListPage"));
 
 function App() {
   const { theme } = useTheme();
 
   usePageTracking();
+  useCallbackHandler();
 
   useEffect(() => {
     console.log(window.location.pathname);
@@ -65,6 +69,14 @@ function App() {
             <Route path={Path.CONTESTS} element={<ContestPage />} />
             <Route path={Path.Stats} element={<StatPage />} />
             <Route path={Path.Issues} element={<IssuePage />} />
+            <Route
+              path={Path.Lists}
+              element={
+                <AuthGuard>
+                  <ListPage />
+                </AuthGuard>
+              }
+            />
           </Routes>
         </Suspense>
       </div>

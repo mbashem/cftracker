@@ -1,23 +1,21 @@
-import { useEffect, useState } from "react";
-import { sortByContestId, sortByRating, sortBySolveCount } from "../../util/sortMethods";
-import { SEARCH } from "../../util/constants";
-import ProblemList from "./ProblemList";
+import { useEffect, useMemo, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSort, faSortDown, faSortUp } from "@fortawesome/free-solid-svg-icons";
+import { sortByRating, sortBySolveCount, sortByContestId, SortOrder, SortProblemBy } from "../../util/sortMethods";
+import ProblemList from "./ProblemList";
 import { useAppSelector } from "../../data/store";
-import Problem from "../../types/Problem";
-import { getObj, getSet, saveObj, saveSet } from "../../util/save";
-import { Verdict } from "../../types/Submission";
-import { ThreeDots } from "react-loader-spinner";
-import { useSearchParams } from "react-router-dom";
-import useSubmissionsStore from "../../data/hooks/useSubmissionsStore";
-import useTheme from "../../data/hooks/useTheme";
+import Problem from "../../types/CF/Problem";
+import { Verdict } from "../../types/CF/Submission";
 import Filter from "../Common/Filter";
 import CustomModal from "../Common/CustomModal";
 import CheckList from "../Common/Forms/CheckList";
 import Pagination from "../Common/Pagination";
-import InputRange from "../Common/Forms/InputRange";
+import InputRange from "../Common/Forms/Input/InputRange";
+import { StorageService } from "../../util/StorageService";
+import useProblemPage from "./useProblemPage";
+import Loading from "../Common/Loading";
 
+// TODO: Convert whole Problem Page to hooks pattern
 const ProblemPage = () => {
   const state = useAppSelector((state) => {
     return {
@@ -25,21 +23,23 @@ const ProblemPage = () => {
       problemList: state.problemList,
     };
   });
-  const { theme } = useTheme();
 
-  const [searchParams, setSearchParams] = useSearchParams();
-  const { submissions } = useSubmissionsStore();
+  const {
+    theme,
+    submissions,
+    listId,
+    list,
+    searchText,
+    setSearchText,
+    addProblemToList,
+    problemsAddedTolist,
+    deleteProblemFromList,
+  } = useProblemPage();
 
-  const SORT_BY_RATING = 1,
-    SORT_BY_SOLVE = 2,
-    SORT_BY_ID = 3,
-    ASCENDING = 0,
-    DESCENDING = 1;
-
-  enum ProblemSave {
-    PROBLEM_SOLVE_STATUS = "PROBLEM_SOLVE_STATUS",
-    PROBLEM_TAGS = "PROBLEM_TAGS",
-    PROBLEM_FILTER = "PROBLEM_FILTER",
+  enum SaveProblem {
+    SolveStatus = "PROBLEM_SOLVE_STATUS",
+    Tags = "PROBLEM_TAGS",
+    Filter = "PROBLEM_FILTER",
   }
 
   interface filt {
@@ -59,20 +59,20 @@ const ProblemPage = () => {
     showUnrated: true,
     minContestId: state.appState.minContestId,
     maxContestId: state.appState.maxContestId,
-    search: searchParams.get(SEARCH) ?? "",
+    search: searchText,
   };
 
-  const [filter, setFilter] = useState<filt>(getObj(ProblemSave.PROBLEM_FILTER, defaultFilt));
+  const [filter, setFilter] = useState<filt>(StorageService.getObject(SaveProblem.Filter, defaultFilt));
 
   const SOLVEBUTTONS = [Verdict.SOLVED, Verdict.ATTEMPTED, Verdict.UNSOLVED];
 
   const initFilterState = {
-    tags: getSet(ProblemSave.PROBLEM_TAGS, []),
-    sortBy: SORT_BY_SOLVE,
-    order: DESCENDING,
+    tags: StorageService.getSet(SaveProblem.Tags, Array<string>()),
+    sortBy: SortProblemBy.SolveCount,
+    order: SortOrder.Descending,
   };
 
-  const [solveStatus, setSolveStatus] = useState(getSet(ProblemSave.PROBLEM_SOLVE_STATUS, SOLVEBUTTONS));
+  const [solveStatus, setSolveStatus] = useState(StorageService.getSet(SaveProblem.SolveStatus, SOLVEBUTTONS));
   const [problemList, setProblemList] = useState<{
     problems: Problem[];
     error: string;
@@ -118,19 +118,19 @@ const ProblemPage = () => {
   };
 
   useEffect(() => {
-    saveObj(ProblemSave.PROBLEM_FILTER, filter);
+    StorageService.saveObject(SaveProblem.Filter, filter);
 
-    if (filter.search.trim().length) setSearchParams({ [SEARCH]: filter.search.trim() });
-    else setSearchParams();
+    setSearchText(filter.search.trim());
+
     if (state.problemList.problems !== undefined) {
       let newProblemsList: Problem[] = [];
       newProblemsList = state.problemList.problems;
       newProblemsList = newProblemsList.filter((problem: Problem) => filterProblem(problem));
 
-      if (filterState.sortBy === SORT_BY_RATING) newProblemsList.sort(sortByRating);
-      else if(filterState.sortBy === SORT_BY_ID) newProblemsList.sort(sortByContestId);
+      if (filterState.sortBy === SortProblemBy.Rating) newProblemsList.sort(sortByRating);
+      else if (filterState.sortBy === SortProblemBy.Id) newProblemsList.sort(sortByContestId);
       else newProblemsList.sort(sortBySolveCount);
-      if (filterState.order === DESCENDING) newProblemsList.reverse();
+      if (filterState.order === SortOrder.Descending) newProblemsList.reverse();
 
       let tags = [];
       for (let tag of state.problemList.tags) tags.push(tag);
@@ -170,7 +170,7 @@ const ProblemPage = () => {
       setFilterState({
         ...filterState,
         ...{
-          order: sortBy === SORT_BY_RATING ? ASCENDING : DESCENDING,
+          order: sortBy === SortProblemBy.Rating ? SortOrder.Ascending : SortOrder.Descending,
           sortBy: sortBy,
         },
       });
@@ -184,11 +184,9 @@ const ProblemPage = () => {
     return problemList.problems.slice(lo, high);
   };
 
-  const nuetral = <FontAwesomeIcon icon={faSort} />;
-
-  const less = <FontAwesomeIcon icon={faSortUp} />;
-
-  const greater = <FontAwesomeIcon icon={faSortDown} />;
+  const nuetral = useMemo(() => <FontAwesomeIcon icon={faSort} />, []);
+  const less = useMemo(() => <FontAwesomeIcon icon={faSortUp} />, []);
+  const greater = useMemo(() => <FontAwesomeIcon icon={faSortDown} />, []);
 
   return (
     <>
@@ -216,7 +214,7 @@ const ProblemPage = () => {
               name={"Solve Status"}
               onClickSet={(newSet) => {
                 setSolveStatus(newSet);
-                saveSet(ProblemSave.PROBLEM_SOLVE_STATUS, newSet);
+                StorageService.saveSet(SaveProblem.SolveStatus, newSet);
               }}
               theme={theme}
             />
@@ -261,7 +259,7 @@ const ProblemPage = () => {
                 let myFilterState = { ...filterState };
                 myFilterState.tags = newSet;
                 setFilterState(myFilterState);
-                saveSet(ProblemSave.PROBLEM_TAGS, newSet);
+                StorageService.saveSet(SaveProblem.Tags, newSet);
               }}
               selectAll={true}
               deselectAll={true}
@@ -272,26 +270,18 @@ const ProblemPage = () => {
         <div className={"container p-0 pt-3 pb-3 " + theme.bg}>
           <div className={"h-100 text-center pb-3 " + theme.bg}>
             {state.problemList.loading ? (
-              <ThreeDots
-                height="80"
-                width="80"
-                radius="8"
-                color="grey"
-                wrapperClass={"d-flex justify-content-center"}
-                ariaLabel="three-dots-loading"
-                visible={true}
-              />
+              <Loading />
             ) : (
               <table className={"table table-bordered m-0 " + theme.table}>
                 <thead className={theme.thead}>
                   <tr>
                     <th scope="col">#</th>
-                    <th scope="col" role="button" onClick={() => sortList(SORT_BY_ID)}>
+                    <th scope="col" role="button" onClick={() => sortList(SortProblemBy.Id)}>
                       <div className="d-flex justify-content-between">
                         <div>ID</div>
                         <div>
-                          {filterState.sortBy === SORT_BY_ID
-                            ? filterState.order === ASCENDING
+                          {filterState.sortBy === SortProblemBy.Id
+                            ? filterState.order === SortOrder.Ascending
                               ? less
                               : greater
                             : nuetral}
@@ -299,30 +289,31 @@ const ProblemPage = () => {
                       </div>
                     </th>
                     <th scope="col">Name</th>
-                    <th scope="col" role="button" onClick={() => sortList(SORT_BY_RATING)}>
+                    <th scope="col" role="button" onClick={() => sortList(SortProblemBy.Rating)}>
                       <div className="d-flex justify-content-between">
                         <div>Rating</div>
                         <div>
-                          {filterState.sortBy === SORT_BY_RATING
-                            ? filterState.order === ASCENDING
+                          {filterState.sortBy === SortProblemBy.Rating
+                            ? filterState.order === SortOrder.Ascending
                               ? less
                               : greater
                             : nuetral}
                         </div>
                       </div>
                     </th>
-                    <th scope="col" role="button" onClick={() => sortList(SORT_BY_SOLVE)}>
+                    <th scope="col" role="button" onClick={() => sortList(SortProblemBy.SolveCount)}>
                       <div className="d-flex justify-content-between">
                         <div>Solve Count</div>
                         <div>
-                          {filterState.sortBy === SORT_BY_SOLVE
-                            ? filterState.order === ASCENDING
+                          {filterState.sortBy === SortProblemBy.SolveCount
+                            ? filterState.order === SortOrder.Ascending
                               ? less
                               : greater
                             : nuetral}
                         </div>
                       </div>
                     </th>
+                    {listId !== undefined && <th scope="col">Add To {list?.name}</th>}
                   </tr>
                 </thead>
                 <tbody className={theme.bg}>
@@ -333,6 +324,10 @@ const ProblemPage = () => {
                     perPage={filter.perPage}
                     pageSelected={selected}
                     theme={theme}
+                    showAddToList={listId !== undefined}
+                    addToList={(id) => addProblemToList(id)}
+                    problemsAddedToList={problemsAddedTolist}
+                    deleteFromList={deleteProblemFromList}
                   />
                 </tbody>
               </table>

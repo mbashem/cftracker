@@ -2,17 +2,15 @@ import Problem, {
   ProblemLite,
   ProblemShared,
   ProblemStatistics,
-} from "../../types/Problem";
+} from "../../types/CF/Problem";
 import { AppDispatch } from "../store";
-import Contest from "../../types/Contest";
+import Contest from "../../types/CF/Contest";
 import { addProblems, errorFetchingProblems, loadingProblems } from "../reducers/problemListSlice";
 import { addContestList, errorFetchingContestList, loadingContestList } from "../reducers/contestListSlice";
 import { addSharedProblems, errorFetchingSharedProblems } from "../reducers/sharedProblemsSlice";
 
-const allContestURL = "https://codeforces.com/api/contest.list?lang=en";
+// const allContestURL = "https://codeforces.com/api/contest.list?lang=en";
 const problemSetURL = "https://codeforces.com/api/problemset.problems?lang=en";
-const SAVED_CONTEST_URL = "../saved_api/contests_data.json";
-const SAVED_SHARED_CONTEST_URL = "../jsons/related";
 
 export const fetchProblemList = (dispatch: AppDispatch) => {
   dispatch(loadingProblems());
@@ -44,6 +42,7 @@ export const fetchProblemList = (dispatch: AppDispatch) => {
         const finalProblemArray: Problem[] = [];
         for (let i = 0; i < problems.length; i++) {
           problems[i].rating = problems[i].rating ?? 0;
+          problems[i].solvedCount = problems[i].solvedCount ?? 0;
           if (problems[i].contestId === undefined) continue;
           finalProblemArray.push(
             new Problem(
