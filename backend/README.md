@@ -28,3 +28,6 @@ GET - /user/verify-cftoken - verifies verification token
 set cf firstName as the token recieved from verification token. It is valid for 1 hour
 
 - Go to settings -> social -> firstName
+
+
+# Docker

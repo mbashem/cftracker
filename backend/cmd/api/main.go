@@ -13,7 +13,7 @@ import (
 
 func main() {
 	if err := configs.LoadEnv(); err != nil {
-		log.Fatalf("Error loading environment variables: %v", err)
+		log.Fatalf("Error loading environment variables: %v\n", err)
 	}
 
 	utils.Init()
