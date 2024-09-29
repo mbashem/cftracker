@@ -30,7 +30,7 @@ func main() {
 
 	routes.RegisterRoutes(router)
 
-	if err := router.Run("localhost:8080"); err != nil {
+	if err := router.Run(":8080"); err != nil {
 		log.Fatalf("Failed to run server: %v", err)
 	}
 }

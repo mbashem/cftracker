@@ -11,4 +11,4 @@ WORKDIR /app
 COPY --from=builder /build/api_bin .
 COPY .env.docker .env
 EXPOSE 8080
-ENTRYPOINT [ "/app/api_bin" ]
+CMD [ "/app/api_bin" ]
