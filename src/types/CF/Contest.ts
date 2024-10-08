@@ -13,7 +13,10 @@ export enum ContestCat {
 	ALL = "All",
 }
 
-const get_short_and_category = (name: string): [string, ContestCat] => {
+const Other_Category_Contests = [2010];
+const Div12_Category_Contests = [1930];
+
+const get_short_and_category = (name: string, contestId: number): [string, ContestCat] => {
 	let CODEFORCES: string = "Codeforces";
 	name = name.replace("Div.2", ContestCat.DIV2);
 	name = name.replace("Div.1", ContestCat.DIV1);
@@ -90,8 +93,14 @@ const get_short_and_category = (name: string): [string, ContestCat] => {
 			category = ContestCat.OTHERS;
 	}
 
+	// Special cases
+	if(Other_Category_Contests.includes(contestId))
+		category = ContestCat.OTHERS
+	else if(Div12_Category_Contests.includes(contestId))
+		category = ContestCat.DIV12
+
 	return [short, category];
-}
+};
 
 export default class Contest {
 	id: number;
@@ -140,7 +149,7 @@ export default class Contest {
 		this.count = 0;
 		this.problemList = {};
 
-		let get_cat_short = get_short_and_category(this.name);
+		let get_cat_short = get_short_and_category(this.name, this.id);
 
 		this.short = get_cat_short[0];
 		this.category = get_cat_short[1];
