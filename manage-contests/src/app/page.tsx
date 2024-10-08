@@ -34,6 +34,7 @@ export default function Home() {
 
   const saveDB = async () => {
     "use server";
+    console.log("Server: saving DB");
     const problems = await getAllProblems();
     writeFileSync("src/saved-db/problems.json", JSON.stringify(problems));
 
@@ -46,11 +47,12 @@ export default function Home() {
       JSON.stringify(sharedContests)
     );
 
-    console.log("Server: saving DB");
+    console.log("Server: saved DB");
   };
 
   const syncDB = async () => {
     "use server";
+    console.log("Server: syning DB")
     const contests = JSON.parse(
       readFileSync("src/saved-db/contests.json", "utf-8")
     ) as Contest[];
@@ -81,7 +83,7 @@ export default function Home() {
         sharedContest.parentContestId
       );
     }
-    console.log("Server: syncing DB");
+    console.log("Server: synced DB");
   };
 
   const dropDB = async () => {
