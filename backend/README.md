@@ -31,3 +31,4 @@ set cf firstName as the token recieved from verification token. It is valid for 
 
 
 # Docker
+local db- postgres://postgres:postgrespw@host.docker.internal:5432/cftracker?sslmode=disable
