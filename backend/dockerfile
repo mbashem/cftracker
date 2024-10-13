@@ -1,8 +1,7 @@
-# syntax=docker/dockerfile:1.7-labs
 FROM golang:1.22.3-alpine AS builder
 
 WORKDIR /build
-COPY --exclude=.env* . /build
+COPY . /build
 RUN go build -o api_bin ./cmd/api/main.go
 
 FROM alpine
