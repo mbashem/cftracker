@@ -4,7 +4,7 @@
 # Working directory for the binary
 bin = "tmp/app"
 # Command to build the project
-cmd = "go build -o ./tmp/app ./cmd/backend"
+cmd = "go build -o ./tmp/app ./cmd/api"
 # Path to the main Go file
 include_ext = ["go", "tpl", "html", "js", "css"]
 exclude_dir = ["assets", "tmp", "vendor"]
@@ -12,7 +12,7 @@ exclude_file = ["air.*"]
 full_bin = ""
 
 # Specify directories to watch for changes
-include_dir = ["cmd/backend", "internal", "configs"]
+include_dir = ["cmd/api", "internal", "configs"]
 
 [log]
 file = ""

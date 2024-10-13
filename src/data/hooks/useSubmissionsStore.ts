@@ -104,7 +104,8 @@ function useSubmissionsStore() {
   return {
     error: state.userSubmissions.error,
     loading: state.userSubmissions.loading,
-    submissions
+    submissions,
+    rawSubmissions: state.userSubmissions.submissions
   }
 }
 
