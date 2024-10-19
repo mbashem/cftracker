@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { OverlayTrigger, Tooltip } from "react-bootstrap";
 import { getProblemUrl, formateDate, charInc, getContestUrl } from "../../util/util";
 import Contest, { ContestCat } from "../../types/CF/Contest";
@@ -14,12 +14,12 @@ interface PropsType {
   theme: Theme;
   showRating: boolean;
   showColor: boolean;
-  category: ContestCat;
+  category: ContestCat[];
   submissions: Map<number, Map<Verdict, Set<string>>>;
 }
 
 const ContestList = (props: PropsType) => {
-  let short = props.category !== ContestCat.ALL;
+  let short = useMemo(() => props.category.length === 1, [props.category]);
   let mxInd: number = 0;
 
   for (let contest of props.contestlist) {
@@ -248,7 +248,7 @@ const ContestList = (props: PropsType) => {
             <th scope="col" className="w-sl first-column" style={{ width: "20px" }}>
               #
             </th>
-            <th scope="col" className={"w-contest third-column" + (props.category !== ContestCat.ALL ? " short" : "")}>
+            <th scope="col" className={"w-contest third-column" + (short ? " short" : "")}>
               Contest
             </th>
             {[...Array(ind.maxIndex - ind.minIndex + 1)].map((_x, i) => {

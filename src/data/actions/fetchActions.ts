@@ -14,14 +14,14 @@ const problemSetURL = "https://codeforces.com/api/problemset.problems?lang=en";
 
 export const fetchProblemList = (dispatch: AppDispatch) => {
   dispatch(loadingProblems());
-  // import("../saved_api/problems_data")
-  //   .then(
-  //     (data) => {
-  //       let result = data.problem_data;
-  fetch(problemSetURL)
-    .then((res) => res.json())
+  import("../saved_api/problems_data")
     .then(
-      (result) => {
+      (data) => {
+        let result = data.problem_data;
+  // fetch(problemSetURL)
+  //   .then((res) => res.json())
+  //   .then(
+  //     (result) => {
         if (result.status !== "OK")
           return dispatch(
             errorFetchingProblems({ error: "Failed to fetch Problems list from CF API" })

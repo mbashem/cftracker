@@ -9,8 +9,7 @@ export enum ContestCat {
 	EDUCATIONAL = "Educational",
 	DIV12 = "Div. 1 + Div. 2",
 	GLOBAL = "Global",
-	OTHERS = "Others",
-	ALL = "All",
+	OTHERS = "Others"
 }
 
 const Other_Category_Contests = [2010];
