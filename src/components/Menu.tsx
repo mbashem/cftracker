@@ -2,7 +2,7 @@ import { faGithub } from "@fortawesome/free-brands-svg-icons";
 import { faMoon } from "@fortawesome/free-regular-svg-icons";
 import { faInfo, faSignIn, faSignOut, faSun, faSync } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import { Nav, Navbar, OverlayTrigger, Popover } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
@@ -18,7 +18,7 @@ import { GITHUB_OAUTH_CLIENT_ID, GITHUB_OAUTH_REDIRECT_URI, IS_BACKEND_AVAILABLE
 import useToast from "../hooks/useToast";
 import useUser from "../hooks/useUser";
 
-const Menu = (): JSX.Element => {
+function Menu() {
   const dispatch = useAppDispatch();
 
   const state = useAppSelector((state) => {
@@ -241,6 +241,6 @@ const Menu = (): JSX.Element => {
       <ToastContainer />
     </Navbar>
   );
-};
+}
 
-export default Menu;
+export default memo(Menu);

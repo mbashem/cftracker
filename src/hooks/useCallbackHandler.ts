@@ -22,7 +22,7 @@ function useCallbackHandler() {
 			navigate(Path.CONTESTS);
 		}
 
-	}, [location]);
+	}, [location.pathname, location.search]);
 }
 
 export default useCallbackHandler;

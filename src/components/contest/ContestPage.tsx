@@ -9,7 +9,7 @@ import Loading from "../Common/Loading";
 import useContestPage from "./useContestPage";
 import ContestCategorySelection from "./ContestCategorySelection";
 
-const ContestPage = () => {
+function ContestPage() {
   const {
     state,
     theme,
@@ -22,11 +22,14 @@ const ContestPage = () => {
     participant,
     currentPageContests,
     selectableVerdictStatuses,
+    categoryFilter,
     updateFilter,
     setSelected,
     setSolveStatus,
     setParticipant,
     setRandomContest,
+    setCategories,
+    setUpdatedCanSelectMultipleCategories,
   } = useContestPage();
 
   return (
@@ -104,12 +107,10 @@ const ContestPage = () => {
         <div className="pt-3 ps-3" style={{ maxWidth: "800px" }}>
           <ContestCategorySelection
             theme={theme}
-            selectedCategories={filter.selectedCategories}
-            canSelectMultipleCategories={filter.canSelectMultipleCategories}
-            setSelectedCategories={(categories) => updateFilter({ selectedCategories: Array.from(categories) })}
-            setCanSelectMultipleCategories={(updatedCanSelectMultipleCategories) =>
-              updateFilter({ canSelectMultipleCategories: updatedCanSelectMultipleCategories })
-            }
+            selectedCategories={categoryFilter.selectedCategories}
+            canSelectMultipleCategories={categoryFilter.canSelectMultipleCategories}
+            setSelectedCategories={setCategories}
+            setCanSelectMultipleCategories={setUpdatedCanSelectMultipleCategories}
           />
         </div>
         <div
@@ -156,6 +157,6 @@ const ContestPage = () => {
       </footer>
     </>
   );
-};
+}
 
 export default ContestPage;

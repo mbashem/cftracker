@@ -3,6 +3,7 @@ import { ContestCat } from "../../types/CF/Contest";
 import CheckList from "../Common/Forms/CheckList";
 import Theme from "../../util/Theme";
 import { faBars, faMinus } from "@fortawesome/free-solid-svg-icons";
+import { memo } from "react";
 
 interface Props {
   theme: Theme;
@@ -53,4 +54,4 @@ function ContestCategorySelection(props: Props) {
   );
 }
 
-export default ContestCategorySelection;
+export default memo(ContestCategorySelection);

@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import Theme from "../../util/Theme";
 import { processNumber } from "../../util/util";
 import InputNumber from "./Forms/Input/InputNumber";
@@ -17,22 +18,20 @@ const Pagination = (props: PaginationProps) => {
 
   let pageCount =
     props.perPage > 0
-      ? Math.floor(
-          (Math.floor(props.totalCount) + Math.floor(props.perPage) - 1) /
-            Math.floor(props.perPage)
-        )
+      ? Math.floor((Math.floor(props.totalCount) + Math.floor(props.perPage) - 1) / Math.floor(props.perPage))
       : 0;
 
+  const pageSizeOptions = useMemo(() => {
+    let sizes = [10, 20, 50, 100];
+    if (!sizes.includes(props.totalCount)) sizes.push(props.totalCount);
+    return sizes;
+  }, [props.totalCount]);
+
   return (
-    <nav
-      aria-label="Page navigation example d-flex justify-content-center"
-      style={{ height: "50px" }}>
+    <nav aria-label="Page navigation example d-flex justify-content-center" style={{ height: "50px" }}>
       <ul className="pagination m-0 d-flex justify-content-center">
         <li className={linkWrapperClassName}>
-          <button
-            className={linkClassName}
-            onClick={() => props.pageSelected(0)}
-            aria-disabled={props.selected === 0}>
+          <button className={linkClassName} onClick={() => props.pageSelected(0)} aria-disabled={props.selected === 0}>
             {"<<"}
           </button>
         </li>
@@ -40,7 +39,8 @@ const Pagination = (props: PaginationProps) => {
           <button
             className={linkClassName}
             onClick={() => props.pageSelected(props.selected - 1)}
-            disabled={props.selected === 0}>
+            disabled={props.selected === 0}
+          >
             {"<"}
           </button>
         </li>
@@ -48,7 +48,8 @@ const Pagination = (props: PaginationProps) => {
           <button
             className={linkClassName}
             onClick={() => props.pageSelected(props.selected + 1)}
-            disabled={props.selected === pageCount - 1}>
+            disabled={props.selected === pageCount - 1}
+          >
             {">"}
           </button>
         </li>
@@ -56,7 +57,8 @@ const Pagination = (props: PaginationProps) => {
           <button
             className={linkClassName}
             onClick={() => props.pageSelected(pageCount - 1)}
-            disabled={props.selected === pageCount - 1}>
+            disabled={props.selected === pageCount - 1}
+          >
             {">>"}
           </button>
         </li>
@@ -85,9 +87,7 @@ const Pagination = (props: PaginationProps) => {
           <div className="d-flex justify-content-between w-100">
             <div className="input-group mb-3">
               <div className="input-group-prepend">
-                <label
-                  className={"input-group-text " + props.theme.bgText}
-                  htmlFor="inputGroupSelect01">
+                <label className={"input-group-text " + props.theme.bgText} htmlFor="inputGroupSelect01">
                   Per Page
                 </label>
               </div>
@@ -96,16 +96,11 @@ const Pagination = (props: PaginationProps) => {
                 value={props.perPage}
                 onChange={(e) => {
                   if (props.pageSize) {
-                    props.pageSize(
-                      processNumber(
-                        parseInt(e.target.value),
-                        1,
-                        props.totalCount
-                      )
-                    );
+                    props.pageSize(processNumber(parseInt(e.target.value), 1, props.totalCount));
                   }
-                }}>
-                {[10, 20, 50, 100, props.totalCount].map((pageSize) => (
+                }}
+              >
+                {pageSizeOptions.map((pageSize) => (
                   <option key={pageSize} value={pageSize}>
                     {pageSize}
                   </option>
