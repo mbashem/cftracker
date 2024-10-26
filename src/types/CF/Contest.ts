@@ -15,7 +15,7 @@ export enum ContestCat {
 const Other_Category_Contests = [2010];
 const Div12_Category_Contests = [1930];
 
-const get_short_and_category = (name: string, contestId: number): [string, ContestCat] => {
+const getShortAndCategory = (name: string, contestId: number): { short: string, isShortAvailable: boolean, isCFRound: boolean, category: ContestCat; } => {
 	let CODEFORCES: string = "Codeforces";
 	name = name.replace("Div.2", ContestCat.DIV2);
 	name = name.replace("Div.1", ContestCat.DIV1);
@@ -72,6 +72,8 @@ const get_short_and_category = (name: string, contestId: number): [string, Conte
 	else if (div4 !== -1)
 		category = ContestCat.DIV4;
 
+	let isShortAvailable = true;
+	let isCFRound = false;
 	if (short.length === 0) {
 		if (lst.length > 0 && cf !== -1) {
 			if (lst[0] == '#')
@@ -80,7 +82,9 @@ const get_short_and_category = (name: string, contestId: number): [string, Conte
 				short = "CF ";
 
 			short += lst;
+			isCFRound = true;
 		} else {
+			isShortAvailable = false;
 			short = name;
 			short = short.replace(" Round", "");
 		}
@@ -93,12 +97,12 @@ const get_short_and_category = (name: string, contestId: number): [string, Conte
 	}
 
 	// Special cases
-	if(Other_Category_Contests.includes(contestId))
-		category = ContestCat.OTHERS
-	else if(Div12_Category_Contests.includes(contestId))
-		category = ContestCat.DIV12
+	if (Other_Category_Contests.includes(contestId))
+		category = ContestCat.OTHERS;
+	else if (Div12_Category_Contests.includes(contestId))
+		category = ContestCat.DIV12;
 
-	return [short, category];
+	return { short, isShortAvailable, isCFRound, category };
 };
 
 export default class Contest {
@@ -123,8 +127,11 @@ export default class Contest {
 	solveCount: number = 0;
 	attempCount: number = 0;
 	count: number;
+
 	category?: ContestCat;
 	short?: string;
+	isShortAvailable: boolean = false;
+	isCFRound: boolean = false;
 
 	problemList: Record<string, Problem[]>;
 	mxInd: number = 0;
@@ -148,10 +155,12 @@ export default class Contest {
 		this.count = 0;
 		this.problemList = {};
 
-		let get_cat_short = get_short_and_category(this.name, this.id);
+		let shortAndCategory = getShortAndCategory(this.name, this.id);
 
-		this.short = get_cat_short[0];
-		this.category = get_cat_short[1];
+		this.short = shortAndCategory.short;
+		this.category = shortAndCategory.category;
+		this.isShortAvailable = shortAndCategory.isShortAvailable;
+		this.isCFRound = shortAndCategory.isCFRound;
 	}
 
 	public clone = (): Contest => {

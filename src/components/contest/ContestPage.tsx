@@ -54,7 +54,7 @@ function ContestPage() {
           <CustomModal title="filter" theme={theme}>
             <div className="group">
               <div className="d-flex flex-column justify-content-between pb-2 w-100">
-                <div className="d-flex row justify-content-between pt-1">
+                <div className="row justify-content-between pt-1">
                   <div className="col-4">
                     <InputChecked
                       header="Date"
@@ -84,6 +84,18 @@ function ContestPage() {
                       theme={theme}
                       onChange={() => {
                         updateFilter({ showColor: !filter.showColor });
+                      }}
+                    />
+                  </div>
+                  <div className="col-6 mt-2">
+                    <InputChecked
+                      header="Short Name"
+                      name="showColor"
+                      checked={filter.showColor}
+                      title={"Show Color?"}
+                      theme={theme}
+                      onChange={() => {
+                        updateFilter({ showShortName: !filter.showShortName });
                       }}
                     />
                   </div>
@@ -130,8 +142,9 @@ function ContestPage() {
                 ) : (
                   <ContestList
                     contestlist={currentPageContests}
-                    category={filter.selectedCategories}
                     submissions={submissions}
+                    showCategoryName={filter.selectedCategories.length > 1}
+                    shouldShowShortName={filter.showShortName}
                     showColor={filter.showColor}
                     showDate={filter.showDate}
                     showRating={filter.showRating}

@@ -1,5 +1,5 @@
 import "./App.css";
-import { lazy, memo, Suspense, useEffect, useMemo } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { Route, Routes } from "react-router-dom";
 
 import Menu from "./components/Menu";

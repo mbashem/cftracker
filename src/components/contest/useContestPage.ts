@@ -15,6 +15,7 @@ interface Filter {
 	showDate: boolean;
 	showRating: boolean;
 	showColor: boolean;
+	showShortName: boolean;
 	search: string;
 	selectedCategories: ContestCat[];
 	canSelectMultipleCategories: boolean;
@@ -45,6 +46,7 @@ function useContestPage() {
 		showDate: false,
 		showRating: true,
 		showColor: true,
+		showShortName: true,
 		selectedCategories: [ContestCat.DIV2],
 		search: searchParams.get(SearchKeys.Search) ?? "",
 		canSelectMultipleCategories: false,
@@ -111,10 +113,7 @@ function useContestPage() {
 
 		let catIn = false;
 
-		if (
-			filter.selectedCategories.length === 0 ||
-			(contest.category !== undefined && filter.selectedCategories.includes(contest.category))
-		)
+		if (contest.category !== undefined && filter.selectedCategories.includes(contest.category))
 			catIn = true;
 
 		return status && searchIncluded && contest.count !== 0 && catIn;
