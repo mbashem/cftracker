@@ -47,7 +47,7 @@ export namespace StorageService {
       console.log(e);
       return false;
     }
-  }
+  };
 
   export const getObject = (name: string, def: any): any => {
     try {
@@ -60,6 +60,6 @@ export namespace StorageService {
       console.log(e);
     }
     return def;
-  }
+  };
 
 }

@@ -1,5 +1,11 @@
 import Theme from "../../../util/Theme";
 
+export interface ButtonItems {
+  label: React.ReactNode;
+  isActive?: React.ReactNode;
+  onClick: () => void;
+}
+
 interface PropsType<T> {
   items: T[];
   active: Set<T>;
@@ -12,6 +18,7 @@ interface PropsType<T> {
   activeClass?: string;
   inactiveClass?: string;
   btnClass?: string;
+  appendButtonsEnd?: ButtonItems[];
 }
 
 const CheckList = <T extends React.Key>(props: PropsType<T>) => {
@@ -70,6 +77,15 @@ const CheckList = <T extends React.Key>(props: PropsType<T>) => {
             }}
           >
             <>{item}</>
+          </button>
+        ))}
+        {props.appendButtonsEnd?.map((buttonElement) => (
+          <button
+            className={btnClass + " " + (buttonElement.isActive ? activeClass : inactiveClass)}
+            key={`end-${buttonElement.label}`}
+            onClick={buttonElement.onClick}
+          >
+            {buttonElement.label}
           </button>
         ))}
       </div>

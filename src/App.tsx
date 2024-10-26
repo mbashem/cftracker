@@ -8,7 +8,7 @@ import { ThemesType } from "./util/Theme";
 import HomePage from "./components/home/HomePage";
 import ProblemPage from "./components/problem/ProblemPage";
 import ContestPage from "./components/contest/ContestPage";
-import usePageTracking from "./usePageTracking";
+import usePageTracking from "./hooks/usePageTracking";
 import useTheme from "./data/hooks/useTheme";
 import useCallbackHandler from "./hooks/useCallbackHandler";
 import AuthGuard from "./util/route/AuthGuard";
@@ -51,6 +51,7 @@ function App() {
   return (
     <div className={"App container-fluid p-0 min-vh-100 d-flex  flex-column " + theme.bgText}>
       <div className="menu w-100">
+        {" "}
         <Menu />
       </div>
       <div className="d-flex flex-column justify-content-between" style={{ minHeight: "calc(100vh - 60px)" }}>

@@ -60,7 +60,7 @@ export default class Theme {
     this.btnSuccess = "btn btn-success";
     this.btnPrimary = "btn btn-primary";
 
-    this.textDanger = "text-danger"
+    this.textDanger = "text-danger";
     this.bgText = this.bg + " " + this.text;
   }
 

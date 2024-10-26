@@ -1,7 +1,7 @@
 import React from "react";
 import { OverlayTrigger, Tooltip } from "react-bootstrap";
 import { getProblemUrl, formateDate, charInc, getContestUrl } from "../../util/util";
-import Contest, { ContestCat } from "../../types/CF/Contest";
+import Contest from "../../types/CF/Contest";
 import Problem from "../../types/CF/Problem";
 import { Verdict } from "../../types/CF/Submission";
 import Theme, { ThemesType } from "../../util/Theme";
@@ -14,12 +14,13 @@ interface PropsType {
   theme: Theme;
   showRating: boolean;
   showColor: boolean;
-  category: ContestCat;
+  shouldShowShortName: boolean;
+  showCategoryName: boolean;
   submissions: Map<number, Map<Verdict, Set<string>>>;
 }
 
+// TODO: Refactor, split into multiple components
 const ContestList = (props: PropsType) => {
-  let short = props.category !== ContestCat.ALL;
   let mxInd: number = 0;
 
   for (let contest of props.contestlist) {
@@ -171,6 +172,8 @@ const ContestList = (props: PropsType) => {
 
   const contestCard = (contest: Contest, index: number) => {
     let solved = false;
+    const shouldShowCategoryName =
+      props.showCategoryName && props.shouldShowShortName && contest.isShortAvailable && contest.isCFRound;
 
     if (
       props.submissions.has(contest.id) &&
@@ -199,20 +202,34 @@ const ContestList = (props: PropsType) => {
             <div className="d-inline-block">{contest.id}</div>
           </td>
         )} */}
-        <td className={"w-contest p-0 " + (solved ? props.theme.bgSuccess : " ") + (short ? " short" : " ")}>
+        <td
+          className={
+            "w-contest p-0 h-100 position-relative " +
+            (solved ? props.theme.bgSuccess : " ") +
+            (props.shouldShowShortName ? " short" : " ")
+          }
+        >
+          {shouldShowCategoryName && (
+            // <h6>
+            // <sup>
+            //   <span className="badge rounded-pill bg-light text-dark">{contest.category}</span>
+            // </sup>
+            // </h6>
+            <span className={`position-absolute ms-0 top-0 start-0 badge rounded-pill ${props.theme.text}`}>
+              {contest.category}
+              <span className="visually-hidden">unread messages</span>
+            </span>
+          )}
           <div className="d-inline-block w-100 name">
             <OverlayTrigger
               placement={"top"}
               key={`contest-name-${contest.id.toString()}`}
               overlay={
                 <Tooltip id={`contest-name-${contest.id.toString()}`}>
-                  <p
-                    className="text-center text-wrap pe-1"
-                    // style={{ minWidth: "300px" }}
-                  >
-                    <span>{contest.name}</span>
-                    <span>ID: {contest.id}</span>
+                  <p className="text-center text-wrap pe-1" style={{ width: "150px" }}>
+                    {contest.name}
                   </p>
+                  <p>ID: {contest.id}</p>
                 </Tooltip>
               }
             >
@@ -220,14 +237,14 @@ const ContestList = (props: PropsType) => {
                 className={
                   "text-decoration-none wrap d-inline-block pt-2 pb-2 ps-2 pe-1 mw-100 " +
                   props.theme.text +
-                  (short ? " text-truncate" : " ")
+                  (props.shouldShowShortName ? " text-truncate" : " ")
                 }
                 target="_blank"
                 rel="noreferrer"
                 //title={contest.name}
                 href={getContestUrl(contest.id)}
               >
-                {short ? contest.short : contest.name}
+                <span>{props.shouldShowShortName ? contest.short : contest.name}</span>
               </a>
             </OverlayTrigger>
           </div>
@@ -248,7 +265,7 @@ const ContestList = (props: PropsType) => {
             <th scope="col" className="w-sl first-column" style={{ width: "20px" }}>
               #
             </th>
-            <th scope="col" className={"w-contest third-column" + (props.category !== ContestCat.ALL ? " short" : "")}>
+            <th scope="col" className={"w-contest third-column" + (props.shouldShowShortName ? " short" : "")}>
               Contest
             </th>
             {[...Array(ind.maxIndex - ind.minIndex + 1)].map((_x, i) => {

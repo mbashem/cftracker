@@ -15,13 +15,8 @@ interface PropsType {
 
 const InputChecked = (props: PropsType) => {
   return (
-    <InputGroup
-      className={"d-flex " + (props.className ? props.className : "")}
-      title={props.title}
-    >
-      <InputGroup.Text className={props.textClass + " " + props.theme.bgText}>
-        {props.header}
-      </InputGroup.Text>
+    <InputGroup className={"d-flex " + (props.className ? props.className : "")} title={props.title}>
+      <InputGroup.Text className={props.textClass + " " + props.theme.bgText}>{props.header}</InputGroup.Text>
 
       {/* <InputGroup.Checkbox
         checked={props.checked}
@@ -32,18 +27,10 @@ const InputChecked = (props: PropsType) => {
           props.onChange(!props.checked);
         }}
       /> */}
-      <div
-        className={
-          "input-group-text " + props.inputClass + " " + props.theme.bgText
-        }
-      >
+      <div className={"input-group-text " + props.inputClass + " " + props.theme.bgText}>
         <input
           name={props.name}
-          className={
-            "form-check-input mt-0 " +
-            props.inputClass +
-            " "
-          }
+          className={"form-check-input mt-0 " + props.inputClass + " "}
           type="checkbox"
           checked={props.checked}
           onChange={() => {
