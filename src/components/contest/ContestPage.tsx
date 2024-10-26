@@ -90,9 +90,9 @@ function ContestPage() {
                   <div className="col-6 mt-2">
                     <InputChecked
                       header="Short Name"
-                      name="showColor"
-                      checked={filter.showColor}
-                      title={"Show Color?"}
+                      name="showShortName"
+                      checked={filter.showShortName}
+                      title={"Show Short Name?"}
                       theme={theme}
                       onChange={() => {
                         updateFilter({ showShortName: !filter.showShortName });

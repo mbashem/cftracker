@@ -215,7 +215,7 @@ const ContestList = (props: PropsType) => {
             //   <span className="badge rounded-pill bg-light text-dark">{contest.category}</span>
             // </sup>
             // </h6>
-            <span className="position-absolute ms-2 top-0 start-0 badge rounded-pill bg-light text-dark">
+            <span className={`position-absolute ms-0 top-0 start-0 badge rounded-pill ${props.theme.text}`}>
               {contest.category}
               <span className="visually-hidden">unread messages</span>
             </span>
