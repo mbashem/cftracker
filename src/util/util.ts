@@ -39,8 +39,8 @@ export const stringToArray = (s: string, separator: string): string[] => {
   return s.trim().split(separator);
 };
 
-export const charInc = (c: string, number: number) => {
-  return String.fromCharCode(c.charCodeAt(0) + number);
+export const increment = (char: string, by: number) => {
+  return String.fromCharCode(char.charCodeAt(0) + by);
 };
 
 export const getRandomInteger = (min: number, max: number) => {
@@ -77,6 +77,10 @@ export const isNumber = (value: string | number): boolean => {
   return value != null && value !== "" && !isNaN(Number(value.toString()));
 };
 
-export const isDefined = (value: any): boolean => {
+export function isDefined<T>(value: T | undefined | null): value is T {
   return value !== undefined && value !== null && (typeof value !== 'number' || !isNaN(value));
 };
+
+export function isFunction(value: any): value is Function {
+  return typeof value === 'function';
+}

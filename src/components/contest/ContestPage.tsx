@@ -1,5 +1,5 @@
 import { Alert } from "react-bootstrap";
-import ContestList from "./ContestList";
+import ContestList from "./contest-list/ContestList";
 import Filter from "../Common/Filter";
 import InputChecked from "../Common/Forms/Input/InputChecked";
 import CustomModal from "../Common/CustomModal";
