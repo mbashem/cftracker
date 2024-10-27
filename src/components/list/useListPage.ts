@@ -7,6 +7,7 @@ import useAppSearchParams from "../../hooks/useSearchParam";
 import { useNavigate } from "react-router";
 import { Path } from "../../util/route/path";
 import useListApi from "../../data/hooks/useListApi";
+import { isDefined } from "../../util/util";
 
 function useListPage() {
 	const { theme } = useTheme();
@@ -14,13 +15,13 @@ function useListPage() {
 	const { showGeneralToast, showErrorToast } = useToast();
 	const api = useListApi();
 	const { data: lists, error, isLoading } = api.useGetAllListsQuery();
-	const { searchParams, updateSearchParam, deleteSearchParam } = useAppSearchParams();
+	const { updateSearchParam, deleteSearchParam } = useAppSearchParams();
 	const navigate = useNavigate();
 
 	function listClicked(listName: string) {
 		let list = lists?.find(list => list.name === listName);
 		setActiveList(list);
-		if (list !== undefined)
+		if (isDefined(list))
 			updateSearchParam(SearchKeys.ListId, list.id.toString());
 		else
 			deleteSearchParam(SearchKeys.ListId);

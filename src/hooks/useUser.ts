@@ -2,6 +2,7 @@ import { useLazyAuthenticateQuery } from "../data/queries/userQuery";
 import { errorAuthenticatingUser, removeUser, setUser } from "../data/reducers/userSlice";
 import { useAppDispatch, useAppSelector } from "../data/store";
 import { StorageService } from "../util/StorageService";
+import { isDefined } from "../util/util";
 
 function useUser() {
 	const dispatch = useAppDispatch();
@@ -27,7 +28,7 @@ function useUser() {
 		dispatch(removeUser());
 	}
 
-	return { handleGithubCallback, logout, user, isAuthenticated: user !== undefined };
+	return { handleGithubCallback, logout, user, isAuthenticated: isDefined(user) };
 }
 
 export default useUser;

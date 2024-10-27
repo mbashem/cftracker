@@ -63,12 +63,13 @@ export const fetchProblemList = (dispatch: AppDispatch) => {
       // Note: it's important to handle errors here
       // instead of a catch() block so that we don't swallow
       // exceptions from actual bugs in components.
-      (_error) => {
+      (error) => {
+        console.log(error)
         return dispatch(errorFetchingProblems({ error: "Failed to fetch Problems list from CF API." }));
       }
     )
-    .catch((_e) => {
-      //  console.log(e);
+    .catch((error) => {
+      console.log(error)
       return dispatch(errorFetchingProblems({ error: "Failed to fetch Problems list from CF API." }));
     });
 };

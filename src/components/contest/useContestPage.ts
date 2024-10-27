@@ -9,8 +9,9 @@ import { StorageService } from "../../util/StorageService";
 import { SearchKeys } from "../../util/constants";
 import { ParticipantType } from "../../types/CF/Party";
 import useContestStore from "../../data/hooks/useContestStore";
+import { isDefined, isFunction } from "../../util/util";
 
-interface Filter {
+export interface Filter {
 	perPage: number;
 	showDate: boolean;
 	showRating: boolean;
@@ -20,6 +21,8 @@ interface Filter {
 	selectedCategories: ContestCat[];
 	canSelectMultipleCategories: boolean;
 }
+
+export type UpdateFilter = Partial<Filter> | ((filter: Filter) => Partial<Filter>);
 
 function useContestPage() {
 	const state = useAppSelector((state) => {
@@ -113,7 +116,7 @@ function useContestPage() {
 
 		let catIn = false;
 
-		if (contest.category !== undefined && filter.selectedCategories.includes(contest.category))
+		if (isDefined(contest.category) && filter.selectedCategories.includes(contest.category))
 			catIn = true;
 
 		return status && searchIncluded && contest.count !== 0 && catIn;
@@ -159,9 +162,12 @@ function useContestPage() {
 		StorageService.saveSet(ContestSave.ParticipantType, participantType);
 	}
 
-	const updateFilter = useCallback((partialFilter: Partial<Filter>) => {
-		setFilter((prvFilter) => ({ ...prvFilter, ...partialFilter }));
-	}, [setFilter]);
+	const updateFilter = useCallback((value: UpdateFilter) => {
+		if (isFunction(value))
+			setFilter(prvFilter => ({ ...prvFilter, ...value(prvFilter) }));
+		else
+			setFilter(prvFilter => ({ ...prvFilter, ...value }));
+	}, []);
 
 	const setCategories = useCallback(
 		(categories: ContestCat[]) => updateFilter({ selectedCategories: Array.from(categories) }),

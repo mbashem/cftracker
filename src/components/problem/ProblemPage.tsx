@@ -14,6 +14,7 @@ import InputRange from "../Common/Forms/Input/InputRange";
 import { StorageService } from "../../util/StorageService";
 import useProblemPage from "./useProblemPage";
 import Loading from "../Common/Loading";
+import { isDefined } from "../../util/util";
 
 // TODO: Convert whole Problem Page to hooks pattern
 const ProblemPage = () => {
@@ -122,7 +123,7 @@ const ProblemPage = () => {
 
     setSearchText(filter.search.trim());
 
-    if (state.problemList.problems !== undefined) {
+    if (isDefined(state.problemList.problems)) {
       let newProblemsList: Problem[] = [];
       newProblemsList = state.problemList.problems;
       newProblemsList = newProblemsList.filter((problem: Problem) => filterProblem(problem));
@@ -313,7 +314,7 @@ const ProblemPage = () => {
                         </div>
                       </div>
                     </th>
-                    {listId !== undefined && <th scope="col">Add To {list?.name}</th>}
+                    {isDefined(listId) && <th scope="col">Add To {list?.name}</th>}
                   </tr>
                 </thead>
                 <tbody className={theme.bg}>
@@ -324,7 +325,7 @@ const ProblemPage = () => {
                     perPage={filter.perPage}
                     pageSelected={selected}
                     theme={theme}
-                    showAddToList={listId !== undefined}
+                    showAddToList={isDefined(listId)}
                     addToList={(id) => addProblemToList(id)}
                     problemsAddedToList={problemsAddedTolist}
                     deleteFromList={deleteProblemFromList}

@@ -4,6 +4,7 @@ import Problem, { ProblemLite, ProblemShared } from "../../types/CF/Problem";
 import lowerBound from "../../util/lowerBound";
 import { useAppSelector } from "../store";
 import { useMemo, useState } from "react";
+import { isDefined } from "../../util/util";
 
 const addSharedToProblems = (
   problemList: Problem[],
@@ -54,7 +55,7 @@ const addSharedToProblems = (
   });
 
   for (let problem of newProblems) {
-    if (problem.contestId !== undefined && rec[problem.contestId] !== undefined)
+    if (isDefined(problem.contestId) && isDefined(rec[problem.contestId]))
       newConestList[rec[problem.contestId]].addProblem(problem);
   }
 
@@ -69,29 +70,29 @@ function useContestStore() {
       (state: any) => state.contestList.contests
     ],
     (problems, sharedProblems, contests) => {
-      return addSharedToProblems(problems, sharedProblems, contests)
+      return addSharedToProblems(problems, sharedProblems, contests);
     }
-  )
+  );
 
   const state = useAppSelector(state => {
     return {
       contestList: state.contestList,
       problems: state.problemList.problems,
       sharedProblems: state.sharedProblems.problems
-    }
-  })
+    };
+  });
 
   const [contests, setContests] = useState<Contest[]>([]);
   useMemo(() => {
-    const calculatedContests = calculateContests(state)
-    setContests(calculatedContests)
-  }, [state.contestList.contests, state.problems, state.sharedProblems])
+    const calculatedContests = calculateContests(state);
+    setContests(calculatedContests);
+  }, [state.contestList.contests, state.problems, state.sharedProblems]);
 
   return {
     error: state.contestList.error,
     loading: state.contestList.loading,
     contests
-  }
+  };
 }
 
-export default useContestStore
+export default useContestStore;

@@ -1,6 +1,7 @@
 import {
   delay,
   getUserSubmissionsURL,
+  isDefined,
   stringToArray,
 } from "../../util/util";
 import Submission from "../../types/CF/Submission";
@@ -19,7 +20,7 @@ export const fetchUsers = (dispatch: AppDispatch, handle: string) => {
 
   for (let handle of handleArray) {
     if (handle.length === 0) continue;
-    dispatch(addHandle({ handle, id: currentId }))
+    dispatch(addHandle({ handle, id: currentId }));
   }
 };
 
@@ -55,8 +56,7 @@ export const fetchUserSubmissions = async (
           let submissions: Submission[] = result.result;
 
           submissions = submissions.filter(
-            (submission) => submission.contestId !== undefined &&
-              submission.verdict !== undefined
+            (submission) => isDefined(submission.contestId) && isDefined(submission.verdict)
           );
 
           return dispatch(addUserSubmissions({ result: submissions, id: currentId }));
