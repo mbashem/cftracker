@@ -23,6 +23,15 @@ export default class Theme {
   btnDanger: string;
   btnSuccess: string;
 
+  get hexColor() {
+    let green = this.themeType === ThemesType.LIGHT ? "#d4edc9" : "#2d6148";
+    let red = this.themeType === ThemesType.LIGHT ? "#ffe3e3" : "#52212b";
+    return {
+      green,
+      red
+    };
+  }
+
   constructor(selected?: ThemesType) {
     switch (selected) {
       case ThemesType.DARK:

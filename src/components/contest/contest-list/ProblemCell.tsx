@@ -71,7 +71,7 @@ function ContestProblemCell({
         data-bs-html="true"
         data-bs-toggle="tooltip"
         data-bs-placement="top"
-        href={getProblemUrl(problem.contestId!, problem.index)}
+        href={getProblemUrl(problem.contestId, problem.index)}
       >
         <span>
           {problem.index}

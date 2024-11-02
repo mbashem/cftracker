@@ -1,5 +1,3 @@
-// ProblemListCell.tsx
-import React from "react";
 import Problem from "../../../types/CF/Problem";
 import { Verdict } from "../../../types/CF/Submission";
 import Theme from "../../../util/Theme";

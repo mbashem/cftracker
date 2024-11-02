@@ -4,7 +4,13 @@ export const SOLVED_PROBLEMS = "solvedProblems";
 export const ATTEMPTED_PROBLEMS = "attemptedProblems";
 export const SOLVED_CONTESTS = "solvedContests";
 export const ATTEMPTED_CONTESTS = "attemptedContests";
-export const enum SearchKeys{
+export const enum SearchKeys {
 	Search = "q",
 	ListId = "listId"
 }
+
+export const RATING_CONSTANTS = {
+	max: 3500,
+	min: 800,
+	interval: 100
+};

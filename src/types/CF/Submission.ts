@@ -26,6 +26,12 @@ export enum Verdict {
   UNSOLVED = "UNSOLVED",
 }
 
+export enum SimpleVerdict {
+  SOLVED = "SOLVED",
+  ATTEMPTED = "ATTEMPTED",
+  UNSOLVED = "UNSOLVED",
+}
+
 export class SubmissionLite implements Comparator<SubmissionLite> {
   contestId: number;
   index: string;
