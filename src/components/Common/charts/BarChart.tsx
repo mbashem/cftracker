@@ -12,13 +12,16 @@ import {
   ChartData,
   ChartDataset,
 } from "chart.js";
+import { Color } from "../../../util/Theme";
+import { isDefined } from "../../../util/util";
+import useTheme from "../../../data/hooks/useTheme";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 export interface BarChartDataSet {
   label: string;
   data: number[];
-  color: string;
+  color?: Color;
 }
 
 interface BarChartProps<XAxis> {
@@ -28,47 +31,59 @@ interface BarChartProps<XAxis> {
 }
 
 function BarChart<XAxis>({ labels, title, dataSets }: BarChartProps<XAxis>) {
+  const { theme } = useTheme();
+
   const chartDataDataSet = useMemo(() => {
     let proccesedDataSets: ChartDataset<"bar">[] = [];
 
     for (let dataSet of dataSets) {
+      let backgroundColor: string | undefined;
+      if (isDefined(dataSet.color)) 
+          backgroundColor = theme.hexColor(dataSet.color);
+
       proccesedDataSets.push({
         label: dataSet.label,
         data: dataSet.data,
-        backgroundColor: dataSet.color
+        backgroundColor,
       });
     }
 
     return proccesedDataSets;
-  }, [dataSets]);
+  }, [dataSets, theme]);
 
-  const chartData: ChartData<"bar"> = useMemo(() => ({
-    labels,
-    datasets: chartDataDataSet,
-  }), [labels, dataSets]);
+  const chartData: ChartData<"bar"> = useMemo(
+    () => ({
+      labels,
+      datasets: chartDataDataSet,
+    }),
+    [labels, dataSets]
+  );
 
-  const options: ChartOptions<"bar"> = useMemo(() => ({
-    responsive: true,
-    plugins: {
-      legend: {
-        display: !!title,
-        position: "top",
+  const options: ChartOptions<"bar"> = useMemo(
+    () => ({
+      responsive: true,
+      plugins: {
+        legend: {
+          display: !!title,
+          position: "top",
+        },
+        title: {
+          display: !!title,
+          text: title || "",
+        },
       },
-      title: {
-        display: !!title,
-        text: title || "",
+      scales: {
+        x: {
+          stacked: true,
+        },
+        y: {
+          stacked: true,
+          beginAtZero: true,
+        },
       },
-    },
-    scales: {
-      x: {
-        stacked: true,
-      },
-      y: {
-        stacked: true,
-        beginAtZero: true,
-      },
-    },
-  }), [title]);
+    }),
+    [title]
+  );
 
   return <Bar data={chartData} options={options} />;
 }

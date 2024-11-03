@@ -1,13 +1,15 @@
 import SolveCountByRating from "./charts/SolveCountByRating";
+import SubmissionsByVerdict from "./charts/SubmissionsByVerdict";
 import useStatPage from "./useStatPage";
 
 const StatPage = () => {
-  const { problemIDsGroupedBySimpleVerdict, theme } = useStatPage();
+  const { problemIDsBySimpleVerdict, submissionsByVerdict, theme } = useStatPage();
 
   return (
-    <>
-      <SolveCountByRating problemIDsGroupedBySimpleVerdict={problemIDsGroupedBySimpleVerdict} />
-    </>
+    <div className="container">
+      <SubmissionsByVerdict submissionsByVerdict={submissionsByVerdict} />
+      <SolveCountByRating problemIDsGroupedBySimpleVerdict={problemIDsBySimpleVerdict} />
+    </div>
   );
 };
 

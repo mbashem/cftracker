@@ -1,8 +1,9 @@
 import { useMemo } from "react";
 import { SimpleVerdict } from "../../../types/CF/Submission";
-import BarChart, { BarChartDataSet } from "./BarChart";
+import BarChart, { BarChartDataSet } from "../../Common/charts/BarChart";
 import { RATING_CONSTANTS } from "../../../util/constants";
 import useTheme from "../../../data/hooks/useTheme";
+import { Color } from "../../../util/Theme";
 
 interface SolveCountByRatingProps {
   problemIDsGroupedBySimpleVerdict: Map<SimpleVerdict, Map<number, Set<string>>>;
@@ -32,12 +33,12 @@ function SolveCountByRating({ problemIDsGroupedBySimpleVerdict }: SolveCountByRa
       {
         label: "Solved",
         data: solved,
-        color: theme.hexColor.green,
+        color: Color.Green,
       },
       {
         label: "Attempted",
         data: attempted,
-        color: theme.hexColor.red,
+        color: Color.Red,
       },
     ];
     return dataSets;
