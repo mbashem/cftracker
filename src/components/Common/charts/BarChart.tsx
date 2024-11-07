@@ -28,9 +28,11 @@ interface BarChartProps<XAxis> {
   labels: XAxis[]; // Labels for each bar
   title?: string; // Optional title for the chart
   dataSets: BarChartDataSet[];
+  yMax?: number;
+  yMin?: number;
 }
 
-function BarChart<XAxis>({ labels, title, dataSets }: BarChartProps<XAxis>) {
+function BarChart<XAxis>({ labels, title, dataSets, yMax, yMin }: BarChartProps<XAxis>) {
   const { theme } = useTheme();
 
   const chartDataDataSet = useMemo(() => {
@@ -38,8 +40,7 @@ function BarChart<XAxis>({ labels, title, dataSets }: BarChartProps<XAxis>) {
 
     for (let dataSet of dataSets) {
       let backgroundColor: string | undefined;
-      if (isDefined(dataSet.color)) 
-          backgroundColor = theme.hexColor(dataSet.color);
+      if (isDefined(dataSet.color)) backgroundColor = theme.hexColor(dataSet.color);
 
       proccesedDataSets.push({
         label: dataSet.label,
@@ -79,10 +80,12 @@ function BarChart<XAxis>({ labels, title, dataSets }: BarChartProps<XAxis>) {
         y: {
           stacked: true,
           beginAtZero: true,
+          max: yMax,
+          min: yMin,
         },
       },
     }),
-    [title]
+    [title, yMax, yMin]
   );
 
   return <Bar data={chartData} options={options} />;

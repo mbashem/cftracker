@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { Pie } from "react-chartjs-2";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, ChartDataset } from "chart.js";
 import { ChartData, ChartOptions } from "chart.js";
@@ -46,7 +46,6 @@ function PieChart({ title, labels, dataSets: propDataSet }: PieChartProps) {
         backgroundColors.push(hexColor);
 
         availableColors.delete(backgroundColor);
-        console.log(backgroundColors, backgroundColor, hexColor);
       }
 
       dataSets.push({
@@ -59,7 +58,6 @@ function PieChart({ title, labels, dataSets: propDataSet }: PieChartProps) {
 
     return dataSets;
   }, [labels, propDataSet, theme]);
-  console.log(dataSets);
 
   let data: ChartData<"pie"> = useMemo(
     () => ({

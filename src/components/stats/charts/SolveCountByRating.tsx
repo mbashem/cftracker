@@ -7,16 +7,10 @@ import { Color } from "../../../util/Theme";
 
 interface SolveCountByRatingProps {
   problemIDsGroupedBySimpleVerdict: Map<SimpleVerdict, Map<number, Set<string>>>;
+  ratingLabels: number[];
 }
 
-function SolveCountByRating({ problemIDsGroupedBySimpleVerdict }: SolveCountByRatingProps) {
-  const labels = useMemo(() => {
-    let labels = [];
-    for (let rating = RATING_CONSTANTS.min; rating <= RATING_CONSTANTS.max; rating += RATING_CONSTANTS.interval) {
-      labels.push(rating);
-    }
-    return labels;
-  }, []);
+function SolveCountByRating({ ratingLabels, problemIDsGroupedBySimpleVerdict }: SolveCountByRatingProps) {
 
   const { theme } = useTheme();
 
@@ -44,7 +38,7 @@ function SolveCountByRating({ problemIDsGroupedBySimpleVerdict }: SolveCountByRa
     return dataSets;
   }, [problemIDsGroupedBySimpleVerdict, theme]);
 
-  return <BarChart title={"Solve Count By Ratings"} labels={labels} dataSets={dataSets} />;
+  return <BarChart title={"Solve Count By Ratings"} labels={ratingLabels} dataSets={dataSets} />;
 }
 
 export default SolveCountByRating;
