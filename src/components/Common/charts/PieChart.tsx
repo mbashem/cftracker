@@ -2,11 +2,12 @@ import { useMemo } from "react";
 import { Pie } from "react-chartjs-2";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, ChartDataset } from "chart.js";
 import { ChartData, ChartOptions } from "chart.js";
+import ChartDataLabels from "chartjs-plugin-datalabels";
 import { Color } from "../../../util/Theme";
 import useTheme from "../../../data/hooks/useTheme";
 import { isDefined, isNumber } from "../../../util/util";
 
-ChartJS.register(ArcElement, Tooltip, Legend);
+ChartJS.register(ArcElement, Tooltip, Legend, ChartDataLabels);
 
 export interface PieChartData {
   data: number;
@@ -71,6 +72,18 @@ function PieChart({ title, labels, dataSets: propDataSet }: PieChartProps) {
     () => ({
       responsive: true,
       plugins: {
+        datalabels: {
+          formatter: (value: number, context: any) => {
+            if (value === 0) return "";
+            const total = context.chart.data.datasets[0].data.reduce((acc: number, val: number) => acc + val, 0);
+            const percentage = (value / total) * 100;
+            return `${percentage.toFixed(1)}%`;
+          },
+          color: "#fff",
+          font: {
+            weight: "bold",
+          },
+        },
         legend: {
           position: "top",
         },

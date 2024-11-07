@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import useSubmissionsStore from "../../data/hooks/useSubmissionsStore";
-import Submission, { SimpleVerdict, Verdict } from "../../types/CF/Submission";
+import Submission, { getSimpleVerdict, SimpleVerdict, Verdict } from "../../types/CF/Submission";
 import { isDefined } from "../../util/util";
 import useTheme from "../../data/hooks/useTheme";
 import { RATING_CONSTANTS } from "../../util/constants";
@@ -27,12 +27,12 @@ function useStatPage() {
 	}, [rawSubmissions]);
 
 	const ratingLabels = useMemo(() => {
-    let labels = [];
-    for (let rating = RATING_CONSTANTS.min; rating <= RATING_CONSTANTS.max; rating += RATING_CONSTANTS.interval) {
-      labels.push(rating);
-    }
-    return labels;
-  }, []);
+		let labels = [];
+		for (let rating = RATING_CONSTANTS.min; rating <= RATING_CONSTANTS.max; rating += RATING_CONSTANTS.interval) {
+			labels.push(rating);
+		}
+		return labels;
+	}, []);
 
 	function addSubmissionToGroupedByVerdict(submission: Submission, groupedSubmissions: Map<Verdict, Submission[]>) {
 		if (!isDefined(groupedSubmissions.get(submission.verdict)))
@@ -41,7 +41,7 @@ function useStatPage() {
 	}
 
 	function addSubmissionsProblemToGroupedBySimpleVerdict(submission: Submission, groupedProblems: Map<SimpleVerdict, Map<number, Set<string>>>) {
-		const verdict = submission.verdict === Verdict.OK ? SimpleVerdict.SOLVED : SimpleVerdict.ATTEMPTED;
+		const verdict = getSimpleVerdict(submission.verdict);
 		if (!isDefined(groupedProblems.get(verdict))) {
 			groupedProblems.set(verdict, new Map());
 		}

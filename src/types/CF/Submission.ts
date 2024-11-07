@@ -32,10 +32,24 @@ export enum SimpleVerdict {
   UNSOLVED = "UNSOLVED",
 }
 
+export function getSimpleVerdict(verdict?: Verdict) {
+  switch (verdict) {
+    case undefined:
+      return SimpleVerdict.UNSOLVED;
+    case Verdict.OK:
+      return SimpleVerdict.SOLVED;
+    default:
+      return SimpleVerdict.ATTEMPTED;
+  }
+}
+
 export class SubmissionLite implements Comparator<SubmissionLite> {
   contestId: number;
   index: string;
   verdict: Verdict;
+  get simpleVerdict() {
+    return getSimpleVerdict(this.verdict);
+  }
 
   constructor(contestId: number, index: string, verdict: Verdict) {
     this.contestId = contestId;

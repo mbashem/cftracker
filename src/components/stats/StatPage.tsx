@@ -1,3 +1,4 @@
+import ContestCategoriesByACPercentage from "./charts/ContestCategoriesByACPercentage";
 import RatingByACPercentage from "./charts/RatingByACPercentage";
 import SolveCountByRating from "./charts/SolveCountByRating";
 import SubmissionsByVerdict from "./charts/SubmissionsByVerdict";
@@ -13,7 +14,8 @@ const StatPage = () => {
     <div className="container">
       <SubmissionsByVerdict submissionsByVerdict={submissionsByVerdict} />
       <SolveCountByRating ratingLabels={ratingLabels} problemIDsGroupedBySimpleVerdict={problemIDsBySimpleVerdict} />
-      <RatingByACPercentage ratingLabels={ratingLabels}/>
+      <RatingByACPercentage ratingLabels={ratingLabels} />
+      <ContestCategoriesByACPercentage />
     </div>
   );
 };

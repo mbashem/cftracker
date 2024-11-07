@@ -64,6 +64,15 @@ function BarChart<XAxis>({ labels, title, dataSets, yMax, yMin }: BarChartProps<
     () => ({
       responsive: true,
       plugins: {
+        datalabels: {
+          formatter: (value: number, context: any) => {
+            return "";
+          },
+          color: "#fff",
+          font: {
+            weight: "bold",
+          },
+        },
         legend: {
           display: !!title,
           position: "top",
