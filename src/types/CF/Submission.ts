@@ -47,6 +47,7 @@ export class SubmissionLite implements Comparator<SubmissionLite> {
   contestId: number;
   index: string;
   verdict: Verdict;
+
   get simpleVerdict() {
     return getSimpleVerdict(this.verdict);
   }
@@ -87,6 +88,11 @@ export default class Submission extends SubmissionLite {
   memoryConsumedBytes: number;
   points?: number;
   fromShared?: boolean;
+
+  get submissionDate(): Date {
+    let secondToMillisecond = 1000;
+    return new Date(this.creationTimeSeconds * secondToMillisecond);
+  }
 
   constructor(sub: Submission) {
     super(sub.contestId, sub.problem.index, sub.verdict);

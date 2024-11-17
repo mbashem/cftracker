@@ -6,14 +6,14 @@ import ProblemList from "./ProblemList";
 import { useAppSelector } from "../../data/store";
 import Problem from "../../types/CF/Problem";
 import { Verdict } from "../../types/CF/Submission";
-import Filter from "../Common/Filter";
-import CustomModal from "../Common/CustomModal";
-import CheckList from "../Common/Forms/CheckList";
-import Pagination from "../Common/Pagination";
-import InputRange from "../Common/Forms/Input/InputRange";
+import Filter from "../common/Filter";
+import CustomModal from "../common/CustomModal";
+import CheckList from "../common/forms/CheckList";
+import Pagination from "../common/Pagination";
+import InputRange from "../common/forms/Input/InputRange";
 import { StorageService } from "../../util/StorageService";
 import useProblemPage from "./useProblemPage";
-import Loading from "../Common/Loading";
+import Loading from "../common/Loading";
 import { isDefined } from "../../util/util";
 
 // TODO: Convert whole Problem Page to hooks pattern

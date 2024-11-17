@@ -1,11 +1,11 @@
 import { Alert } from "react-bootstrap";
 import ContestList from "./contest-list/ContestList";
-import Filter from "../Common/Filter";
-import InputChecked from "../Common/Forms/Input/InputChecked";
-import CustomModal from "../Common/CustomModal";
-import CheckList from "../Common/Forms/CheckList";
-import Pagination from "../Common/Pagination";
-import Loading from "../Common/Loading";
+import Filter from "../common/Filter";
+import InputChecked from "../common/forms/Input/InputChecked";
+import CustomModal from "../common/CustomModal";
+import CheckList from "../common/forms/CheckList";
+import Pagination from "../common/Pagination";
+import Loading from "../common/Loading";
 import useContestPage from "./useContestPage";
 import ContestCategorySelection from "./ContestCategorySelection";
 

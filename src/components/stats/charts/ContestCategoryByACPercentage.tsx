@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { ContestCat } from "../../../types/CF/Contest";
 import { SimpleVerdict } from "../../../types/CF/Submission";
-import PieChart, { PieChartData, PieChartDataSet } from "../../Common/charts/PieChart";
+import PieChart, { PieChartData, PieChartDataSet } from "../../common/charts/PieChart";
 import { Color } from "../../../util/Theme";
 import DefaultValueMap from "../../../util/DefaultValueMap";
 
@@ -16,7 +16,6 @@ function ContestCategoryByACPercentage({ category, simpleVerdictCounts }: Contes
     let labels: string[] = [];
 
     for (let simpleVerdict of Object.values(SimpleVerdict)) {
-      console.log(simpleVerdict, simpleVerdictCounts.get(simpleVerdict));
       pieChartData.push({
         data: simpleVerdictCounts.get(simpleVerdict) ?? 0,
         backgroundColor: getColorForVerdict(simpleVerdict),

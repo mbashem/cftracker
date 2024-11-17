@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import useSubmissionsStore from "../../../data/hooks/useSubmissionsStore";
-import BarChart, { BarChartDataSet } from "../../Common/charts/BarChart";
+import BarChart, { BarChartDataSet } from "../../common/charts/BarChart";
 import { Verdict } from "../../../types/CF/Submission";
 import { Color } from "../../../util/Theme";
 import { isDefined } from "../../../util/util";
@@ -49,7 +49,15 @@ function RatingByACPercentage({ ratingLabels }: RatingByACPercentageProps) {
     return dataSets;
   }, [submissions, ratingLabels]);
 
-  return <BarChart title="Rating By AC Percentage" labels={ratingLabels} dataSets={ratingByACPercentageDataset} yMin={0} yMax={100} />;
+  return (
+    <BarChart
+      title="Rating By AC Percentage"
+      labels={ratingLabels}
+      dataSets={ratingByACPercentageDataset}
+      yMin={0}
+      yMax={100}
+    />
+  );
 }
 
 export default RatingByACPercentage;

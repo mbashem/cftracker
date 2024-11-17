@@ -38,15 +38,20 @@ function ContestCategoriesByACPercentage({}: ContestCategoryByACPercentageProps)
   }, [contestByCategory, submissions]);
 
   return (
-    <div className="row">
-      {categories.map((category) => (
-        <div className="col-4">
-          <ContestCategoryByACPercentage
-            category={category}
-            simpleVerdictCounts={simpleVerdictByContestCategory.get(category) ?? new DefaultValueMap()}
-          />
-        </div>
-      ))}
+    <div className="container">
+      <div className="row text-secondary text-center w-100">
+        <span className="small">Contest Categories By AC Percentage </span>
+      </div>
+      <div className="row">
+        {categories.map((category) => (
+          <div className="col-6 col-md-3" key={category}>
+            <ContestCategoryByACPercentage
+              category={category}
+              simpleVerdictCounts={simpleVerdictByContestCategory.get(category) ?? new DefaultValueMap()}
+            />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

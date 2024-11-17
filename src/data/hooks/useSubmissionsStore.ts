@@ -16,13 +16,15 @@ const addSharedToSubmissions = (
 
   for (let submission of userSubmissions) {
     if (submission.contestId === undefined) continue;
+
+    newSubmissions;
     let id: string = submission.id.toString() + submission.contestId.toString();
     presSubs.add(id);
   }
 
-  let newUserSubmissions: Submission[] = []
+  let newUserSubmissions: Submission[] = [];
   for (let submission of userSubmissions) {
-    newUserSubmissions.push(new Submission(submission))
+    newUserSubmissions.push(new Submission(submission));
     let currentShared: ProblemShared = new ProblemShared(
       submission.contestId,
       submission.index
@@ -53,7 +55,7 @@ const addSharedToSubmissions = (
         submission.problem.rating,
         submission.problem.tags,
         submission.problem.solvedCount
-      )
+      );
       newS.author.contestId = problem.contestId;
       newS.fromShared = true;
       newS.index = problem.index;
@@ -70,11 +72,9 @@ const addSharedToSubmissions = (
     }
   }
 
-  userSubmissions = newSubmissions.concat(userSubmissions);
+  newUserSubmissions.sort(sortByCompare);
 
-  userSubmissions.sort(sortByCompare);
-
-  return userSubmissions;
+  return newUserSubmissions;
 };
 
 function useSubmissionsStore() {
@@ -84,29 +84,29 @@ function useSubmissionsStore() {
       (state: any) => state.sharedProblems.problems
     ],
     (submissions, problems) => {
-      return addSharedToSubmissions(submissions, problems)
+      return addSharedToSubmissions(submissions, problems);
     }
-  )
+  );
 
   const state = useAppSelector(state => {
     return {
       userSubmissions: state.userSubmissions,
       sharedProblems: state.sharedProblems
-    }
-  })
+    };
+  });
 
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   useMemo(() => {
-    const calculatedSubmissions = calculateSubmissions(state)
-    setSubmissions(calculatedSubmissions)
-  }, [state.userSubmissions.submissions, state.sharedProblems.problems])
+    const calculatedSubmissions = calculateSubmissions(state);
+    setSubmissions(calculatedSubmissions);
+  }, [state.userSubmissions.submissions, state.sharedProblems.problems]);
 
   return {
     error: state.userSubmissions.error,
     loading: state.userSubmissions.loading,
     submissions,
     rawSubmissions: state.userSubmissions.submissions
-  }
+  };
 }
 
 export default useSubmissionsStore;

@@ -193,3 +193,7 @@ footer {
 .dark-rating-legendary::first-letter {
   color: #f8f9fa !important;
 }
+
+text.text-light {
+  fill: #f8f9fa !important;
+}

@@ -119,7 +119,7 @@ function Menu() {
                 <span>
                   Stats
                   <sup>
-                    <FontAwesomeIcon icon={faFlask} />
+                    <FontAwesomeIcon icon={faFlask} /> <i>Beta</i>
                   </sup>
                 </span>
               </Link>

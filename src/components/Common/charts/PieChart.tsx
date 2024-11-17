@@ -73,6 +73,7 @@ function PieChart({ title, labels, dataSets: propDataSet }: PieChartProps) {
       responsive: true,
       plugins: {
         datalabels: {
+          display: 'auto',
           formatter: (value: number, context: any) => {
             if (value === 0) return "";
             const total = context.chart.data.datasets[0].data.reduce((acc: number, val: number) => acc + val, 0);

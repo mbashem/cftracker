@@ -1,5 +1,5 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import Loading from "../../Common/Loading";
+import Loading from "../../common/Loading";
 import useIndividualListPage from "./useIndividualListPage";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
 

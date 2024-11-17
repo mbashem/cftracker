@@ -1,6 +1,6 @@
 import { memo } from "react";
 import Submission, { Verdict } from "../../../types/CF/Submission";
-import PieChart, { PieChartData, PieChartDataSet } from "../../Common/charts/PieChart";
+import PieChart, { PieChartData, PieChartDataSet } from "../../common/charts/PieChart";
 import { Color } from "../../../util/Theme";
 import { isDefined } from "../../../util/util";
 

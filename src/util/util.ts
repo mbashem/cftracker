@@ -1,19 +1,3 @@
-export const formateDate = (time: number) => {
-  const date = new Date(time * 1000);
-  //console.log(date);
-  return (
-    date.getDate() +
-    "/" +
-    (date.getMonth() + 1) +
-    "/" +
-    date.getFullYear() +
-    " " +
-    date.getHours() +
-    ":" +
-    date.getMinutes()
-  );
-};
-
 export const getContestUrl = (contestId: number) => {
   return "https://codeforces.com/contest/" + contestId;
 };
@@ -59,8 +43,6 @@ export const parseQuery = (queryString: string) => {
   }
   return query;
 };
-
-export const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
 export const processNumber = (
   num: number,
