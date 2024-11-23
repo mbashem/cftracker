@@ -11,9 +11,11 @@ import {
   ChartOptions,
   ChartData,
   ChartDataset,
+  TooltipModel,
+  TooltipItem,
 } from "chart.js";
 import { Color } from "../../../util/Theme";
-import { getFormattedString, isDefined, isNumber, isStringNumber } from "../../../util/util";
+import { getFormattedString, isDefined, isNumber } from "../../../util/util";
 import useTheme from "../../../data/hooks/useTheme";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
@@ -89,12 +91,12 @@ function BarChart<XAxis>({ labels, title, dataSets, yMax, yMin }: BarChartProps<
         },
         tooltip: {
           callbacks: {
-            label: function (tooltipItem: any, _data: any) {
+            label: function (this: TooltipModel<"bar">, tooltipItem: TooltipItem<"bar">) {
               let value = tooltipItem.raw;
               if (isNumber(value)) {
                 return getFormattedString(value);
               }
-              return value;
+              return "unknown";
             },
           },
         },
