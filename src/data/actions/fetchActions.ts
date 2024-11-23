@@ -14,14 +14,14 @@ const problemSetURL = "https://codeforces.com/api/problemset.problems?lang=en";
 
 export const fetchProblemList = (dispatch: AppDispatch) => {
   dispatch(loadingProblems());
-  import("../saved_api/problems_data")
+  // import("../saved_api/problems_data")
+  //   .then(
+  //     (data) => {
+  //       let result = data.problem_data;
+  fetch(problemSetURL)
+    .then((res) => res.json())
     .then(
-      (data) => {
-        let result = data.problem_data;
-  // fetch(problemSetURL)
-    // .then((res) => res.json())
-    // .then(
-    //   (result) => {
+      (result) => {
         if (result.status !== "OK")
           return dispatch(
             errorFetchingProblems({ error: "Failed to fetch Problems list from CF API" })
@@ -64,12 +64,12 @@ export const fetchProblemList = (dispatch: AppDispatch) => {
       // instead of a catch() block so that we don't swallow
       // exceptions from actual bugs in components.
       (error) => {
-        console.log(error)
+        console.log(error);
         return dispatch(errorFetchingProblems({ error: "Failed to fetch Problems list from CF API." }));
       }
     )
     .catch((error) => {
-      console.log(error)
+      console.log(error);
       return dispatch(errorFetchingProblems({ error: "Failed to fetch Problems list from CF API." }));
     });
 };

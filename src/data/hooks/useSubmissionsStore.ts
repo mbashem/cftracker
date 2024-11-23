@@ -12,19 +12,19 @@ const addSharedToSubmissions = (
   sharedProblems: ProblemShared[]
 ): Submission[] => {
   let presSubs: Set<string> = new Set<string>();
-  let newSubmissions: Submission[] = new Array<Submission>();
 
   for (let submission of userSubmissions) {
     if (submission.contestId === undefined) continue;
 
-    newSubmissions;
     let id: string = submission.id.toString() + submission.contestId.toString();
     presSubs.add(id);
   }
 
-  let newUserSubmissions: Submission[] = [];
+  let deepCopiedSubmissions: Submission[] = [];
+  let generatedSubmissions: Submission[] = new Array<Submission>();
+
   for (let submission of userSubmissions) {
-    newUserSubmissions.push(new Submission(submission));
+    deepCopiedSubmissions.push(new Submission(submission));
     let currentShared: ProblemShared = new ProblemShared(
       submission.contestId,
       submission.index
@@ -68,10 +68,11 @@ const addSharedToSubmissions = (
         console.log(newS);
       }
 
-      newSubmissions.push(newS);
+      generatedSubmissions.push(newS);
     }
   }
 
+  let newUserSubmissions = deepCopiedSubmissions.concat(generatedSubmissions);
   newUserSubmissions.sort(sortByCompare);
 
   return newUserSubmissions;

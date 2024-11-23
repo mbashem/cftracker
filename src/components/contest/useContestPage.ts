@@ -82,9 +82,14 @@ function useContestPage() {
 		if (randomContest !== -1) {
 			return [contestList.contests[randomContest]];
 		}
+		let lo = selected * filter.perPage;
+		let high = Math.min(contestList.contests.length, lo + filter.perPage);
 
+		if (lo > high) return [];
+		console.log("CurrentPageContests ", randomContest, lo, high);
+		// return contestList.contests.slice(lo, high);
 		return getCurrentPageContests();
-	}, [contestList, filter.perPage, randomContest]);
+	}, [contestList, selected, filter.perPage, randomContest]);
 
 	const submissions = useMemo(() => {
 		let currRec: Map<number, Map<Verdict, Set<string>>> = new Map();
