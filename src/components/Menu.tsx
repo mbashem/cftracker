@@ -1,6 +1,14 @@
 import { faGithub } from "@fortawesome/free-brands-svg-icons";
 import { faMoon } from "@fortawesome/free-regular-svg-icons";
-import { faInfo, faSignIn, faSignOut, faSun, faSync } from "@fortawesome/free-solid-svg-icons";
+import {
+  faFlask,
+  faInfo,
+  faScrewdriverWrench,
+  faSignIn,
+  faSignOut,
+  faSun,
+  faSync,
+} from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { memo, useEffect, useState } from "react";
 import { Nav, Navbar, OverlayTrigger, Popover } from "react-bootstrap";
@@ -105,6 +113,17 @@ function Menu() {
                 </Link>
               </li>
             )}
+            <li className="nav-item active">
+              <Link to={Path.Stats} className="nav-link">
+                {/* <span className="p-1">{<FontAwesomeIcon icon={faBars} />}</span> */}
+                <span title="experimental">
+                  Stats
+                  <sup>
+                    <FontAwesomeIcon icon={faFlask} />
+                  </sup>
+                </span>
+              </Link>
+            </li>
             <li className="nav-item active">
               <Link to={Path.PROBLEMS} className="nav-link">
                 {/* <span className="p-1">{<FontAwesomeIcon icon={faBars} />}</span> */}

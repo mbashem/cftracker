@@ -1,5 +1,4 @@
 import {
-  delay,
   getUserSubmissionsURL,
   isDefined,
   stringToArray,
@@ -8,6 +7,7 @@ import Submission from "../../types/CF/Submission";
 import { AppDispatch } from "../store";
 import { addHandle, removeAllHandle } from "../reducers/userSlice";
 import { addUserSubmissions, clearAllUsersSubmissions, errorFetchingUserSubmissions, loadingUserSubmissions } from "../reducers/userSubmissionsSlice";
+import { delay } from "../../util/time";
 
 export const fetchUsers = (dispatch: AppDispatch, handle: string) => {
   let currentId = Date.now();

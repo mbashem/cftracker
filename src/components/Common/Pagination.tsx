@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import Theme from "../../util/Theme";
 import { processNumber } from "../../util/util";
-import InputNumber from "./Forms/Input/InputNumber";
+import InputNumber from "./forms/Input/InputNumber";
 
 interface PaginationProps {
   perPage: number;

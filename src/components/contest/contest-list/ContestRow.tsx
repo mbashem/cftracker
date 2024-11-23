@@ -1,9 +1,10 @@
 import { OverlayTrigger, Tooltip } from "react-bootstrap";
-import { formateDate, increment, getContestUrl } from "../../../util/util";
+import { increment, getContestUrl } from "../../../util/util";
 import Contest from "../../../types/CF/Contest";
 import { Verdict } from "../../../types/CF/Submission";
 import Theme from "../../../util/Theme";
 import ProblemListCell from "./ProblemsListCell";
+import { formateDate } from "../../../util/time";
 
 interface ContestRowProps {
   contest: Contest;
