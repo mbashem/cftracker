@@ -2,14 +2,13 @@ import { useMemo } from "react";
 import useSubmissionsStore from "../../../data/hooks/useSubmissionsStore";
 import BarChart, { BarChartDataSet } from "../../common/charts/BarChart";
 import { Verdict } from "../../../types/CF/Submission";
-import { Color } from "../../../util/Theme";
+import Theme from "../../../util/Theme";
 import { isDefined } from "../../../util/util";
+import { RATING_LABELS } from "../../../util/cf";
 
-interface RatingByACPercentageProps {
-  ratingLabels: number[];
-}
+interface RatingByACPercentageProps {}
 
-function RatingByACPercentage({ ratingLabels }: RatingByACPercentageProps) {
+function RatingByACPercentage({}: RatingByACPercentageProps) {
   const { rawSubmissions: submissions } = useSubmissionsStore();
 
   const ratingByACPercentageDataset = useMemo(() => {
@@ -25,7 +24,7 @@ function RatingByACPercentage({ ratingLabels }: RatingByACPercentageProps) {
 
     let acPercentages: number[] = [];
 
-    for (let rating of ratingLabels) {
+    for (let rating of RATING_LABELS) {
       let totalSubmission = totalSubmissions.get(rating);
       if (!isDefined(totalSubmission)) {
         acPercentages.push(0);
@@ -38,21 +37,23 @@ function RatingByACPercentage({ ratingLabels }: RatingByACPercentageProps) {
       acPercentages.push(acPercentage);
     }
 
+    // acPercentages = acPercentages.map((value) => (value < 1 ? 50 : value));
+
     let dataSets: BarChartDataSet[] = [
       {
         label: "AC",
         data: acPercentages,
-        color: Color.Green,
+        color: Theme.colorsForRatings,
       },
     ];
 
     return dataSets;
-  }, [submissions, ratingLabels]);
+  }, [submissions]);
 
   return (
     <BarChart
       title="Rating By AC Percentage"
-      labels={ratingLabels}
+      labels={RATING_LABELS}
       dataSets={ratingByACPercentageDataset}
       yMin={0}
       yMax={100}

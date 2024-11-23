@@ -116,10 +116,10 @@ function Menu() {
             <li className="nav-item active">
               <Link to={Path.Stats} className="nav-link">
                 {/* <span className="p-1">{<FontAwesomeIcon icon={faBars} />}</span> */}
-                <span>
+                <span title="experimental">
                   Stats
                   <sup>
-                    <FontAwesomeIcon icon={faFlask} /> <i>Beta</i>
+                    <FontAwesomeIcon icon={faFlask} />
                   </sup>
                 </span>
               </Link>

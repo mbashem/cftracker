@@ -13,7 +13,7 @@ import {
   ChartDataset,
 } from "chart.js";
 import { Color } from "../../../util/Theme";
-import { isDefined } from "../../../util/util";
+import { getFormattedString, isDefined, isNumber, isStringNumber } from "../../../util/util";
 import useTheme from "../../../data/hooks/useTheme";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
@@ -21,7 +21,7 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
 export interface BarChartDataSet {
   label: string;
   data: number[];
-  color?: Color;
+  color?: Color | Color[];
 }
 
 interface BarChartProps<XAxis> {
@@ -39,8 +39,12 @@ function BarChart<XAxis>({ labels, title, dataSets, yMax, yMin }: BarChartProps<
     let proccesedDataSets: ChartDataset<"bar">[] = [];
 
     for (let dataSet of dataSets) {
-      let backgroundColor: string | undefined;
-      if (isDefined(dataSet.color)) backgroundColor = theme.hexColor(dataSet.color);
+      let backgroundColor: string | string[] | undefined;
+      if (isDefined(dataSet.color)) {
+        if (Array.isArray(dataSet.color)) {
+          backgroundColor = dataSet.color.map((color) => theme.hexColor(color));
+        } else backgroundColor = theme.hexColor(dataSet.color);
+      }
 
       proccesedDataSets.push({
         label: dataSet.label,
@@ -66,7 +70,7 @@ function BarChart<XAxis>({ labels, title, dataSets, yMax, yMin }: BarChartProps<
       plugins: {
         datalabels: {
           display: false,
-          formatter: (value: number, context: any) => {
+          formatter: (value: number, _context: any) => {
             return `${value.toFixed(0)}`;
           },
           color: "#fff",
@@ -81,6 +85,18 @@ function BarChart<XAxis>({ labels, title, dataSets, yMax, yMin }: BarChartProps<
         title: {
           display: !!title,
           text: title || "",
+          color: "#6c757d",
+        },
+        tooltip: {
+          callbacks: {
+            label: function (tooltipItem: any, _data: any) {
+              let value = tooltipItem.raw;
+              if (isNumber(value)) {
+                return getFormattedString(value);
+              }
+              return value;
+            },
+          },
         },
       },
       scales: {

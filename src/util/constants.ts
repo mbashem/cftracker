@@ -8,9 +8,3 @@ export const enum SearchKeys {
 	Search = "q",
 	ListId = "listId"
 }
-
-export const RATING_CONSTANTS = {
-	max: 3500,
-	min: 800,
-	interval: 100
-};

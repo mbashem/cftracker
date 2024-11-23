@@ -3,7 +3,6 @@ import useSubmissionsStore from "../../data/hooks/useSubmissionsStore";
 import Submission, { getSimpleVerdict, SimpleVerdict, Verdict } from "../../types/CF/Submission";
 import { isDefined } from "../../util/util";
 import useTheme from "../../data/hooks/useTheme";
-import { RATING_CONSTANTS } from "../../util/constants";
 
 function useStatPage() {
 	const { rawSubmissions } = useSubmissionsStore();
@@ -26,14 +25,6 @@ function useStatPage() {
 		return { submissionsByVerdict: groupedSubmissions, problemIDsBySimpleVerdict: groupedProblems };
 	}, [rawSubmissions]);
 
-	const ratingLabels = useMemo(() => {
-		let labels = [];
-		for (let rating = RATING_CONSTANTS.min; rating <= RATING_CONSTANTS.max; rating += RATING_CONSTANTS.interval) {
-			labels.push(rating);
-		}
-		return labels;
-	}, []);
-
 	function addSubmissionToGroupedByVerdict(submission: Submission, groupedSubmissions: Map<Verdict, Submission[]>) {
 		if (!isDefined(groupedSubmissions.get(submission.verdict)))
 			groupedSubmissions.set(submission.verdict, []);
@@ -54,7 +45,7 @@ function useStatPage() {
 	}
 
 
-	return { submissionsByVerdict, problemIDsBySimpleVerdict, ratingLabels, theme };
+	return { submissionsByVerdict, problemIDsBySimpleVerdict, theme };
 }
 
 export default useStatPage;

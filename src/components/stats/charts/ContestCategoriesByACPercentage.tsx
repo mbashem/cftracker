@@ -40,7 +40,7 @@ function ContestCategoriesByACPercentage({}: ContestCategoryByACPercentageProps)
   return (
     <div className="container">
       <div className="row text-secondary text-center w-100">
-        <span className="small">Contest Categories By AC Percentage </span>
+        <span className="small fw-bold">Contest Categories By AC Percentage </span>
       </div>
       <div className="row">
         {categories.map((category) => (

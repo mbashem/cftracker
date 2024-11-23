@@ -10,14 +10,11 @@ export interface CalendarHeatMapData {
 export interface CalendarHeatMapDataSet {
   datas: CalendarHeatMapData[];
   year: number;
-  midThreshold?: number;
-  highThreshold?: number;
 }
 
 interface CalendarHeatMapProps {
   datasets: CalendarHeatMapDataSet[];
-  midThreshold: number;
-  highThreshold: number;
+  minimumValueForMaxColor: number;
 }
 
 export interface CalendarTooltipProps {
@@ -26,7 +23,7 @@ export interface CalendarTooltipProps {
   yPosition: number;
 }
 
-function CalendarHeatMap({ datasets, midThreshold, highThreshold }: CalendarHeatMapProps) {
+function CalendarHeatMap({ datasets, minimumValueForMaxColor }: CalendarHeatMapProps) {
   const [hoveredCellData, setHoveredCell] = useState<CalendarTooltipProps>({
     message: "",
     xPosition: -1,
@@ -46,14 +43,22 @@ function CalendarHeatMap({ datasets, midThreshold, highThreshold }: CalendarHeat
   }, []);
 
   return (
-    <div>
+    <div className="d-flex flex-column justify-content-center">
+      <span className="row justify-content-center mb-4 text-secondary fw-bold small">Submission HeatMap</span>
+
       {datasets.map((dataset) => (
-        <div className="row" key={dataset.year}>
-          <ReactCalendarHeatMap
-            data={dataset.datas}
-            onDayCellMouseOver={onDayCellMouseOver}
-            onDayCellMouseLeave={onDayCellMouseLeave}
-          />
+        <div className="d-flex flex-column" key={dataset.year}>
+          <div className="d-flex justify-content-center">
+            <span className="row text-secondary">{dataset.year}</span>
+            <div className="row">
+              <ReactCalendarHeatMap
+                data={dataset.datas}
+                onDayCellMouseOver={onDayCellMouseOver}
+                onDayCellMouseLeave={onDayCellMouseLeave}
+                minimumValueForMaxColor={minimumValueForMaxColor}
+              />
+            </div>
+          </div>
         </div>
       ))}
       <Tooltip xPosition={hoveredCellData.xPosition} yPosition={hoveredCellData.yPosition} width={500} height={100}>

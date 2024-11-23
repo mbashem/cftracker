@@ -9,7 +9,6 @@ function SubmissionsHeatMap({}: SubmissionsHeatMap) {
 
   const datasets = useMemo(() => {
     let datasets: CalendarHeatMapDataSet[] = [];
-    console.log(submissions);
     let clonedSubmissions = [...submissions];
     clonedSubmissions.sort(
       (submission1, submission2) => submission1.creationTimeSeconds - submission2.creationTimeSeconds
@@ -42,7 +41,7 @@ function SubmissionsHeatMap({}: SubmissionsHeatMap) {
     );
   }
 
-  return <CalendarHeatMap datasets={datasets} midThreshold={3} highThreshold={5} />;
+  return <CalendarHeatMap datasets={datasets} minimumValueForMaxColor={5} />;
 }
 
 export default SubmissionsHeatMap;

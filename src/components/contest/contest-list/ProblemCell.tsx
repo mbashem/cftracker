@@ -41,7 +41,6 @@ function ContestProblemCell({
   if (v === Verdict.ATTEMPTED) attempted = true;
 
   let name = problem.name;
-  let id = problem.id;
 
   let className =
     (solved ? theme.bgSuccess : attempted ? theme.bgDanger : "") +
@@ -56,7 +55,6 @@ function ContestProblemCell({
           ? " pe-0 border-end" + (theme.themeType === ThemesType.DARK ? " border-dark" : "")
           : "")
       }
-      key={id}
     >
       <a
         className={

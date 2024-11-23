@@ -55,9 +55,32 @@ export const processNumber = (
   return num;
 };
 
-export const isNumber = (value: string | number): boolean => {
-  return value != null && value !== "" && !isNaN(Number(value.toString()));
+/**
+ * 
+ * @param {number} value - The number.
+ * @param {Intl.NumberFormatOptions} options - The options.
+ *  Default Value: { maximumFractionDigits: 2, minimumFractionDigits: 0 }
+ * @returns {string} Returns the number in as formatted string.
+ * 
+ * @example
+ * const result = multiply(2, 3);
+ * console.log(result); // 6
+ */
+export function getFormattedString(value: number, options: Intl.NumberFormatOptions = { maximumFractionDigits: 2, minimumFractionDigits: 0 }) {
+  return value.toLocaleString("en-US", options);
+}
+
+export function isNumber<T>(value: T | number): value is number {
+  return (typeof value === 'number');
 };
+
+export function isNonNANNumber<T>(value: T | number): value is number {
+  return isNumber(value) && !isDefined(value);
+}
+
+export function isStringNumber(value: string): boolean {
+  return !isNaN(Number(value));
+}
 
 export function isDefined<T>(value: T | undefined | null): value is T {
   return value !== undefined && value !== null && (typeof value !== 'number' || !isNaN(value));

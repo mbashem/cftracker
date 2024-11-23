@@ -73,7 +73,7 @@ function PieChart({ title, labels, dataSets: propDataSet }: PieChartProps) {
       responsive: true,
       plugins: {
         datalabels: {
-          display: 'auto',
+          display: "auto",
           formatter: (value: number, context: any) => {
             if (value === 0) return "";
             const total = context.chart.data.datasets[0].data.reduce((acc: number, val: number) => acc + val, 0);
@@ -86,11 +86,12 @@ function PieChart({ title, labels, dataSets: propDataSet }: PieChartProps) {
           },
         },
         legend: {
-          position: "top",
+          position: "bottom",
         },
         title: {
           display: isDefined(title),
           text: title,
+          color: "#6c757d",
         },
         tooltip: {
           callbacks: {
