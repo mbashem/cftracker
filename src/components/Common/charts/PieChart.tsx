@@ -99,6 +99,7 @@ function PieChart({ title, labels, dataSets: propDataSet }: PieChartProps) {
           },
         },
       },
+      maintainAspectRatio: false,
     }),
     [title]
   );
