@@ -1,5 +1,5 @@
 import { memo, useCallback, useState } from "react";
-import ReactCalendarHeatMap, { DayData } from "./HeatMaps/ReactCalendarHeatMap";
+import ReactCalendarHeatMap, { DayData } from "./heat-maps/ReactCalendarHeatMap";
 import { Tooltip } from "../tooltip/Tooltip";
 
 export interface CalendarHeatMapData {

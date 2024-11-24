@@ -6,7 +6,6 @@ import ProblemList from "./ProblemList";
 import { useAppSelector } from "../../data/store";
 import Problem from "../../types/CF/Problem";
 import { Verdict } from "../../types/CF/Submission";
-import Filter from "../common/Filter";
 import CustomModal from "../common/CustomModal";
 import CheckList from "../common/forms/CheckList";
 import Pagination from "../common/Pagination";
@@ -15,6 +14,7 @@ import { StorageService } from "../../util/StorageService";
 import useProblemPage from "./useProblemPage";
 import Loading from "../common/Loading";
 import { isDefined } from "../../util/util";
+import Filter from "../common/Filter";
 
 // TODO: Convert whole Problem Page to hooks pattern
 const ProblemPage = () => {

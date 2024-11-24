@@ -158,8 +158,6 @@ export default class Theme {
         return this.themeType === ThemesType.LIGHT ? "#c62828" : "#842029"; // Deep red, darker deep red
       case Color.Yellow:
         return this.themeType === ThemesType.LIGHT ? "#fdd835" : "#fbc02d"; // Light yellow, dark yellow
-      case Color.Black:
-        return this.themeType === ThemesType.LIGHT ? "#424242" : "#212121"; // Neutral black for both modes
       case Color.Purple:
         return this.themeType === ThemesType.LIGHT ? "#6a1b9a" : "#3e2a63";  // Dark purple, dark purple
       case Color.Teal:
@@ -192,6 +190,8 @@ export default class Theme {
         return this.themeType === ThemesType.LIGHT ? "#00796b" : "#14544f";  // Dark mint, dark mint
       case Color.ConstrastingColor:
         return this.themeType === ThemesType.LIGHT ? "#212121" : "#f5f5f5";// Almost black, Near white
+      case Color.Black:
+        return this.themeType === ThemesType.LIGHT ? "#424242" : "#212121"; // Neutral black for both modes
       default:
         return this.themeType === ThemesType.LIGHT ? "#ffffff" : "#000000";  // Light white, dark black
     }

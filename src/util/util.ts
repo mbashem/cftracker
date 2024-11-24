@@ -63,8 +63,8 @@ export const processNumber = (
  * @returns {string} Returns the number in as formatted string.
  * 
  * @example
- * const result = multiply(2, 3);
- * console.log(result); // 6
+ * const result = getFormattedString(3.012)
+ * console.log(result); // 3.01
  */
 export function getFormattedString(value: number, options: Intl.NumberFormatOptions = { maximumFractionDigits: 2, minimumFractionDigits: 0 }) {
   return value.toLocaleString("en-US", options);
