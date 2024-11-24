@@ -1,10 +1,10 @@
 import React from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faAdd, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { getProblemUrl } from "../../util/util";
 import { ATTEMPTED_PROBLEMS, SOLVED_PROBLEMS } from "../../util/constants";
 import Problem from "../../types/CF/Problem";
 import Theme from "../../util/Theme";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faAdd, faTrash } from "@fortawesome/free-solid-svg-icons";
 
 interface ProblemListProps {
   problems: Problem[];

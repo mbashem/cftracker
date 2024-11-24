@@ -1,6 +1,6 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { ContestCat } from "../../types/CF/Contest";
-import CheckList from "../Common/Forms/CheckList";
+import CheckList from "../common/forms/CheckList";
 import Theme from "../../util/Theme";
 import { faBars, faMinus } from "@fortawesome/free-solid-svg-icons";
 import { memo, useRef } from "react";

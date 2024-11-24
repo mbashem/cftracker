@@ -1,6 +1,6 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import CustomModal from "../Common/CustomModal";
-import CheckList from "../Common/Forms/CheckList";
+import CustomModal from "../common/CustomModal";
+import CheckList from "../common/forms/CheckList";
 import useListPage from "./useListPage";
 import { useEffect, useState } from "react";
 import { faPlus, faTrash } from "@fortawesome/free-solid-svg-icons";

@@ -26,10 +26,31 @@ export enum Verdict {
   UNSOLVED = "UNSOLVED",
 }
 
+export enum SimpleVerdict {
+  SOLVED = "SOLVED",
+  ATTEMPTED = "ATTEMPTED",
+  UNSOLVED = "UNSOLVED",
+}
+
+export function getSimpleVerdict(verdict?: Verdict) {
+  switch (verdict) {
+    case undefined:
+      return SimpleVerdict.UNSOLVED;
+    case Verdict.OK:
+      return SimpleVerdict.SOLVED;
+    default:
+      return SimpleVerdict.ATTEMPTED;
+  }
+}
+
 export class SubmissionLite implements Comparator<SubmissionLite> {
   contestId: number;
   index: string;
   verdict: Verdict;
+
+  get simpleVerdict() {
+    return getSimpleVerdict(this.verdict);
+  }
 
   constructor(contestId: number, index: string, verdict: Verdict) {
     this.contestId = contestId;
@@ -67,6 +88,11 @@ export default class Submission extends SubmissionLite {
   memoryConsumedBytes: number;
   points?: number;
   fromShared?: boolean;
+
+  get submissionDate(): Date {
+    let secondToMillisecond = 1000;
+    return new Date(this.creationTimeSeconds * secondToMillisecond);
+  }
 
   constructor(sub: Submission) {
     super(sub.contestId, sub.problem.index, sub.verdict);
