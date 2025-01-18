@@ -13,7 +13,7 @@ export enum ContestCat {
 }
 
 const Other_Category_Contests = [2010];
-const Div12_Category_Contests = [1930];
+const Div12_Category_Contests = [1930, 2029];
 
 const getShortAndCategory = (name: string, contestId: number): { short: string, isShortAvailable: boolean, isCFRound: boolean, category: ContestCat; } => {
 	let CODEFORCES: string = "Codeforces";
