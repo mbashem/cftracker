@@ -1,26 +1,24 @@
 "use client";
-import { AppBar, Toolbar, Typography, Button } from "@mui/material";
+import { AppBar, Toolbar, Typography, Button, Stack } from "@mui/material";
 import Link from "next/link";
 
 const Navbar: React.FC = () => {
   return (
     <AppBar position="static">
       <Toolbar>
-        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-          <Link href="/" passHref>
-            CFTracker
-          </Link>
-        </Typography>
-        <Button color="inherit">
+        <Stack direction="row" spacing={2} alignItems="center" sx={{ flexGrow: 1 }}>
+          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+            <Link href="/" passHref>
+              CFTracker
+            </Link>
+          </Typography>
           <Link href="/" passHref>
             Home
           </Link>
-        </Button>
-        <Button color="inherit">
           <Link href="/shared-contests" passHref>
             Shared Contest
           </Link>
-        </Button>
+        </Stack>
         {/* Add more buttons or links as needed */}
       </Toolbar>
     </AppBar>

@@ -1,7 +1,7 @@
-import { SharedContest } from "@prisma/client";
 import { ProblemShared, ProblemType } from "../types/ProblemShared";
 import { getAllProblems } from "@/features/problems/services/ProblemDBService";
 import { getAllSharedContestGroupByParent } from "./SharedContestsDBService";
+import { SharedContest } from "@/prisma/generated/client/client";
 
 export function createShared(problems: ProblemType[], sharedContests: SharedContest[][]): ProblemShared[] {
 	let res: ProblemShared[] = [];
@@ -30,11 +30,13 @@ export function createShared(problems: ProblemType[], sharedContests: SharedCont
 		let problem: ProblemShared = new ProblemShared(
 			problems[i].contestId,
 			problems[i].index,
-			problems[i].name
+			problems[i].name,
+			undefined,
+			problems[i].rating
 		);
 
 		for (let j = 0; j < problems.length; j++) {
-			if (i !== j && problems[i].name === problems[j].name && mp.get(problems[i].contestId)?.has(problems[j].contestId)) {
+			if (i !== j && problems[i].name === problems[j].name && problems[i].rating === problems[j].rating && mp.get(problems[i].contestId)?.has(problems[j].contestId)) {
 				problem.shared.push(problems[j]);
 			}
 		}
@@ -50,7 +52,13 @@ export async function getGroupedSharedProblems() {
 
 	const problems = await getAllProblems();
 	const sharedContests = await getAllSharedContestGroupByParent();
-	const shared = createShared(problems, sharedContests);
+	const shared = createShared(problems.map(problem => ({
+		name: problem.name,
+		contestId: problem.contestId,
+		index: problem.index,
+		rating: problem.rating === null ? undefined : problem.rating
+	}
+	)), sharedContests);
 	for (let problem of shared) {
 		send.push(problem.toJSON());
 	}

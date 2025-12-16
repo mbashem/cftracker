@@ -1,6 +1,6 @@
 import prismaClient from "@/prisma/prismaClient";
 import { getAllContestsFromCF } from "@/features/cf-api/CFApiService";
-import { Contest } from "@prisma/client";
+import { Contest } from "@/prisma/generated/client/client";
 
 export async function createOrUpdateContest(contestId: number, name: string) {
 	if (await getContest(contestId)) {
@@ -35,7 +35,7 @@ export async function deleteContest(contestId: number) {
 		where: {
 			contestId: contestId
 		}
-	})
+	});
 	return res;
 }
 

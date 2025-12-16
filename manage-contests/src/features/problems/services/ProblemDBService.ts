@@ -1,9 +1,9 @@
 import { getContestWithProblemByIdFromCF } from "@/features/cf-api/CFApiService";
 import prismaClient from "@/prisma/prismaClient";
 import { sleep } from "@/utils/utils";
-import { Contest } from "@prisma/client";
+import { Contest } from "@/prisma/generated/client/client";
 
-export async function createOrUpdateProblem(contestId: number, index: string, name: string) {
+export async function createOrUpdateProblem(contestId: number, index: string, name: string, rating?: number) {
 	if (await getProblem(contestId, index)) {
 		return await prismaClient.problem.updateMany({
 			where: {
@@ -11,7 +11,8 @@ export async function createOrUpdateProblem(contestId: number, index: string, na
 				index: index
 			},
 			data: {
-				name: name
+				name: name,
+				rating: rating
 			}
 		});
 	}
@@ -19,7 +20,8 @@ export async function createOrUpdateProblem(contestId: number, index: string, na
 		data: {
 			contestId: contestId,
 			index: index,
-			name: name
+			name: name,
+			rating: rating
 		}
 	});
 	return res;
@@ -40,7 +42,7 @@ export async function deleteProblem(contestId: number, index: string) {
 			contestId: contestId,
 			index: index
 		}
-	})
+	});
 	return res;
 }
 

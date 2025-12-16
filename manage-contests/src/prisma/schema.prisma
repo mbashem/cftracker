@@ -1,12 +1,12 @@
 // Set the datasource provider to PostgreSQL
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 // Generate the Prisma client for TypeScript
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "./generated/client"
 }
 
 // Define the Problem model
@@ -14,6 +14,7 @@ model Problem {
   name      String
   contestId Int
   index     String
+  rating    Int?
 
   // Define foreign key relationship to Contest
   contest Contest @relation(fields: [contestId], references: [contestId])

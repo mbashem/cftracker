@@ -2,23 +2,27 @@ export interface ProblemType {
   contestId: number;
   index: string;
   name: string;
+  rating?: number;
 }
 
 export class ProblemShared implements ProblemType {
   contestId: number;
   index: string;
   name: string;
+  rating?: number;
   shared: ProblemType[];
 
   constructor(
     contestId: number,
     index: string,
     name: string,
-    shared?: ProblemType[]
+    shared?: ProblemType[],
+    rating?: number
   ) {
     this.contestId = contestId;
     this.index = index;
     this.name = name;
+    this.rating = rating;
     if (shared) this.shared = [...shared];
     else this.shared = new Array<ProblemType>();
   }
