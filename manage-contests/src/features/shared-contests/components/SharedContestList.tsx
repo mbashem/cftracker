@@ -1,5 +1,4 @@
 "use client";
-import { Contest, SharedContest } from "@prisma/client";
 import { useMemo } from "react";
 import React, { useState } from "react";
 import {
@@ -17,12 +16,10 @@ import {
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import SelectContest from "./SelectContest";
-import {
-  deleteSharedContestAction,
-  fetchAndSaveProblems,
-} from "../actions/SharedContestActions";
+import { deleteSharedContestAction, fetchAndSaveProblems } from "../actions/SharedContestActions";
 import CachedIcon from "@mui/icons-material/Cached";
 import CheckIcon from "@mui/icons-material/Check";
+import { Contest, SharedContest } from "@/prisma/generated/client/client";
 
 interface Props {
   sharedContests: SharedContest[][];
@@ -30,11 +27,7 @@ interface Props {
   fetchedContests: number[];
 }
 
-export default function SharedContestList({
-  sharedContests,
-  contests,
-  fetchedContests,
-}: Props) {
+export default function SharedContestList({ sharedContests, contests, fetchedContests }: Props) {
   const contestNameMap = useMemo(() => {
     const map = new Map<number, string>();
     contests.forEach((contest) => {
@@ -70,9 +63,7 @@ export default function SharedContestList({
           setSelectedContest(null);
         }}
         contests={contests.filter((contest) => {
-          return !sharedContests
-            .flatMap((rows) => rows.map((row) => row.contestId))
-            .includes(contest.contestId);
+          return !sharedContests.flatMap((rows) => rows.map((row) => row.contestId)).includes(contest.contestId);
         })}
         onSelect={() => {}}
       />
@@ -93,9 +84,7 @@ export default function SharedContestList({
                   <TableRow>
                     <TableCell>{rows[0].parentContestId}</TableCell>
                     <TableCell>{rows[0].parentContestId}</TableCell>
-                    <TableCell>
-                      {contestNameMap.get(rows[0].parentContestId)}
-                    </TableCell>
+                    <TableCell>{contestNameMap.get(rows[0].parentContestId)}</TableCell>
                     <TableCell>
                       <Stack direction="row" justifyContent={"flex-end"}>
                         <IconButton
@@ -103,11 +92,7 @@ export default function SharedContestList({
                           aria-controls="menu"
                           aria-haspopup="true"
                           onClick={() => {
-                            setSelectedContest(
-                              contests.find(
-                                (value) => value.contestId === rows[0].contestId
-                              ) ?? null
-                            );
+                            setSelectedContest(contests.find((value) => value.contestId === rows[0].contestId) ?? null);
                           }}
                         >
                           <EditIcon />
@@ -119,35 +104,37 @@ export default function SharedContestList({
                     <TableRow key={"sub_" + subRow.contestId}>
                       <TableCell></TableCell>
                       <TableCell>{subRow.contestId}</TableCell>
-                      <TableCell>
-                        {contestNameMap.get(subRow.contestId) ?? "undefined"}
-                      </TableCell>
+                      <TableCell>{contestNameMap.get(subRow.contestId) ?? "undefined"}</TableCell>
                       <TableCell>
                         <Stack direction="row" justifyContent={"flex-end"}>
-                          {fetchedContests.includes(subRow.contestId) ? (
-                            <IconButton
-                              aria-label="actions"
-                              aria-controls="menu"
-                              aria-haspopup="true"
-                              onClick={() => {}}
-                            >
-                              <CheckIcon />
-                            </IconButton>
-                          ) : (
-                            <IconButton
-                              aria-label="actions"
-                              aria-controls="menu"
-                              aria-haspopup="true"
-                              onClick={async () => {
-                                const res = await fetchAndSaveProblems(
-                                  subRow.contestId
-                                );
-                                console.log(res);
-                              }}
-                            >
-                              <CachedIcon />
-                            </IconButton>
+                          {fetchedContests.includes(subRow.contestId) && (
+                            <>
+                              <IconButton
+                                aria-label="actions"
+                                aria-controls="menu"
+                                aria-haspopup="true"
+                                onClick={async () => {
+                                  const res = await fetchAndSaveProblems(subRow.contestId);
+                                  console.log(res);
+                                }}
+                              >
+                                <CheckIcon />
+                              </IconButton>
+                              <IconButton aria-label="actions" aria-controls="menu" aria-haspopup="true"></IconButton>
+                            </>
                           )}
+                          <IconButton
+                            aria-label="actions"
+                            aria-controls="menu"
+                            aria-haspopup="true"
+                            onClick={async () => {
+                              const res = await fetchAndSaveProblems(subRow.contestId);
+                              console.log(res);
+                            }}
+                          >
+                            <CachedIcon />
+                          </IconButton>
+
                           <IconButton
                             aria-label="actions"
                             aria-controls="menu"

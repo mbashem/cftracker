@@ -1,4 +1,4 @@
-import { Contest } from "@prisma/client";
+import { Contest } from "@/prisma/generated/client/client";
 import { createOrUpdateSharedContest } from "./SharedContestsDBService";
 
 const check = (child_name: string, parent_name: string): boolean => {
@@ -50,6 +50,6 @@ const groupContestAsShared = async (contests: Contest[]) => {
 			}
 		}
 	}
-}
+};
 
 export default groupContestAsShared;

@@ -1,13 +1,8 @@
 "use client";
 import { Box, Button, Modal, Typography } from "@mui/material";
-import { Contest } from "@prisma/client";
+import { Contest } from "@/prisma/generated/client/client";
 import { useEffect, useState } from "react";
-import {
-  DataGrid,
-  GridColDef,
-  GridRenderCellParams,
-  GridToolbarQuickFilter,
-} from "@mui/x-data-grid";
+import { DataGrid, GridColDef, GridRenderCellParams, GridToolbarQuickFilter } from "@mui/x-data-grid";
 import { createSharedContest } from "../actions/GroupContestAction";
 
 const style = {
@@ -31,12 +26,7 @@ interface Props {
   contests: Contest[];
 }
 
-export default function SelectContest({
-  parentContest,
-  onClose,
-  onSelect,
-  contests,
-}: Props) {
+export default function SelectContest({ parentContest, onClose, onSelect, contests }: Props) {
   const [open, setOpen] = useState(false);
   const handleOpen = () => setOpen(true);
   const handleClose = () => {
@@ -68,16 +58,9 @@ export default function SelectContest({
           onClick={async () => {
             onSelect(params.row.contestId);
             if (parentContest?.contestId === -1) {
-              await createSharedContest(
-                params.row.contestId,
-                params.row.contestId
-              );
+              await createSharedContest(params.row.contestId, params.row.contestId);
             } else {
-              if (parentContest !== null)
-                await createSharedContest(
-                  parentContest.contestId,
-                  params.row.contestId
-                );
+              if (parentContest !== null) await createSharedContest(parentContest.contestId, params.row.contestId);
             }
             handleClose();
           }}
@@ -103,7 +86,7 @@ export default function SelectContest({
           <Box>
             <DataGrid
               rows={contests}
-              getRowId={ row => row.contestId}
+              getRowId={(row) => row.contestId}
               columns={columns}
               initialState={{
                 pagination: {
