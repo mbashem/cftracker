@@ -1,9 +1,6 @@
 import {
   Button,
-  Box,
-  Typography,
   Container,
-  TextField,
   Paper,
 } from "@mui/material";
 import { groupContests } from "./actions/GroupContestAction";

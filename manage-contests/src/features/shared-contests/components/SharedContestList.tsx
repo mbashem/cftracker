@@ -36,14 +36,7 @@ export default function SharedContestList({ sharedContests, contests, fetchedCon
     return map;
   }, []);
 
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-
   const [selectedContest, setSelectedContest] = useState<Contest | null>(null);
-  const [selectedContestName, setSelectedContestName] = useState<string>("");
-
-  const handleClick = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget);
-  };
 
   console.log(sharedContests, contests);
 
@@ -54,6 +47,7 @@ export default function SharedContestList({ sharedContests, contests, fetchedCon
           console.log("set open");
           setSelectedContest({ contestId: -1, name: "", id: "" } as Contest);
         }}
+        disableRipple
       >
         Create New Shared Contest
       </Button>
@@ -94,6 +88,7 @@ export default function SharedContestList({ sharedContests, contests, fetchedCon
                           onClick={() => {
                             setSelectedContest(contests.find((value) => value.contestId === rows[0].contestId) ?? null);
                           }}
+                          disableRipple
                         >
                           <EditIcon />
                         </IconButton>
@@ -117,10 +112,10 @@ export default function SharedContestList({ sharedContests, contests, fetchedCon
                                   const res = await fetchAndSaveProblems(subRow.contestId);
                                   console.log(res);
                                 }}
+                                disableRipple
                               >
                                 <CheckIcon />
                               </IconButton>
-                              <IconButton aria-label="actions" aria-controls="menu" aria-haspopup="true"></IconButton>
                             </>
                           )}
                           <IconButton
@@ -131,6 +126,7 @@ export default function SharedContestList({ sharedContests, contests, fetchedCon
                               const res = await fetchAndSaveProblems(subRow.contestId);
                               console.log(res);
                             }}
+                            disableRipple
                           >
                             <CachedIcon />
                           </IconButton>
@@ -142,6 +138,7 @@ export default function SharedContestList({ sharedContests, contests, fetchedCon
                             onClick={async () => {
                               await deleteSharedContestAction(subRow.contestId);
                             }}
+                            disableRipple
                           >
                             <DeleteIcon />
                           </IconButton>
