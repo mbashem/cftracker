@@ -1,18 +1,15 @@
-import Image from "next/image";
-import styles from "./page.module.css";
 import {
   createOrUpdateContest,
-  deleteAllContests,
   fetchAndSaveAllContests,
   getAllContests,
 } from "@/features/contests/services/ContestDBService";
-import { Box, Button, Container, Paper, Stack, Typography } from "@mui/material";
+import { Button, Container, Paper, Stack } from "@mui/material";
 import {
   createOrUpdateProblem,
   deleteAllProblems,
   getAllProblems,
 } from "@/features/problems/services/ProblemDBService";
-import { readFile, readFileSync, writeFileSync } from "fs";
+import { readFileSync, writeFileSync } from "fs";
 import {
   createOrUpdateSharedContest,
   deleteAllSharedContests,
@@ -23,7 +20,7 @@ import { sleep } from "@/utils/utils";
 import { Contest, Problem, SharedContest } from "@/prisma/generated/client/client";
 
 export default function Home() {
-  const fetchContestFromCF = async (formData: FormData) => {
+  const fetchContestFromCF = async () => {
     "use server";
     console.log("Server: fethcing contest from CF");
 

@@ -1,23 +1,11 @@
 "use client";
 import { Box, Button, Modal, Typography } from "@mui/material";
-import { Contest } from "@/prisma/generated/client/client";
-import { useEffect, useState } from "react";
-import { DataGrid, GridColDef, GridRenderCellParams, GridToolbarQuickFilter } from "@mui/x-data-grid";
-import { createSharedContest } from "../actions/GroupContestAction";
+import { DataGrid, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
 
-const style = {
-  position: "absolute" as "absolute",
-  top: "50%",
-  left: "50%",
-  transform: "translate(-50%, -50%)",
-  width: 800,
-  bgcolor: "background.paper",
-  color: "black",
-  border: "2px solid #000",
-  boxShadow: 24,
-  overflow: "scroll",
-  p: 4,
-};
+import { useEffect, useState } from "react";
+import { createSharedContest } from "../actions/GroupContestAction";
+import { Contest } from "@/prisma/generated/client/client";
+import QuickFIlterToolbar from "@/components/QuickFilterToolbar";
 
 interface Props {
   parentContest: Contest | null;
@@ -54,7 +42,7 @@ export default function SelectContest({ parentContest, onClose, onSelect, contes
           variant="contained"
           size="small"
           style={{ marginLeft: 16 }}
-          tabIndex={params.hasFocus ? 0 : -1}
+          // tabIndex={params.hasFocus ? 0 : -1}
           onClick={async () => {
             onSelect(params.row.contestId);
             if (parentContest?.contestId === -1) {
@@ -79,7 +67,21 @@ export default function SelectContest({ parentContest, onClose, onSelect, contes
         aria-labelledby="parent-modal-title"
         aria-describedby="parent-modal-description"
       >
-        <Box sx={style}>
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 800,
+            bgcolor: "background.paper",
+            color: "black",
+            border: "2px solid #000",
+            boxShadow: 24,
+            overflow: "scroll",
+            p: 4,
+          }}
+        >
           <Typography id="parent-modal-title" variant="h6" component="h2">
             Parent ID:{parentContest?.contestId} , Name: {parentContest?.name}
           </Typography>
@@ -97,12 +99,10 @@ export default function SelectContest({ parentContest, onClose, onSelect, contes
               }}
               pageSizeOptions={[5, 10, 15]}
               disableRowSelectionOnClick
-              slots={{ toolbar: GridToolbarQuickFilter }}
-              slotProps={{
-                toolbar: {
-                  showQuickFilter: true,
-                },
-              }}
+              disableColumnFilter
+              disableColumnSelector
+              slots={{ toolbar: QuickFIlterToolbar }}
+              showToolbar
             />
           </Box>
         </Box>
