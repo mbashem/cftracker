@@ -36,7 +36,7 @@ export async function saveSharedContestsToFileAction() {
 
 	const groupedSharedProblems = await getGroupedSharedProblems();
 	console.log("filePath: ", filePath);
-	const jsonData = "export const jsonData = " + JSON.stringify(groupedSharedProblems);
+	const jsonData = "export const jsonData = {\"status\":\"OK\",\"result\":" + JSON.stringify(groupedSharedProblems) + "}";
 	writeFile(filePath, jsonData, (err) => {
 		if (err) {
 			console.error("Error writing file: ", err);

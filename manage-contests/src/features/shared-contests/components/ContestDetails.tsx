@@ -58,7 +58,7 @@ export default function ContestDetails({ contest, onClose }: Props) {
 	async function handleSubmitNewProblem() {
 		if (contest === undefined || newProblem.index === "" || newProblem.name === "") return;
 		console.log("submit: ", newProblem);
-		await addProblemAction(contest!.contestId, newProblem.index, newProblem.name);
+		await addProblemAction(contest!.contestId, newProblem.index.trim(), newProblem.name.trim());
 		setNewProblem({
 			index: "",
 			name: "",
