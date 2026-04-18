@@ -3,12 +3,12 @@ import { Box, Button, Modal, Typography } from "@mui/material";
 import { DataGrid, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
 
 import { useEffect, useState } from "react";
-import { createSharedContest } from "../actions/GroupContestAction";
+import { createSharedContestAction } from "../actions/SharedContestActions";
 import { Contest } from "@/prisma/generated/client/client";
 import QuickFIlterToolbar from "@/components/QuickFilterToolbar";
 
 interface Props {
-  parentContest: Contest | null;
+  parentContest: Contest | undefined;
   onClose: () => void;
   onSelect: (contestId: number) => void;
   contests: Contest[];
@@ -24,7 +24,7 @@ export default function SelectContest({ parentContest, onClose, onSelect, contes
 
   useEffect(() => {
     console.log("parentContest: ", parentContest);
-    if (parentContest !== null) handleOpen();
+    if (parentContest !== undefined) handleOpen();
   }, [parentContest]);
 
   const columns: GridColDef[] = [
@@ -42,13 +42,12 @@ export default function SelectContest({ parentContest, onClose, onSelect, contes
           variant="contained"
           size="small"
           style={{ marginLeft: 16 }}
-          // tabIndex={params.hasFocus ? 0 : -1}
           onClick={async () => {
             onSelect(params.row.contestId);
             if (parentContest?.contestId === -1) {
-              await createSharedContest(params.row.contestId, params.row.contestId);
+              await createSharedContestAction(params.row.contestId, params.row.contestId);
             } else {
-              if (parentContest !== null) await createSharedContest(parentContest.contestId, params.row.contestId);
+              if (parentContest !== undefined) await createSharedContestAction(parentContest.contestId, params.row.contestId);
             }
             handleClose();
           }}

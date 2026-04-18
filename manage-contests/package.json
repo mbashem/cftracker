@@ -23,11 +23,13 @@
     "@prisma/adapter-pg": "^7.2.0",
     "@prisma/client": "^7.2.0",
     "axios": "^1.13.2",
+    "cheerio": "^1.2.0",
     "dotenv": "^17.2.3",
     "next": "16.1.0",
     "pg": "^8.16.3",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "server-only": "^0.0.1"
   },
   "devDependencies": {
     "@types/node": "^22",

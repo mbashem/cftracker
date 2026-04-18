@@ -1,19 +1,13 @@
-import { getContestWithProblemByIdFromCF } from "@/features/cf-api/CFApiService";
-import { createOrUpdateContest } from "@/features/contests/services/ContestDBService";
-import { createOrUpdateProblem } from "@/features/problems/services/ProblemDBService";
-import { fetchAndSaveProblemsByContestId } from "@/features/problems/services/ProblemService";
-import { Problem } from "@/features/problems/types/problemsTypes";
+import { getProblemsByContestId } from "@/features/problems/services/ProblemDBService";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function GET(req: NextRequest, context: { params: { contestId: number } }) {
-	const res = await getContestWithProblemByIdFromCF(context.params.contestId);
-
+export async function GET(_req: NextRequest, context: { params: Promise<{ contestId: string; }>; }) {
 	try {
-		const { insertedContest, problemsList } = await fetchAndSaveProblemsByContestId(context.params.contestId);
+		const contestId = parseInt((await context.params).contestId);
+		const problems = await getProblemsByContestId(contestId);
 
 		return NextResponse.json({
-			contest: insertedContest,
-			problems: problemsList,
+			problems: problems,
 		});
 	} catch (e) {
 		console.log(e);

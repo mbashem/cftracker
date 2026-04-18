@@ -1,7 +1,7 @@
 import { getGroupedSharedProblems } from "@/features/shared-contests/services/CreateSharedService";
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
-export async function GET(req: NextRequest) {
+export async function GET() {
 	const res = await getGroupedSharedProblems();
 	console.log(res);
 	return NextResponse.json({
