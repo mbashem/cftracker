@@ -1,5 +1,5 @@
 "use client";
-import { useMemo } from "react";
+import { use, useMemo } from "react";
 import React, { useState } from "react";
 import {
   Table,
@@ -16,10 +16,15 @@ import {
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import SelectContest from "./SelectContest";
-import { deleteSharedContestAction, fetchAndSaveProblems } from "../actions/SharedContestActions";
+import { deleteSharedContestAction } from "../actions/SharedContestActions";
 import CachedIcon from "@mui/icons-material/Cached";
 import CheckIcon from "@mui/icons-material/Check";
+import FileCopyIcon from '@mui/icons-material/FileCopy';
+import AddIcon from '@mui/icons-material/Add';
 import { Contest, SharedContest } from "@/prisma/generated/client/client";
+import ContestDetails from "./ContestDetails";
+import { useRouter } from "next/dist/client/components/navigation";
+import { fetchAndSaveProblemsAction, scrapAndSaveProblemsAction } from "../actions/ProblemActions";
 
 interface Props {
   sharedContests: SharedContest[][];
@@ -36,7 +41,9 @@ export default function SharedContestList({ sharedContests, contests, fetchedCon
     return map;
   }, []);
 
-  const [selectedContest, setSelectedContest] = useState<Contest | null>(null);
+  const router = useRouter();
+  const [selectedContest, setSelectedContest] = useState<Contest | undefined>(undefined);
+  const [selectedContestForDetails, setSelectedContestForDetails] = useState<Contest | undefined>(undefined);
 
   console.log(sharedContests, contests);
 
@@ -54,12 +61,19 @@ export default function SharedContestList({ sharedContests, contests, fetchedCon
       <SelectContest
         parentContest={selectedContest}
         onClose={() => {
-          setSelectedContest(null);
+          setSelectedContest(undefined);
         }}
         contests={contests.filter((contest) => {
           return !sharedContests.flatMap((rows) => rows.map((row) => row.contestId)).includes(contest.contestId);
         })}
-        onSelect={() => {}}
+        onSelect={() => { }}
+      />
+      <ContestDetails
+        contest={selectedContestForDetails}
+        onClose={() => {
+          setSelectedContestForDetails(undefined);
+          router.refresh();
+        }}
       />
       <TableContainer component={Paper}>
         <Table>
@@ -86,7 +100,7 @@ export default function SharedContestList({ sharedContests, contests, fetchedCon
                           aria-controls="menu"
                           aria-haspopup="true"
                           onClick={() => {
-                            setSelectedContest(contests.find((value) => value.contestId === rows[0].contestId) ?? null);
+                            setSelectedContest(contests.find((value) => value.contestId === rows[0].contestId) ?? undefined);
                           }}
                           disableRipple
                         >
@@ -108,27 +122,48 @@ export default function SharedContestList({ sharedContests, contests, fetchedCon
                                 aria-label="actions"
                                 aria-controls="menu"
                                 aria-haspopup="true"
-                                onClick={async () => {
-                                  const res = await fetchAndSaveProblems(subRow.contestId);
-                                  console.log(res);
-                                }}
                                 disableRipple
+                                disabled
                               >
                                 <CheckIcon />
                               </IconButton>
                             </>
                           )}
+
+                          <IconButton
+                            aria-label="actions"
+                            aria-controls="menu"
+                            aria-haspopup="true"
+                            onClick={() => setSelectedContestForDetails(contests.find((value) => value.contestId === subRow.contestId))}
+                            disableRipple
+                          >
+                            <AddIcon />
+                          </IconButton>
+
                           <IconButton
                             aria-label="actions"
                             aria-controls="menu"
                             aria-haspopup="true"
                             onClick={async () => {
-                              const res = await fetchAndSaveProblems(subRow.contestId);
+                              const res = await fetchAndSaveProblemsAction(subRow.contestId);
                               console.log(res);
                             }}
                             disableRipple
                           >
                             <CachedIcon />
+                          </IconButton>
+
+                          <IconButton
+                            aria-label="actions"
+                            aria-controls="menu"
+                            aria-haspopup="true"
+                            onClick={async () => {
+                              const res = await scrapAndSaveProblemsAction(subRow.contestId);
+                              console.log(res);
+                            }}
+                            disableRipple
+                          >
+                            <FileCopyIcon />
                           </IconButton>
 
                           <IconButton

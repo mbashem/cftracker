@@ -2,7 +2,7 @@
 import { createOrUpdateSharedContest, getAllSharedContestGroupByParent } from "@/features/shared-contests/services/SharedContestsDBService";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function GET(req: NextRequest) {
+export async function GET() {
 	const res = await getAllSharedContestGroupByParent();
 	console.log(res);
 	return NextResponse.json(res);

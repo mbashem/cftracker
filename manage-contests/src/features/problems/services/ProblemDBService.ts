@@ -1,3 +1,5 @@
+"use server";
+
 import { getContestWithProblemByIdFromCF } from "@/features/cf-api/CFApiService";
 import prismaClient from "@/prisma/prismaClient";
 import { sleep } from "@/utils/utils";
@@ -25,6 +27,14 @@ export async function createOrUpdateProblem(contestId: number, index: string, na
 		}
 	});
 	return res;
+}
+
+export async function getProblemsByContestId(contestId: number) {
+	return await prismaClient.problem.findMany({
+		where: {
+			contestId: contestId
+		}
+	});
 }
 
 export async function getProblem(contestId: number, index: string) {

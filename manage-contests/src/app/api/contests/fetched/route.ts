@@ -1,8 +1,7 @@
-import { getAllContests } from "@/features/contests/services/ContestDBService";
 import { getFetchedProblemsContestIdList } from "@/features/problems/services/ProblemDBService";
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
-export async function GET(req: NextRequest) {
+export async function GET() {
 	const res = await getFetchedProblemsContestIdList();
 	// console.log(res);
 
