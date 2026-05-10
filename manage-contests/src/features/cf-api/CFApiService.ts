@@ -55,7 +55,7 @@ function generateAuthenticatedApiUrl(
   return `${baseUrl}/${methodName}?${queryString}&apiSig=${apiSig}`;
 }
 
-export async function getContestWithProblemByIdFromCF(contestID: number) {
+export async function getAuthenticatedContestWithProblemByIdFromCF(contestID: number) {
   console.log("API Key: ", process.env.CF_API_KEY);
   console.log("API Secret: ", process.env.CF_API_SECRET);
   let url = generateAuthenticatedApiUrl(
@@ -66,6 +66,13 @@ export async function getContestWithProblemByIdFromCF(contestID: number) {
   )
 
   console.log("URL: ", url);
+  const res = await axios.get(url);
+
+  return res.data.result as CFAPIResult;
+}
+
+export async function getContestWithProblemByIdFromCF(contestID: number) {
+  let url = `https://codeforces.com/api/contest.standings?contestId=${contestID}`;
   const res = await axios.get(url);
 
   return res.data.result as CFAPIResult;
