@@ -111,6 +111,8 @@ Local debug mode is based on Vite's development flag, so `npm run dev` uses the 
 
 User submissions are fetched for comma-separated Codeforces handles entered in the navbar. Submission status is converted into solved, attempted, and unsolved states in feature hooks.
 
+In local debug mode, identical Codeforces API URLs reuse a browser-local response for 30 minutes. Simultaneous requests for the same URL also share one in-flight request. Production requests are not cached by this helper.
+
 Several filters are saved in browser local storage through `src/util/StorageService.ts`. Search text and list-add mode use URL query params from `src/util/constants.ts`.
 
 ## Environment Variables

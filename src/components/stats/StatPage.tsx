@@ -11,7 +11,11 @@ import useStatPage from "./useStatPage";
  * percentage of problem solved by rating
  */
 const StatPage = () => {
-  const { problemIDsBySimpleVerdict, submissionsByVerdict } = useStatPage();
+  const { problemIDsBySimpleVerdict, submissionsByVerdict, hasSubmissionData } = useStatPage();
+
+  if (!hasSubmissionData) {
+    return <div className="container py-5 text-center text-secondary">No data available</div>;
+  }
 
   return (
     <div className="container pb-5">

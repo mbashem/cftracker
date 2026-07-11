@@ -1,37 +1,25 @@
 import { type Dispatch, type SetStateAction, useEffect, useState } from "react";
 import { StorageService } from "../util/StorageService";
 
-enum PersistentValueType {
-  Object,
-  Set,
-  Map,
-}
-
-function getPersistentValueType(value: unknown): PersistentValueType {
-  if (value instanceof Set) return PersistentValueType.Set;
-  if (value instanceof Map) return PersistentValueType.Map;
-  return PersistentValueType.Object;
-}
-
-function getPersistentValue<T>(key: string, defaultValue: T, type: PersistentValueType): T {
-  if (type === PersistentValueType.Set) {
+function getPersistentValue<T>(key: string, defaultValue: T): T {
+  if (defaultValue instanceof Set) {
     return StorageService.getSet(key, defaultValue as Iterable<unknown>) as T;
   }
 
-  if (type === PersistentValueType.Map) {
+  if (defaultValue instanceof Map) {
     return StorageService.getMap(key, defaultValue as Iterable<[unknown, unknown]>) as T;
   }
 
   return StorageService.getObject(key, defaultValue);
 }
 
-function savePersistentValue<T>(key: string, value: T, type: PersistentValueType) {
-  if (type === PersistentValueType.Set) {
+function savePersistentValue<T>(key: string, value: T) {
+  if (value instanceof Set) {
     StorageService.saveSet(key, value as Set<unknown>);
     return;
   }
 
-  if (type === PersistentValueType.Map) {
+  if (value instanceof Map) {
     StorageService.saveMap(key, value as Map<unknown, unknown>);
     return;
   }
@@ -40,12 +28,11 @@ function savePersistentValue<T>(key: string, value: T, type: PersistentValueType
 }
 
 function usePersistentState<T>(key: string, defaultValue: T): [T, Dispatch<SetStateAction<T>>] {
-  const [valueType] = useState(() => getPersistentValueType(defaultValue));
-  const [value, setValue] = useState<T>(() => getPersistentValue(key, defaultValue, valueType));
+  const [value, setValue] = useState<T>(() => getPersistentValue(key, defaultValue));
 
   useEffect(() => {
-    savePersistentValue(key, value, valueType);
-  }, [key, value, valueType]);
+    savePersistentValue(key, value);
+  }, [key, value]);
 
   return [value, setValue];
 }

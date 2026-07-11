@@ -1,7 +1,6 @@
 import { faGithub } from "@fortawesome/free-brands-svg-icons";
 import { faMoon } from "@fortawesome/free-regular-svg-icons";
 import {
-  faFlask,
   faInfo,
   faScrewdriverWrench,
   faSignIn,
@@ -116,12 +115,7 @@ function Menu() {
             <li className="nav-item active">
               <Link to={Path.Stats} className="nav-link">
                 {/* <span className="p-1">{<FontAwesomeIcon icon={faBars} />}</span> */}
-                <span title="experimental">
-                  Stats
-                  <sup>
-                    <FontAwesomeIcon icon={faFlask} />
-                  </sup>
-                </span>
+                <span>Stats</span>
               </Link>
             </li>
             <li className="nav-item active">

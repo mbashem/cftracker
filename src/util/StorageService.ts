@@ -14,6 +14,14 @@ export namespace StorageService {
       export const SolveStatus = "CONTEST_SOLVE_STATUS";
       export const ParticipantType = "PARTICIPANT_TYPE";
     }
+
+    export namespace Codeforces {
+      export const DebugApiCache = "DEBUG_CODEFORCES_API_CACHE";
+    }
+
+    export namespace Stats {
+      export const SubmissionHeatMapYear = "STATS_SUBMISSION_HEATMAP_YEAR";
+    }
   }
 
   function isPlainObject(value: unknown): value is Record<string, unknown> {
