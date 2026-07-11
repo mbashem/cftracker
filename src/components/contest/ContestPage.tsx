@@ -47,7 +47,7 @@ function ContestPage() {
           selected={selected}
           name="Contest"
           setRandom={(num) => {
-            setRandomContest(num);
+            setRandomContest(num ?? -1);
           }}
           theme={theme}
         >

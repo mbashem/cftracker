@@ -29,7 +29,7 @@ const saveToLocalStorage = (state: RootState) => {
       userList: state.userList,
       appState: state.appState,
     };
-    StorageService.saveObject("statev2", newState);
+    StorageService.saveObject(StorageService.Keys.StateV2, newState);
   } catch (e) {
     console.log(e);
   }
@@ -37,7 +37,7 @@ const saveToLocalStorage = (state: RootState) => {
 
 const loadFromLocalStorage = (): any => {
   try {
-    const persedData = StorageService.getObject("statev2", {});
+    const persedData = StorageService.getObject(StorageService.Keys.StateV2, {});
 
     console.log(persedData);
     return persedData;
