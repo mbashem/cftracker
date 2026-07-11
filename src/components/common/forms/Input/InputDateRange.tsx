@@ -55,19 +55,19 @@ function DateInput({ label, value, min, max, theme, onChange, onClear }: DateInp
       >
         <input
           ref={inputRef}
-          className={`date-range-input border-0 bg-transparent py-1 ps-2 ${theme.text}`}
+          className={`date-range-input border-0 bg-transparent ps-1 py-1 ${theme.text}`}
           type="date"
           aria-label={fieldName}
           min={min}
           max={max}
           value={value ?? ""}
-          style={{ colorScheme: theme.name, minWidth: 0, width: "8rem" }}
+          style={{ colorScheme: theme.name }}
           onChange={(event) => onChange(event.target.value)}
         />
         {value !== undefined && (
           <button
             type="button"
-            className={`btn border-0 bg-transparent p-0 ${theme.textDanger}`}
+            className={`date-range-clear-button btn border-0 bg-transparent p-0 ${theme.textDanger}`}
             aria-label={`Clear ${fieldName}`}
             title={`Clear ${fieldName}`}
             onClick={(event) => {

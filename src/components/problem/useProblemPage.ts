@@ -15,6 +15,7 @@ import { StorageService } from "../../util/StorageService";
 import { formatDateInputValue } from "../../util/time";
 import { isDefined } from "../../util/util";
 import { sortByContestId, sortByRating, sortBySolveCount, SortOrder, SortProblemBy } from "../../util/sortMethods";
+import useContestStore from "../../data/hooks/useContestStore";
 
 export interface ProblemFilter {
 	perPage: number;
@@ -48,7 +49,7 @@ function useProblemPage() {
 	const { problemList: problemStore } = useProblemsStore();
 	const [problemsAddedToList, setProblemsAddedToList] = useState<Set<string>>(new Set());
 	const appState = useAppSelector((state) => state.appState);
-	const contests = useAppSelector((state) => state.contestList.contests);
+	const { contests } = useContestStore();
 	const { showErrorToast } = useToast();
 
 	const defaultFilter: ProblemFilter = {

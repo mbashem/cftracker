@@ -203,6 +203,10 @@ text.text-light {
   outline: none;
 }
 
+.date-range-clear-button {
+  margin-left: -0.7rem;
+}
+
 .date-range-input::-webkit-calendar-picker-indicator {
   display: none;
 }
