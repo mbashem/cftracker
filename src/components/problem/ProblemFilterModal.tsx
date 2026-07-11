@@ -3,6 +3,7 @@ import { Verdict } from "../../types/CF/Submission";
 import Theme from "../../util/Theme";
 import CustomModal from "../common/CustomModal";
 import CheckList from "../common/forms/CheckList";
+import InputDateRange from "../common/forms/Input/InputDateRange";
 import InputRange from "../common/forms/Input/InputRange";
 import type { ProblemFilter, ProblemFilterState, UpdateProblemFilter } from "./useProblemPage";
 
@@ -32,11 +33,12 @@ function ProblemFilterModal({
   setTags,
 }: ProblemFilterModalProps) {
   return (
-    <CustomModal title="Filter" theme={theme}>
+    <CustomModal title="Filter" theme={theme} size="lg">
       <CheckList
         items={selectableVerdictStatuses}
         active={solveStatus}
         name={"Solve Status"}
+        className="pb-2"
         onClickSet={setSolveStatus}
         theme={theme}
       />
@@ -49,7 +51,7 @@ function ProblemFilterModal({
         name="Rating"
         step={100}
         minTitle="Set 0 to show Unrated Problems"
-        className="p-2 pb-0"
+        className="pb-2"
         onMinChange={(num: number) => updateFilter({ minRating: num })}
         onMaxChange={(num: number) => updateFilter({ maxRating: num })}
       />
@@ -61,9 +63,18 @@ function ProblemFilterModal({
         theme={theme}
         name="ContestId"
         step={1}
-        className="p-2"
+        className="pb-2"
         onMinChange={(num: number) => updateFilter({ minContestId: num })}
         onMaxChange={(num: number) => updateFilter({ maxContestId: num })}
+      />
+      <InputDateRange
+        name="Date"
+        minValue={filter.minContestDate}
+        maxValue={filter.maxContestDate}
+        theme={theme}
+        className="pb-2"
+        onMinChange={(minContestDate) => updateFilter({ minContestDate })}
+        onMaxChange={(maxContestDate) => updateFilter({ maxContestDate })}
       />
       <CheckList
         items={tags}

@@ -197,3 +197,12 @@ footer {
 text.text-light {
   fill: #f8f9fa !important;
 }
+
+.date-range-input {
+  appearance: none;
+  outline: none;
+}
+
+.date-range-input::-webkit-calendar-picker-indicator {
+  display: none;
+}

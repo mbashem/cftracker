@@ -12,6 +12,7 @@ import { List } from "../../types/list";
 import Problem from "../../types/CF/Problem";
 import { Verdict } from "../../types/CF/Submission";
 import { StorageService } from "../../util/StorageService";
+import { formatDateInputValue } from "../../util/time";
 import { isDefined } from "../../util/util";
 import { sortByContestId, sortByRating, sortBySolveCount, SortOrder, SortProblemBy } from "../../util/sortMethods";
 
@@ -22,6 +23,8 @@ export interface ProblemFilter {
 	showUnrated: boolean;
 	minContestId: number;
 	maxContestId: number;
+	minContestDate: string | undefined;
+	maxContestDate: string | undefined;
 	search: string;
 }
 
@@ -45,6 +48,7 @@ function useProblemPage() {
 	const { problemList: problemStore } = useProblemsStore();
 	const [problemsAddedToList, setProblemsAddedToList] = useState<Set<string>>(new Set());
 	const appState = useAppSelector((state) => state.appState);
+	const contests = useAppSelector((state) => state.contestList.contests);
 	const { showErrorToast } = useToast();
 
 	const defaultFilter: ProblemFilter = {
@@ -54,6 +58,8 @@ function useProblemPage() {
 		showUnrated: true,
 		minContestId: appState.minContestId,
 		maxContestId: appState.maxContestId,
+		minContestDate: undefined,
+		maxContestDate: undefined,
 		search: searchParams.get(SearchKeys.Search) ?? "",
 	};
 
@@ -87,6 +93,17 @@ function useProblemPage() {
 			problemList: problemStore,
 		};
 	}, [appState, problemStore]);
+
+	const contestDates = useMemo(() => {
+		const dates = new Map<number, string>();
+
+		for (const contest of contests) {
+			if (contest.startTimeSeconds === undefined) continue;
+			dates.set(contest.id, formatDateInputValue(new Date(contest.startTimeSeconds * 1000)));
+		}
+
+		return dates;
+	}, [contests]);
 
 	const { solved, attempted } = useMemo(() => {
 		const solved = new Set<string>();
@@ -124,15 +141,20 @@ function useProblemPage() {
 
 			const ratingInside = problem.rating <= filter.maxRating && problem.rating >= filter.minRating;
 			const contestIdInside = problem.contestId <= filter.maxContestId && problem.contestId >= filter.minContestId;
+			const contestDate = contestDates.get(problem.contestId);
+			const contestDateInside = contestDate === undefined || (
+				(filter.minContestDate === undefined || contestDate >= filter.minContestDate) &&
+				(filter.maxContestDate === undefined || contestDate <= filter.maxContestDate)
+			);
 			const status = solveStatus.has(getProblemStatus(problem));
 
 			let searchIncluded = true;
 			const text = filter.search.toLowerCase().trim();
 			if (text.length) searchIncluded = problem.name.toLowerCase().includes(text) || problem.id.toLowerCase().includes(text);
 
-			return status && ratingInside && containTags && searchIncluded && contestIdInside;
+			return status && ratingInside && containTags && searchIncluded && contestIdInside && contestDateInside;
 		},
-		[filter, filterState.tags, getProblemStatus, solveStatus]
+		[contestDates, filter, filterState.tags, getProblemStatus, solveStatus]
 	);
 
 	const filteredProblems = useMemo(() => {
