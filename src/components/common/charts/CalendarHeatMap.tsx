@@ -44,8 +44,6 @@ function CalendarHeatMap({ datasets, minimumValueForMaxColor }: CalendarHeatMapP
 
   return (
     <div className="d-flex flex-column justify-content-center">
-      <span className="row justify-content-center mb-4 text-secondary fw-bold small">Submission HeatMap</span>
-
       {datasets.map((dataset) => (
         <div className="d-flex flex-column" key={dataset.year}>
           <div className="d-flex justify-content-center">

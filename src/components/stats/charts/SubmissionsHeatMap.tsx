@@ -1,11 +1,19 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import useSubmissionsStore from "../../../data/hooks/useSubmissionsStore";
+import useTheme from "../../../data/hooks/useTheme";
+import usePersistentState from "../../../hooks/usePersistentState";
+import { StorageService } from "../../../util/StorageService";
 import CalendarHeatMap, { CalendarHeatMapDataSet } from "../../common/charts/CalendarHeatMap";
 
-interface SubmissionsHeatMap {}
+const allYears = "all";
 
-function SubmissionsHeatMap({}: SubmissionsHeatMap) {
+function SubmissionsHeatMap() {
   const { rawSubmissions: submissions } = useSubmissionsStore();
+  const { theme } = useTheme();
+  const [selectedYear, setSelectedYear] = usePersistentState<number | typeof allYears | undefined>(
+    StorageService.Keys.Stats.SubmissionHeatMapYear,
+    undefined
+  );
 
   const datasets = useMemo(() => {
     let datasets: CalendarHeatMapDataSet[] = [];
@@ -33,6 +41,19 @@ function SubmissionsHeatMap({}: SubmissionsHeatMap) {
     return datasets;
   }, [submissions]);
 
+  const years = useMemo(() => datasets.map((dataset) => dataset.year).reverse(), [datasets]);
+  const activeYear = selectedYear === allYears || (selectedYear !== undefined && years.includes(selectedYear))
+    ? selectedYear
+    : years[0] ?? allYears;
+  const visibleDatasets = useMemo(
+    () => activeYear === allYears ? datasets : datasets.filter((dataset) => dataset.year === activeYear),
+    [activeYear, datasets]
+  );
+
+  useEffect(() => {
+    if (years.length > 0 && selectedYear !== activeYear) setSelectedYear(activeYear);
+  }, [activeYear, selectedYear, setSelectedYear, years.length]);
+
   function isSameDay(date1: Date, date2: Date): boolean {
     return (
       date1.getDate() === date2.getDate() &&
@@ -41,7 +62,29 @@ function SubmissionsHeatMap({}: SubmissionsHeatMap) {
     );
   }
 
-  return <CalendarHeatMap datasets={datasets} minimumValueForMaxColor={5} />;
+  return (
+    <div className="d-flex flex-column w-100">
+      <div className="d-flex justify-content-center align-items-center gap-3 mb-4">
+        <span className="text-secondary fw-bold small">Submission HeatMap</span>
+        <select
+          className={`form-select form-select-sm w-auto ${theme.bgText}`}
+          aria-label="Select heatmap year"
+          value={activeYear}
+          onChange={(event) => {
+            setSelectedYear(event.target.value === allYears ? allYears : Number(event.target.value));
+          }}
+        >
+          <option value={allYears}>All</option>
+          {years.map((year) => (
+            <option key={year} value={year}>
+              {year}
+            </option>
+          ))}
+        </select>
+      </div>
+      <CalendarHeatMap datasets={visibleDatasets} minimumValueForMaxColor={5} />
+    </div>
+  );
 }
 
 export default SubmissionsHeatMap;

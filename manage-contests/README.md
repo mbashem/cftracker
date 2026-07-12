@@ -1,36 +1,34 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# manage-contests
 
-## Getting Started
+`manage-contests` is a personal admin utility for CFTracker contest/problem/shared-contest maintenance.
 
-First, run the development server:
+It is not part of the public CFTracker user-facing app. Treat it as an operator tool for local/admin tasks. It includes actions that fetch Codeforces data, sync saved data, and mutate local admin data.
+
+## Environment
+
+Create `manage-contests/.env`:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+DATABASE_URL=postgres://postgres:postgrespw@localhost:5432/cftracker_manage?sslmode=disable
+CF_API_KEY=your_codeforces_api_key
+CF_API_SECRET=your_codeforces_api_secret
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`DATABASE_URL` is used by Prisma. `CF_API_KEY` and `CF_API_SECRET` are only needed for authenticated Codeforces API calls.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Run Locally
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+```bash
+cd manage-contests
+npm install
+npm run dev
+```
 
-## Learn More
+Open the local URL printed by Next.js in the terminal.
 
-To learn more about Next.js, take a look at the following resources:
+## Notes
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+- This tool is intended for admin usage only.
+- Do not expose it as a public deployment.
+- Saved admin snapshots live under `src/saved-db/`.
+- Prisma schema and migrations live under `src/prisma/`.

@@ -42,7 +42,7 @@ function useContestPage() {
 		error: string;
 	}>({ contests: [], error: "" });
 
-	const [randomContest, setRandomContest] = useState(-1);
+	const [randomContest, setRandomContest] = useState<number | undefined>(undefined);
 
 	const defaultFilt: Filter = {
 		perPage: 100,
@@ -55,13 +55,7 @@ function useContestPage() {
 		canSelectMultipleCategories: false,
 	};
 
-	enum ContestSave {
-		SolveStatus = "CONTEST_SOLVE_STATUS",
-		ParticipantType = "PARTICIPANT_TYPE",
-		Filter = "CONTEST_FILTER",
-	}
-
-	const [filter, setFilter] = useState<Filter>(StorageService.getObject(ContestSave.Filter, defaultFilt));
+	const [filter, setFilter] = useState<Filter>(StorageService.getObject(StorageService.Keys.Contest.Filter, defaultFilt));
 
 	const categoryFilter = useMemo(() => {
 		return {
@@ -75,12 +69,17 @@ function useContestPage() {
 	const allParticipantType = useMemo(() => Object.keys(ParticipantType), []);
 
 	const [selected, setSelected] = useState(0);
-	const [solveStatus, setSolveStatus] = useState(StorageService.getSet(ContestSave.SolveStatus, selectableVerdictStatuses));
-	const [participant, setParticipant] = useState(StorageService.getSet(ContestSave.ParticipantType, allParticipantType));
+	const [solveStatus, setSolveStatus] = useState(
+		StorageService.getSet(StorageService.Keys.Contest.SolveStatus, selectableVerdictStatuses)
+	);
+	const [participant, setParticipant] = useState(
+		StorageService.getSet(StorageService.Keys.Contest.ParticipantType, allParticipantType)
+	);
 
 	const currentPageContests = useMemo(() => {
-		if (randomContest !== -1) {
-			return [contestList.contests[randomContest]];
+		if (randomContest !== undefined) {
+			const contest = contestList.contests[randomContest];
+			return contest ? [contest] : [];
 		}
 		let lo = selected * filter.perPage;
 		let high = Math.min(contestList.contests.length, lo + filter.perPage);
@@ -136,14 +135,14 @@ function useContestPage() {
 	}
 
 	useEffect(() => {
-		StorageService.saveObject(ContestSave.Filter, filter);
+		StorageService.saveObject(StorageService.Keys.Contest.Filter, filter);
 		if (filter.search.trim().length) updateSearchParam(SearchKeys.Search, filter.search.trim());
 		else deleteSearchParam(SearchKeys.Search);
 
 		const newContestList = contests.filter((contest) => filterContest(contest));
 
 		setContestList({ ...contestList, contests: newContestList });
-		setRandomContest(-1);
+		setRandomContest(undefined);
 	}, [state.problemList.problems, filter, solveStatus, submissions]);
 
 	useEffect(() => {
@@ -159,12 +158,12 @@ function useContestPage() {
 
 	function updateSolveStatus(status: Set<Verdict>) {
 		setSolveStatus(status);
-		StorageService.saveSet(ContestSave.SolveStatus, status);
+		StorageService.saveSet(StorageService.Keys.Contest.SolveStatus, status);
 	}
 
 	function updateParticipantsType(participantType: Set<string>) {
 		setParticipant(participantType);
-		StorageService.saveSet(ContestSave.ParticipantType, participantType);
+		StorageService.saveSet(StorageService.Keys.Contest.ParticipantType, participantType);
 	}
 
 	const updateFilter = useCallback((value: UpdateFilter) => {

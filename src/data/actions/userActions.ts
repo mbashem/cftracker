@@ -8,6 +8,12 @@ import { AppDispatch } from "../store";
 import { addHandle, removeAllHandle } from "../reducers/userSlice";
 import { addUserSubmissions, clearAllUsersSubmissions, errorFetchingUserSubmissions, loadingUserSubmissions } from "../reducers/userSubmissionsSlice";
 import { delay } from "../../util/time";
+import { fetchCodeforcesApi } from "../../util/codeforcesApi";
+
+interface UserSubmissionsResponse {
+  status: string;
+  result: Submission[];
+}
 
 export const fetchUsers = (dispatch: AppDispatch, handle: string) => {
   let currentId = Date.now();
@@ -46,8 +52,7 @@ export const fetchUserSubmissions = async (
       await delay(1000);
     cnt++;
 
-    fetch(getUserSubmissionsURL(handle))
-      .then((res) => res.json())
+    fetchCodeforcesApi<UserSubmissionsResponse>(getUserSubmissionsURL(handle))
       .then(
         (result) => {
           if (result.status !== "OK")

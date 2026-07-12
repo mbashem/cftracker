@@ -45,7 +45,12 @@ function useStatPage() {
 	}
 
 
-	return { submissionsByVerdict, problemIDsBySimpleVerdict, theme };
+	return {
+		submissionsByVerdict,
+		problemIDsBySimpleVerdict,
+		hasSubmissionData: rawSubmissions.length > 0,
+		theme,
+	};
 }
 
 export default useStatPage;

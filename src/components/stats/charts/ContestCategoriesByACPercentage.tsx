@@ -7,12 +7,11 @@ import DefaultValueMap from "../../../util/DefaultValueMap";
 import ContestCategoryByACPercentage from "./ContestCategoryByACPercentage";
 
 interface ContestCategoryByACPercentageProps {}
+const categories = Object.values(ContestCat) as ContestCat[];
 
 function ContestCategoriesByACPercentage({}: ContestCategoryByACPercentageProps) {
   const { rawSubmissions: submissions } = useSubmissionsStore();
   const { contests } = useContestStore();
-
-  const categories = Object.values(ContestCat) as ContestCat[];
 
   const contestByCategory = useMemo(() => {
     let contestByCategory = new DefaultValueMap<number, ContestCat>();
@@ -37,17 +36,25 @@ function ContestCategoriesByACPercentage({}: ContestCategoryByACPercentageProps)
     return simpleVerdictByContestCategory;
   }, [contestByCategory, submissions]);
 
+  const categoriesWithData = useMemo(
+    () => categories.filter((category) => {
+      const verdictCounts = simpleVerdictByContestCategory.get(category);
+      return verdictCounts !== undefined && [...verdictCounts.values()].some((count) => count > 0);
+    }),
+    [simpleVerdictByContestCategory]
+  );
+
   return (
     <div className="container">
       <div className="row text-secondary text-center w-100">
         <span className="small fw-bold">Contest Categories By AC Percentage </span>
       </div>
       <div className="row">
-        {categories.map((category) => (
+        {categoriesWithData.map((category) => (
           <div className="col-6 col-md-3" key={category}>
             <ContestCategoryByACPercentage
               category={category}
-              simpleVerdictCounts={simpleVerdictByContestCategory.get(category) ?? new DefaultValueMap()}
+              simpleVerdictCounts={simpleVerdictByContestCategory.get(category)!}
             />
           </div>
         ))}

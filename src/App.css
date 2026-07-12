@@ -197,3 +197,83 @@ footer {
 text.text-light {
   fill: #f8f9fa !important;
 }
+
+.date-range-input {
+  appearance: none;
+  outline: none;
+}
+
+.date-range-clear-button {
+  margin-left: -0.7rem;
+}
+
+.date-range-input::-webkit-calendar-picker-indicator {
+  display: none;
+}
+
+.input-range-slider {
+  height: 1.5rem;
+}
+
+.input-range-slider-light {
+  --input-range-slider-track: #dee2e6;
+  --input-range-slider-selected: #0d6efd;
+}
+
+.input-range-slider-dark {
+  --input-range-slider-track: #6c757d;
+  --input-range-slider-selected: #6ea8fe;
+}
+
+.input-range-slider-track {
+  height: 0.5rem;
+  top: 50%;
+  border-radius: 1rem;
+  pointer-events: none;
+  transform: translateY(-50%);
+  z-index: 1;
+}
+
+.input-range-slider-input {
+  inset: 0;
+  margin: 0;
+  pointer-events: none;
+}
+
+.input-range-slider-input:focus {
+  z-index: 5 !important;
+}
+
+.input-range-slider-input::-webkit-slider-runnable-track {
+  background: transparent;
+}
+
+.input-range-slider-input::-moz-range-track {
+  background: transparent;
+}
+
+.input-range-slider-input::-webkit-slider-thumb {
+  cursor: ew-resize;
+  pointer-events: auto;
+}
+
+.input-range-slider-input::-moz-range-thumb {
+  cursor: ew-resize;
+  pointer-events: auto;
+}
+
+.input-range-slider-min.input-range-slider-equal::-webkit-slider-thumb {
+  transform: translateX(-0.2rem);
+}
+
+.input-range-slider-max.input-range-slider-equal::-webkit-slider-thumb {
+  transform: translateX(0.2rem);
+}
+
+.input-range-slider-min.input-range-slider-equal::-moz-range-thumb {
+  transform: translateX(-0.2rem);
+}
+
+.input-range-slider-max.input-range-slider-equal::-moz-range-thumb {
+  transform: translateX(0.2rem);
+}

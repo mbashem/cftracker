@@ -1,65 +1,126 @@
 export namespace StorageService {
-  enum Key {
-    jwtToken = "jwtToken"
+  export namespace Keys {
+    export const JwtToken = "jwtToken";
+    export const StateV2 = "statev2";
+
+    export namespace Problem {
+      export const Filter = "PROBLEM_FILTER";
+      export const Tags = "PROBLEM_TAGS";
+      export const SolveStatus = "PROBLEM_SOLVE_STATUS";
+    }
+
+    export namespace Contest {
+      export const Filter = "CONTEST_FILTER";
+      export const SolveStatus = "CONTEST_SOLVE_STATUS";
+      export const ParticipantType = "PARTICIPANT_TYPE";
+    }
+
+    export namespace Codeforces {
+      export const DebugApiCache = "DEBUG_CODEFORCES_API_CACHE";
+    }
+
+    export namespace Stats {
+      export const SubmissionHeatMapYear = "STATS_SUBMISSION_HEATMAP_YEAR";
+    }
   }
+
+  function isPlainObject(value: unknown): value is Record<string, unknown> {
+    return typeof value === "object" && value !== null && !Array.isArray(value) && !(value instanceof Set) && !(value instanceof Map);
+  }
+
   export function getJWTToken() {
-    return localStorage.getItem(Key.jwtToken);
+    return localStorage.getItem(Keys.JwtToken);
   }
 
   export function setJWTToken(jwtToken: string) {
-    localStorage.setItem(Key.jwtToken, jwtToken);
+    localStorage.setItem(Keys.JwtToken, jwtToken);
   }
 
   export function removeJWTToken() {
-    localStorage.removeItem(Key.jwtToken);
+    localStorage.removeItem(Keys.JwtToken);
   }
 
-  export const saveSet = <T extends string | number | boolean>(name: string, st: Set<T>): boolean => {
+  export const saveSet = <T>(storageKey: string, valueSet: Set<T>): boolean => {
     try {
-      localStorage.setItem(name, JSON.stringify([...st]));
+      localStorage.setItem(storageKey, JSON.stringify([...valueSet]));
       return true;
-    } catch (e) {
-      console.log(e);
+    } catch (error) {
+      console.log(error);
       return false;
     }
   };
 
-  export const getSet = <T extends string | number | boolean>(name: string, def: T[]): Set<T> => {
+  export const getSet = <T>(storageKey: string, defaultValue: Iterable<T>): Set<T> => {
     try {
-      let res = JSON.parse(localStorage.getItem(name)!);
+      const storedValue = localStorage.getItem(storageKey);
+      if (storedValue === null) return new Set(defaultValue);
 
-      if (res) {
-        let st = new Set<T>(res);
-        return st;
+      let parsedValue = JSON.parse(storedValue);
+
+      if (parsedValue) {
+        let valueSet = new Set<T>(parsedValue);
+        return valueSet;
       }
-    } catch (e) {
-      console.log(e);
+    } catch (error) {
+      console.log(error);
     }
-    return new Set(def);
+    return new Set(defaultValue);
   };
 
-  export const saveObject = (name: string, obj: any): boolean => {
+  export const saveMap = <MapKey, MapValue>(storageKey: string, valueMap: Map<MapKey, MapValue>): boolean => {
     try {
-      // console.log();
-      localStorage.setItem(name, JSON.stringify(obj));
+      localStorage.setItem(storageKey, JSON.stringify([...valueMap]));
       return true;
-    } catch (e) {
-      console.log(e);
+    } catch (error) {
+      console.log(error);
       return false;
     }
   };
 
-  export const getObject = (name: string, def: any): any => {
+  export const getMap = <MapKey, MapValue>(
+    storageKey: string,
+    defaultValue: Iterable<[MapKey, MapValue]>
+  ): Map<MapKey, MapValue> => {
     try {
-      let res = JSON.parse(localStorage.getItem(name)!);
+      const storedValue = localStorage.getItem(storageKey);
+      if (storedValue === null) return new Map(defaultValue);
 
-      if (res) {
-        return { ...def, ...res };
+      let parsedValue = JSON.parse(storedValue);
+
+      if (parsedValue) {
+        return new Map<MapKey, MapValue>(parsedValue);
       }
-    } catch (e) {
-      console.log(e);
+    } catch (error) {
+      console.log(error);
     }
-    return def;
+    return new Map(defaultValue);
+  };
+
+  export const saveObject = <T>(storageKey: string, value: T): boolean => {
+    try {
+      const serializedObject = JSON.stringify(value);
+      if (serializedObject === undefined) localStorage.removeItem(storageKey);
+      else localStorage.setItem(storageKey, serializedObject);
+      return true;
+    } catch (error) {
+      console.log(error);
+      return false;
+    }
+  };
+
+  export const getObject = <T>(storageKey: string, defaultValue: T): T => {
+    try {
+      const storedValue = localStorage.getItem(storageKey);
+      if (storedValue === null) return defaultValue;
+
+      let parsedValue = JSON.parse(storedValue);
+
+      if (isPlainObject(defaultValue) && isPlainObject(parsedValue)) return { ...defaultValue, ...parsedValue } as T;
+      return parsedValue as T;
+    } catch (error) {
+      console.log(error);
+    }
+    return defaultValue;
   };
 
 }

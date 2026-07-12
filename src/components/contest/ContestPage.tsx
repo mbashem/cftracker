@@ -46,9 +46,7 @@ function ContestPage() {
           perPage={filter.perPage}
           selected={selected}
           name="Contest"
-          setRandom={(num) => {
-            setRandomContest(num);
-          }}
+          setRandom={setRandomContest}
           theme={theme}
         >
           <CustomModal title="filter" theme={theme}>

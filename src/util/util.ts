@@ -44,7 +44,7 @@ export const parseQuery = (queryString: string) => {
   return query;
 };
 
-export const processNumber = (
+export const clampNumber = (
   num: number,
   min: number,
   max: number

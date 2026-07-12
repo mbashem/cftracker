@@ -14,6 +14,14 @@ export function formateDate(time: number) {
 	);
 };
 
+export function formatDateInputValue(date: Date) {
+	const year = date.getFullYear().toString().padStart(4, "0");
+	const month = (date.getMonth() + 1).toString().padStart(2, "0");
+	const day = date.getDate().toString().padStart(2, "0");
+
+	return `${year}-${month}-${day}`;
+}
+
 export function getDaysInYear(year: number) {
 	return (year % 4 === 0 && year % 100 > 0) || year % 400 == 0 ? 366 : 365;
 }

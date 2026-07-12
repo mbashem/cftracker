@@ -14,6 +14,7 @@ interface PropsType {
   children: React.ReactNode | ((props: childrenProps) => React.ReactNode);
   theme: Theme;
   button?: React.ReactNode;
+  size?: "sm" | "lg" | "xl";
 }
 
 const CustomModal = (props: PropsType) => {
@@ -27,12 +28,12 @@ const CustomModal = (props: PropsType) => {
       <button type="button" className={"btn " + props.theme.btn} onClick={handleShow}>
         {props.button === undefined ? <FontAwesomeIcon icon={faFilter} /> : props.button}
       </button>
-      <Modal className="modal" show={show} onHide={handleClose}>
+      <Modal className="modal" size={props.size} show={show} onHide={handleClose}>
         <Modal.Header className={"modal-header " + props.theme.bgText}>
           <Modal.Title>{props.title}</Modal.Title>
           <button
             type="button"
-            className="btn-close"
+            className={props.theme.btnClose}
             data-bs-dismiss="modal"
             aria-label="Close"
             onClick={() => handleClose()}

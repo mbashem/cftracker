@@ -52,6 +52,7 @@ export default class Theme {
   btnPrimary: string;
 
   btn: string;
+  btnClose: string;
   btnDanger: string;
   btnSuccess: string;
 
@@ -70,6 +71,7 @@ export default class Theme {
         this.bgDanger = "bg-danger";
 
         this.btn = "btn btn-dark";
+        this.btnClose = "btn-close btn-close-white";
         break;
       case ThemesType.LIGHT:
       default:
@@ -85,6 +87,7 @@ export default class Theme {
         this.bgDanger = "bg-danger-light";
 
         this.btn = "btn btn-light";
+        this.btnClose = "btn-close";
         break;
     }
 

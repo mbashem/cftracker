@@ -18,6 +18,7 @@ interface PropsType<T> {
   activeClass?: string;
   inactiveClass?: string;
   btnClass?: string;
+  className?: string;
   appendButtonsEnd?: ButtonItems[];
 }
 
@@ -31,7 +32,7 @@ const CheckList = <T extends React.Key>(props: PropsType<T>) => {
   if (!activeClass) activeClass = "btn-success active";
 
   return (
-    <div className="d-flex flex-column">
+    <div className={`d-flex flex-column ${props.className ?? ""}`}>
       <div className="d-inline-flex gap-2 align-items-center">
         {props.name.length ? <div className="">{props.name}</div> : ""}
         {props.selectAll ? (

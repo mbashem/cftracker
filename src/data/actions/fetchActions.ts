@@ -8,57 +8,77 @@ import Contest from "../../types/CF/Contest";
 import { addProblems, errorFetchingProblems, loadingProblems } from "../reducers/problemListSlice";
 import { addContestList, errorFetchingContestList, loadingContestList } from "../reducers/contestListSlice";
 import { addSharedProblems, errorFetchingSharedProblems } from "../reducers/sharedProblemsSlice";
+import { IS_DEBUG_MODE } from "../../util/env";
 
 // const allContestURL = "https://codeforces.com/api/contest.list?lang=en";
 const problemSetURL = "https://codeforces.com/api/problemset.problems?lang=en";
 
+interface ProblemSetResult {
+  status: string;
+  result: {
+    problems: Problem[];
+    problemStatistics: ProblemStatistics[];
+  };
+}
+
+function addProblemListFromResult(dispatch: AppDispatch, result: ProblemSetResult) {
+  if (result.status !== "OK")
+    return dispatch(
+      errorFetchingProblems({ error: "Failed to fetch Problems list from CF API" })
+    );
+
+  let problems: Problem[] = result.result.problems as Problem[];
+  let problemStatistics: ProblemStatistics[] =
+    result.result.problemStatistics as ProblemStatistics[];
+
+  problems = problems.filter((problem) =>
+    problem.contestId ? true : false
+  );
+
+  problemStatistics = problemStatistics.filter((problem) =>
+    problem.contestId ? true : false
+  );
+
+  const finalProblemArray: Problem[] = [];
+  for (let index = 0; index < problems.length; index++) {
+    problems[index].rating = problems[index].rating ?? 0;
+    problems[index].solvedCount = problems[index].solvedCount ?? 0;
+    if (problems[index].contestId === undefined) continue;
+    finalProblemArray.push(
+      new Problem(
+        problems[index].contestId!,
+        problems[index].index,
+        problems[index].name,
+        problems[index].type,
+        problems[index].rating,
+        problems[index].tags,
+        problemStatistics[index]?.solvedCount ?? 0
+      )
+    );
+  }
+
+  return dispatch(addProblems({ problems: finalProblemArray }));
+}
+
 export const fetchProblemList = (dispatch: AppDispatch) => {
   dispatch(loadingProblems());
-  // import("../saved_api/problems_data")
-  //   .then(
-  //     (data) => {
-  //       let result = data.problem_data;
+
+  if (IS_DEBUG_MODE) {
+    console.log("CFTracker is running in debug mode. Using local saved problems data.");
+    import("../saved_api/problems_data")
+      .then((data) => addProblemListFromResult(dispatch, data.problem_data as ProblemSetResult))
+      .catch((error) => {
+        console.log(error);
+        return dispatch(errorFetchingProblems({ error: "Failed to load saved Problems list." }));
+      });
+    return;
+  }
+
   fetch(problemSetURL)
-    .then((res) => res.json())
+    .then((response) => response.json())
     .then(
       (result) => {
-        if (result.status !== "OK")
-          return dispatch(
-            errorFetchingProblems({ error: "Failed to fetch Problems list from CF API" })
-          );
-        //   console.log(result);
-        let problems: Problem[] = result.result.problems as Problem[];
-        let problemStatistics: ProblemStatistics[] =
-          result.result.problemStatistics as ProblemStatistics[];
-
-        problems = problems.filter((problem) =>
-          problem.contestId ? true : false
-        );
-
-        problemStatistics = problemStatistics.filter((problem) =>
-          problem.contestId ? true : false
-        );
-
-        const finalProblemArray: Problem[] = [];
-        for (let i = 0; i < problems.length; i++) {
-          problems[i].rating = problems[i].rating ?? 0;
-          problems[i].solvedCount = problems[i].solvedCount ?? 0;
-          if (problems[i].contestId === undefined) continue;
-          finalProblemArray.push(
-            new Problem(
-              problems[i].contestId!,
-              problems[i].index,
-              problems[i].name,
-              problems[i].type,
-              problems[i].rating,
-              problems[i].tags,
-              problemStatistics[i].solvedCount
-            )
-          );
-        }
-
-        return dispatch(addProblems({ problems: finalProblemArray }));
-        //	console.log(result.result.length)
+        return addProblemListFromResult(dispatch, result as ProblemSetResult);
       },
       // Note: it's important to handle errors here
       // instead of a catch() block so that we don't swallow

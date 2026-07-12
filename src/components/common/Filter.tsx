@@ -12,7 +12,7 @@ interface PropsType {
   selected: number;
   perPage: number;
   onSearch: (s: string) => void;
-  setRandom: (num: number) => void;
+  setRandom: (num: number | undefined) => void;
   theme: Theme;
   name: string;
 }
@@ -56,7 +56,7 @@ const Filter = (props: PropsType) => {
               type="button"
               className={"btn btn-transparent text-secondary"}
               title="Cancel Random"
-              onClick={() => props.setRandom(-1)}
+              onClick={() => props.setRandom(undefined)}
             >
               <FontAwesomeIcon icon={faRedo} />
             </button>
