@@ -15,6 +15,7 @@ const ProblemPage = () => {
     selected,
     filter,
     filterState,
+    ratingRange,
     solveStatus,
     solved,
     attempted,
@@ -52,6 +53,7 @@ const ProblemPage = () => {
             appState={state.appState}
             filter={filter}
             filterState={filterState}
+            ratingRange={ratingRange}
             selectableVerdictStatuses={selectableVerdictStatuses}
             solveStatus={solveStatus}
             tags={tagList.tags}

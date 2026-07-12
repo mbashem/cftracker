@@ -12,8 +12,9 @@ import { List } from "../../types/list";
 import Problem from "../../types/CF/Problem";
 import { Verdict } from "../../types/CF/Submission";
 import { StorageService } from "../../util/StorageService";
+import { RATING_CONSTANTS } from "../../util/cf";
 import { formatDateInputValue } from "../../util/time";
-import { isDefined } from "../../util/util";
+import { isDefined, processNumber } from "../../util/util";
 import { sortByContestId, sortByRating, sortBySolveCount, SortOrder, SortProblemBy } from "../../util/sortMethods";
 import useContestStore from "../../data/hooks/useContestStore";
 
@@ -35,9 +36,33 @@ export interface ProblemFilterState {
 	order: SortOrder;
 }
 
+export interface ProblemRatingRange {
+	min: number;
+	max: number;
+	step: number;
+	minValue: number;
+	maxValue: number;
+}
+
 export type UpdateProblemFilter = Partial<ProblemFilter> | ((filter: ProblemFilter) => Partial<ProblemFilter>);
 
 type ProblemSortState = Omit<ProblemFilterState, "tags">;
+
+function getRatingRange(minRating: number, maxRating: number): ProblemRatingRange {
+	const { min, max, interval: step } = RATING_CONSTANTS;
+	const boundedMin = processNumber(minRating, min, max);
+	const boundedMax = processNumber(maxRating, min, max);
+	const steppedMin = min + Math.floor((boundedMin - min) / step) * step;
+	const steppedMax = min + Math.ceil((boundedMax - min) / step) * step;
+
+	return {
+		min,
+		max,
+		step,
+		minValue: Math.min(steppedMin, steppedMax),
+		maxValue: Math.max(steppedMin, steppedMax),
+	};
+}
 
 function useProblemPage() {
 	const { searchParams, updateSearchParam, deleteSearchParam } = useAppSearchParams();
@@ -54,8 +79,8 @@ function useProblemPage() {
 
 	const defaultFilter: ProblemFilter = {
 		perPage: 100,
-		minRating: appState.minRating,
-		maxRating: appState.maxRating,
+		minRating: RATING_CONSTANTS.min,
+		maxRating: RATING_CONSTANTS.max,
 		showUnrated: true,
 		minContestId: appState.minContestId,
 		maxContestId: appState.maxContestId,
@@ -86,6 +111,11 @@ function useProblemPage() {
 			order: filterSortState.order,
 		}),
 		[filterSortState.order, filterSortState.sortBy, tags]
+	);
+
+	const ratingRange = useMemo(
+		() => getRatingRange(filter.minRating, filter.maxRating),
+		[filter.maxRating, filter.minRating]
 	);
 
 	const state = useMemo(() => {
@@ -140,7 +170,9 @@ function useProblemPage() {
 						break;
 					}
 
-			const ratingInside = problem.rating <= filter.maxRating && problem.rating >= filter.minRating;
+			const ratingInside = problem.rating > 0
+				? problem.rating <= ratingRange.maxValue && problem.rating >= ratingRange.minValue
+				: filter.showUnrated;
 			const contestIdInside = problem.contestId <= filter.maxContestId && problem.contestId >= filter.minContestId;
 			const contestDate = contestDates.get(problem.contestId);
 			const contestDateInside = contestDate === undefined || (
@@ -155,7 +187,7 @@ function useProblemPage() {
 
 			return status && ratingInside && containTags && searchIncluded && contestIdInside && contestDateInside;
 		},
-		[contestDates, filter, filterState.tags, getProblemStatus, solveStatus]
+		[contestDates, filter, filterState.tags, getProblemStatus, ratingRange, solveStatus]
 	);
 
 	const filteredProblems = useMemo(() => {
@@ -289,6 +321,7 @@ function useProblemPage() {
 		selected,
 		filter,
 		filterState,
+		ratingRange,
 		solveStatus,
 		solved,
 		attempted,

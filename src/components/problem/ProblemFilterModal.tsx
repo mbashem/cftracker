@@ -3,15 +3,18 @@ import { Verdict } from "../../types/CF/Submission";
 import Theme from "../../util/Theme";
 import CustomModal from "../common/CustomModal";
 import CheckList from "../common/forms/CheckList";
+import InputChecked from "../common/forms/Input/InputChecked";
 import InputDateRange from "../common/forms/Input/InputDateRange";
 import InputRange from "../common/forms/Input/InputRange";
-import type { ProblemFilter, ProblemFilterState, UpdateProblemFilter } from "./useProblemPage";
+import InputRangeSlider from "../common/forms/Input/InputRangeSlider";
+import type { ProblemFilter, ProblemFilterState, ProblemRatingRange, UpdateProblemFilter } from "./useProblemPage";
 
 interface ProblemFilterModalProps {
   theme: Theme;
   appState: AppState;
   filter: ProblemFilter;
   filterState: ProblemFilterState;
+  ratingRange: ProblemRatingRange;
   selectableVerdictStatuses: Verdict[];
   solveStatus: Set<Verdict>;
   tags: string[];
@@ -25,6 +28,7 @@ function ProblemFilterModal({
   appState,
   filter,
   filterState,
+  ratingRange,
   selectableVerdictStatuses,
   solveStatus,
   tags,
@@ -42,19 +46,28 @@ function ProblemFilterModal({
         onClickSet={setSolveStatus}
         theme={theme}
       />
-      <InputRange
-        min={appState.minRating}
-        max={appState.maxRating}
-        minValue={filter.minRating}
-        maxValue={filter.maxRating}
-        theme={theme}
-        name="Rating"
-        step={100}
-        minTitle="Set 0 to show Unrated Problems"
-        className="pb-2"
-        onMinChange={(num: number) => updateFilter({ minRating: num })}
-        onMaxChange={(num: number) => updateFilter({ maxRating: num })}
-      />
+      <div className="d-flex flex-column flex-md-row align-items-md-end gap-2 pb-2">
+        <InputRangeSlider
+          min={ratingRange.min}
+          max={ratingRange.max}
+          minValue={ratingRange.minValue}
+          maxValue={ratingRange.maxValue}
+          step={ratingRange.step}
+          theme={theme}
+          name="Rating"
+          className="flex-grow-1"
+          onChange={(minRating, maxRating) => updateFilter({ minRating, maxRating })}
+        />
+        <InputChecked
+          header="Unrated Problems"
+          name="showUnrated"
+          checked={filter.showUnrated}
+          title="Include unrated problems"
+          theme={theme}
+          className="w-auto flex-shrink-0 align-self-md-end"
+          onChange={(showUnrated) => updateFilter({ showUnrated })}
+        />
+      </div>
       <InputRange
         min={appState.minContestId}
         max={appState.maxContestId}

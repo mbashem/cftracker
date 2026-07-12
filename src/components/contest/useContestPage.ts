@@ -42,7 +42,7 @@ function useContestPage() {
 		error: string;
 	}>({ contests: [], error: "" });
 
-	const [randomContest, setRandomContest] = useState(-1);
+	const [randomContest, setRandomContest] = useState<number | undefined>(undefined);
 
 	const defaultFilt: Filter = {
 		perPage: 100,
@@ -77,8 +77,9 @@ function useContestPage() {
 	);
 
 	const currentPageContests = useMemo(() => {
-		if (randomContest !== -1) {
-			return [contestList.contests[randomContest]];
+		if (randomContest !== undefined) {
+			const contest = contestList.contests[randomContest];
+			return contest ? [contest] : [];
 		}
 		let lo = selected * filter.perPage;
 		let high = Math.min(contestList.contests.length, lo + filter.perPage);
@@ -141,7 +142,7 @@ function useContestPage() {
 		const newContestList = contests.filter((contest) => filterContest(contest));
 
 		setContestList({ ...contestList, contests: newContestList });
-		setRandomContest(-1);
+		setRandomContest(undefined);
 	}, [state.problemList.problems, filter, solveStatus, submissions]);
 
 	useEffect(() => {
