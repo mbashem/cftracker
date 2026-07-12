@@ -2,7 +2,6 @@ import { faGithub } from "@fortawesome/free-brands-svg-icons";
 import { faMoon } from "@fortawesome/free-regular-svg-icons";
 import {
   faInfo,
-  faScrewdriverWrench,
   faSignIn,
   faSignOut,
   faSun,
