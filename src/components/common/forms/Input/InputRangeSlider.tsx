@@ -1,5 +1,5 @@
 import Theme from "../../../../util/Theme";
-import { processNumber } from "../../../../util/util";
+import { clampNumber } from "../../../../util/util";
 
 interface InputRangeSliderProps {
   name: string;
@@ -24,14 +24,12 @@ function InputRangeSlider({
   className,
   onChange,
 }: InputRangeSliderProps) {
-  const boundedMin = processNumber(minValue, min, max);
-  const boundedMax = processNumber(maxValue, min, max);
-  const selectedMin = Math.min(boundedMin, boundedMax);
-  const selectedMax = Math.max(boundedMin, boundedMax);
+  const boundedMinValue = clampNumber(minValue, min, max);
+  const boundedMaxValue = clampNumber(maxValue, min, max);
   const range = max - min;
-  const minPercentage = range === 0 ? 0 : ((selectedMin - min) / range) * 100;
-  const maxPercentage = range === 0 ? 100 : ((selectedMax - min) / range) * 100;
-  const valuesAreEqual = selectedMin === selectedMax;
+  const minPercentage = range === 0 ? 0 : ((boundedMinValue - min) / range) * 100;
+  const maxPercentage = range === 0 ? 100 : ((boundedMaxValue - min) / range) * 100;
+  const valuesAreEqual = boundedMinValue === boundedMaxValue;
 
   const trackBackground = `linear-gradient(to right,
     var(--input-range-slider-track) ${minPercentage}%,
@@ -43,10 +41,10 @@ function InputRangeSlider({
     <div className={`d-flex flex-column px-2 ${theme.bgText} ${className ?? ""}`}>
       <div className="d-flex justify-content-between align-items-center gap-2 mb-1">
         <span>
-          Min {name}: <output>{selectedMin}</output>
+          Min {name}: <output>{boundedMinValue}</output>
         </span>
         <span>
-          Max {name}: <output>{selectedMax}</output>
+          Max {name}: <output>{boundedMaxValue}</output>
         </span>
       </div>
 
@@ -63,12 +61,14 @@ function InputRangeSlider({
           min={min}
           max={max}
           step={step}
-          value={selectedMin}
+          value={boundedMinValue}
           aria-label={`Minimum ${name.toLowerCase()}`}
-          aria-valuemax={selectedMax}
-          aria-valuetext={selectedMin.toString()}
-          style={{ zIndex: selectedMin >= selectedMax - step ? 4 : 2 }}
-          onChange={(event) => onChange(Math.min(Number(event.target.value), selectedMax), selectedMax)}
+          aria-valuemax={boundedMaxValue}
+          aria-valuetext={boundedMinValue.toString()}
+          style={{ zIndex: boundedMinValue >= boundedMaxValue - step ? 4 : 2 }}
+          onChange={(event) =>
+            onChange(Math.min(Number(event.target.value), boundedMaxValue), boundedMaxValue)
+          }
         />
         <input
           className={`input-range-slider-input input-range-slider-max form-range position-absolute w-100 ${
@@ -78,12 +78,14 @@ function InputRangeSlider({
           min={min}
           max={max}
           step={step}
-          value={selectedMax}
+          value={boundedMaxValue}
           aria-label={`Maximum ${name.toLowerCase()}`}
-          aria-valuemin={selectedMin}
-          aria-valuetext={selectedMax.toString()}
+          aria-valuemin={boundedMinValue}
+          aria-valuetext={boundedMaxValue.toString()}
           style={{ zIndex: 3 }}
-          onChange={(event) => onChange(selectedMin, Math.max(Number(event.target.value), selectedMin))}
+          onChange={(event) =>
+            onChange(boundedMinValue, Math.max(Number(event.target.value), boundedMinValue))
+          }
         />
       </div>
     </div>

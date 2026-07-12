@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { processNumber } from "../../../../util/util";
+import { clampNumber } from "../../../../util/util";
 
 interface PropsType {
   header: string;
@@ -21,10 +21,10 @@ const InputNumber = (props: PropsType) => {
   const validateAndUpdate = () => {
     let num: number = parseInt(inputValue);
     if (!isNaN(num)) {
-      let processedNum = processNumber(num, props.min, props.max);
-      if (processedNum != num) {
+      let clampedNumber = clampNumber(num, props.min, props.max);
+      if (clampedNumber != num) {
         // FIXME:- It causes infinite rendering
-        // setInputValue(processedNum.toString()); // converting num to string
+        // setInputValue(clampedNumber.toString()); // converting num to string
       }
       props.onChange(num);
     }

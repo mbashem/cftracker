@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import Theme from "../../util/Theme";
-import { processNumber } from "../../util/util";
+import { clampNumber } from "../../util/util";
 import InputNumber from "./forms/Input/InputNumber";
 
 interface PaginationProps {
@@ -96,7 +96,7 @@ const Pagination = (props: PaginationProps) => {
                 value={props.perPage}
                 onChange={(e) => {
                   if (props.pageSize) {
-                    props.pageSize(processNumber(parseInt(e.target.value), 1, props.totalCount));
+                    props.pageSize(clampNumber(parseInt(e.target.value), 1, props.totalCount));
                   }
                 }}
               >

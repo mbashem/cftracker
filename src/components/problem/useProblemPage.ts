@@ -14,7 +14,7 @@ import { Verdict } from "../../types/CF/Submission";
 import { StorageService } from "../../util/StorageService";
 import { RATING_CONSTANTS } from "../../util/cf";
 import { formatDateInputValue } from "../../util/time";
-import { isDefined, processNumber } from "../../util/util";
+import { clampNumber, isDefined } from "../../util/util";
 import { sortByContestId, sortByRating, sortBySolveCount, SortOrder, SortProblemBy } from "../../util/sortMethods";
 import useContestStore from "../../data/hooks/useContestStore";
 
@@ -50,8 +50,8 @@ type ProblemSortState = Omit<ProblemFilterState, "tags">;
 
 function getRatingRange(minRating: number, maxRating: number): ProblemRatingRange {
 	const { min, max, interval: step } = RATING_CONSTANTS;
-	const boundedMin = processNumber(minRating, min, max);
-	const boundedMax = processNumber(maxRating, min, max);
+	const boundedMin = clampNumber(minRating, min, max);
+	const boundedMax = clampNumber(maxRating, min, max);
 	const steppedMin = min + Math.floor((boundedMin - min) / step) * step;
 	const steppedMax = min + Math.ceil((boundedMax - min) / step) * step;
 
