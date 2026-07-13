@@ -18,6 +18,8 @@ CF_API_SECRET=your_codeforces_api_secret
 
 ## Run Locally
 
+Node.js 20.9 or newer is required.
+
 ```bash
 cd manage-contests
 npm install

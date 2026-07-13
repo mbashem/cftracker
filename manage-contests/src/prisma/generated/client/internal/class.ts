@@ -17,18 +17,26 @@ import type * as Prisma from "./prismaNamespace"
 
 const config: runtime.GetPrismaClientConfig = {
   "previewFeatures": [],
-  "clientVersion": "7.1.0",
-  "engineVersion": "ab635e6b9d606fa5c8fb8b1a7f909c3c3c1c98ba",
+  "clientVersion": "7.8.0",
+  "engineVersion": "3c6e192761c0362d496ed980de936e2f3cebcd3a",
   "activeProvider": "postgresql",
   "inlineSchema": "// Set the datasource provider to PostgreSQL\ndatasource db {\n  provider = \"postgresql\"\n}\n\n// Generate the Prisma client for TypeScript\ngenerator client {\n  provider = \"prisma-client\"\n  output   = \"./generated/client\"\n}\n\n// Define the Problem model\nmodel Problem {\n  name      String\n  contestId Int\n  index     String\n  rating    Int?\n\n  // Define foreign key relationship to Contest\n  contest Contest @relation(fields: [contestId], references: [contestId])\n\n  @@id([contestId, index])\n}\n\n// Define the Contest model\nmodel Contest {\n  contestId           Int             @id\n  name                String\n  Problem             Problem[]\n  SharedContest       SharedContest[] @relation(\"contest\")\n  parentSharedContest SharedContest[] @relation(\"parentContest\")\n}\n\n// Define the SharedContest model\nmodel SharedContest {\n  contestId       Int @unique\n  parentContestId Int\n\n  // Define foreign key relationships to Contest\n  Contest       Contest @relation(\"contest\", fields: [contestId], references: [contestId])\n  parentContest Contest @relation(\"parentContest\", fields: [parentContestId], references: [contestId])\n\n  @@id([contestId, parentContestId])\n}\n",
   "runtimeDataModel": {
     "models": {},
     "enums": {},
     "types": {}
+  },
+  "parameterizationSchema": {
+    "strings": [],
+    "graph": ""
   }
 }
 
 config.runtimeDataModel = JSON.parse("{\"models\":{\"Problem\":{\"fields\":[{\"name\":\"name\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"contestId\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"index\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"rating\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"contest\",\"kind\":\"object\",\"type\":\"Contest\",\"relationName\":\"ContestToProblem\"}],\"dbName\":null},\"Contest\":{\"fields\":[{\"name\":\"contestId\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"name\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"Problem\",\"kind\":\"object\",\"type\":\"Problem\",\"relationName\":\"ContestToProblem\"},{\"name\":\"SharedContest\",\"kind\":\"object\",\"type\":\"SharedContest\",\"relationName\":\"contest\"},{\"name\":\"parentSharedContest\",\"kind\":\"object\",\"type\":\"SharedContest\",\"relationName\":\"parentContest\"}],\"dbName\":null},\"SharedContest\":{\"fields\":[{\"name\":\"contestId\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"parentContestId\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"Contest\",\"kind\":\"object\",\"type\":\"Contest\",\"relationName\":\"contest\"},{\"name\":\"parentContest\",\"kind\":\"object\",\"type\":\"Contest\",\"relationName\":\"parentContest\"}],\"dbName\":null}},\"enums\":{},\"types\":{}}")
+config.parameterizationSchema = {
+  strings: JSON.parse("[\"where\",\"orderBy\",\"cursor\",\"Problem\",\"Contest\",\"parentContest\",\"SharedContest\",\"parentSharedContest\",\"_count\",\"contest\",\"Problem.findUnique\",\"Problem.findUniqueOrThrow\",\"Problem.findFirst\",\"Problem.findFirstOrThrow\",\"Problem.findMany\",\"data\",\"Problem.createOne\",\"Problem.createMany\",\"Problem.createManyAndReturn\",\"Problem.updateOne\",\"Problem.updateMany\",\"Problem.updateManyAndReturn\",\"create\",\"update\",\"Problem.upsertOne\",\"Problem.deleteOne\",\"Problem.deleteMany\",\"having\",\"_avg\",\"_sum\",\"_min\",\"_max\",\"Problem.groupBy\",\"Problem.aggregate\",\"Contest.findUnique\",\"Contest.findUniqueOrThrow\",\"Contest.findFirst\",\"Contest.findFirstOrThrow\",\"Contest.findMany\",\"Contest.createOne\",\"Contest.createMany\",\"Contest.createManyAndReturn\",\"Contest.updateOne\",\"Contest.updateMany\",\"Contest.updateManyAndReturn\",\"Contest.upsertOne\",\"Contest.deleteOne\",\"Contest.deleteMany\",\"Contest.groupBy\",\"Contest.aggregate\",\"SharedContest.findUnique\",\"SharedContest.findUniqueOrThrow\",\"SharedContest.findFirst\",\"SharedContest.findFirstOrThrow\",\"SharedContest.findMany\",\"SharedContest.createOne\",\"SharedContest.createMany\",\"SharedContest.createManyAndReturn\",\"SharedContest.updateOne\",\"SharedContest.updateMany\",\"SharedContest.updateManyAndReturn\",\"SharedContest.upsertOne\",\"SharedContest.deleteOne\",\"SharedContest.deleteMany\",\"SharedContest.groupBy\",\"SharedContest.aggregate\",\"AND\",\"OR\",\"NOT\",\"contestId\",\"parentContestId\",\"equals\",\"in\",\"notIn\",\"lt\",\"lte\",\"gt\",\"gte\",\"not\",\"name\",\"contains\",\"startsWith\",\"endsWith\",\"every\",\"some\",\"none\",\"index\",\"rating\",\"contestId_parentContestId\",\"contestId_index\",\"is\",\"isNot\",\"connectOrCreate\",\"upsert\",\"createMany\",\"set\",\"disconnect\",\"delete\",\"connect\",\"updateMany\",\"deleteMany\",\"increment\",\"decrement\",\"multiply\",\"divide\"]"),
+  graph: "vwEgMAkJAABnACBCAABoADBDAAADABBEAABoADBFAgBcACFPAQBdACFWAQBdACFXAgBpACFZAABqACABAAAAAQAgCAkAAGcAIEIAAGgAMEMAAAMAEEQAAGgAMEUCAFwAIU8BAF0AIVYBAF0AIVcCAGkAIQIJAACtAQAgVwAApQEAIAMAAAADACABAAAEADACAAABACAHBAAAZwAgBQAAZwAgQgAAZgAwQwAABgAQRAAAZgAwRQIAXAAhRgIAXAAhAgQAAK0BACAFAACtAQAgCAQAAGcAIAUAAGcAIEIAAGYAMEMAAAYAEEQAAGYAMEUCAAAAAUYCAFwAIVgAAGUAIAMAAAAGACABAAAHADACAAAIACADAAAABgAgAQAABwAwAgAACAAgAQAAAAMAIAEAAAAGACABAAAABgAgAQAAAAEAIAMAAAADACABAAAEADACAAABACADAAAAAwAgAQAABAAwAgAAAQAgAwAAAAMAIAEAAAQAMAIAAAEAIAUJAACsAQAgRQIAAAABTwEAAAABVgEAAAABVwIAAAABAQ8AABIAIARFAgAAAAFPAQAAAAFWAQAAAAFXAgAAAAEBDwAAFAAwAQ8AABQAMAUJAACrAQAgRQIAcAAhTwEAegAhVgEAegAhVwIAnQEAIQIAAAABACAPAAAXACAERQIAcAAhTwEAegAhVgEAegAhVwIAnQEAIQIAAAADACAPAAAZACACAAAAAwAgDwAAGQAgAwAAAAEAIBYAABIAIBcAABcAIAEAAAABACABAAAAAwAgBggAAKYBACAcAACnAQAgHQAAqgEAIB4AAKkBACAfAACoAQAgVwAApQEAIAdCAABgADBDAAAgABBEAABgADBFAgBTACFPAQBYACFWAQBYACFXAgBhACEDAAAAAwAgAQAAHwAwGwAAIAAgAwAAAAMAIAEAAAQAMAIAAAEAIAgDAABeACAGAABfACAHAABfACBCAABbADBDAAAmABBEAABbADBFAgAAAAFPAQBdACEBAAAAIwAgAQAAACMAIAgDAABeACAGAABfACAHAABfACBCAABbADBDAAAmABBEAABbADBFAgBcACFPAQBdACEDAwAAowEAIAYAAKQBACAHAACkAQAgAwAAACYAIAEAACcAMAIAACMAIAMAAAAmACABAAAnADACAAAjACADAAAAJgAgAQAAJwAwAgAAIwAgBQMAAKABACAGAAChAQAgBwAAogEAIEUCAAAAAU8BAAAAAQEPAAArACACRQIAAAABTwEAAAABAQ8AAC0AMAEPAAAtADAFAwAAewAgBgAAfAAgBwAAfQAgRQIAcAAhTwEAegAhAgAAACMAIA8AADAAIAJFAgBwACFPAQB6ACECAAAAJgAgDwAAMgAgAgAAACYAIA8AADIAIAMAAAAjACAWAAArACAXAAAwACABAAAAIwAgAQAAACYAIAUIAAB1ACAcAAB2ACAdAAB5ACAeAAB4ACAfAAB3ACAFQgAAVwAwQwAAOQAQRAAAVwAwRQIAUwAhTwEAWAAhAwAAACYAIAEAADgAMBsAADkAIAMAAAAmACABAAAnADACAAAjACABAAAACAAgAQAAAAgAIAMAAAAGACABAAAHADACAAAIACADAAAABgAgAQAABwAwAgAACAAgAwAAAAYAIAEAAAcAMAIAAAgAIAQEAABzACAFAAB0ACBFAgAAAAFGAgAAAAEBDwAAQQAgAkUCAAAAAUYCAAAAAQEPAABDADABDwAAQwAwBAQAAHEAIAUAAHIAIEUCAHAAIUYCAHAAIQIAAAAIACAPAABGACACRQIAcAAhRgIAcAAhAgAAAAYAIA8AAEgAIAIAAAAGACAPAABIACADAAAACAAgFgAAQQAgFwAARgAgAQAAAAgAIAEAAAAGACAFCAAAawAgHAAAbAAgHQAAbwAgHgAAbgAgHwAAbQAgBUIAAFIAMEMAAE8AEEQAAFIAMEUCAFMAIUYCAFMAIQMAAAAGACABAABOADAbAABPACADAAAABgAgAQAABwAwAgAACAAgBUIAAFIAMEMAAE8AEEQAAFIAMEUCAFMAIUYCAFMAIQ0IAABVACAcAABWACAdAABVACAeAABVACAfAABVACBHAgAAAAFIAgAAAARJAgAAAARKAgAAAAFLAgAAAAFMAgAAAAFNAgAAAAFOAgBUACENCAAAVQAgHAAAVgAgHQAAVQAgHgAAVQAgHwAAVQAgRwIAAAABSAIAAAAESQIAAAAESgIAAAABSwIAAAABTAIAAAABTQIAAAABTgIAVAAhCEcCAAAAAUgCAAAABEkCAAAABEoCAAAAAUsCAAAAAUwCAAAAAU0CAAAAAU4CAFUAIQhHCAAAAAFICAAAAARJCAAAAARKCAAAAAFLCAAAAAFMCAAAAAFNCAAAAAFOCABWACEFQgAAVwAwQwAAOQAQRAAAVwAwRQIAUwAhTwEAWAAhDggAAFUAIB4AAFoAIB8AAFoAIEcBAAAAAUgBAAAABEkBAAAABEoBAAAAAUsBAAAAAUwBAAAAAU0BAAAAAU4BAFkAIVABAAAAAVEBAAAAAVIBAAAAAQ4IAABVACAeAABaACAfAABaACBHAQAAAAFIAQAAAARJAQAAAARKAQAAAAFLAQAAAAFMAQAAAAFNAQAAAAFOAQBZACFQAQAAAAFRAQAAAAFSAQAAAAELRwEAAAABSAEAAAAESQEAAAAESgEAAAABSwEAAAABTAEAAAABTQEAAAABTgEAWgAhUAEAAAABUQEAAAABUgEAAAABCAMAAF4AIAYAAF8AIAcAAF8AIEIAAFsAMEMAACYAEEQAAFsAMEUCAFwAIU8BAF0AIQhHAgAAAAFIAgAAAARJAgAAAARKAgAAAAFLAgAAAAFMAgAAAAFNAgAAAAFOAgBVACELRwEAAAABSAEAAAAESQEAAAAESgEAAAABSwEAAAABTAEAAAABTQEAAAABTgEAWgAhUAEAAAABUQEAAAABUgEAAAABA1MAAAMAIFQAAAMAIFUAAAMAIANTAAAGACBUAAAGACBVAAAGACAHQgAAYAAwQwAAIAAQRAAAYAAwRQIAUwAhTwEAWAAhVgEAWAAhVwIAYQAhDQgAAGMAIBwAAGQAIB0AAGMAIB4AAGMAIB8AAGMAIEcCAAAAAUgCAAAABUkCAAAABUoCAAAAAUsCAAAAAUwCAAAAAU0CAAAAAU4CAGIAIQ0IAABjACAcAABkACAdAABjACAeAABjACAfAABjACBHAgAAAAFIAgAAAAVJAgAAAAVKAgAAAAFLAgAAAAFMAgAAAAFNAgAAAAFOAgBiACEIRwIAAAABSAIAAAAFSQIAAAAFSgIAAAABSwIAAAABTAIAAAABTQIAAAABTgIAYwAhCEcIAAAAAUgIAAAABUkIAAAABUoIAAAAAUsIAAAAAUwIAAAAAU0IAAAAAU4IAGQAIQJFAgAAAAFGAgAAAAEHBAAAZwAgBQAAZwAgQgAAZgAwQwAABgAQRAAAZgAwRQIAXAAhRgIAXAAhCgMAAF4AIAYAAF8AIAcAAF8AIEIAAFsAMEMAACYAEEQAAFsAMEUCAFwAIU8BAF0AIVoAACYAIFsAACYAIAgJAABnACBCAABoADBDAAADABBEAABoADBFAgBcACFPAQBdACFWAQBdACFXAgBpACEIRwIAAAABSAIAAAAFSQIAAAAFSgIAAAABSwIAAAABTAIAAAABTQIAAAABTgIAYwAhAkUCAAAAAVYBAAAAAQAAAAAABV8CAAAAAWUCAAAAAWYCAAAAAWcCAAAAAWgCAAAAAQUWAAC4AQAgFwAAvgEAIFwAALkBACBdAAC9AQAgYgAAIwAgBRYAALYBACAXAAC7AQAgXAAAtwEAIF0AALoBACBiAAAjACADFgAAuAEAIFwAALkBACBiAAAjACADFgAAtgEAIFwAALcBACBiAAAjACAAAAAAAAFfAQAAAAELFgAAkwEAMBcAAJgBADBcAACUAQAwXQAAlQEAMF4AAJYBACBfAACXAQAwYAAAlwEAMGEAAJcBADBiAACXAQAwYwAAmQEAMGQAAJoBADALFgAAigEAMBcAAI4BADBcAACLAQAwXQAAjAEAMF4AAI0BACBfAACCAQAwYAAAggEAMGEAAIIBADBiAACCAQAwYwAAjwEAMGQAAIUBADALFgAAfgAwFwAAgwEAMFwAAH8AMF0AAIABADBeAACBAQAgXwAAggEAMGAAAIIBADBhAACCAQAwYgAAggEAMGMAAIQBADBkAACFAQAwAgQAAHMAIEUCAAAAAQIAAAAIACAWAACJAQAgAwAAAAgAIBYAAIkBACAXAACIAQAgAQ8AALUBADAIBAAAZwAgBQAAZwAgQgAAZgAwQwAABgAQRAAAZgAwRQIAAAABRgIAXAAhWAAAZQAgAgAAAAgAIA8AAIgBACACAAAAhgEAIA8AAIcBACAFQgAAhQEAMEMAAIYBABBEAACFAQAwRQIAXAAhRgIAXAAhBUIAAIUBADBDAACGAQAQRAAAhQEAMEUCAFwAIUYCAFwAIQFFAgBwACECBAAAcQAgRQIAcAAhAgQAAHMAIEUCAAAAAQIFAAB0ACBGAgAAAAECAAAACAAgFgAAkgEAIAMAAAAIACAWAACSAQAgFwAAkQEAIAEPAAC0AQAwAgAAAAgAIA8AAJEBACACAAAAhgEAIA8AAJABACABRgIAcAAhAgUAAHIAIEYCAHAAIQIFAAB0ACBGAgAAAAEDTwEAAAABVgEAAAABVwIAAAABAgAAAAEAIBYAAJ8BACADAAAAAQAgFgAAnwEAIBcAAJ4BACABDwAAswEAMAkJAABnACBCAABoADBDAAADABBEAABoADBFAgBcACFPAQBdACFWAQBdACFXAgBpACFZAABqACACAAAAAQAgDwAAngEAIAIAAACbAQAgDwAAnAEAIAdCAACaAQAwQwAAmwEAEEQAAJoBADBFAgBcACFPAQBdACFWAQBdACFXAgBpACEHQgAAmgEAMEMAAJsBABBEAACaAQAwRQIAXAAhTwEAXQAhVgEAXQAhVwIAaQAhA08BAHoAIVYBAHoAIVcCAJ0BACEFXwIAAAABZQIAAAABZgIAAAABZwIAAAABaAIAAAABA08BAHoAIVYBAHoAIVcCAJ0BACEDTwEAAAABVgEAAAABVwIAAAABBBYAAJMBADBcAACUAQAwXgAAlgEAIGIAAJcBADAEFgAAigEAMFwAAIsBADBeAACNAQAgYgAAggEAMAQWAAB-ADBcAAB_ADBeAACBAQAgYgAAggEAMAAAAAAAAAAABRYAAK4BACAXAACxAQAgXAAArwEAIF0AALABACBiAAAjACADFgAArgEAIFwAAK8BACBiAAAjACADAwAAowEAIAYAAKQBACAHAACkAQAgBAYAAKEBACAHAACiAQAgRQIAAAABTwEAAAABAgAAACMAIBYAAK4BACADAAAAJgAgFgAArgEAIBcAALIBACAGAAAAJgAgBgAAfAAgBwAAfQAgDwAAsgEAIEUCAHAAIU8BAHoAIQQGAAB8ACAHAAB9ACBFAgBwACFPAQB6ACEDTwEAAAABVgEAAAABVwIAAAABAUYCAAAAAQFFAgAAAAEEAwAAoAEAIAYAAKEBACBFAgAAAAFPAQAAAAECAAAAIwAgFgAAtgEAIAQDAACgAQAgBwAAogEAIEUCAAAAAU8BAAAAAQIAAAAjACAWAAC4AQAgAwAAACYAIBYAALYBACAXAAC8AQAgBgAAACYAIAMAAHsAIAYAAHwAIA8AALwBACBFAgBwACFPAQB6ACEEAwAAewAgBgAAfAAgRQIAcAAhTwEAegAhAwAAACYAIBYAALgBACAXAAC_AQAgBgAAACYAIAMAAHsAIAcAAH0AIA8AAL8BACBFAgBwACFPAQB6ACEEAwAAewAgBwAAfQAgRQIAcAAhTwEAegAhAQkAAgQDBQEGCQMHCgMIAAQCBAACBQACAwMLAAYMAAcNAAABCQACAQkAAgUIAAkcAAodAAseAAwfAA0AAAAAAAUIAAkcAAodAAseAAwfAA0AAAUIABIcABMdABQeABUfABYAAAAAAAUIABIcABMdABQeABUfABYCBAACBQACAgQAAgUAAgUIABscABwdAB0eAB4fAB8AAAAAAAUIABscABwdAB0eAB4fAB8KAgELDgEMDwENEAEOEQEQEwERFQUSFgYTGAEUGgUVGwcYHAEZHQEaHgUgIQghIg4iJAIjJQIkKAIlKQImKgInLAIoLgUpLw8qMQIrMwUsNBAtNQIuNgIvNwUwOhExOxcyPAMzPQM0PgM1PwM2QAM3QgM4RAU5RRg6RwM7SQU8Shk9SwM-TAM_TQVAUBpBUSA"
+}
 
 async function decodeBase64AsWasm(wasmBase64: string): Promise<WebAssembly.Module> {
   const { Buffer } = await import('node:buffer')
@@ -37,12 +45,14 @@ async function decodeBase64AsWasm(wasmBase64: string): Promise<WebAssembly.Modul
 }
 
 config.compilerWasm = {
-  getRuntime: async () => await import("@prisma/client/runtime/query_compiler_bg.postgresql.mjs"),
+  getRuntime: async () => await import("@prisma/client/runtime/query_compiler_fast_bg.postgresql.mjs"),
 
   getQueryCompilerWasmModule: async () => {
-    const { wasm } = await import("@prisma/client/runtime/query_compiler_bg.postgresql.wasm-base64.mjs")
+    const { wasm } = await import("@prisma/client/runtime/query_compiler_fast_bg.postgresql.wasm-base64.mjs")
     return await decodeBase64AsWasm(wasm)
-  }
+  },
+
+  importName: "./query_compiler_fast_bg.js"
 }
 
 
@@ -57,7 +67,9 @@ export interface PrismaClientConstructor {
    * Type-safe database client for TypeScript
    * @example
    * ```
-   * const prisma = new PrismaClient()
+   * const prisma = new PrismaClient({
+   *   adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL })
+   * })
    * // Fetch zero or more Problems
    * const problems = await prisma.problem.findMany()
    * ```
@@ -79,7 +91,9 @@ export interface PrismaClientConstructor {
  * Type-safe database client for TypeScript
  * @example
  * ```
- * const prisma = new PrismaClient()
+ * const prisma = new PrismaClient({
+ *   adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL })
+ * })
  * // Fetch zero or more Problems
  * const problems = await prisma.problem.findMany()
  * ```
@@ -164,9 +178,9 @@ export interface PrismaClient<
    * ])
    * ```
    * 
-   * Read more in our [docs](https://www.prisma.io/docs/concepts/components/prisma-client/transactions).
+   * Read more in our [docs](https://www.prisma.io/docs/orm/prisma-client/queries/transactions).
    */
-  $transaction<P extends Prisma.PrismaPromise<any>[]>(arg: [...P], options?: { isolationLevel?: Prisma.TransactionIsolationLevel }): runtime.Types.Utils.JsPromise<runtime.Types.Utils.UnwrapTuple<P>>
+  $transaction<P extends Prisma.PrismaPromise<any>[]>(arg: [...P], options?: { maxWait?: number, timeout?: number, isolationLevel?: Prisma.TransactionIsolationLevel }): runtime.Types.Utils.JsPromise<runtime.Types.Utils.UnwrapTuple<P>>
 
   $transaction<R>(fn: (prisma: Omit<PrismaClient, runtime.ITXClientDenyList>) => runtime.Types.Utils.JsPromise<R>, options?: { maxWait?: number, timeout?: number, isolationLevel?: Prisma.TransactionIsolationLevel }): runtime.Types.Utils.JsPromise<R>
 

@@ -86,7 +86,7 @@ export type SharedContestAggregateArgs<ExtArgs extends runtime.Types.Extensions.
   where?: Prisma.SharedContestWhereInput
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-   * 
+   *
    * Determine the order of SharedContests to fetch.
    */
   orderBy?: Prisma.SharedContestOrderByWithRelationInput | Prisma.SharedContestOrderByWithRelationInput[]
@@ -175,7 +175,7 @@ export type SharedContestGroupByOutputType = {
   _max: SharedContestMaxAggregateOutputType | null
 }
 
-type GetSharedContestGroupByPayload<T extends SharedContestGroupByArgs> = Prisma.PrismaPromise<
+export type GetSharedContestGroupByPayload<T extends SharedContestGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<SharedContestGroupByOutputType, T['by']> &
       {
@@ -1050,31 +1050,31 @@ export type SharedContestFindFirstArgs<ExtArgs extends runtime.Types.Extensions.
   where?: Prisma.SharedContestWhereInput
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-   * 
+   *
    * Determine the order of SharedContests to fetch.
    */
   orderBy?: Prisma.SharedContestOrderByWithRelationInput | Prisma.SharedContestOrderByWithRelationInput[]
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-   * 
+   *
    * Sets the position for searching for SharedContests.
    */
   cursor?: Prisma.SharedContestWhereUniqueInput
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-   * 
+   *
    * Take `±n` SharedContests from the position of the cursor.
    */
   take?: number
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-   * 
+   *
    * Skip the first `n` SharedContests.
    */
   skip?: number
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
-   * 
+   *
    * Filter by unique combinations of SharedContests.
    */
   distinct?: Prisma.SharedContestScalarFieldEnum | Prisma.SharedContestScalarFieldEnum[]
@@ -1126,7 +1126,7 @@ export type SharedContestFindFirstOrThrowArgs<ExtArgs extends runtime.Types.Exte
   skip?: number
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
-   * 
+   *
    * Filter by unique combinations of SharedContests.
    */
   distinct?: Prisma.SharedContestScalarFieldEnum | Prisma.SharedContestScalarFieldEnum[]
@@ -1176,6 +1176,11 @@ export type SharedContestFindManyArgs<ExtArgs extends runtime.Types.Extensions.I
    * Skip the first `n` SharedContests.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of SharedContests.
+   */
   distinct?: Prisma.SharedContestScalarFieldEnum | Prisma.SharedContestScalarFieldEnum[]
 }
 

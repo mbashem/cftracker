@@ -18,7 +18,7 @@ For local development workflows, see [DEVELOPMENT.md](./DEVELOPMENT.md). For con
 ## Tech Stack
 
 - React 19
-- TypeScript 5
+- TypeScript 6
 - Vite 8
 - Redux Toolkit and RTK Query
 - Bootstrap and React Bootstrap
