@@ -5,6 +5,16 @@ import { CFAPIContest, CFAPIResult } from "./CFApiTypes";
 import crypto from "crypto";
 
 type Params = Record<string, string | number | boolean>;
+const requestConfig = {
+  timeout: 30_000,
+  maxContentLength: 25 * 1024 * 1024,
+};
+
+function getRequiredEnvironmentVariable(name: "CF_API_KEY" | "CF_API_SECRET"): string {
+  const value = process.env[name];
+  if (!value) throw new Error(`${name} is required for authenticated Codeforces API calls`);
+  return value;
+}
 
 function generateAuthenticatedApiUrl(
   methodName: string,
@@ -37,7 +47,7 @@ function generateAuthenticatedApiUrl(
     .join("&");
 
   // 4. Generate random 6-char string
-  const rand = Math.random().toString(36).substring(2, 8);
+  const rand = crypto.randomBytes(3).toString("hex");
 
   // 5. Create string to hash
   const stringToHash = `${rand}/${methodName}?${queryString}#${apiSecret}`;
@@ -56,24 +66,21 @@ function generateAuthenticatedApiUrl(
 }
 
 export async function getAuthenticatedContestWithProblemByIdFromCF(contestID: number) {
-  console.log("API Key: ", process.env.CF_API_KEY);
-  console.log("API Secret: ", process.env.CF_API_SECRET);
-  let url = generateAuthenticatedApiUrl(
+  const url = generateAuthenticatedApiUrl(
     "contest.standings",
-    process.env.CF_API_KEY || "",
-    process.env.CF_API_SECRET || "",
+    getRequiredEnvironmentVariable("CF_API_KEY"),
+    getRequiredEnvironmentVariable("CF_API_SECRET"),
     { contestId: contestID, from: 1, count: 1, showUnofficial: false }
-  )
+  );
 
-  console.log("URL: ", url);
-  const res = await axios.get(url);
+  const res = await axios.get(url, requestConfig);
 
   return res.data.result as CFAPIResult;
 }
 
 export async function getContestWithProblemByIdFromCF(contestID: number) {
-  let url = `https://codeforces.com/api/contest.standings?contestId=${contestID}`;
-  const res = await axios.get(url);
+  const url = `https://codeforces.com/api/contest.standings?contestId=${contestID}`;
+  const res = await axios.get(url, requestConfig);
 
   return res.data.result as CFAPIResult;
 }
@@ -81,7 +88,8 @@ export async function getContestWithProblemByIdFromCF(contestID: number) {
 export async function getAllContestsFromCF(gym = false) {
   const res = await axios.get(
     `https://codeforces.com/api/contest.list?lang=en&gym=${gym ? "true" : "false"
-    }`
+    }`,
+    requestConfig
   );
 
   return res.data.result as CFAPIContest[];

@@ -82,7 +82,7 @@ export type ContestAggregateArgs<ExtArgs extends runtime.Types.Extensions.Intern
   where?: Prisma.ContestWhereInput
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-   * 
+   *
    * Determine the order of Contests to fetch.
    */
   orderBy?: Prisma.ContestOrderByWithRelationInput | Prisma.ContestOrderByWithRelationInput[]
@@ -171,7 +171,7 @@ export type ContestGroupByOutputType = {
   _max: ContestMaxAggregateOutputType | null
 }
 
-type GetContestGroupByPayload<T extends ContestGroupByArgs> = Prisma.PrismaPromise<
+export type GetContestGroupByPayload<T extends ContestGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<ContestGroupByOutputType, T['by']> &
       {
@@ -1074,31 +1074,31 @@ export type ContestFindFirstArgs<ExtArgs extends runtime.Types.Extensions.Intern
   where?: Prisma.ContestWhereInput
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-   * 
+   *
    * Determine the order of Contests to fetch.
    */
   orderBy?: Prisma.ContestOrderByWithRelationInput | Prisma.ContestOrderByWithRelationInput[]
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-   * 
+   *
    * Sets the position for searching for Contests.
    */
   cursor?: Prisma.ContestWhereUniqueInput
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-   * 
+   *
    * Take `±n` Contests from the position of the cursor.
    */
   take?: number
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-   * 
+   *
    * Skip the first `n` Contests.
    */
   skip?: number
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
-   * 
+   *
    * Filter by unique combinations of Contests.
    */
   distinct?: Prisma.ContestScalarFieldEnum | Prisma.ContestScalarFieldEnum[]
@@ -1150,7 +1150,7 @@ export type ContestFindFirstOrThrowArgs<ExtArgs extends runtime.Types.Extensions
   skip?: number
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
-   * 
+   *
    * Filter by unique combinations of Contests.
    */
   distinct?: Prisma.ContestScalarFieldEnum | Prisma.ContestScalarFieldEnum[]
@@ -1200,6 +1200,11 @@ export type ContestFindManyArgs<ExtArgs extends runtime.Types.Extensions.Interna
    * Skip the first `n` Contests.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of Contests.
+   */
   distinct?: Prisma.ContestScalarFieldEnum | Prisma.ContestScalarFieldEnum[]
 }
 

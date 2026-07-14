@@ -17,9 +17,9 @@ For local development workflows, see [DEVELOPMENT.md](./DEVELOPMENT.md). For con
 
 ## Tech Stack
 
-- React 18
-- TypeScript 5
-- Vite 5
+- React 19
+- TypeScript 6
+- Vite 8
 - Redux Toolkit and RTK Query
 - Bootstrap and React Bootstrap
 - Chart.js and D3
@@ -27,8 +27,8 @@ For local development workflows, see [DEVELOPMENT.md](./DEVELOPMENT.md). For con
 
 ## Requirements
 
-- Node.js 18 or newer
-- npm 9 or newer
+- Node.js 20.19.x, or Node.js 22.12 or newer
+- npm 10 or newer
 - Optional backend: Go 1.22 or newer, Docker, and PostgreSQL
 
 ## Frontend Setup
@@ -36,7 +36,7 @@ For local development workflows, see [DEVELOPMENT.md](./DEVELOPMENT.md). For con
 ```bash
 git clone https://github.com/mbashem/cftracker.git
 cd cftracker
-npm install
+npm ci
 npm run dev
 ```
 
@@ -92,6 +92,7 @@ The API runs on `http://localhost:8080` and allows requests from `http://localho
 npm run dev      # Start the Vite dev server
 npm run build    # Build the frontend for production
 npm run lint     # Run ESLint
+npm run typecheck # Run the TypeScript project check
 ```
 
 Backend scripts are available from `backend/`:

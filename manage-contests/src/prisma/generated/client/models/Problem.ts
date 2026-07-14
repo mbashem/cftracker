@@ -98,7 +98,7 @@ export type ProblemAggregateArgs<ExtArgs extends runtime.Types.Extensions.Intern
   where?: Prisma.ProblemWhereInput
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-   * 
+   *
    * Determine the order of Problems to fetch.
    */
   orderBy?: Prisma.ProblemOrderByWithRelationInput | Prisma.ProblemOrderByWithRelationInput[]
@@ -189,7 +189,7 @@ export type ProblemGroupByOutputType = {
   _max: ProblemMaxAggregateOutputType | null
 }
 
-type GetProblemGroupByPayload<T extends ProblemGroupByArgs> = Prisma.PrismaPromise<
+export type GetProblemGroupByPayload<T extends ProblemGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<ProblemGroupByOutputType, T['by']> &
       {
@@ -1037,31 +1037,31 @@ export type ProblemFindFirstArgs<ExtArgs extends runtime.Types.Extensions.Intern
   where?: Prisma.ProblemWhereInput
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-   * 
+   *
    * Determine the order of Problems to fetch.
    */
   orderBy?: Prisma.ProblemOrderByWithRelationInput | Prisma.ProblemOrderByWithRelationInput[]
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-   * 
+   *
    * Sets the position for searching for Problems.
    */
   cursor?: Prisma.ProblemWhereUniqueInput
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-   * 
+   *
    * Take `±n` Problems from the position of the cursor.
    */
   take?: number
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-   * 
+   *
    * Skip the first `n` Problems.
    */
   skip?: number
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
-   * 
+   *
    * Filter by unique combinations of Problems.
    */
   distinct?: Prisma.ProblemScalarFieldEnum | Prisma.ProblemScalarFieldEnum[]
@@ -1113,7 +1113,7 @@ export type ProblemFindFirstOrThrowArgs<ExtArgs extends runtime.Types.Extensions
   skip?: number
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
-   * 
+   *
    * Filter by unique combinations of Problems.
    */
   distinct?: Prisma.ProblemScalarFieldEnum | Prisma.ProblemScalarFieldEnum[]
@@ -1163,6 +1163,11 @@ export type ProblemFindManyArgs<ExtArgs extends runtime.Types.Extensions.Interna
    * Skip the first `n` Problems.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of Problems.
+   */
   distinct?: Prisma.ProblemScalarFieldEnum | Prisma.ProblemScalarFieldEnum[]
 }
 

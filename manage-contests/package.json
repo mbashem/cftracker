@@ -9,7 +9,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@emotion/cache": "^11.14.0",
@@ -20,29 +21,34 @@
     "@mui/material": "^7.3.6",
     "@mui/material-nextjs": "^7.3.6",
     "@mui/x-data-grid": "^8.22.1",
-    "@prisma/adapter-pg": "^7.2.0",
-    "@prisma/client": "^7.2.0",
-    "axios": "^1.13.2",
+    "@prisma/adapter-pg": "^7.8.0",
+    "@prisma/client": "^7.8.0",
+    "axios": "^1.18.1",
     "cheerio": "^1.2.0",
     "dotenv": "^17.2.3",
-    "next": "16.1.0",
+    "next": "16.2.10",
     "pg": "^8.16.3",
-    "react": "19.2.3",
-    "react-dom": "19.2.3",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
     "server-only": "^0.0.1"
   },
   "devDependencies": {
     "@types/node": "^22",
     "@types/pg": "^8.16.0",
-    "@types/react": "19.2.7",
+    "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3",
     "eslint": "^9",
-    "eslint-config-next": "16.1.0",
-    "prisma": "^7.2.0",
-    "typescript": "^5"
+    "eslint-config-next": "16.2.10",
+    "prisma": "^7.8.0",
+    "typescript": "^6.0.3"
   },
   "overrides": {
-    "@types/react": "19.2.7",
-    "@types/react-dom": "19.2.3"
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "@hono/node-server": "1.19.13",
+    "postcss": "8.5.10"
+  },
+  "engines": {
+    "node": ">=20.9.0"
   }
 }

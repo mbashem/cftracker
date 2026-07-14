@@ -7,7 +7,7 @@ This guide explains how to set up the project locally, understand the code layou
 ```bash
 git clone https://github.com/mbashem/cftracker.git
 cd cftracker
-npm install
+npm ci
 npm run dev
 ```
 
@@ -31,7 +31,7 @@ manage-contests/       Personal admin utility for contest/problem management
 
 ## Frontend Architecture
 
-The app is a React/Vite SPA. Routes are registered in `src/App.tsx`, and route constants live in `src/util/route/path.ts`.
+The app is a React 19/Vite 8 SPA. Routes are registered in `src/App.tsx`, and route constants live in `src/util/route/path.ts`.
 
 The navigation component, `src/components/Menu.tsx`, performs the initial data loads:
 
@@ -216,10 +216,13 @@ The backend listens on `http://localhost:8080`. Frontend API calls should use `V
 Frontend:
 
 ```bash
-npm run dev      # Start Vite
-npm run build    # Build production assets
-npm run lint     # Run ESLint
+npm run dev        # Start Vite
+npm run build      # Build production assets
+npm run lint       # Run ESLint with zero warnings
+npm run typecheck  # Run the TypeScript project check
 ```
+
+Use `npm ci` for a reproducible install from the committed root `package-lock.json`. Use `npm install` when intentionally changing dependencies, and commit the resulting manifest and lockfile changes together.
 
 Backend:
 
@@ -242,15 +245,15 @@ node fetch_problems.mjs
 
 ## Validation Notes
 
-Use `npm run build` as the current frontend baseline. It verifies the Vite production build.
-
-The stricter `npx tsc -b` command currently reports legacy project issues outside recent page work, including `web-vitals` API changes, missing Workbox types, and an unused icon in `Menu.tsx`. Fix those separately before making `tsc -b` a required gate.
-
-When changing a focused feature, a targeted TypeScript check can still be useful:
+Run every frontend validation command before pushing:
 
 ```bash
-npx tsc --noEmit --jsx react-jsx --target ES2020 --lib ES2020,DOM,DOM.Iterable --module ESNext --moduleResolution bundler --allowImportingTsExtensions --resolveJsonModule --isolatedModules --strict --noUnusedLocals --noUnusedParameters --skipLibCheck src/vite-env.d.ts path/to/file.tsx
+npm run typecheck
+npm run lint
+npm run build
 ```
+
+The root lint configuration covers the frontend and Vite configuration. Generated API snapshots and the separate backend, scripts, and `manage-contests` projects are excluded from this frontend gate.
 
 ## Adding a New Page
 

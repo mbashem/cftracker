@@ -19,7 +19,7 @@ interface ProblemListProps {
   deleteFromList: (id: string) => void;
 }
 
-const ProblemList = (props: ProblemListProps): JSX.Element => {
+const ProblemList = (props: ProblemListProps): React.JSX.Element => {
   const getState = (problem: Problem) => {
     if (props.solved.has(problem.id)) return SOLVED_PROBLEMS;
     if (props.attempted.has(problem.id)) return ATTEMPTED_PROBLEMS;

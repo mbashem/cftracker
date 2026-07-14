@@ -70,16 +70,13 @@ Use:
 
 Run the app locally and manually test the affected flow before pushing your branch.
 
-Run the production build before opening a PR:
+Install the exact dependency tree and run all frontend checks before pushing:
 
 ```bash
-npm run build
-```
-
-Run lint when your change touches TypeScript or React code:
-
-```bash
+npm ci
+npm run typecheck
 npm run lint
+npm run build
 ```
 
 For backend changes:
@@ -88,8 +85,6 @@ For backend changes:
 cd backend
 make test
 ```
-
-`npx tsc -b` is not currently a clean required gate because of legacy project issues. If you fix those issues, update [DEVELOPMENT.md](./DEVELOPMENT.md) and this guide.
 
 ## Commit Messages
 
@@ -108,7 +103,7 @@ Before opening a PR, confirm:
 - A related issue exists and has maintainer approval.
 - The change is scoped and described clearly.
 - The affected flow was run and tested locally before pushing.
-- `npm run build` passes, or the PR explains why it could not be run.
+- `npm run typecheck`, `npm run lint`, and `npm run build` pass.
 - Backend tests pass for backend changes, or the PR explains why they could not be run.
 - New or changed behavior is documented.
 - User-facing behavior changes include screenshots or notes when helpful.

@@ -1,5 +1,5 @@
 import * as cheerio from "cheerio";
-import axios, { AxiosInstance } from "axios";
+import axios from "axios";
 import { Problem } from "@/prisma/generated/client/client";
 
 const getUrl = (contestId: number): string => {
@@ -16,14 +16,10 @@ const scrapProblemsFromContest = async (contestId: number = 1509) => {
   const names: string[] = [];
   const indexes: string[] = [];
   try {
-  	const axiosInstance: AxiosInstance = axios.create({
-  		headers: {
-  			"Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET",
-      },
+    const pageData = await axios.get(url, {
+      timeout: 30_000,
+      maxContentLength: 10 * 1024 * 1024,
     });
-
-    const pageData = await axios.get(url);
     const data = cheerio.load(pageData.data);
     const problemNames = data(problemNameSelector);
     const problemIndexes = data(problemIndexInRow);
