@@ -9,7 +9,7 @@ import { StorageService } from "../../util/StorageService";
 import { SearchKeys } from "../../util/constants";
 import { ParticipantType } from "../../types/CF/Party";
 import useContestStore from "../../data/hooks/useContestStore";
-import { isDefined, isFunction } from "../../util/util";
+import { isDefined, isFunction, overrideObject } from "../../util/util";
 
 export interface Filter {
 	perPage: number;
@@ -34,6 +34,7 @@ function useContestPage() {
 
 	const { theme } = useTheme();
 	const { searchParams, updateSearchParam, deleteSearchParam } = useAppSearchParams();
+	const searchTextFromUrl = searchParams.get(SearchKeys.Search) ?? undefined;
 	const { submissions: userSubmissions } = useSubmissionsStore();
 	const { contests } = useContestStore();
 
@@ -51,11 +52,13 @@ function useContestPage() {
 		showColor: true,
 		showShortName: true,
 		selectedCategories: [ContestCat.DIV2],
-		search: searchParams.get(SearchKeys.Search) ?? "",
+		search: "",
 		canSelectMultipleCategories: false,
 	};
 
-	const [filter, setFilter] = useState<Filter>(StorageService.getObject(StorageService.Keys.Contest.Filter, defaultFilt));
+	const savedFilter = StorageService.getObject(StorageService.Keys.Contest.Filter, defaultFilt);
+	const initialFilter = searchTextFromUrl === undefined ? savedFilter : overrideObject(savedFilter, { search: searchTextFromUrl });
+	const [filter, setFilter] = useState<Filter>(initialFilter);
 
 	const categoryFilter = useMemo(() => {
 		return {
