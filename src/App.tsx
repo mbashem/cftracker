@@ -1,17 +1,15 @@
 import "./App.css";
-import { lazy, Suspense, useEffect } from "react";
+import { lazy, Suspense } from "react";
 import { Route, Routes } from "react-router-dom";
 
 import Menu from "./components/Menu";
 import { Path } from "./util/route/path";
-import { ThemesType } from "./util/Theme";
 import HomePage from "./components/home/HomePage";
 import ProblemPage from "./components/problem/ProblemPage";
 import ContestPage from "./components/contest/ContestPage";
-import usePageTracking from "./hooks/usePageTracking";
 import useTheme from "./data/hooks/useTheme";
-import useCallbackHandler from "./hooks/useCallbackHandler";
 import AuthGuard from "./util/route/AuthGuard";
+import useAppBootstrap from "./hooks/useAppBootstrap";
 
 // const HomePage = lazy(() => import("./components/home/HomePage"));
 // const ProblemPage = lazy(() => import("./components/problem/ProblemPage"));
@@ -21,32 +19,9 @@ const IssuePage = lazy(() => import("./components/comment/CommentPage"));
 const ListPage = lazy(() => import("./components/list/ListPage"));
 
 function App() {
+  useAppBootstrap();
+
   const { theme } = useTheme();
-
-  usePageTracking();
-  useCallbackHandler();
-
-  useEffect(() => {
-    console.log(window.location.pathname);
-
-    if (theme.themeType === ThemesType.DARK) {
-      document.body.classList.add("bg-dark");
-      document.body.classList.remove("bg-light");
-    } else {
-      document.body.classList.add("bg-light");
-      document.body.classList.remove("bg-dark");
-    }
-  }, []);
-
-  useEffect(() => {
-    if (theme.themeType === ThemesType.DARK) {
-      document.body.classList.add("bg-dark");
-      document.body.classList.remove("bg-light");
-    } else {
-      document.body.classList.add("bg-light");
-      document.body.classList.remove("bg-dark");
-    }
-  }, [theme.themeType]);
 
   return (
     <div className={"App container-fluid p-0 min-vh-100 d-flex  flex-column " + theme.bgText}>

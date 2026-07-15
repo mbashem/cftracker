@@ -12,8 +12,7 @@ import { memo, useEffect, useState } from "react";
 import { Nav, Navbar, OverlayTrigger, Popover } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
-import { fetchContestList, fetchProblemList, fetchSharedProblemList } from "../data/actions/fetchActions";
-import { fetchUserSubmissions, fetchUsers } from "../data/actions/userActions";
+import { fetchUsers } from "../data/actions/userActions";
 import { useAppDispatch, useAppSelector } from "../data/store";
 import { Path } from "../util/route/path";
 import { ThemesType } from "../util/Theme";
@@ -31,7 +30,6 @@ function Menu() {
     return {
       userList: state.userList,
       problemList: state.problemList,
-      contestList: state.contestList,
       userSubmissions: {
         error: state.userSubmissions.error,
       },
@@ -41,12 +39,6 @@ function Menu() {
   const { isAuthenticated, logout } = useUser();
 
   const [handle, setHandle] = useState(state.userList.handles.length ? state.userList.handles.toString() : "");
-
-  useEffect(() => {
-    fetchProblemList(dispatch);
-    fetchContestList(dispatch);
-    fetchSharedProblemList(dispatch);
-  }, []);
 
   const { showErrorToast, showGeneralToast } = useToast();
 
@@ -65,21 +57,6 @@ function Menu() {
   useEffect(() => {
     InvokeErrorToast(state.problemList.error);
   }, [state.problemList.error]);
-
-  // useEffect(() => {
-  //   if (!state.contestList.loading && !state.problemList.loading) sync(true);
-  // }, [state.userList]);
-
-  useEffect(() => {
-    if (!state.contestList.loading && !state.problemList.loading)
-      sync(state.userList.handles.length > 2 ? true : false);
-    // console.log(state.contestList.loading);
-    // console.log(state.problemList.loading);
-  }, [state.userList, state.contestList.loading, state.problemList.loading]);
-
-  const sync = (wait = false) => {
-    fetchUserSubmissions(dispatch, state.userList.handles, wait);
-  };
 
   const submitUser = () => {
     showGeneralToast(`Handles entered: ${handle}`);
