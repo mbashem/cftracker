@@ -1,16 +1,18 @@
 import { createSelector } from "@reduxjs/toolkit";
-import { useAppSelector } from "../store";
+import { useAppSelector, type RootState } from "../store";
 import { useMemo } from "react";
 import Problem from "../../types/CF/Problem";
 
+const memorizeProblemsById = createSelector(
+	(state: RootState["problemList"]) => state,
+	(problems) => problems.problems.reduce((previousValue, currentValue) => {
+		previousValue.set(currentValue.id, currentValue);
+		return previousValue;
+	}, new Map<string, Problem>())
+);
+
 function useProblemsStore() {
 	const problemList = useAppSelector((state) => state.problemList);
-	const memorizeProblemsById = createSelector((state: typeof problemList) => state,
-		(problems) => problems.problems.reduce((previousValue, currentValue) => {
-			previousValue.set(currentValue.id, currentValue);
-			return previousValue;
-		}, new Map<string, Problem>())
-	);
 
 	const problemsById = useMemo(() => memorizeProblemsById(problemList), [problemList]);
 

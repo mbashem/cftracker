@@ -62,18 +62,18 @@ const addSharedToProblems = (
   return newConestList;
 };
 
-function useContestStore() {
-  const calculateContests = createSelector(
-    [
-      (state: any) => state.problems,
-      (state: any) => state.sharedProblems,
-      (state: any) => state.contestList.contests
-    ],
-    (problems, sharedProblems, contests) => {
-      return addSharedToProblems(problems, sharedProblems, contests);
-    }
-  );
+const calculateContests = createSelector(
+  [
+    (state: any) => state.problems,
+    (state: any) => state.sharedProblems,
+    (state: any) => state.contestList.contests
+  ],
+  (problems, sharedProblems, contests) => {
+    return addSharedToProblems(problems, sharedProblems, contests);
+  }
+);
 
+function useContestStore() {
   const state = useAppSelector(state => {
     return {
       contestList: state.contestList,

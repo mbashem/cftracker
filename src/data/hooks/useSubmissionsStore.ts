@@ -78,17 +78,17 @@ const addSharedToSubmissions = (
   return newUserSubmissions;
 };
 
-function useSubmissionsStore() {
-  const calculateSubmissions = createSelector(
-    [
-      (state: any) => state.userSubmissions.submissions,
-      (state: any) => state.sharedProblems.problems
-    ],
-    (submissions, problems) => {
-      return addSharedToSubmissions(submissions, problems);
-    }
-  );
+const calculateSubmissions = createSelector(
+  [
+    (state: any) => state.userSubmissions.submissions,
+    (state: any) => state.sharedProblems.problems
+  ],
+  (submissions, problems) => {
+    return addSharedToSubmissions(submissions, problems);
+  }
+);
 
+function useSubmissionsStore() {
   const state = useAppSelector(state => {
     return {
       userSubmissions: state.userSubmissions,
