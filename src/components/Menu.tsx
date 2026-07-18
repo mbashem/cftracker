@@ -8,59 +8,34 @@ import {
   faSync,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { memo, useEffect, useState } from "react";
+import { memo, useState } from "react";
 import { Nav, Navbar, OverlayTrigger, Popover } from "react-bootstrap";
 import { Link } from "react-router-dom";
-import { ToastContainer } from "react-toastify";
-import { fetchUsers } from "../data/actions/userActions";
-import { useAppDispatch, useAppSelector } from "../data/store";
 import { Path } from "../util/route/path";
 import { ThemesType } from "../util/Theme";
-import "react-toastify/dist/ReactToastify.css";
 import siteLogo from "../util/assets/siteLogo.png";
 import useTheme from "../data/hooks/useTheme";
 import { GITHUB_OAUTH_CLIENT_ID, GITHUB_OAUTH_REDIRECT_URI, IS_BACKEND_AVAILABLE } from "../util/env";
 import useToast from "../hooks/useToast";
 import useUser from "../hooks/useUser";
+import useUserStore from "../data/hooks/useUserStore";
 
 function Menu() {
-  const dispatch = useAppDispatch();
-
-  const state = useAppSelector((state) => {
-    return {
-      userList: state.userList,
-      problemList: state.problemList,
-      userSubmissions: {
-        error: state.userSubmissions.error,
-      },
-    };
-  });
+  const { userList, updateUsers, syncUserSubmissions } = useUserStore();
   const { theme, changeThemeMod } = useTheme();
   const { isAuthenticated, logout } = useUser();
 
-  const [handle, setHandle] = useState(state.userList.handles.length ? state.userList.handles.toString() : "");
+  const [handle, setHandle] = useState(userList.handles.length ? userList.handles.toString() : "");
 
-  const { showErrorToast, showGeneralToast } = useToast();
-
-  const InvokeErrorToast = (message: string) => {
-    if (message.length === 0) {
-      return;
-    }
-    console.log(message);
-    showErrorToast(message);
-  };
-
-  useEffect(() => {
-    InvokeErrorToast(state.userSubmissions.error);
-  }, [state.userSubmissions.error]);
-
-  useEffect(() => {
-    InvokeErrorToast(state.problemList.error);
-  }, [state.problemList.error]);
+  const { showGeneralToast } = useToast();
 
   const submitUser = () => {
     showGeneralToast(`Handles entered: ${handle}`);
-    fetchUsers(dispatch, handle);
+    updateUsers(handle);
+  };
+
+  const sync = () => {
+    syncUserSubmissions();
   };
 
   return (
@@ -227,7 +202,6 @@ function Menu() {
           </Nav>
         </Navbar.Collapse>
       </div>
-      <ToastContainer />
     </Navbar>
   );
 }

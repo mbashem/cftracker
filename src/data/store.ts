@@ -2,25 +2,23 @@ import { combineReducers, configureStore } from '@reduxjs/toolkit';
 import logger from "redux-logger";
 import { TypedUseSelectorHook, useDispatch, useSelector } from "react-redux";
 
-import problemList from './reducers/problemListSlice';
 import sharedProblems from './reducers/sharedProblemsSlice';
-import contestList from './reducers/contestListSlice';
 import userSubmissions from './reducers/userSubmissionsSlice';
 import appSlice from './reducers/appSlice';
 import userSlice from './reducers/userSlice';
 import { userApi } from './queries/userQuery';
 import { StorageService } from '../util/StorageService';
 import { listApi } from './queries/listQuery';
+import { codeforcesApi } from './queries/codeforcesQuery';
 
 const rootReducer = combineReducers({
   appState: appSlice,
-  contestList,
-  problemList,
   sharedProblems,
   userList: userSlice,
   userSubmissions,
   [userApi.reducerPath]: userApi.reducer,
-  [listApi.reducerPath]: listApi.reducer
+  [listApi.reducerPath]: listApi.reducer,
+  [codeforcesApi.reducerPath]: codeforcesApi.reducer
 });
 
 const saveToLocalStorage = (state: RootState) => {
@@ -51,7 +49,7 @@ const store = configureStore({
   reducer: rootReducer,
   middleware: (getDefaultMiddleware) => getDefaultMiddleware({ serializableCheck: false })
     .concat(logger)
-    .concat([userApi.middleware, listApi.middleware]),
+    .concat([userApi.middleware, listApi.middleware, codeforcesApi.middleware]),
   preloadedState: loadFromLocalStorage()
 });
 

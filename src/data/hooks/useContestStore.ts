@@ -3,8 +3,10 @@ import Contest from "../../types/CF/Contest";
 import Problem, { ProblemLite, ProblemShared } from "../../types/CF/Problem";
 import lowerBound from "../../util/lowerBound";
 import { useAppSelector } from "../store";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { isDefined } from "../../util/util";
+import useProblemsStore from "./useProblemsStore";
+import { codeforcesApi } from "../queries/codeforcesQuery";
 
 const addSharedToProblems = (
   problemList: Problem[],
@@ -50,7 +52,7 @@ const addSharedToProblems = (
   let newConestList: Contest[] = new Array<Contest>();
 
   contestList.map((contest) => {
-    newConestList.push(contest);
+    newConestList.push(contest.clone());
     rec[contest.id] = newConestList.length - 1;
   });
 
@@ -66,7 +68,7 @@ const calculateContests = createSelector(
   [
     (state: any) => state.problems,
     (state: any) => state.sharedProblems,
-    (state: any) => state.contestList.contests
+    (state: any) => state.contests
   ],
   (problems, sharedProblems, contests) => {
     return addSharedToProblems(problems, sharedProblems, contests);
@@ -74,24 +76,31 @@ const calculateContests = createSelector(
 );
 
 function useContestStore() {
+  const { problemList } = useProblemsStore();
+  const { data, error, isLoading } = codeforcesApi.useGetContestQuery();
   const state = useAppSelector(state => {
     return {
-      contestList: state.contestList,
-      problems: state.problemList.problems,
       sharedProblems: state.sharedProblems.problems
     };
   });
 
-  const [contests, setContests] = useState<Contest[]>([]);
-  useMemo(() => {
-    const calculatedContests = calculateContests(state);
-    setContests(calculatedContests);
-  }, [state.contestList.contests, state.problems, state.sharedProblems]);
+  const contests = useMemo(
+    () => calculateContests({
+      contests: data?.contests ?? [],
+      problems: problemList.problems,
+      sharedProblems: state.sharedProblems,
+    }),
+    [data?.contests, problemList.problems, state.sharedProblems]
+  );
+
+  const contestListError = error === undefined ? data?.error : "Failed to load saved contestList.";
 
   return {
-    error: state.contestList.error,
-    loading: state.contestList.loading,
-    contests
+    error: contestListError,
+    loading: isLoading || (data?.loading ?? false),
+    contests,
+    isContestListLoading: isLoading || (data?.loading ?? false),
+    contestListError,
   };
 }
 

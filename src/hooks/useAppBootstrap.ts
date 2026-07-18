@@ -1,32 +1,53 @@
 import { useEffect } from "react";
-import { fetchContestList, fetchProblemList, fetchSharedProblemList } from "../data/actions/fetchActions";
-import { fetchUserSubmissions } from "../data/actions/userActions";
+import { fetchSharedProblemList } from "../data/actions/fetchActions";
+import useContestStore from "../data/hooks/useContestStore";
+import useProblemsStore from "../data/hooks/useProblemsStore";
 import useTheme from "../data/hooks/useTheme";
 import { useAppDispatch, useAppSelector } from "../data/store";
 import { ThemesType } from "../util/Theme";
 import useCallbackHandler from "./useCallbackHandler";
 import usePageTracking from "./usePageTracking";
+import useToast from "./useToast";
+import useUserStore from "../data/hooks/useUserStore";
 
 function useAppBootstrap() {
   const dispatch = useAppDispatch();
   const { theme } = useTheme();
-  const handles = useAppSelector((state) => state.userList.handles);
-  const isProblemListLoading = useAppSelector((state) => state.problemList.loading);
-  const isContestListLoading = useAppSelector((state) => state.contestList.loading);
+  const { showErrorToast } = useToast();
+  const { isProblemListLoading, problemListError } = useProblemsStore();
+  const { isContestListLoading, contestListError } = useContestStore();
+  const { userList, syncUserSubmissions } = useUserStore();
+  const userSubmissionsError = useAppSelector((state) => state.userSubmissions.error);
 
   usePageTracking();
   useCallbackHandler();
 
   useEffect(() => {
-    fetchProblemList(dispatch);
-    fetchContestList(dispatch);
     fetchSharedProblemList(dispatch);
   }, [dispatch]);
 
   useEffect(() => {
     if (!isContestListLoading && !isProblemListLoading)
-      fetchUserSubmissions(dispatch, handles, handles.length > 2 ? true : false);
-  }, [dispatch, handles, isContestListLoading, isProblemListLoading]);
+      syncUserSubmissions(userList.handles.length > 2 ? true : false);
+  }, [isContestListLoading, isProblemListLoading, userList.handles]);
+
+  const showErrorMessage = (message: string | undefined) => {
+    if (message === undefined || message.length === 0) return;
+    console.log(message);
+    showErrorToast(message);
+  };
+
+  useEffect(() => {
+    showErrorMessage(userSubmissionsError);
+  }, [userSubmissionsError]);
+
+  useEffect(() => {
+    showErrorMessage(problemListError);
+  }, [problemListError]);
+
+  useEffect(() => {
+    showErrorMessage(contestListError);
+  }, [contestListError]);
 
   useEffect(() => {
     if (theme.themeType === ThemesType.DARK) {
