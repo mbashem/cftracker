@@ -1,5 +1,5 @@
-import { fetchUserSubmissions } from "../actions/userActions";
 import { addHandle, removeAllHandle } from "../reducers/userSlice";
+import { requestUserSubmissions } from "../reducers/userSubmissionsSlice";
 import { useAppDispatch, useAppSelector } from "../store";
 import { stringToArray } from "../../util/util";
 
@@ -21,7 +21,7 @@ function useUserStore() {
 	}
 
 	function syncUserSubmissions(wait = false) {
-		fetchUserSubmissions(dispatch, userList.handles, wait);
+		dispatch(requestUserSubmissions(userList.handles, wait));
 	}
 
 	return { userList, updateUsers, syncUserSubmissions };

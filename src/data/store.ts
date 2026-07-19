@@ -9,6 +9,7 @@ import { userApi } from './queries/userQuery';
 import { StorageService } from '../util/StorageService';
 import { listApi } from './queries/listQuery';
 import { codeforcesApi } from './queries/codeforcesQuery';
+import { userSubmissionsListener } from './listeners/userSubmissionsListener';
 
 const rootReducer = combineReducers({
   appState: appSlice,
@@ -46,6 +47,7 @@ const loadFromLocalStorage = (): any => {
 const store = configureStore({
   reducer: rootReducer,
   middleware: (getDefaultMiddleware) => getDefaultMiddleware({ serializableCheck: false })
+    .prepend(userSubmissionsListener.middleware)
     .concat(logger)
     .concat([userApi.middleware, listApi.middleware, codeforcesApi.middleware]),
   preloadedState: loadFromLocalStorage()
