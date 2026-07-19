@@ -2,7 +2,6 @@ import { combineReducers, configureStore } from '@reduxjs/toolkit';
 import logger from "redux-logger";
 import { TypedUseSelectorHook, useDispatch, useSelector } from "react-redux";
 
-import sharedProblems from './reducers/sharedProblemsSlice';
 import userSubmissions from './reducers/userSubmissionsSlice';
 import appSlice from './reducers/appSlice';
 import userSlice from './reducers/userSlice';
@@ -13,7 +12,6 @@ import { codeforcesApi } from './queries/codeforcesQuery';
 
 const rootReducer = combineReducers({
   appState: appSlice,
-  sharedProblems,
   userList: userSlice,
   userSubmissions,
   [userApi.reducerPath]: userApi.reducer,

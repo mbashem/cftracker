@@ -6,6 +6,7 @@ import Problem, { ProblemShared } from "../../types/CF/Problem";
 import Submission from "../../types/CF/Submission";
 import { Compared } from "../../util/Comparator";
 import { useMemo, useState } from "react";
+import useSharedProblemsStore from "./useSharedProblemsStore";
 
 const addSharedToSubmissions = (
   userSubmissions: Submission[],
@@ -81,7 +82,7 @@ const addSharedToSubmissions = (
 const calculateSubmissions = createSelector(
   [
     (state: any) => state.userSubmissions.submissions,
-    (state: any) => state.sharedProblems.problems
+    (state: any) => state.sharedProblemList.problems
   ],
   (submissions, problems) => {
     return addSharedToSubmissions(submissions, problems);
@@ -89,18 +90,21 @@ const calculateSubmissions = createSelector(
 );
 
 function useSubmissionsStore() {
+  const { sharedProblems } = useSharedProblemsStore();
   const state = useAppSelector(state => {
     return {
       userSubmissions: state.userSubmissions,
-      sharedProblems: state.sharedProblems
     };
   });
 
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   useMemo(() => {
-    const calculatedSubmissions = calculateSubmissions(state);
+    const calculatedSubmissions = calculateSubmissions({
+      userSubmissions: state.userSubmissions,
+      sharedProblemList: sharedProblems,
+    });
     setSubmissions(calculatedSubmissions);
-  }, [state.userSubmissions.submissions, state.sharedProblems.problems]);
+  }, [state.userSubmissions.submissions, sharedProblems.problems]);
 
   return {
     error: state.userSubmissions.error,

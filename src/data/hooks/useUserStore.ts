@@ -1,12 +1,23 @@
-import { fetchUserSubmissions, fetchUsers } from "../actions/userActions";
+import { fetchUserSubmissions } from "../actions/userActions";
+import { addHandle, removeAllHandle } from "../reducers/userSlice";
 import { useAppDispatch, useAppSelector } from "../store";
+import { stringToArray } from "../../util/util";
 
 function useUserStore() {
 	const dispatch = useAppDispatch();
 	const userList = useAppSelector(state => state.userList);
 
 	function updateUsers(handle: string) {
-		fetchUsers(dispatch, handle);
+		const currentId = Date.now();
+		const handles = stringToArray(handle, ",").map(handle => handle.trim()).filter((handle) => handle.length);
+
+		if (handles.length === 0) {
+			dispatch(removeAllHandle());
+			return;
+		}
+
+		for (const handle of handles)
+			dispatch(addHandle({ handle, id: currentId }));
 	}
 
 	function syncUserSubmissions(wait = false) {

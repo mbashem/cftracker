@@ -1,5 +1,5 @@
 import Contest from "../../types/CF/Contest";
-import Problem, { ProblemStatistics } from "../../types/CF/Problem";
+import Problem, { ProblemLite, ProblemShared, ProblemStatistics } from "../../types/CF/Problem";
 import { sortByContestId } from "../../util/sortMethods";
 
 export interface ProblemListState {
@@ -15,6 +15,12 @@ export interface CodeforcesContestListState {
 	loading: boolean;
 }
 
+export interface SharedProblemListState {
+	problems: ProblemShared[];
+	error: string | undefined;
+	loading: boolean;
+}
+
 export interface ProblemSetResult {
 	status: string;
 	result: {
@@ -26,6 +32,11 @@ export interface ProblemSetResult {
 export interface ContestListResult {
 	status: string;
 	result: ContestResultItem[];
+}
+
+export interface SharedProblemListResult {
+	status: string;
+	result: ProblemShared[];
 }
 
 interface ContestResultItem {
@@ -99,6 +110,27 @@ export function normalizeContestResult(result: ContestListResult): CodeforcesCon
 
 	return {
 		contests,
+		error: undefined,
+		loading: false,
+	};
+}
+
+export function normalizeSharedProblemResult(result: SharedProblemListResult): SharedProblemListState {
+	if (result.status !== "OK") throw new Error("Error fetching shared problems api call failed");
+
+	const sharedProblems: ProblemShared[] = [];
+
+	for (const shared of result.result) {
+		const currentSharedProblem = new ProblemShared(shared.contestId, shared.index);
+
+		for (const lite of shared.shared ?? [])
+			currentSharedProblem.shared?.push(new ProblemLite(lite.contestId!, lite.index));
+
+		sharedProblems.push(currentSharedProblem);
+	}
+
+	return {
+		problems: sharedProblems.sort(sortByContestId),
 		error: undefined,
 		loading: false,
 	};

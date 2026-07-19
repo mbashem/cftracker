@@ -2,11 +2,11 @@ import { createSelector } from "@reduxjs/toolkit";
 import Contest from "../../types/CF/Contest";
 import Problem, { ProblemLite, ProblemShared } from "../../types/CF/Problem";
 import lowerBound from "../../util/lowerBound";
-import { useAppSelector } from "../store";
 import { useMemo } from "react";
 import { isDefined } from "../../util/util";
 import useProblemsStore from "./useProblemsStore";
 import { codeforcesApi } from "../queries/codeforcesQuery";
+import useSharedProblemsStore from "./useSharedProblemsStore";
 
 const addSharedToProblems = (
   problemList: Problem[],
@@ -67,7 +67,7 @@ const addSharedToProblems = (
 const calculateContests = createSelector(
   [
     (state: any) => state.problems,
-    (state: any) => state.sharedProblems,
+    (state: any) => state.sharedProblemList,
     (state: any) => state.contests
   ],
   (problems, sharedProblems, contests) => {
@@ -77,20 +77,16 @@ const calculateContests = createSelector(
 
 function useContestStore() {
   const { problemList } = useProblemsStore();
+  const { sharedProblems } = useSharedProblemsStore();
   const { data, error, isLoading } = codeforcesApi.useGetContestQuery();
-  const state = useAppSelector(state => {
-    return {
-      sharedProblems: state.sharedProblems.problems
-    };
-  });
 
   const contests = useMemo(
     () => calculateContests({
       contests: data?.contests ?? [],
       problems: problemList.problems,
-      sharedProblems: state.sharedProblems,
+      sharedProblemList: sharedProblems.problems,
     }),
-    [data?.contests, problemList.problems, state.sharedProblems]
+    [data?.contests, problemList.problems, sharedProblems.problems]
   );
 
   const contestListError = error === undefined ? data?.error : "Failed to load saved contestList.";

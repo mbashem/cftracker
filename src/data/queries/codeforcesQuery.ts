@@ -6,8 +6,11 @@ import {
 	ContestListResult,
 	normalizeContestResult,
 	normalizeProblemResult,
+	normalizeSharedProblemResult,
 	ProblemListState,
-	ProblemSetResult
+	ProblemSetResult,
+	SharedProblemListResult,
+	SharedProblemListState
 } from './codeforcesApiResponse';
 
 export const codeforcesApi = createApi({
@@ -19,6 +22,9 @@ export const codeforcesApi = createApi({
 		}),
 		getContest: builder.query<CodeforcesContestListState, void>({
 			queryFn: () => getContest(),
+		}),
+		getSharedProblems: builder.query<SharedProblemListState, void>({
+			queryFn: () => getSharedProblems(),
 		}),
 	}),
 });
@@ -51,6 +57,15 @@ async function getContest(): Promise<CodeforcesQueryResult<CodeforcesContestList
 	}
 }
 
+async function getSharedProblems(): Promise<CodeforcesQueryResult<SharedProblemListState>> {
+	try {
+		return getSavedSharedProblems();
+	} catch (error) {
+		console.log(error);
+		return codeforcesError("Error processing shared problems");
+	}
+}
+
 async function getSavedProblems(): Promise<CodeforcesQueryResult<ProblemListState>> {
 	console.log("CFTracker is running in debug mode. Using local saved problems data.");
 	const data = await import("../saved_api/problems_data");
@@ -60,6 +75,11 @@ async function getSavedProblems(): Promise<CodeforcesQueryResult<ProblemListStat
 async function getSavedContest(): Promise<CodeforcesQueryResult<CodeforcesContestListState>> {
 	const data = await import("../saved_api/contests_data");
 	return { data: normalizeContestResult(data.contests_data as ContestListResult) };
+}
+
+async function getSavedSharedProblems(): Promise<CodeforcesQueryResult<SharedProblemListState>> {
+	const data = await import("../saved_api/related");
+	return { data: normalizeSharedProblemResult(data.jsonData as SharedProblemListResult) };
 }
 
 function codeforcesError(error: string): CodeforcesQueryResult<never> {

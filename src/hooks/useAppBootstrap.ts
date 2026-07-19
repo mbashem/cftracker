@@ -1,9 +1,8 @@
 import { useEffect } from "react";
-import { fetchSharedProblemList } from "../data/actions/fetchActions";
 import useContestStore from "../data/hooks/useContestStore";
 import useProblemsStore from "../data/hooks/useProblemsStore";
 import useTheme from "../data/hooks/useTheme";
-import { useAppDispatch, useAppSelector } from "../data/store";
+import { useAppSelector } from "../data/store";
 import { ThemesType } from "../util/Theme";
 import useCallbackHandler from "./useCallbackHandler";
 import usePageTracking from "./usePageTracking";
@@ -11,7 +10,6 @@ import useToast from "./useToast";
 import useUserStore from "../data/hooks/useUserStore";
 
 function useAppBootstrap() {
-  const dispatch = useAppDispatch();
   const { theme } = useTheme();
   const { showErrorToast } = useToast();
   const { isProblemListLoading, problemListError } = useProblemsStore();
@@ -21,10 +19,6 @@ function useAppBootstrap() {
 
   usePageTracking();
   useCallbackHandler();
-
-  useEffect(() => {
-    fetchSharedProblemList(dispatch);
-  }, [dispatch]);
 
   useEffect(() => {
     if (!isContestListLoading && !isProblemListLoading)
