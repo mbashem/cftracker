@@ -46,7 +46,7 @@ const loadFromLocalStorage = (): any => {
 
 const store = configureStore({
   reducer: rootReducer,
-  middleware: (getDefaultMiddleware) => getDefaultMiddleware({ serializableCheck: false })
+  middleware: (getDefaultMiddleware) => getDefaultMiddleware()
     .prepend(userSubmissionsListener.middleware)
     .concat(logger)
     .concat([userApi.middleware, listApi.middleware, codeforcesApi.middleware]),

@@ -1,31 +1,24 @@
-import Contest from "../../types/CF/Contest";
-import Problem, { ProblemLite, ProblemShared, ProblemStatistics } from "../../types/CF/Problem";
+import {
+	ProblemData,
+	ProblemLiteData,
+	ProblemSharedData,
+} from "../../types/CF/Problem";
 import { sortByContestId } from "../../util/sortMethods";
 
-export interface ProblemListState {
-	problems: Problem[];
-	error: string | undefined;
-	tags: string[];
-	loading: boolean;
-}
-
-export interface CodeforcesContestListState {
-	contests: Contest[];
-	error: string | undefined;
-	loading: boolean;
-}
-
-export interface SharedProblemListState {
-	problems: ProblemShared[];
-	error: string | undefined;
-	loading: boolean;
+export interface ContestData {
+	id: number;
+	name: string;
+	type?: string;
+	phase: string;
+	durationSeconds?: number;
+	startTimeSeconds?: number;
 }
 
 export interface ProblemSetResult {
 	status: string;
 	result: {
-		problems: Problem[];
-		problemStatistics: ProblemStatistics[];
+		problems: ProblemResultItem[];
+		problemStatistics: ProblemStatisticsResultItem[];
 	};
 }
 
@@ -36,7 +29,22 @@ export interface ContestListResult {
 
 export interface SharedProblemListResult {
 	status: string;
-	result: ProblemShared[];
+	result: SharedProblemResultItem[];
+}
+
+interface ProblemResultItem {
+	contestId?: number;
+	index: string;
+	name: string;
+	type: string;
+	rating?: number;
+	tags: string[];
+}
+
+interface ProblemStatisticsResultItem {
+	contestId?: number;
+	index: string;
+	solvedCount: number;
 }
 
 interface ContestResultItem {
@@ -48,90 +56,89 @@ interface ContestResultItem {
 	startTimeSeconds?: number;
 }
 
-export function normalizeProblemResult(result: ProblemSetResult): ProblemListState {
+interface SharedProblemResultItem {
+	contestId?: number;
+	index: string;
+	shared?: SharedProblemLiteResultItem[];
+}
+
+interface SharedProblemLiteResultItem {
+	contestId?: number;
+	index: string;
+}
+
+export function normalizeProblemResult(result: ProblemSetResult): ProblemData[] {
 	if (result.status !== "OK") throw new Error("Failed to fetch Problems list from CF API");
 
-	let problems = result.result.problems;
-	let problemStatistics = result.result.problemStatistics;
+	const problems = result.result.problems.filter(hasContestId);
+	const problemStatistics = result.result.problemStatistics.filter(hasContestId);
+	const finalProblemArray: ProblemData[] = [];
 
-	problems = problems.filter((problem) => problem.contestId ? true : false);
-	problemStatistics = problemStatistics.filter((problem) => problem.contestId ? true : false);
-
-	const finalProblemArray: Problem[] = [];
 	for (let index = 0; index < problems.length; index++) {
-		problems[index].rating = problems[index].rating ?? 0;
-		problems[index].solvedCount = problems[index].solvedCount ?? 0;
-		if (problems[index].contestId === undefined) continue;
-		finalProblemArray.push(
-			new Problem(
-				problems[index].contestId!,
-				problems[index].index,
-				problems[index].name,
-				problems[index].type,
-				problems[index].rating,
-				problems[index].tags,
-				problemStatistics[index]?.solvedCount ?? 0
-			)
-		);
+		const problem = problems[index];
+		finalProblemArray.push({
+			contestId: problem.contestId,
+			index: problem.index,
+			name: problem.name,
+			type: problem.type,
+			rating: problem.rating ?? 0,
+			tags: [...problem.tags],
+			solvedCount: problemStatistics[index]?.solvedCount ?? 0,
+		});
 	}
 
 	finalProblemArray.sort(sortByContestId);
 
-	const tags = new Set<string>();
-	for (const problem of finalProblemArray)
-		for (const tag of problem.tags) tags.add(tag);
-
-	return {
-		problems: finalProblemArray,
-		error: undefined,
-		tags: Array.from(tags),
-		loading: false,
-	};
+	return finalProblemArray;
 }
 
-export function normalizeContestResult(result: ContestListResult): CodeforcesContestListState {
+export function normalizeContestResult(result: ContestListResult): ContestData[] {
 	if (result.status !== "OK") throw new Error("Failed to load saved contestList");
 
-	const contests: Contest[] = [];
+	const contests: ContestData[] = [];
 
 	for (const contest of result.result) {
-		if (contest.id)
-			contests.push(
-				new Contest(
-					contest.id,
-					contest.name,
-					contest.type,
-					contest.phase,
-					contest.durationSeconds,
-					contest.startTimeSeconds
-				)
-			);
+		if (contest.id === undefined) continue;
+
+		contests.push({
+			id: contest.id,
+			name: contest.name,
+			type: contest.type,
+			phase: contest.phase,
+			durationSeconds: contest.durationSeconds,
+			startTimeSeconds: contest.startTimeSeconds,
+		});
 	}
 
-	return {
-		contests,
-		error: undefined,
-		loading: false,
-	};
+	return contests;
 }
 
-export function normalizeSharedProblemResult(result: SharedProblemListResult): SharedProblemListState {
+export function normalizeSharedProblemResult(result: SharedProblemListResult): ProblemSharedData[] {
 	if (result.status !== "OK") throw new Error("Error fetching shared problems api call failed");
 
-	const sharedProblems: ProblemShared[] = [];
+	const sharedProblems: ProblemSharedData[] = [];
 
 	for (const shared of result.result) {
-		const currentSharedProblem = new ProblemShared(shared.contestId, shared.index);
+		if (shared.contestId === undefined) continue;
 
-		for (const lite of shared.shared ?? [])
-			currentSharedProblem.shared?.push(new ProblemLite(lite.contestId!, lite.index));
+		const relatedProblems: ProblemLiteData[] = [];
+		for (const problem of shared.shared ?? []) {
+			if (problem.contestId === undefined) continue;
+			relatedProblems.push({ contestId: problem.contestId, index: problem.index });
+		}
 
-		sharedProblems.push(currentSharedProblem);
+		sharedProblems.push({
+			contestId: shared.contestId,
+			index: shared.index,
+			shared: relatedProblems,
+		});
 	}
 
-	return {
-		problems: sharedProblems.sort(sortByContestId),
-		error: undefined,
-		loading: false,
-	};
+	return sharedProblems.sort(sortByContestId);
+}
+
+function hasContestId<T extends { contestId?: number }>(
+	value: T
+): value is T & { contestId: number } {
+	return value.contestId !== undefined;
 }

@@ -1,18 +1,35 @@
 import { createSelector } from "@reduxjs/toolkit";
 import { useMemo } from "react";
-import Problem from "../../types/CF/Problem";
+import Problem, { ProblemData } from "../../types/CF/Problem";
 import { codeforcesApi } from "../queries/codeforcesQuery";
-import { ProblemListState } from "../queries/codeforcesApiResponse";
 
-const emptyProblems: Problem[] = [];
-const emptyTags: string[] = [];
+export interface HydratedProblemListState {
+	problems: Problem[];
+	error: string | undefined;
+	tags: string[];
+	loading: boolean;
+}
 
-const memorizeProblemsById = createSelector(
-	(state: ProblemListState) => state,
-	(problems) => problems.problems.reduce((previousValue, currentValue) => {
-		previousValue.set(currentValue.id, currentValue);
-		return previousValue;
-	}, new Map<string, Problem>())
+const selectProblems = createSelector(
+	(problems: ProblemData[] | undefined) => problems,
+	(problems) => {
+		const tags = new Set<string>();
+		const selectedProblems = (problems ?? []).reduce(
+			(previousValue, currentValue) => {
+			const problem = createProblem(currentValue);
+			previousValue.problems.push(problem);
+			previousValue.problemsById.set(problem.id, problem);
+			for (const tag of problem.tags) tags.add(tag);
+			return previousValue;
+			},
+			{
+				problems: [] as Problem[],
+				problemsById: new Map<string, Problem>(),
+			}
+		);
+
+		return { ...selectedProblems, tags: Array.from(tags) };
+	}
 );
 
 function getProblemErrorMessage(error: unknown): string | undefined {
@@ -27,15 +44,14 @@ function getProblemErrorMessage(error: unknown): string | undefined {
 
 function useProblemsStore() {
 	const { data, error, isLoading } = codeforcesApi.useGetProblemsQuery();
+	const { problems, problemsById, tags } = selectProblems(data);
 
-	const problemList = useMemo<ProblemListState>(() => ({
-		problems: data?.problems ?? emptyProblems,
-		tags: data?.tags ?? emptyTags,
-		error: getProblemErrorMessage(error) ?? data?.error,
-		loading: isLoading || (data?.loading ?? false),
-	}), [data, error, isLoading]);
-
-	const problemsById = useMemo(() => memorizeProblemsById(problemList), [problemList]);
+	const problemList = useMemo<HydratedProblemListState>(() => ({
+		problems,
+		tags,
+		error: getProblemErrorMessage(error),
+		loading: isLoading,
+	}), [error, isLoading, problems, tags]);
 
 	return {
 		problemList: problemList,
@@ -43,6 +59,18 @@ function useProblemsStore() {
 		isProblemListLoading: problemList.loading,
 		problemListError: problemList.error,
 	};
+}
+
+function createProblem(problem: ProblemData): Problem {
+	return new Problem(
+		problem.contestId,
+		problem.index,
+		problem.name,
+		problem.type,
+		problem.rating,
+		problem.tags,
+		problem.solvedCount
+	);
 }
 
 export default useProblemsStore;

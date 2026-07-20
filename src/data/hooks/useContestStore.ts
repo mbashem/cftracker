@@ -2,16 +2,16 @@ import { createSelector } from "@reduxjs/toolkit";
 import Contest from "../../types/CF/Contest";
 import Problem, { ProblemLite, ProblemShared } from "../../types/CF/Problem";
 import lowerBound from "../../util/lowerBound";
-import { useMemo } from "react";
 import { isDefined } from "../../util/util";
 import useProblemsStore from "./useProblemsStore";
 import { codeforcesApi } from "../queries/codeforcesQuery";
+import { ContestData } from "../queries/codeforcesApiResponse";
 import useSharedProblemsStore from "./useSharedProblemsStore";
 
 const addSharedToProblems = (
   problemList: Problem[],
   sharedProblems: ProblemShared[],
-  contestList: Contest[]
+  contestList: ContestData[]
 ): Contest[] => {
   let addProblems: Problem[] = new Array<Problem>();
   let added: Set<string> = new Set<string>();
@@ -52,7 +52,14 @@ const addSharedToProblems = (
   let newConestList: Contest[] = new Array<Contest>();
 
   contestList.map((contest) => {
-    newConestList.push(contest.clone());
+    newConestList.push(new Contest(
+      contest.id,
+      contest.name,
+      contest.type,
+      contest.phase,
+      contest.durationSeconds,
+      contest.startTimeSeconds
+    ));
     rec[contest.id] = newConestList.length - 1;
   });
 
@@ -66,36 +73,30 @@ const addSharedToProblems = (
 
 const calculateContests = createSelector(
   [
-    (state: any) => state.problems,
-    (state: any) => state.sharedProblemList,
-    (state: any) => state.contests
+    (problems: Problem[]) => problems,
+    (_problems: Problem[], sharedProblems: ProblemShared[]) => sharedProblems,
+    (_problems: Problem[], _sharedProblems: ProblemShared[], contests: ContestData[]) => contests,
   ],
-  (problems, sharedProblems, contests) => {
-    return addSharedToProblems(problems, sharedProblems, contests);
-  }
+  addSharedToProblems
 );
 
 function useContestStore() {
   const { problemList } = useProblemsStore();
   const { sharedProblems } = useSharedProblemsStore();
   const { data, error, isLoading } = codeforcesApi.useGetContestQuery();
-
-  const contests = useMemo(
-    () => calculateContests({
-      contests: data?.contests ?? [],
-      problems: problemList.problems,
-      sharedProblemList: sharedProblems.problems,
-    }),
-    [data?.contests, problemList.problems, sharedProblems.problems]
+  const contests = calculateContests(
+    problemList.problems,
+    sharedProblems.problems,
+    data ?? []
   );
 
-  const contestListError = error === undefined ? data?.error : "Failed to load saved contestList.";
+  const contestListError = error === undefined ? undefined : "Failed to load saved contestList.";
 
   return {
     error: contestListError,
-    loading: isLoading || (data?.loading ?? false),
+    loading: isLoading,
     contests,
-    isContestListLoading: isLoading || (data?.loading ?? false),
+    isContestListLoading: isLoading,
     contestListError,
   };
 }

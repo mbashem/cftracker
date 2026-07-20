@@ -3,9 +3,8 @@ import { useAppSelector } from "../store";
 import { sortByCompare } from "../../util/sortMethods";
 import lowerBound from "../../util/lowerBound";
 import Problem, { ProblemShared } from "../../types/CF/Problem";
-import Submission from "../../types/CF/Submission";
+import Submission, { SubmissionData } from "../../types/CF/Submission";
 import { Compared } from "../../util/Comparator";
-import { useMemo, useState } from "react";
 import useSharedProblemsStore from "./useSharedProblemsStore";
 
 const addSharedToSubmissions = (
@@ -81,36 +80,28 @@ const addSharedToSubmissions = (
 
 const calculateSubmissions = createSelector(
   [
-    (state: any) => state.userSubmissions.submissions,
-    (state: any) => state.sharedProblemList.problems
+    (submissions: Submission[]) => submissions,
+    (_submissions: Submission[], problems: ProblemShared[]) => problems,
   ],
-  (submissions, problems) => {
-    return addSharedToSubmissions(submissions, problems);
-  }
+  addSharedToSubmissions
+);
+
+const hydrateSubmissions = createSelector(
+  [(submissions: SubmissionData[]) => submissions],
+  (submissions) => submissions.map((submission) => new Submission(submission))
 );
 
 function useSubmissionsStore() {
   const { sharedProblems } = useSharedProblemsStore();
-  const state = useAppSelector(state => {
-    return {
-      userSubmissions: state.userSubmissions,
-    };
-  });
-
-  const [submissions, setSubmissions] = useState<Submission[]>([]);
-  useMemo(() => {
-    const calculatedSubmissions = calculateSubmissions({
-      userSubmissions: state.userSubmissions,
-      sharedProblemList: sharedProblems,
-    });
-    setSubmissions(calculatedSubmissions);
-  }, [state.userSubmissions.submissions, sharedProblems.problems]);
+  const userSubmissions = useAppSelector((state) => state.userSubmissions);
+  const rawSubmissions = hydrateSubmissions(userSubmissions.submissions);
+  const submissions = calculateSubmissions(rawSubmissions, sharedProblems.problems);
 
   return {
-    error: state.userSubmissions.error,
-    loading: state.userSubmissions.loading,
+    error: userSubmissions.error,
+    loading: userSubmissions.loading,
     submissions,
-    rawSubmissions: state.userSubmissions.submissions
+    rawSubmissions,
   };
 }
 

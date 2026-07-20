@@ -1,12 +1,11 @@
 import { createSlice, nanoid, PayloadAction } from '@reduxjs/toolkit';
-import Submission from '../../types/CF/Submission';
-import { sortByCompare } from '../../util/sortMethods';
+import { compareSubmissionData, SubmissionData } from '../../types/CF/Submission';
 
 export interface SubmissionState {
   error: string | undefined;
   loading: number;
   requestId: string | undefined;
-  submissions: Submission[];
+  submissions: SubmissionData[];
 }
 
 const submissionsInitialState: SubmissionState = {
@@ -39,15 +38,15 @@ const userSubmissionsSlice = createSlice({
     },
     addUserSubmissions(
       state,
-      action: PayloadAction<{ requestId: string; submissions: Submission[]; }>
+      action: PayloadAction<{ requestId: string; submissions: SubmissionData[]; }>
     ) {
       if (action.payload.requestId !== state.requestId) return;
 
       state.loading = Math.max(0, state.loading - 1);
       for (const submission of action.payload.submissions)
-        state.submissions.push(new Submission(submission));
+        state.submissions.push(submission);
 
-      state.submissions.sort(sortByCompare);
+      state.submissions.sort(compareSubmissionData);
     },
     errorFetchingUserSubmissions(
       state,

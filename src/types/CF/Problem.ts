@@ -1,5 +1,24 @@
 import Comparator, { Compared } from "../../util/Comparator";
 
+export interface ProblemLiteData {
+  contestId: number;
+  index: string;
+}
+
+export interface ProblemData extends ProblemLiteData {
+  problemsetName?: string;
+  name: string;
+  type: string;
+  points?: number;
+  rating: number;
+  tags: string[];
+  solvedCount: number;
+}
+
+export interface ProblemSharedData extends ProblemLiteData {
+  shared?: ProblemLiteData[];
+}
+
 export class ProblemLite implements Comparator<ProblemLite> {
   contestId: number;
   index: string;

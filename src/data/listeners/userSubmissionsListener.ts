@@ -1,5 +1,5 @@
 import { createListenerMiddleware } from "@reduxjs/toolkit";
-import Submission from "../../types/CF/Submission";
+import { SubmissionData } from "../../types/CF/Submission";
 import { fetchCodeforcesApi } from "../../util/codeforcesApi";
 import { getUserSubmissionsURL, isDefined } from "../../util/util";
 import {
@@ -10,7 +10,7 @@ import {
 
 interface UserSubmissionsResponse {
   status: string;
-  result: Submission[];
+  result: SubmissionData[];
 }
 
 export const userSubmissionsListener = createListenerMiddleware();
@@ -62,7 +62,7 @@ userSubmissionsListener.startListening({
   },
 });
 
-function getValidSubmissions(submissions: Submission[]): Submission[] {
+function getValidSubmissions(submissions: SubmissionData[]): SubmissionData[] {
   return submissions.filter(
     (submission) => isDefined(submission.contestId) && isDefined(submission.verdict)
   );
