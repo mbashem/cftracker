@@ -8,6 +8,8 @@ import { codeforcesApi } from "../queries/codeforcesQuery";
 import { ContestData } from "../queries/codeforcesApiResponse";
 import useSharedProblemsStore from "./useSharedProblemsStore";
 
+const emptyContests: ContestData[] = [];
+
 const addSharedToProblems = (
   problemList: Problem[],
   sharedProblems: ProblemShared[],
@@ -87,7 +89,7 @@ function useContestStore() {
   const contests = calculateContests(
     problemList.problems,
     sharedProblems.problems,
-    data ?? []
+    data ?? emptyContests
   );
 
   const contestListError = error === undefined ? undefined : "Failed to load saved contestList.";

@@ -3,6 +3,8 @@ import { useMemo } from "react";
 import Problem, { ProblemData } from "../../types/CF/Problem";
 import { codeforcesApi } from "../queries/codeforcesQuery";
 
+const emptyProblems: ProblemData[] = [];
+
 export interface HydratedProblemListState {
 	problems: Problem[];
 	error: string | undefined;
@@ -14,7 +16,7 @@ const selectProblems = createSelector(
 	(problems: ProblemData[] | undefined) => problems,
 	(problems) => {
 		const tags = new Set<string>();
-		const selectedProblems = (problems ?? []).reduce(
+		const selectedProblems = (problems ?? emptyProblems).reduce(
 			(previousValue, currentValue) => {
 			const problem = createProblem(currentValue);
 			previousValue.problems.push(problem);

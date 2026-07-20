@@ -9,6 +9,8 @@ import { Path } from "../../util/route/path";
 import useListApi from "../../data/hooks/useListApi";
 import { isDefined } from "../../util/util";
 
+const emptyLists: List[] = [];
+
 function useListPage() {
 	const { theme } = useTheme();
 	const [activeList, setActiveList] = useState<List | undefined>();
@@ -72,7 +74,7 @@ function useListPage() {
 	}
 
 	return {
-		lists: lists ?? [],
+		lists: lists ?? emptyLists,
 		theme,
 		listClicked,
 		activeList,
