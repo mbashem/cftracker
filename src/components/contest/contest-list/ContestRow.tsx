@@ -5,9 +5,7 @@ import { Verdict } from "../../../types/CF/Submission";
 import Theme from "../../../util/Theme";
 import ProblemListCell from "./ProblemsListCell";
 import { formateDate } from "../../../util/time";
-import Problem from "../../../types/CF/Problem";
-
-const emptyProblems: Problem[] = [];
+import { EMPTY_ARRAY } from "../../../util/constants";
 
 interface ContestRowProps {
   contest: Contest;
@@ -114,7 +112,7 @@ function ContestRow({
         return (
           <ProblemListCell
             key={contest.id.toString + index}
-            problems={contest.problemList[index] ?? emptyProblems}
+            problems={contest.problemList[index] ?? EMPTY_ARRAY}
             contestId={contest.id}
             index={index}
             theme={theme}

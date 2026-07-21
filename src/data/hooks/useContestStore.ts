@@ -7,13 +7,12 @@ import useProblemsStore from "./useProblemsStore";
 import { codeforcesApi } from "../queries/codeforcesQuery";
 import { ContestData } from "../queries/codeforcesApiResponse";
 import useSharedProblemsStore from "./useSharedProblemsStore";
-
-const emptyContests: ContestData[] = [];
+import { EMPTY_ARRAY } from "../../util/constants";
 
 const addSharedToProblems = (
-  problemList: Problem[],
-  sharedProblems: ProblemShared[],
-  contestList: ContestData[]
+  problemList: readonly Problem[],
+  sharedProblems: readonly ProblemShared[],
+  contestList: readonly ContestData[]
 ): Contest[] => {
   let addProblems: Problem[] = new Array<Problem>();
   let added: Set<string> = new Set<string>();
@@ -28,7 +27,7 @@ const addSharedToProblems = (
     let lb: number = lowerBound(problemList, currentProblem as ProblemLite);
 
     if (lb !== problemList.length && problemList[lb].equal(currentProblem)) {
-      for (let sharedProblem of problem.shared ?? []) {
+      for (let sharedProblem of problem.shared ?? EMPTY_ARRAY) {
         if (added.has(sharedProblem.id)) continue;
         if (sharedProblem.contestId === undefined) continue;
         const newProblem: Problem = new Problem(
@@ -75,9 +74,9 @@ const addSharedToProblems = (
 
 const calculateContests = createSelector(
   [
-    (problems: Problem[]) => problems,
-    (_problems: Problem[], sharedProblems: ProblemShared[]) => sharedProblems,
-    (_problems: Problem[], _sharedProblems: ProblemShared[], contests: ContestData[]) => contests,
+    (problems: readonly Problem[]) => problems,
+    (_problems: readonly Problem[], sharedProblems: readonly ProblemShared[]) => sharedProblems,
+    (_problems: readonly Problem[], _sharedProblems: readonly ProblemShared[], contests: readonly ContestData[]) => contests,
   ],
   addSharedToProblems
 );
@@ -89,7 +88,7 @@ function useContestStore() {
   const contests = calculateContests(
     problemList.problems,
     sharedProblems.problems,
-    data ?? emptyContests
+    data ?? EMPTY_ARRAY
   );
 
   const contestListError = error === undefined ? undefined : "Failed to load saved contestList.";

@@ -1,6 +1,6 @@
 import Comparator, { Compared } from "./Comparator";
 
-const lowerBound = <T extends Comparator<T>>(list: T[], val: T): number => {
+const lowerBound = <T extends Comparator<T>>(list: readonly T[], val: T): number => {
   let l: number = 0,
     r: number = list.length - 1,
     ans: number = list.length;

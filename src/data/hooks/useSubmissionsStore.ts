@@ -6,10 +6,11 @@ import Problem, { ProblemShared } from "../../types/CF/Problem";
 import Submission, { SubmissionData } from "../../types/CF/Submission";
 import { Compared } from "../../util/Comparator";
 import useSharedProblemsStore from "./useSharedProblemsStore";
+import { EMPTY_ARRAY } from "../../util/constants";
 
 const addSharedToSubmissions = (
   userSubmissions: Submission[],
-  sharedProblems: ProblemShared[]
+  sharedProblems: readonly ProblemShared[]
 ): Submission[] => {
   let userSubmissionsIdsWithContestIds: Set<string> = new Set<string>();
 
@@ -38,7 +39,7 @@ const addSharedToSubmissions = (
     )
       continue;
 
-    for (let problem of sharedProblems[lb].shared ?? []) {
+    for (let problem of sharedProblems[lb].shared ?? EMPTY_ARRAY) {
       if (problem.contestId === undefined) continue;
       let id: string =
         submission.id.toString() + problem.contestId.toString();
@@ -81,7 +82,7 @@ const addSharedToSubmissions = (
 const calculateSubmissions = createSelector(
   [
     (submissions: Submission[]) => submissions,
-    (_submissions: Submission[], problems: ProblemShared[]) => problems,
+    (_submissions: Submission[], problems: readonly ProblemShared[]) => problems,
   ],
   addSharedToSubmissions
 );

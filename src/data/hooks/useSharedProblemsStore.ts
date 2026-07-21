@@ -2,18 +2,17 @@ import { createSelector } from "@reduxjs/toolkit";
 import { useMemo } from "react";
 import { ProblemLite, ProblemShared, ProblemSharedData } from "../../types/CF/Problem";
 import { codeforcesApi } from "../queries/codeforcesQuery";
-
-const emptySharedProblems: ProblemShared[] = [];
+import { EMPTY_ARRAY } from "../../util/constants";
 
 interface HydratedSharedProblemListState {
-	problems: ProblemShared[];
+	problems: readonly ProblemShared[];
 	error: string | undefined;
 	loading: boolean;
 }
 
 const hydrateSharedProblems = createSelector(
 	(problems: ProblemSharedData[] | undefined) => problems,
-	(problems) => problems?.map(createSharedProblem) ?? emptySharedProblems
+	(problems) => problems?.map(createSharedProblem) ?? EMPTY_ARRAY
 );
 
 function getSharedProblemErrorMessage(error: unknown): string | undefined {

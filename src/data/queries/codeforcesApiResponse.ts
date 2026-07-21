@@ -4,6 +4,7 @@ import {
 	ProblemSharedData,
 } from "../../types/CF/Problem";
 import { sortByContestId } from "../../util/sortMethods";
+import { EMPTY_ARRAY } from "../../util/constants";
 
 export interface ContestData {
 	id: number;
@@ -122,7 +123,7 @@ export function normalizeSharedProblemResult(result: SharedProblemListResult): P
 		if (shared.contestId === undefined) continue;
 
 		const relatedProblems: ProblemLiteData[] = [];
-		for (const problem of shared.shared ?? []) {
+		for (const problem of shared.shared ?? EMPTY_ARRAY) {
 			if (problem.contestId === undefined) continue;
 			relatedProblems.push({ contestId: problem.contestId, index: problem.index });
 		}

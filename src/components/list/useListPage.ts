@@ -8,8 +8,7 @@ import { useNavigate } from "react-router";
 import { Path } from "../../util/route/path";
 import useListApi from "../../data/hooks/useListApi";
 import { isDefined } from "../../util/util";
-
-const emptyLists: List[] = [];
+import { EMPTY_ARRAY } from "../../util/constants";
 
 function useListPage() {
 	const { theme } = useTheme();
@@ -74,7 +73,7 @@ function useListPage() {
 	}
 
 	return {
-		lists: lists ?? emptyLists,
+		lists: lists ?? EMPTY_ARRAY,
 		theme,
 		listClicked,
 		activeList,

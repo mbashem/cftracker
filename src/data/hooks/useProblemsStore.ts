@@ -2,8 +2,7 @@ import { createSelector } from "@reduxjs/toolkit";
 import { useMemo } from "react";
 import Problem, { ProblemData } from "../../types/CF/Problem";
 import { codeforcesApi } from "../queries/codeforcesQuery";
-
-const emptyProblems: ProblemData[] = [];
+import { EMPTY_ARRAY } from "../../util/constants";
 
 export interface HydratedProblemListState {
 	problems: Problem[];
@@ -16,7 +15,7 @@ const selectProblems = createSelector(
 	(problems: ProblemData[] | undefined) => problems,
 	(problems) => {
 		const tags = new Set<string>();
-		const selectedProblems = (problems ?? emptyProblems).reduce(
+		const selectedProblems = (problems ?? EMPTY_ARRAY).reduce(
 			(previousValue, currentValue) => {
 			const problem = createProblem(currentValue);
 			previousValue.problems.push(problem);
