@@ -14,7 +14,7 @@ import { Verdict } from "../../types/CF/Submission";
 import { StorageService } from "../../util/StorageService";
 import { RATING_CONSTANTS } from "../../util/cf";
 import { formatDateInputValue } from "../../util/time";
-import { clampNumber, isDefined } from "../../util/util";
+import { clampNumber, isDefined, overrideObject } from "../../util/util";
 import { sortByContestId, sortByRating, sortBySolveCount, SortOrder, SortProblemBy } from "../../util/sortMethods";
 import useContestStore from "../../data/hooks/useContestStore";
 
@@ -66,6 +66,7 @@ function getRatingRange(minRating: number, maxRating: number): ProblemRatingRang
 
 function useProblemPage() {
 	const { searchParams, updateSearchParam, deleteSearchParam } = useAppSearchParams();
+	const searchTextFromUrl = searchParams.get(SearchKeys.Search) ?? undefined;
 	const [listId, setListId] = useState<number | undefined>(undefined);
 	const [list, setList] = useState<List | undefined>(undefined);
 	const { submissions } = useSubmissionsStore();
@@ -86,12 +87,18 @@ function useProblemPage() {
 		maxContestId: appState.maxContestId,
 		minContestDate: undefined,
 		maxContestDate: undefined,
-		search: searchParams.get(SearchKeys.Search) ?? "",
+		search: "",
 	};
 
 	const selectableVerdictStatuses = useMemo(() => [Verdict.SOLVED, Verdict.ATTEMPTED, Verdict.UNSOLVED], []);
 	const defaultSolveStatus = useMemo(() => new Set(selectableVerdictStatuses), [selectableVerdictStatuses]);
-	const [filter, setFilter] = usePersistentState(StorageService.Keys.Problem.Filter, defaultFilter);
+	const [filter, setFilter] = usePersistentState(
+		StorageService.Keys.Problem.Filter,
+		defaultFilter,
+		searchTextFromUrl === undefined
+			? undefined
+			: () => overrideObject(StorageService.getObject(StorageService.Keys.Problem.Filter, defaultFilter), { search: searchTextFromUrl })
+	);
 	const [tags, setTags] = usePersistentState(StorageService.Keys.Problem.Tags, new Set<string>());
 	const [filterSortState, setFilterSortState] = useState<ProblemSortState>({
 		sortBy: SortProblemBy.SolveCount,

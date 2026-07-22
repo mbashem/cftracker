@@ -4,7 +4,7 @@ import Theme from "../../../util/Theme";
 import ProblemCell from "./ProblemCell";
 
 interface ProblemListCellProps {
-  problems: Problem[];
+  problems: readonly Problem[];
   contestId: number;
   index: string;
   theme: Theme;

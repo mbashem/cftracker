@@ -3,4 +3,4 @@ export const GITHUB_OAUTH_CLIENT_ID = import.meta.env.VITE_GITHUB_OAUTH_CLIENT_I
 export const GITHUB_OAUTH_REDIRECT_URI = import.meta.env.VITE_GITHUB_OAUTH_REDIRECT_URI;
 export const IS_BACKEND_AVAILABLE = import.meta.env.VITE_IS_BACKEND_AVAILABLE === "true";
 export const BACKEND_NOT_AVAILBLE_MESSAGE = import.meta.env.VITE_BACKEND_NOT_AVAILBLE_MESSAGE;
-export const IS_DEBUG_MODE = import.meta.env.DEV;
+export const IS_DEBUG_MODE = import.meta.env.VITE_DEBUG_MODE === "true";

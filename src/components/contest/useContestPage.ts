@@ -9,7 +9,8 @@ import { StorageService } from "../../util/StorageService";
 import { SearchKeys } from "../../util/constants";
 import { ParticipantType } from "../../types/CF/Party";
 import useContestStore from "../../data/hooks/useContestStore";
-import { isDefined, isFunction } from "../../util/util";
+import { isDefined, isFunction, overrideObject } from "../../util/util";
+import useProblemsStore from "../../data/hooks/useProblemsStore";
 
 export interface Filter {
 	perPage: number;
@@ -25,17 +26,25 @@ export interface Filter {
 export type UpdateFilter = Partial<Filter> | ((filter: Filter) => Partial<Filter>);
 
 function useContestPage() {
-	const state = useAppSelector((state) => {
-		return {
-			appState: state.appState,
-			problemList: state.problemList,
-		};
-	});
+	const appState = useAppSelector((state) => state.appState);
+	const { problemList } = useProblemsStore();
 
 	const { theme } = useTheme();
 	const { searchParams, updateSearchParam, deleteSearchParam } = useAppSearchParams();
+	const searchTextFromUrl = searchParams.get(SearchKeys.Search) ?? undefined;
 	const { submissions: userSubmissions } = useSubmissionsStore();
-	const { contests } = useContestStore();
+	const { contests, loading: isContestListLoading, error: contestListError } = useContestStore();
+	const state = useMemo(
+		() => ({
+			appState,
+			problemList,
+			contestList: {
+				loading: isContestListLoading,
+				error: contestListError,
+			},
+		}),
+		[appState, contestListError, isContestListLoading, problemList]
+	);
 
 	const [contestList, setContestList] = useState<{
 		contests: Contest[];
@@ -51,11 +60,13 @@ function useContestPage() {
 		showColor: true,
 		showShortName: true,
 		selectedCategories: [ContestCat.DIV2],
-		search: searchParams.get(SearchKeys.Search) ?? "",
+		search: "",
 		canSelectMultipleCategories: false,
 	};
 
-	const [filter, setFilter] = useState<Filter>(StorageService.getObject(StorageService.Keys.Contest.Filter, defaultFilt));
+	const savedFilter = StorageService.getObject(StorageService.Keys.Contest.Filter, defaultFilt);
+	const initialFilter = searchTextFromUrl === undefined ? savedFilter : overrideObject(savedFilter, { search: searchTextFromUrl });
+	const [filter, setFilter] = useState<Filter>(initialFilter);
 
 	const categoryFilter = useMemo(() => {
 		return {
@@ -143,7 +154,7 @@ function useContestPage() {
 
 		setContestList({ ...contestList, contests: newContestList });
 		setRandomContest(undefined);
-	}, [state.problemList.problems, filter, solveStatus, submissions]);
+	}, [contests, filter, problemList.problems, solveStatus, submissions]);
 
 	useEffect(() => {
 		if (!filter.canSelectMultipleCategories) {
