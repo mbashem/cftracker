@@ -10,6 +10,9 @@ import { StorageService } from '../util/StorageService';
 import { listApi } from './queries/listQuery';
 import { codeforcesApi } from './queries/codeforcesQuery';
 import { userSubmissionsListener } from './listeners/userSubmissionsListener';
+import { IS_DEBUG_MODE } from '../util/env';
+
+const IS_REDUX_LOGGING_ENABLED = IS_DEBUG_MODE || sessionStorage.getItem("redux-debug") === "true";
 
 const rootReducer = combineReducers({
   appState: appSlice,
@@ -46,10 +49,11 @@ function loadFromLocalStorage(): any {
 
 const store = configureStore({
   reducer: rootReducer,
-  middleware: (getDefaultMiddleware) => getDefaultMiddleware()
-    .prepend(userSubmissionsListener.middleware)
-    .concat(logger)
-    .concat([userApi.middleware, listApi.middleware, codeforcesApi.middleware]),
+  middleware: (getDefaultMiddleware) => {
+    const middleware = getDefaultMiddleware().prepend(userSubmissionsListener.middleware);
+    if (IS_REDUX_LOGGING_ENABLED) middleware.push(logger);
+    return middleware.concat([userApi.middleware, listApi.middleware, codeforcesApi.middleware]);
+  },
   preloadedState: loadFromLocalStorage()
 });
 

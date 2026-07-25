@@ -51,7 +51,6 @@ function useContestPage() {
 		contests: Contest[];
 		error: string;
 	}>({ contests: [], error: "" });
-	const [isPaginationLoading, setIsPaginationLoading] = useState(true);
 
 	const [randomContest, setRandomContest] = useState<number | undefined>(undefined);
 
@@ -82,6 +81,7 @@ function useContestPage() {
 	const allParticipantType = useMemo(() => Object.keys(ParticipantType), []);
 
 	const [selected, setSelected] = usePersistentState(StorageService.Keys.Contest.Page, 0);
+	const isPaginationLoading = problemList.loading || isContestListLoading;
 	const [solveStatus, setSolveStatus] = useState(
 		StorageService.getSet(StorageService.Keys.Contest.SolveStatus, selectableVerdictStatuses)
 	);
@@ -98,9 +98,7 @@ function useContestPage() {
 		let high = Math.min(contestList.contests.length, lo + filter.perPage);
 
 		if (lo > high) return [];
-		console.log("CurrentPageContests ", randomContest, lo, high);
-		// return contestList.contests.slice(lo, high);
-		return getCurrentPageContests();
+		return contestList.contests.slice(lo, high);
 	}, [contestList, selected, filter.perPage, randomContest]);
 
 	const submissions = useMemo(() => {
@@ -139,14 +137,6 @@ function useContestPage() {
 		return status && searchIncluded && contest.count !== 0 && catIn;
 	};
 
-	function getCurrentPageContests() {
-		let lo = selected * filter.perPage;
-		let high = Math.min(contestList.contests.length, lo + filter.perPage);
-
-		if (lo > high) return [];
-		return contestList.contests.slice(lo, high);
-	}
-
 	useEffect(() => {
 		StorageService.saveObject(StorageService.Keys.Contest.Filter, filter);
 		if (filter.search.trim().length) updateSearchParam(SearchKeys.Search, filter.search.trim());
@@ -156,8 +146,7 @@ function useContestPage() {
 
 		setContestList({ ...contestList, contests: newContestList });
 		setRandomContest(undefined);
-		setIsPaginationLoading(problemList.loading || isContestListLoading);
-	}, [contests, filter, problemList.loading, problemList.problems, solveStatus, submissions, isContestListLoading]);
+	}, [contests, filter, problemList.problems, solveStatus, submissions]);
 
 	useEffect(() => {
 		if (!filter.canSelectMultipleCategories && filter.selectedCategories.length !== 1) {

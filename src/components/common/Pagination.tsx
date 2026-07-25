@@ -31,10 +31,11 @@ function Pagination(props: PaginationProps) {
   const displayPage = pageCount > 0 ? selected + 1 : 0;
   const isRandomModeDisabled = isRandomActive;
   const isPageNavigationDisabled = isRandomModeDisabled || pageCount <= 1;
+  const isPageSizeDisabled = isRandomModeDisabled || pageCount === 0;
 
   useEffect(() => {
     if (isLoading || isRandomActive) return;
-    if (props.selected < 0 || (props.selected >= pageCount && props.selected !== 0)) props.pageSelected(0);
+    if (props.selected >= pageCount && props.selected !== 0 && pageCount !== 0) props.pageSelected(0);
   }, [isLoading, isRandomActive, pageCount, props.pageSelected, props.selected]);
 
   const pageSizeOptions = useMemo(() => {
@@ -96,7 +97,7 @@ function Pagination(props: PaginationProps) {
               textClass={props.theme.bgText}
               inputClass={props.theme.bgText}
               onChange={(e) => {
-                if (isRandomModeDisabled) return;
+                if (isRandomModeDisabled || isLoading) return;
                 props.pageSelected(e - 1);
               }}
               disabled={isPageNavigationDisabled}
@@ -114,7 +115,7 @@ function Pagination(props: PaginationProps) {
               <select
                 className={"custom-select " + props.theme.bgText}
                 value={isRandomActive ? 1 : props.perPage}
-                disabled={isRandomModeDisabled}
+                disabled={isPageSizeDisabled}
                 onChange={(e) => {
                   if (props.pageSize) {
                     props.pageSize(clampNumber(parseInt(e.target.value), 1, props.totalCount));
