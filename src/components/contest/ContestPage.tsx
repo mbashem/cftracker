@@ -42,6 +42,7 @@ function ContestPage() {
           searchName="searchContest"
           searchPlaceHolder="Search by Contest Name or Id"
           onSearch={(e) => {
+            setSelected(0);
             updateFilter({ search: e });
           }}
           length={contestList.contests.length}

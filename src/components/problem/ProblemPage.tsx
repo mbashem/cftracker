@@ -42,7 +42,10 @@ function ProblemPage() {
           searchName="problemSearch"
           searchPlaceHolder="Problem Name or Id"
           name="Problem"
-          onSearch={(search) => updateFilter({ search })}
+          onSearch={(search) => {
+            setSelected(0);
+            updateFilter({ search });
+          }}
           length={problemList.problems.length}
           perPage={filter.perPage}
           selected={selected}
