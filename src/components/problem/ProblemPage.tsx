@@ -96,9 +96,10 @@ function ProblemPage() {
           perPage={filter.perPage}
           selected={selected}
           theme={theme}
-          pageSelected={(page) => setSelected(page)}
+          pageSelected={setSelected}
           pageSize={(perPage) => updateFilter({ perPage })}
           isRandomActive={isRandomActive}
+          isLoading={state.problemList.loading}
         />
       </footer>
     </>

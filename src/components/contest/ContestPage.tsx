@@ -21,6 +21,7 @@ function ContestPage() {
     allParticipantType,
     participant,
     currentPageContests,
+    isPaginationLoading,
     isRandomActive,
     selectableVerdictStatuses,
     categoryFilter,
@@ -160,13 +161,14 @@ function ContestPage() {
       </div>
       <footer className={"pt-2 " + theme.bg}>
         <Pagination
-          pageSelected={(e) => setSelected(e)}
+          pageSelected={setSelected}
           perPage={filter.perPage}
           selected={selected}
           theme={theme}
           totalCount={contestList.contests.length}
           pageSize={(e) => updateFilter({ perPage: e })}
           isRandomActive={isRandomActive}
+          isLoading={isPaginationLoading}
         />
       </footer>
     </>

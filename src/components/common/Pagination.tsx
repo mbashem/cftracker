@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import Theme from "../../util/Theme";
 import { clampNumber } from "../../util/util";
 import InputNumber from "./forms/Input/InputNumber";
@@ -11,12 +11,14 @@ interface PaginationProps {
   totalCount: number;
   theme: Theme;
   isRandomActive?: boolean;
+  isLoading?: boolean;
 }
 
 function Pagination(props: PaginationProps) {
   let linkClassName = "page-link " + props.theme.bgText;
   let linkWrapperClassName = "page-item";
   const isRandomActive = props.isRandomActive ?? false;
+  const isLoading = props.isLoading ?? false;
   const effectiveTotalCount = isRandomActive ? Math.min(props.totalCount, 1) : props.totalCount;
 
   let pageCount =
@@ -29,6 +31,11 @@ function Pagination(props: PaginationProps) {
   const displayPage = pageCount > 0 ? selected + 1 : 0;
   const isRandomModeDisabled = isRandomActive;
   const isPageNavigationDisabled = isRandomModeDisabled || pageCount <= 1;
+
+  useEffect(() => {
+    if (isLoading || isRandomActive) return;
+    if (props.selected < 0 || (props.selected >= pageCount && props.selected !== 0)) props.pageSelected(0);
+  }, [isLoading, isRandomActive, pageCount, props.pageSelected, props.selected]);
 
   const pageSizeOptions = useMemo(() => {
     if (isRandomActive) return [1];

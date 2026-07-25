@@ -11,6 +11,7 @@ import { ParticipantType } from "../../types/CF/Party";
 import useContestStore from "../../data/hooks/useContestStore";
 import { isDefined, isFunction, overrideObject } from "../../util/util";
 import useProblemsStore from "../../data/hooks/useProblemsStore";
+import usePersistentState from "../../hooks/usePersistentState";
 
 export interface Filter {
 	perPage: number;
@@ -50,6 +51,7 @@ function useContestPage() {
 		contests: Contest[];
 		error: string;
 	}>({ contests: [], error: "" });
+	const [isPaginationLoading, setIsPaginationLoading] = useState(true);
 
 	const [randomContest, setRandomContest] = useState<number | undefined>(undefined);
 
@@ -79,7 +81,7 @@ function useContestPage() {
 
 	const allParticipantType = useMemo(() => Object.keys(ParticipantType), []);
 
-	const [selected, setSelected] = useState(0);
+	const [selected, setSelected] = usePersistentState(StorageService.Keys.Contest.Page, 0);
 	const [solveStatus, setSolveStatus] = useState(
 		StorageService.getSet(StorageService.Keys.Contest.SolveStatus, selectableVerdictStatuses)
 	);
@@ -154,18 +156,15 @@ function useContestPage() {
 
 		setContestList({ ...contestList, contests: newContestList });
 		setRandomContest(undefined);
-	}, [contests, filter, problemList.problems, solveStatus, submissions]);
+		setIsPaginationLoading(problemList.loading || isContestListLoading);
+	}, [contests, filter, problemList.loading, problemList.problems, solveStatus, submissions, isContestListLoading]);
 
 	useEffect(() => {
-		if (!filter.canSelectMultipleCategories) {
+		if (!filter.canSelectMultipleCategories && filter.selectedCategories.length !== 1) {
 			let newSelectedCategory = filter.selectedCategories.length === 0 ? ContestCat.DIV2 : filter.selectedCategories[0];
 			updateFilter({ selectedCategories: [newSelectedCategory] });
 		}
-	}, [filter.canSelectMultipleCategories]);
-
-	useEffect(() => {
-		setSelected(0);
-	}, [filter.selectedCategories]);
+	}, [filter.canSelectMultipleCategories, filter.selectedCategories]);
 
 	function updateSolveStatus(status: Set<Verdict>) {
 		setSolveStatus(status);
@@ -206,6 +205,7 @@ function useContestPage() {
 		allParticipantType,
 		participant,
 		currentPageContests,
+		isPaginationLoading,
 		isRandomActive: randomContest !== undefined,
 		selectableVerdictStatuses,
 		categoryFilter,
