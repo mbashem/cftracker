@@ -8,7 +8,7 @@ type TooltipProps = {
   height: number;
 };
 
-export const Tooltip = ({ children, width, height, xPosition, yPosition }: TooltipProps) => {
+export function Tooltip({ children, width, height, xPosition, yPosition }: TooltipProps) {
   if (!children) {
     return null;
   }
@@ -38,4 +38,4 @@ export const Tooltip = ({ children, width, height, xPosition, yPosition }: Toolt
       </div>
     </div>
   );
-};
+}

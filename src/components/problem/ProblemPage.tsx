@@ -5,7 +5,7 @@ import ProblemFilterModal from "./ProblemFilterModal";
 import ProblemTable from "./problem-list/ProblemTable";
 import useProblemPage from "./useProblemPage";
 
-const ProblemPage = () => {
+function ProblemPage() {
   const {
     state,
     theme,
@@ -23,6 +23,7 @@ const ProblemPage = () => {
     selectableVerdictStatuses,
     showAddToList,
     problemsAddedToList,
+    isRandomActive,
     updateFilter,
     setSelected,
     setSolveStatus,
@@ -47,6 +48,7 @@ const ProblemPage = () => {
           selected={selected}
           setRandom={setRandomProblem}
           theme={theme}
+          isRandomActive={isRandomActive}
         >
           <ProblemFilterModal
             theme={theme}
@@ -73,7 +75,7 @@ const ProblemPage = () => {
                 solved={solved}
                 attempted={attempted}
                 perPage={filter.perPage}
-                pageSelected={selected}
+                pageSelected={isRandomActive ? 0 : selected}
                 theme={theme}
                 filterState={filterState}
                 showAddToList={showAddToList}
@@ -96,10 +98,11 @@ const ProblemPage = () => {
           theme={theme}
           pageSelected={(page) => setSelected(page)}
           pageSize={(perPage) => updateFilter({ perPage })}
+          isRandomActive={isRandomActive}
         />
       </footer>
     </>
   );
-};
+}
 
 export default ProblemPage;

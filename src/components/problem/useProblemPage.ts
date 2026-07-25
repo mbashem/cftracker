@@ -336,6 +336,7 @@ function useProblemPage() {
 		selectableVerdictStatuses,
 		showAddToList: isDefined(listId),
 		problemsAddedToList,
+		isRandomActive: randomProblem !== undefined,
 		updateFilter,
 		setSelected,
 		setSolveStatus: updateSolveStatus,

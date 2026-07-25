@@ -206,6 +206,7 @@ function useContestPage() {
 		allParticipantType,
 		participant,
 		currentPageContests,
+		isRandomActive: randomContest !== undefined,
 		selectableVerdictStatuses,
 		categoryFilter,
 		updateFilter,

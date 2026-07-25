@@ -10,36 +10,47 @@ interface PaginationProps {
   pageSize?: (size: number) => void;
   totalCount: number;
   theme: Theme;
+  isRandomActive?: boolean;
 }
 
-const Pagination = (props: PaginationProps) => {
+function Pagination(props: PaginationProps) {
   let linkClassName = "page-link " + props.theme.bgText;
   let linkWrapperClassName = "page-item";
+  const isRandomActive = props.isRandomActive ?? false;
+  const effectiveTotalCount = isRandomActive ? Math.min(props.totalCount, 1) : props.totalCount;
 
   let pageCount =
     props.perPage > 0
-      ? Math.floor((Math.floor(props.totalCount) + Math.floor(props.perPage) - 1) / Math.floor(props.perPage))
+      ? Math.floor((Math.floor(effectiveTotalCount) + Math.floor(props.perPage) - 1) / Math.floor(props.perPage))
       : 0;
+  const selected = pageCount > 0 ? clampNumber(props.selected, 0, pageCount - 1) : 0;
+  const canGoPrevious = !isRandomActive && pageCount > 0 && selected > 0;
+  const canGoNext = !isRandomActive && pageCount > 0 && selected < pageCount - 1;
+  const displayPage = pageCount > 0 ? selected + 1 : 0;
+  const isRandomModeDisabled = isRandomActive;
+  const isPageNavigationDisabled = isRandomModeDisabled || pageCount <= 1;
 
   const pageSizeOptions = useMemo(() => {
+    if (isRandomActive) return [1];
+
     let sizes = [10, 20, 50, 100];
     if (!sizes.includes(props.totalCount)) sizes.push(props.totalCount);
     return sizes;
-  }, [props.totalCount]);
+  }, [isRandomActive, props.totalCount]);
 
   return (
     <nav aria-label="Page navigation example d-flex justify-content-center" style={{ height: "50px" }}>
       <ul className="pagination m-0 d-flex justify-content-center">
         <li className={linkWrapperClassName}>
-          <button className={linkClassName} onClick={() => props.pageSelected(0)} aria-disabled={props.selected === 0}>
+          <button className={linkClassName} onClick={() => props.pageSelected(0)} disabled={!canGoPrevious} aria-disabled={!canGoPrevious}>
             {"<<"}
           </button>
         </li>
         <li className={linkWrapperClassName}>
           <button
             className={linkClassName}
-            onClick={() => props.pageSelected(props.selected - 1)}
-            disabled={props.selected === 0}
+            onClick={() => props.pageSelected(selected - 1)}
+            disabled={!canGoPrevious}
           >
             {"<"}
           </button>
@@ -47,8 +58,8 @@ const Pagination = (props: PaginationProps) => {
         <li className={linkWrapperClassName}>
           <button
             className={linkClassName}
-            onClick={() => props.pageSelected(props.selected + 1)}
-            disabled={props.selected === pageCount - 1}
+            onClick={() => props.pageSelected(selected + 1)}
+            disabled={!canGoNext}
           >
             {">"}
           </button>
@@ -57,14 +68,14 @@ const Pagination = (props: PaginationProps) => {
           <button
             className={linkClassName}
             onClick={() => props.pageSelected(pageCount - 1)}
-            disabled={props.selected === pageCount - 1}
+            disabled={!canGoNext}
           >
             {">>"}
           </button>
         </li>
         <li className={linkWrapperClassName + " p-2"}>
           <span>
-            Page {props.selected + 1} of {pageCount}
+            Page {displayPage} of {pageCount}
           </span>
         </li>
         <li className={linkWrapperClassName}>
@@ -72,14 +83,16 @@ const Pagination = (props: PaginationProps) => {
             <InputNumber
               header={"Go to page:"}
               name={"gotoPage"}
-              value={props.selected + 1}
+              value={displayPage}
               min={1}
               max={pageCount}
               textClass={props.theme.bgText}
               inputClass={props.theme.bgText}
               onChange={(e) => {
+                if (isRandomModeDisabled) return;
                 props.pageSelected(e - 1);
               }}
+              disabled={isPageNavigationDisabled}
             />
           </div>
         </li>
@@ -93,7 +106,8 @@ const Pagination = (props: PaginationProps) => {
               </div>
               <select
                 className={"custom-select " + props.theme.bgText}
-                value={props.perPage}
+                value={isRandomActive ? 1 : props.perPage}
+                disabled={isRandomModeDisabled}
                 onChange={(e) => {
                   if (props.pageSize) {
                     props.pageSize(clampNumber(parseInt(e.target.value), 1, props.totalCount));
@@ -112,6 +126,6 @@ const Pagination = (props: PaginationProps) => {
       </ul>
     </nav>
   );
-};
+}
 
 export default Pagination;

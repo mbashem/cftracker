@@ -2,7 +2,7 @@ import { useAppSelector } from "../../data/store";
 import { ThemesType } from "../../util/Theme";
 import UtterancesComments from "./UtterancesComments";
 
-const CommentPage = () => {
+function CommentPage() {
   const themeMod = useAppSelector((state) => state.appState.themeMod);
 
   return (
@@ -15,6 +15,6 @@ const CommentPage = () => {
       />
     </>
   );
-};
+}
 
 export default CommentPage;

@@ -17,11 +17,16 @@ interface PropsType {
   size?: "sm" | "lg" | "xl";
 }
 
-const CustomModal = (props: PropsType) => {
+function CustomModal(props: PropsType) {
   const [show, setShow] = useState(false);
 
-  const handleClose = () => setShow(false);
-  const handleShow = () => setShow(true);
+  function handleClose() {
+    setShow(false);
+  }
+
+  function handleShow() {
+    setShow(true);
+  }
 
   return (
     <>
@@ -45,6 +50,6 @@ const CustomModal = (props: PropsType) => {
       </Modal>
     </>
   );
-};
+}
 
 export default CustomModal;

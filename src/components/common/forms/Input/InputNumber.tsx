@@ -13,12 +13,13 @@ interface PropsType {
   title?: string;
   step?: number;
   className?: string;
+  disabled?: boolean;
 }
 
-const InputNumber = (props: PropsType) => {
+function InputNumber(props: PropsType) {
   const [inputValue, setInputValue] = useState<string>(props.value.toString());
 
-  const validateAndUpdate = () => {
+  function validateAndUpdate() {
     let num: number = parseInt(inputValue);
     if (!isNaN(num)) {
       let clampedNumber = clampNumber(num, props.min, props.max);
@@ -28,7 +29,7 @@ const InputNumber = (props: PropsType) => {
       }
       props.onChange(num);
     }
-  };
+  }
 
   const firstTime = useRef(true);
   useEffect(() => {
@@ -56,10 +57,11 @@ const InputNumber = (props: PropsType) => {
         value={inputValue}
         name={props.name}
         step={props.step ? props.step : 1}
+        disabled={props.disabled}
         onChange={(e) => setInputValue(e.target.value)}
       />
     </div>
   );
-};
+}
 
 export default InputNumber;

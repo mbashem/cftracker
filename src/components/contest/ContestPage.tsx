@@ -21,6 +21,7 @@ function ContestPage() {
     allParticipantType,
     participant,
     currentPageContests,
+    isRandomActive,
     selectableVerdictStatuses,
     categoryFilter,
     updateFilter,
@@ -48,6 +49,7 @@ function ContestPage() {
           name="Contest"
           setRandom={setRandomContest}
           theme={theme}
+          isRandomActive={isRandomActive}
         >
           <CustomModal title="filter" theme={theme}>
             <div className="group">
@@ -147,7 +149,7 @@ function ContestPage() {
                     showDate={filter.showDate}
                     showRating={filter.showRating}
                     perPage={filter.perPage}
-                    pageSelected={selected}
+                    pageSelected={isRandomActive ? 0 : selected}
                     theme={theme}
                   />
                 )}
@@ -164,6 +166,7 @@ function ContestPage() {
           theme={theme}
           totalCount={contestList.contests.length}
           pageSize={(e) => updateFilter({ perPage: e })}
+          isRandomActive={isRandomActive}
         />
       </footer>
     </>

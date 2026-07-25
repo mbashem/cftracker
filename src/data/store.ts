@@ -20,7 +20,7 @@ const rootReducer = combineReducers({
   [codeforcesApi.reducerPath]: codeforcesApi.reducer
 });
 
-const saveToLocalStorage = (state: RootState) => {
+function saveToLocalStorage(state: RootState) {
   try {
     const newState = {
       userList: state.userList,
@@ -30,9 +30,9 @@ const saveToLocalStorage = (state: RootState) => {
   } catch (e) {
     console.log(e);
   }
-};
+}
 
-const loadFromLocalStorage = (): any => {
+function loadFromLocalStorage(): any {
   try {
     const persedData = StorageService.getObject(StorageService.Keys.StateV2, {});
 
@@ -42,7 +42,7 @@ const loadFromLocalStorage = (): any => {
     console.log(e);
     return {};
   }
-};
+}
 
 const store = configureStore({
   reducer: rootReducer,

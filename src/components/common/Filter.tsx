@@ -15,11 +15,15 @@ interface PropsType {
   setRandom: (num: number | undefined) => void;
   theme: Theme;
   name: string;
+  isRandomActive?: boolean;
 }
 
-const Filter = (props: PropsType) => {
-  let lo = props.selected * props.perPage;
-  let high = Math.min(props.length, lo + props.perPage);
+function Filter(props: PropsType) {
+  const isRandomActive = props.isRandomActive ?? false;
+  const lo = props.selected * props.perPage;
+  const high = Math.min(props.length, lo + props.perPage);
+  const visibleCount = isRandomActive ? Math.min(props.length, 1) : Math.max(0, high - lo);
+  const totalCount = isRandomActive ? visibleCount : props.length;
 
   return (
     <div className="menu">
@@ -38,7 +42,7 @@ const Filter = (props: PropsType) => {
           />
         </li>
         <li className="nav-item text-secondary">
-          Showing {high - lo} of {props.length}
+          Showing {visibleCount} of {totalCount}
         </li>
         <li className="nav-item">
           <div className="btn-group" role="group" aria-label="Basic example">
@@ -66,6 +70,6 @@ const Filter = (props: PropsType) => {
       </ul>
     </div>
   );
-};
+}
 
 export default Filter;
