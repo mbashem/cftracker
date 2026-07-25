@@ -109,7 +109,7 @@ function useProblemPage() {
 		defaultSolveStatus
 	);
 	const [randomProblem, setRandomProblem] = useState<number | undefined>(undefined);
-	const [selected, setSelected] = useState(0);
+	const [selected, setSelected] = usePersistentState(StorageService.Keys.Problem.Page, 0);
 
 	const filterState = useMemo<ProblemFilterState>(
 		() => ({
@@ -256,7 +256,6 @@ function useProblemPage() {
 
 	useEffect(() => {
 		setRandomProblem(undefined);
-		setSelected(0);
 	}, [filteredProblems]);
 
 	const updateFilter = useCallback((value: UpdateProblemFilter) => {
@@ -336,6 +335,7 @@ function useProblemPage() {
 		selectableVerdictStatuses,
 		showAddToList: isDefined(listId),
 		problemsAddedToList,
+		isRandomActive: randomProblem !== undefined,
 		updateFilter,
 		setSelected,
 		setSolveStatus: updateSolveStatus,

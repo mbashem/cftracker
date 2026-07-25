@@ -1,45 +1,45 @@
 /** Returns the Codeforces contest page URL for a contest id. */
-export const getContestUrl = (contestId: number) => {
+export function getContestUrl(contestId: number) {
   return "https://codeforces.com/contest/" + contestId;
-};
+}
 
 /** Returns the Codeforces problem page URL for a contest id and problem index. */
-export const getProblemUrl = (contestId: number, index: string) => {
+export function getProblemUrl(contestId: number, index: string) {
   return getContestUrl(contestId) + "/problem/" + index;
-};
+}
 
 /** Returns the Codeforces user submissions API URL, optionally limited by count. */
-export const getUserSubmissionsURL = (handle: string, limit?: number) => {
+export function getUserSubmissionsURL(handle: string, limit?: number) {
   return (
     "https://codeforces.com/api/user.status?handle=" +
     handle +
     (limit ? "&&from=1&count=" + limit : "")
   );
-};
+}
 
 /** Returns the Codeforces user info API URL for one or more comma-separated handles. */
-export const getUserInfoURL = (handle: string) => {
+export function getUserInfoURL(handle: string) {
   handle = handle.trim().replace(/,/g, ";");
   return "https://codeforces.com/api/user.info?handles=" + handle;
-};
+}
 
 /** Splits a trimmed string by the provided separator. */
-export const stringToArray = (s: string, separator: string): string[] => {
+export function stringToArray(s: string, separator: string): string[] {
   return s.trim().split(separator);
-};
+}
 
 /** Returns the character shifted by the given character-code offset. */
-export const increment = (char: string, by: number) => {
+export function increment(char: string, by: number) {
   return String.fromCharCode(char.charCodeAt(0) + by);
-};
+}
 
 /** Returns a random integer in the half-open range [min, max). */
-export const getRandomInteger = (min: number, max: number) => {
+export function getRandomInteger(min: number, max: number) {
   return Math.floor(Math.random() * (max - min)) + min;
-};
+}
 
 /** Parses a query string into a key-value object. */
-export const parseQuery = (queryString: string) => {
+export function parseQuery(queryString: string) {
   queryString = queryString.trim();
   var query: Record<string, string> = {};
   var pairs = (
@@ -50,19 +50,19 @@ export const parseQuery = (queryString: string) => {
     query[decodeURIComponent(pair[0])] = decodeURIComponent(pair[1] || "");
   }
   return query;
-};
+}
 
 /** Restricts a number to the inclusive min/max bounds, using min for NaN. */
-export const clampNumber = (
+export function clampNumber(
   num: number,
   min: number,
   max: number
-): number => {
+): number {
   if (isNaN(num)) return min;
   if (num < min) return min;
   if (num > max) return max;
   return num;
-};
+}
 
 /**
  * 

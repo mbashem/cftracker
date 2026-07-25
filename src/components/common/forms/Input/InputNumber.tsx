@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from "react";
-import { clampNumber } from "../../../../util/util";
 
 interface PropsType {
   header: string;
@@ -13,27 +12,45 @@ interface PropsType {
   title?: string;
   step?: number;
   className?: string;
+  disabled?: boolean;
 }
 
-const InputNumber = (props: PropsType) => {
+const INPUT_RESET_DELAY_MS = 500;
+
+function InputNumber(props: PropsType) {
   const [inputValue, setInputValue] = useState<string>(props.value.toString());
+  const latestProps = useRef({ value: props.value, min: props.min, max: props.max });
 
-  const validateAndUpdate = () => {
+  function validateAndUpdate() {
     let num: number = parseInt(inputValue);
-    if (!isNaN(num)) {
-      let clampedNumber = clampNumber(num, props.min, props.max);
-      if (clampedNumber != num) {
-        // FIXME:- It causes infinite rendering
-        // setInputValue(clampedNumber.toString()); // converting num to string
-      }
-      props.onChange(num);
-    }
-  };
+    if (isNaN(num)) return;
+    if (isOutsideRange(num))
+      return window.setTimeout(() => {
+        setInputValue((currentInputValue) => {
+          const currentNumber = parseInt(currentInputValue);
+          return !isNaN(currentNumber) && isOutsideRange(currentNumber) ? latestProps.current.value.toString() : currentInputValue;
+        });
+      }, INPUT_RESET_DELAY_MS);
+    if (num !== props.value) props.onChange(num);
+  }
 
-  const firstTime = useRef(true);
+  function isOutsideRange(num: number) {
+    return num < latestProps.current.min || num > latestProps.current.max;
+  }
+
   useEffect(() => {
-    if (firstTime.current) firstTime.current = false;
-    else validateAndUpdate();
+    latestProps.current = { value: props.value, min: props.min, max: props.max };
+  }, [props.value, props.min, props.max]);
+
+  useEffect(() => {
+    setInputValue(props.value.toString());
+  }, [props.value]);
+
+  useEffect(() => {
+    const timeoutId = validateAndUpdate();
+    return () => {
+      if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+    };
   }, [inputValue]);
 
   return (
@@ -50,16 +67,19 @@ const InputNumber = (props: PropsType) => {
         {props.header}
       </span>
       <input
-        className={"form-control " + (props.inputClass || "")}
+        className={"form-control " + (props.inputClass ?? "")}
         type="number"
         placeholder="Max Rating"
         value={inputValue}
         name={props.name}
-        step={props.step ? props.step : 1}
+        min={props.min}
+        max={props.max}
+        step={props.step ?? 1}
+        disabled={props.disabled}
         onChange={(e) => setInputValue(e.target.value)}
       />
     </div>
   );
-};
+}
 
 export default InputNumber;

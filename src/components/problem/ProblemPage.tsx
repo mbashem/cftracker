@@ -5,7 +5,7 @@ import ProblemFilterModal from "./ProblemFilterModal";
 import ProblemTable from "./problem-list/ProblemTable";
 import useProblemPage from "./useProblemPage";
 
-const ProblemPage = () => {
+function ProblemPage() {
   const {
     state,
     theme,
@@ -23,6 +23,7 @@ const ProblemPage = () => {
     selectableVerdictStatuses,
     showAddToList,
     problemsAddedToList,
+    isRandomActive,
     updateFilter,
     setSelected,
     setSolveStatus,
@@ -41,12 +42,16 @@ const ProblemPage = () => {
           searchName="problemSearch"
           searchPlaceHolder="Problem Name or Id"
           name="Problem"
-          onSearch={(search) => updateFilter({ search })}
+          onSearch={(search) => {
+            setSelected(0);
+            updateFilter({ search });
+          }}
           length={problemList.problems.length}
           perPage={filter.perPage}
           selected={selected}
           setRandom={setRandomProblem}
           theme={theme}
+          isRandomActive={isRandomActive}
         >
           <ProblemFilterModal
             theme={theme}
@@ -73,7 +78,7 @@ const ProblemPage = () => {
                 solved={solved}
                 attempted={attempted}
                 perPage={filter.perPage}
-                pageSelected={selected}
+                pageSelected={isRandomActive ? 0 : selected}
                 theme={theme}
                 filterState={filterState}
                 showAddToList={showAddToList}
@@ -94,12 +99,14 @@ const ProblemPage = () => {
           perPage={filter.perPage}
           selected={selected}
           theme={theme}
-          pageSelected={(page) => setSelected(page)}
+          pageSelected={setSelected}
           pageSize={(perPage) => updateFilter({ perPage })}
+          isRandomActive={isRandomActive}
+          isLoading={state.problemList.loading}
         />
       </footer>
     </>
   );
-};
+}
 
 export default ProblemPage;

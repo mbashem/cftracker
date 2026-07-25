@@ -21,6 +21,8 @@ function ContestPage() {
     allParticipantType,
     participant,
     currentPageContests,
+    isPaginationLoading,
+    isRandomActive,
     selectableVerdictStatuses,
     categoryFilter,
     updateFilter,
@@ -40,6 +42,7 @@ function ContestPage() {
           searchName="searchContest"
           searchPlaceHolder="Search by Contest Name or Id"
           onSearch={(e) => {
+            setSelected(0);
             updateFilter({ search: e });
           }}
           length={contestList.contests.length}
@@ -48,6 +51,7 @@ function ContestPage() {
           name="Contest"
           setRandom={setRandomContest}
           theme={theme}
+          isRandomActive={isRandomActive}
         >
           <CustomModal title="filter" theme={theme}>
             <div className="group">
@@ -147,7 +151,7 @@ function ContestPage() {
                     showDate={filter.showDate}
                     showRating={filter.showRating}
                     perPage={filter.perPage}
-                    pageSelected={selected}
+                    pageSelected={isRandomActive ? 0 : selected}
                     theme={theme}
                   />
                 )}
@@ -158,12 +162,14 @@ function ContestPage() {
       </div>
       <footer className={"pt-2 " + theme.bg}>
         <Pagination
-          pageSelected={(e) => setSelected(e)}
+          pageSelected={setSelected}
           perPage={filter.perPage}
           selected={selected}
           theme={theme}
           totalCount={contestList.contests.length}
           pageSize={(e) => updateFilter({ perPage: e })}
+          isRandomActive={isRandomActive}
+          isLoading={isPaginationLoading}
         />
       </footer>
     </>

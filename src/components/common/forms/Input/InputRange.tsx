@@ -16,7 +16,7 @@ interface PropsType {
   theme: Theme;
 }
 
-const InputRange = (props: PropsType) => {
+function InputRange(props: PropsType) {
   return (
     <div className={"d-flex " + (props.className ? props.className : "")}>
       <InputNumber
@@ -51,6 +51,6 @@ const InputRange = (props: PropsType) => {
       />
     </div>
   );
-};
+}
 
 export default InputRange;

@@ -13,7 +13,7 @@ interface PropsType {
   className?: string;
 }
 
-const InputChecked = (props: PropsType) => {
+function InputChecked(props: PropsType) {
   return (
     <InputGroup className={"d-flex " + (props.className ? props.className : "")} title={props.title}>
       <InputGroup.Text className={props.textClass + " " + props.theme.bgText}>{props.header}</InputGroup.Text>
@@ -40,6 +40,6 @@ const InputChecked = (props: PropsType) => {
       </div>
     </InputGroup>
   );
-};
+}
 
 export default InputChecked;

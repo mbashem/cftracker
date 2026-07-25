@@ -3,11 +3,13 @@ const Keys = {
   StateV2: "statev2",
   Problem: {
     Filter: "PROBLEM_FILTER",
+    Page: "PROBLEM_PAGE",
     Tags: "PROBLEM_TAGS",
     SolveStatus: "PROBLEM_SOLVE_STATUS",
   },
   Contest: {
     Filter: "CONTEST_FILTER",
+    Page: "CONTEST_PAGE",
     SolveStatus: "CONTEST_SOLVE_STATUS",
     ParticipantType: "PARTICIPANT_TYPE",
   },

@@ -11,6 +11,7 @@ import { ParticipantType } from "../../types/CF/Party";
 import useContestStore from "../../data/hooks/useContestStore";
 import { isDefined, isFunction, overrideObject } from "../../util/util";
 import useProblemsStore from "../../data/hooks/useProblemsStore";
+import usePersistentState from "../../hooks/usePersistentState";
 
 export interface Filter {
 	perPage: number;
@@ -79,7 +80,8 @@ function useContestPage() {
 
 	const allParticipantType = useMemo(() => Object.keys(ParticipantType), []);
 
-	const [selected, setSelected] = useState(0);
+	const [selected, setSelected] = usePersistentState(StorageService.Keys.Contest.Page, 0);
+	const isPaginationLoading = problemList.loading || isContestListLoading;
 	const [solveStatus, setSolveStatus] = useState(
 		StorageService.getSet(StorageService.Keys.Contest.SolveStatus, selectableVerdictStatuses)
 	);
@@ -96,9 +98,7 @@ function useContestPage() {
 		let high = Math.min(contestList.contests.length, lo + filter.perPage);
 
 		if (lo > high) return [];
-		console.log("CurrentPageContests ", randomContest, lo, high);
-		// return contestList.contests.slice(lo, high);
-		return getCurrentPageContests();
+		return contestList.contests.slice(lo, high);
 	}, [contestList, selected, filter.perPage, randomContest]);
 
 	const submissions = useMemo(() => {
@@ -137,14 +137,6 @@ function useContestPage() {
 		return status && searchIncluded && contest.count !== 0 && catIn;
 	};
 
-	function getCurrentPageContests() {
-		let lo = selected * filter.perPage;
-		let high = Math.min(contestList.contests.length, lo + filter.perPage);
-
-		if (lo > high) return [];
-		return contestList.contests.slice(lo, high);
-	}
-
 	useEffect(() => {
 		StorageService.saveObject(StorageService.Keys.Contest.Filter, filter);
 		if (filter.search.trim().length) updateSearchParam(SearchKeys.Search, filter.search.trim());
@@ -157,15 +149,11 @@ function useContestPage() {
 	}, [contests, filter, problemList.problems, solveStatus, submissions]);
 
 	useEffect(() => {
-		if (!filter.canSelectMultipleCategories) {
+		if (!filter.canSelectMultipleCategories && filter.selectedCategories.length !== 1) {
 			let newSelectedCategory = filter.selectedCategories.length === 0 ? ContestCat.DIV2 : filter.selectedCategories[0];
 			updateFilter({ selectedCategories: [newSelectedCategory] });
 		}
-	}, [filter.canSelectMultipleCategories]);
-
-	useEffect(() => {
-		setSelected(0);
-	}, [filter.selectedCategories]);
+	}, [filter.canSelectMultipleCategories, filter.selectedCategories]);
 
 	function updateSolveStatus(status: Set<Verdict>) {
 		setSolveStatus(status);
@@ -206,6 +194,8 @@ function useContestPage() {
 		allParticipantType,
 		participant,
 		currentPageContests,
+		isPaginationLoading,
+		isRandomActive: randomContest !== undefined,
 		selectableVerdictStatuses,
 		categoryFilter,
 		updateFilter,

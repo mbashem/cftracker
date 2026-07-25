@@ -10,7 +10,7 @@ import useStatPage from "./useStatPage";
  * percentage of problem solved by problem index
  * percentage of problem solved by rating
  */
-const StatPage = () => {
+function StatPage() {
   const { problemIDsBySimpleVerdict, submissionsByVerdict, hasSubmissionData } = useStatPage();
 
   if (!hasSubmissionData) {
@@ -36,6 +36,6 @@ const StatPage = () => {
       </div>
     </div>
   );
-};
+}
 
 export default StatPage;
