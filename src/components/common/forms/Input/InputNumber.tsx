@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 interface PropsType {
   header: string;
@@ -19,6 +19,7 @@ const INPUT_RESET_DELAY_MS = 500;
 
 function InputNumber(props: PropsType) {
   const [inputValue, setInputValue] = useState<string>(props.value.toString());
+  const latestProps = useRef({ value: props.value, min: props.min, max: props.max });
 
   function validateAndUpdate() {
     let num: number = parseInt(inputValue);
@@ -27,15 +28,20 @@ function InputNumber(props: PropsType) {
       return window.setTimeout(() => {
         setInputValue((currentInputValue) => {
           const currentNumber = parseInt(currentInputValue);
-          return !isNaN(currentNumber) && isOutsideRange(currentNumber) ? props.value.toString() : currentInputValue;
+          return !isNaN(currentNumber) && isOutsideRange(currentNumber) ? latestProps.current.value.toString() : currentInputValue;
         });
       }, INPUT_RESET_DELAY_MS);
     if (num !== props.value) props.onChange(num);
   }
 
   function isOutsideRange(num: number) {
-    return num < props.min || num > props.max;
+    return num < latestProps.current.min || num > latestProps.current.max;
   }
+
+  useEffect(() => {
+    latestProps.current = { value: props.value, min: props.min, max: props.max };
+  }, [props.value, props.min, props.max]);
+
   useEffect(() => {
     setInputValue(props.value.toString());
   }, [props.value]);
