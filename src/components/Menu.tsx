@@ -8,82 +8,34 @@ import {
   faSync,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { memo, useEffect, useState } from "react";
+import { memo, useState } from "react";
 import { Nav, Navbar, OverlayTrigger, Popover } from "react-bootstrap";
 import { Link } from "react-router-dom";
-import { ToastContainer } from "react-toastify";
-import { fetchContestList, fetchProblemList, fetchSharedProblemList } from "../data/actions/fetchActions";
-import { fetchUserSubmissions, fetchUsers } from "../data/actions/userActions";
-import { useAppDispatch, useAppSelector } from "../data/store";
 import { Path } from "../util/route/path";
 import { ThemesType } from "../util/Theme";
-import "react-toastify/dist/ReactToastify.css";
 import siteLogo from "../util/assets/siteLogo.png";
 import useTheme from "../data/hooks/useTheme";
 import { GITHUB_OAUTH_CLIENT_ID, GITHUB_OAUTH_REDIRECT_URI, IS_BACKEND_AVAILABLE } from "../util/env";
 import useToast from "../hooks/useToast";
 import useUser from "../hooks/useUser";
+import useUserStore from "../data/hooks/useUserStore";
 
 function Menu() {
-  const dispatch = useAppDispatch();
-
-  const state = useAppSelector((state) => {
-    return {
-      userList: state.userList,
-      problemList: state.problemList,
-      contestList: state.contestList,
-      userSubmissions: {
-        error: state.userSubmissions.error,
-      },
-    };
-  });
+  const { userList, updateUsers, syncUserSubmissions } = useUserStore();
   const { theme, changeThemeMod } = useTheme();
   const { isAuthenticated, logout } = useUser();
 
-  const [handle, setHandle] = useState(state.userList.handles.length ? state.userList.handles.toString() : "");
+  const [handle, setHandle] = useState(userList.handles.length ? userList.handles.toString() : "");
 
-  useEffect(() => {
-    fetchProblemList(dispatch);
-    fetchContestList(dispatch);
-    fetchSharedProblemList(dispatch);
-  }, []);
-
-  const { showErrorToast, showGeneralToast } = useToast();
-
-  const InvokeErrorToast = (message: string) => {
-    if (message.length === 0) {
-      return;
-    }
-    console.log(message);
-    showErrorToast(message);
-  };
-
-  useEffect(() => {
-    InvokeErrorToast(state.userSubmissions.error);
-  }, [state.userSubmissions.error]);
-
-  useEffect(() => {
-    InvokeErrorToast(state.problemList.error);
-  }, [state.problemList.error]);
-
-  // useEffect(() => {
-  //   if (!state.contestList.loading && !state.problemList.loading) sync(true);
-  // }, [state.userList]);
-
-  useEffect(() => {
-    if (!state.contestList.loading && !state.problemList.loading)
-      sync(state.userList.handles.length > 2 ? true : false);
-    // console.log(state.contestList.loading);
-    // console.log(state.problemList.loading);
-  }, [state.userList, state.contestList.loading, state.problemList.loading]);
-
-  const sync = (wait = false) => {
-    fetchUserSubmissions(dispatch, state.userList.handles, wait);
-  };
+  const { showGeneralToast } = useToast();
 
   const submitUser = () => {
     showGeneralToast(`Handles entered: ${handle}`);
-    fetchUsers(dispatch, handle);
+    updateUsers(handle);
+  };
+
+  const sync = () => {
+    syncUserSubmissions();
   };
 
   return (
@@ -250,7 +202,6 @@ function Menu() {
           </Nav>
         </Navbar.Collapse>
       </div>
-      <ToastContainer />
     </Navbar>
   );
 }

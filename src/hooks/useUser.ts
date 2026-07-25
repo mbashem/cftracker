@@ -1,12 +1,14 @@
 import { useLazyAuthenticateQuery } from "../data/queries/userQuery";
 import { errorAuthenticatingUser, removeUser, setUser } from "../data/reducers/userSlice";
-import { useAppDispatch, useAppSelector } from "../data/store";
+import useUserStore from "../data/hooks/useUserStore";
+import { useAppDispatch } from "../data/store";
 import { StorageService } from "../util/StorageService";
 import { isDefined } from "../util/util";
 
 function useUser() {
 	const dispatch = useAppDispatch();
-	const user = useAppSelector(state => state.userList.user);
+	const { userList } = useUserStore();
+	const user = userList.user;
 	const [authenticate] = useLazyAuthenticateQuery();
 
 	async function handleGithubCallback(code: string) {

@@ -27,8 +27,20 @@ function savePersistentValue<T>(key: string, value: T) {
   StorageService.saveObject(key, value);
 }
 
-function usePersistentState<T>(key: string, defaultValue: T): [T, Dispatch<SetStateAction<T>>] {
-  const [value, setValue] = useState<T>(() => getPersistentValue(key, defaultValue));
+type GetInitialValue<T> = () => T;
+
+function usePersistentState<T>(
+  key: string,
+  defaultValue: T,
+  getInitialValue?: GetInitialValue<T>
+): [T, Dispatch<SetStateAction<T>>] {
+  const [value, setValue] = useState<T>(() => {
+    if (getInitialValue === undefined) return getPersistentValue(key, defaultValue);
+
+    const initialValue = getInitialValue();
+    savePersistentValue(key, initialValue);
+    return initialValue;
+  });
 
   useEffect(() => {
     savePersistentValue(key, value);

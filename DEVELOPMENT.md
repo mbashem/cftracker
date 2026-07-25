@@ -33,9 +33,9 @@ manage-contests/       Personal admin utility for contest/problem management
 
 The app is a React 19/Vite 8 SPA. Routes are registered in `src/App.tsx`, and route constants live in `src/util/route/path.ts`.
 
-The navigation component, `src/components/Menu.tsx`, performs the initial data loads:
+App bootstrap performs the initial data loads:
 
-- Codeforces problemset data from `src/data/saved_api/problems_data.ts` in local debug mode, or from the public API outside debug mode.
+- Codeforces problemset data from `src/data/saved_api/problems_data.ts` when `VITE_DEBUG_MODE=true`, or from the public API outside debug mode.
 - Contest snapshot data from `src/data/saved_api/contests_data.ts`.
 - Shared-problem data from `src/data/saved_api/related.ts`.
 
@@ -99,7 +99,7 @@ Location: `manage-contests/`
 
 ## Data Flow
 
-Codeforces problemset data is loaded from `src/data/saved_api/problems_data.ts` while running Vite locally. Outside local debug mode, it is fetched live from:
+Codeforces problemset data is loaded from `src/data/saved_api/problems_data.ts` when `VITE_DEBUG_MODE=true`. Outside debug mode, it is fetched live from:
 
 ```text
 https://codeforces.com/api/problemset.problems?lang=en
@@ -107,11 +107,11 @@ https://codeforces.com/api/problemset.problems?lang=en
 
 Contest data is loaded from a checked-in generated snapshot. Refresh scripts live in `scripts/`.
 
-Local debug mode is based on Vite's development flag, so `npm run dev` uses the saved problem snapshot and production builds use the live API.
+Debug mode is controlled by `VITE_DEBUG_MODE=true`. It is independent of Vite's built-in `import.meta.env.DEV`, so `npm run dev` can use live problem data when the flag is unset.
 
 User submissions are fetched for comma-separated Codeforces handles entered in the navbar. Submission status is converted into solved, attempted, and unsolved states in feature hooks.
 
-In local debug mode, identical Codeforces API URLs reuse a browser-local response for 30 minutes. Simultaneous requests for the same URL also share one in-flight request. Production requests are not cached by this helper.
+In debug mode, identical Codeforces API URLs reuse a browser-local response for 30 minutes. Simultaneous requests for the same URL also share one in-flight request. Requests are not cached by this helper when debug mode is unset.
 
 Several filters are saved in browser local storage through `src/util/StorageService.ts`. Search text and list-add mode use URL query params from `src/util/constants.ts`.
 
@@ -124,18 +124,20 @@ Frontend-only development does not need a `.env` file.
 Create root `.env` only when enabling backend-backed features in the Vite app:
 
 ```bash
+VITE_DEBUG_MODE=true
 VITE_BACKEND_API_URL=http://localhost:8080/api
 VITE_IS_BACKEND_AVAILABLE=true
 VITE_GITHUB_OAUTH_CLIENT_ID=your_github_oauth_client_id
 VITE_GITHUB_OAUTH_REDIRECT_URI=http://localhost:5173/callback/auth-gh
 ```
 
-Leave `VITE_IS_BACKEND_AVAILABLE` unset for frontend-only mode. Backend UI is enabled only when it is set to the literal value `true`.
+Leave `VITE_DEBUG_MODE` unset to use live Codeforces problem data. Leave `VITE_IS_BACKEND_AVAILABLE` unset for frontend-only mode. Backend UI is enabled only when it is set to the literal value `true`.
 
 Root frontend envs currently read by the app:
 
 | Variable | Required | Used for |
 | --- | --- | --- |
+| `VITE_DEBUG_MODE` | Optional | Uses the checked-in problem snapshot and enables 30-minute local Codeforces API caching only when set to `true`. |
 | `VITE_BACKEND_API_URL` | Only with backend features | RTK Query base URL. Use `http://localhost:8080/api` locally. |
 | `VITE_IS_BACKEND_AVAILABLE` | Only with backend features | Shows backend-only nav/auth/list UI only when set to `true`. |
 | `VITE_GITHUB_OAUTH_CLIENT_ID` | Only with GitHub login | GitHub OAuth login link. |

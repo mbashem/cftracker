@@ -42,18 +42,21 @@ npm run dev
 
 Open the local URL printed by Vite in the terminal.
 
-The frontend-only app does not require environment variables. In local Vite development it loads problem, contest, and shared-problem data from checked-in generated files. Production builds fetch the problemset from the public Codeforces API.
+The frontend-only app does not require environment variables. Contest and shared-problem data are loaded from checked-in generated files. Problemset data is fetched from the public Codeforces API unless debug mode is enabled.
 
 ## Frontend Configuration
 
 Create `.env` in the repository root only when enabling backend-backed features:
 
 ```bash
+VITE_DEBUG_MODE=true
 VITE_BACKEND_API_URL=http://localhost:8080/api
 VITE_IS_BACKEND_AVAILABLE=true
 VITE_GITHUB_OAUTH_CLIENT_ID=your_github_oauth_client_id
 VITE_GITHUB_OAUTH_REDIRECT_URI=http://localhost:5173/callback/auth-gh
 ```
+
+Set `VITE_DEBUG_MODE=true` to use the checked-in problem snapshot and local 30-minute Codeforces API cache while developing. Leave it unset to use live Codeforces problem data.
 
 Leave `VITE_IS_BACKEND_AVAILABLE` unset for frontend-only mode. Backend UI is enabled only when it is set to the literal value `true`.
 

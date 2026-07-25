@@ -2,15 +2,14 @@ export interface List {
 	id: number;
 	userId: number;
 	name: string;
-	createdAt: Date;
+	createdAt: string;
 }
 
 export interface ListItem {
 	listId: number;
 	problemId: string;
-	name?: String;
 	position: number;
-	createdAt: Date;
+	createdAt: string;
 }
 
 export interface ListWithItem extends List {
@@ -36,7 +35,6 @@ export function jsonToListItem(json: any): ListItem {
 	return {
 		listId: json.list_id,
 		problemId: json.problem_id,
-		name: json.name,
 		position: json.position,
 		createdAt: json.created_at
 	};

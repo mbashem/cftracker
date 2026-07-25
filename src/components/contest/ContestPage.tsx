@@ -128,13 +128,13 @@ function ContestPage() {
           // style={{ height: "calc(100vh - 175px)" }}
         >
           <div className={"h-100 m-0 pb-2 " + theme.bg}>
-            {state.problemList.loading ? (
+            {state.problemList.loading || state.contestList.loading ? (
               <Loading />
             ) : (
               <>
-                {state.problemList.error.length > 0 ? (
+                {state.problemList.error || state.contestList.error ? (
                   <Alert key={"danger"} variant={"danger"}>
-                    {state.problemList.error} Most probably because CF API is down. Try reloading after few minutes. API
+                    {state.problemList.error ?? state.contestList.error} Most probably because CF API is down. Try reloading after few minutes. API
                     link: https://codeforces.com/api/problemset.problems .
                   </Alert>
                 ) : (

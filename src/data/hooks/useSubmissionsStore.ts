@@ -3,13 +3,14 @@ import { useAppSelector } from "../store";
 import { sortByCompare } from "../../util/sortMethods";
 import lowerBound from "../../util/lowerBound";
 import Problem, { ProblemShared } from "../../types/CF/Problem";
-import Submission from "../../types/CF/Submission";
+import Submission, { SubmissionData } from "../../types/CF/Submission";
 import { Compared } from "../../util/Comparator";
-import { useMemo, useState } from "react";
+import useSharedProblemsStore from "./useSharedProblemsStore";
+import { EMPTY_ARRAY } from "../../util/constants";
 
 const addSharedToSubmissions = (
   userSubmissions: Submission[],
-  sharedProblems: ProblemShared[]
+  sharedProblems: readonly ProblemShared[]
 ): Submission[] => {
   let userSubmissionsIdsWithContestIds: Set<string> = new Set<string>();
 
@@ -38,7 +39,7 @@ const addSharedToSubmissions = (
     )
       continue;
 
-    for (let problem of sharedProblems[lb].shared ?? []) {
+    for (let problem of sharedProblems[lb].shared ?? EMPTY_ARRAY) {
       if (problem.contestId === undefined) continue;
       let id: string =
         submission.id.toString() + problem.contestId.toString();
@@ -78,35 +79,30 @@ const addSharedToSubmissions = (
   return newUserSubmissions;
 };
 
+const calculateSubmissions = createSelector(
+  [
+    (submissions: Submission[]) => submissions,
+    (_submissions: Submission[], problems: readonly ProblemShared[]) => problems,
+  ],
+  addSharedToSubmissions
+);
+
+const hydrateSubmissions = createSelector(
+  [(submissions: SubmissionData[]) => submissions],
+  (submissions) => submissions.map((submission) => new Submission(submission))
+);
+
 function useSubmissionsStore() {
-  const calculateSubmissions = createSelector(
-    [
-      (state: any) => state.userSubmissions.submissions,
-      (state: any) => state.sharedProblems.problems
-    ],
-    (submissions, problems) => {
-      return addSharedToSubmissions(submissions, problems);
-    }
-  );
-
-  const state = useAppSelector(state => {
-    return {
-      userSubmissions: state.userSubmissions,
-      sharedProblems: state.sharedProblems
-    };
-  });
-
-  const [submissions, setSubmissions] = useState<Submission[]>([]);
-  useMemo(() => {
-    const calculatedSubmissions = calculateSubmissions(state);
-    setSubmissions(calculatedSubmissions);
-  }, [state.userSubmissions.submissions, state.sharedProblems.problems]);
+  const { sharedProblems } = useSharedProblemsStore();
+  const userSubmissions = useAppSelector((state) => state.userSubmissions);
+  const rawSubmissions = hydrateSubmissions(userSubmissions.submissions);
+  const submissions = calculateSubmissions(rawSubmissions, sharedProblems.problems);
 
   return {
-    error: state.userSubmissions.error,
-    loading: state.userSubmissions.loading,
+    error: userSubmissions.error,
+    loading: userSubmissions.loading,
     submissions,
-    rawSubmissions: state.userSubmissions.submissions
+    rawSubmissions,
   };
 }
 

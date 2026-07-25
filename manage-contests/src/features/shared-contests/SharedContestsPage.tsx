@@ -4,28 +4,21 @@ import {
   Paper,
   Stack,
 } from "@mui/material";
+import { getAllContests } from "@/features/contests/services/ContestDBService";
+import { getFetchedProblemsContestIdList } from "@/features/problems/services/ProblemDBService";
+import { connection } from "next/server";
 import { groupContestsAction, saveSharedContestsToFileAction } from "./actions/SharedContestActions";
 import SharedContestList from "./components/SharedContestList";
+import { getAllSharedContestGroupByParent } from "./services/SharedContestsDBService";
 
 export default async function SharedContestsPage() {
-  const data = await fetch("http://localhost:3000/api/shared-contests", {
-    cache: "no-store",
-  });
-  const sharedContests = await data.json();
+  await connection();
 
-  const contestsData = await fetch("http://localhost:3000/api/contests", {
-    cache: "no-store",
-  });
-
-  const fetchedContestsData = await fetch(
-    "http://localhost:3000/api/contests/fetched",
-    {
-      cache: "no-store",
-    }
-  );
-
-  const fetchedContests = await fetchedContestsData.json();
-  const contests = await contestsData.json();
+  const [sharedContests, contests, fetchedContests] = await Promise.all([
+    getAllSharedContestGroupByParent(),
+    getAllContests(),
+    getFetchedProblemsContestIdList(),
+  ]);
 
   return (
     <Container component={Paper}>
