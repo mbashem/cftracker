@@ -18,7 +18,9 @@ func main() {
 
 	utils.Init()
 
-	db.InitDB()
+	if err := db.InitDB(); err != nil {
+		log.Fatalf("Failed to initialize database: %v", err)
+	}
 
 	router := gin.Default()
 
