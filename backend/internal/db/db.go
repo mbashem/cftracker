@@ -1,8 +1,10 @@
 package db
 
 import (
+	"context"
 	"database/sql"
-	"log"
+	"fmt"
+	"time"
 
 	_ "github.com/lib/pq"
 	"github.com/mbashem/cftracker/backend/configs"
@@ -10,23 +12,23 @@ import (
 
 var DB *sql.DB
 
-func InitDB() {
-	var err error
-	DB, err = sql.Open("postgres", configs.GetEnv(configs.DATABASE_URL))
-
+func InitDB() error {
+	database, err := sql.Open("postgres", configs.GetEnv(configs.DATABASE_URL))
 	if err != nil {
-		log.Panic("Could not connect to database")
+		return fmt.Errorf("open database: %w", err)
 	}
 
-	DB.SetMaxOpenConns(10)
-	DB.SetMaxIdleConns(5)
+	database.SetMaxOpenConns(10)
+	database.SetMaxIdleConns(5)
 
-	createTables()
-}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
-func createTables() {
-	createUsersTable()
-	createListsTables()
+	if err := database.PingContext(ctx); err != nil {
+		database.Close()
+		return fmt.Errorf("ping database: %w", err)
+	}
 
-	log.Println("Database setup completed successfully")
+	DB = database
+	return nil
 }
