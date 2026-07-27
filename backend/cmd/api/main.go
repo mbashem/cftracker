@@ -2,12 +2,17 @@ package main
 
 import (
 	"log"
+	"net/http"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/mbashem/cftracker/backend/configs"
+	"github.com/mbashem/cftracker/backend/internal/auth"
 	"github.com/mbashem/cftracker/backend/internal/db"
+	"github.com/mbashem/cftracker/backend/internal/lists"
+	"github.com/mbashem/cftracker/backend/internal/lists/items"
 	"github.com/mbashem/cftracker/backend/internal/routes"
+	"github.com/mbashem/cftracker/backend/internal/users"
 	"github.com/mbashem/cftracker/backend/internal/utils"
 )
 
@@ -18,9 +23,16 @@ func main() {
 
 	utils.Init()
 
-	if err := db.InitDB(); err != nil {
+	database, err := db.InitDB()
+	if err != nil {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
+	defer database.Close()
+
+	userRepository := users.NewRepository(database)
+	userAPI := users.NewAPI(userRepository, users.NewVerificationTokenStore(), http.DefaultClient)
+	authHandler := auth.NewAuthHandler(auth.NewOAuthConfig(), userRepository)
+	listAPI := lists.NewAPI(lists.NewRepository(database), items.NewRepository(database))
 
 	router := gin.Default()
 
@@ -30,7 +42,11 @@ func main() {
 	corsConfig.AllowCredentials = true
 	router.Use(cors.New(corsConfig))
 
-	routes.RegisterRoutes(router)
+	routes.RegisterRoutes(router, routes.Dependencies{
+		Auth:  authHandler,
+		Users: userAPI,
+		Lists: listAPI,
+	})
 
 	if err := router.Run(":8080"); err != nil {
 		log.Fatalf("Failed to run server: %v", err)

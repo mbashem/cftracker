@@ -7,8 +7,14 @@ import (
 	"github.com/mbashem/cftracker/backend/internal/users"
 )
 
-func RegisterRoutes(server *gin.Engine) {
-	auth.RegisterRoutes(server)
-	users.RegisterRoutes(server)
-	lists.RegisterRoutes(server)
+type Dependencies struct {
+	Auth  *auth.AuthHandler
+	Users *users.API
+	Lists *lists.API
+}
+
+func RegisterRoutes(server *gin.Engine, dependencies Dependencies) {
+	auth.RegisterRoutes(server, dependencies.Auth)
+	users.RegisterRoutes(server, dependencies.Users)
+	lists.RegisterRoutes(server, dependencies.Lists)
 }

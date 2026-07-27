@@ -5,12 +5,11 @@ import (
 	"github.com/mbashem/cftracker/backend/internal/middlewares"
 )
 
-func RegisterRoutes(server *gin.Engine) {
-	// server.GET("/user/:id", getUserByID)
+func RegisterRoutes(server *gin.Engine, api *API) {
 	userServer := server.Group("/api/user")
 	userServer.Use(middlewares.Authenticate)
-	userServer.GET("/profile", getProfileHandler)
-	userServer.PUT("/cfhandle", UpdateCFHandleHandler)
-	userServer.GET("/cfverification-token", getCFVerificationTokenHandler)
-	userServer.GET("/verify-cftoken", verifyCFVerificationTokenHandler)
+	userServer.GET("/profile", api.GetProfile)
+	userServer.PUT("/cfhandle", api.UpdateCFHandle)
+	userServer.GET("/cfverification-token", api.GetCFVerificationToken)
+	userServer.GET("/verify-cftoken", api.VerifyCFVerificationToken)
 }
