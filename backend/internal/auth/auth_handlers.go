@@ -1,9 +1,8 @@
 package auth
 
 import (
-	"context"
 	"encoding/json"
-	"log"
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -12,8 +11,22 @@ import (
 	"golang.org/x/oauth2"
 )
 
+type API_MESSAGE string
+
+const (
+	failedToExchangeToken   API_MESSAGE = "Failed to exchange token"
+	failedToGetUserInfo     API_MESSAGE = "Failed to get user info"
+	githubUserRequestFailed API_MESSAGE = "GitHub user request failed"
+	failedToDecodeUserInfo  API_MESSAGE = "Failed to decode user info"
+	failedToSaveUser        API_MESSAGE = "Failed to save user"
+	failedToLoadUser        API_MESSAGE = "Failed to load user"
+	failedToUpdateUser      API_MESSAGE = "Failed to update user"
+	failedToGenerateToken   API_MESSAGE = "Failed to generate token"
+)
+
 type AuthHandler struct {
-	oauthConf *oauth2.Config
+	oauthConf      *oauth2.Config
+	userRepository users.AuthUserRepository
 }
 
 type GithubUser struct {
@@ -23,72 +36,75 @@ type GithubUser struct {
 	AvatarURL string `json:"avatar_url"`
 }
 
-func NewAuthHandler(oauthConf *oauth2.Config) *AuthHandler {
-	return &AuthHandler{oauthConf: oauthConf}
+func NewAuthHandler(oauthConf *oauth2.Config, userRepository users.AuthUserRepository) *AuthHandler {
+	return &AuthHandler{
+		oauthConf:      oauthConf,
+		userRepository: userRepository,
+	}
 }
 
-func (h *AuthHandler) GitHubLogin(ginContext *gin.Context) {
-	url := h.oauthConf.AuthCodeURL("state")
-	ginContext.Redirect(http.StatusTemporaryRedirect, url)
+func (handler *AuthHandler) GitHubLogin(context *gin.Context) {
+	url := handler.oauthConf.AuthCodeURL("state")
+	context.Redirect(http.StatusTemporaryRedirect, url)
 }
 
-func (h *AuthHandler) GitHubCallback(ginContext *gin.Context) {
-	code := ginContext.Query("code")
-
-	token, err := h.oauthConf.Exchange(context.Background(), code)
+func (handler *AuthHandler) GitHubCallback(context *gin.Context) {
+	requestContext := context.Request.Context()
+	token, err := handler.oauthConf.Exchange(requestContext, context.Query("code"))
 	if err != nil {
-		ginContext.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to exchange token"})
+		context.JSON(http.StatusInternalServerError, gin.H{"error": failedToExchangeToken})
 		return
 	}
 
-	client := h.oauthConf.Client(context.Background(), token)
-	resp, err := client.Get("https://api.github.com/user")
+	response, err := handler.oauthConf.Client(requestContext, token).Get("https://api.github.com/user")
 	if err != nil {
-		ginContext.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user info"})
+		context.JSON(http.StatusInternalServerError, gin.H{"error": failedToGetUserInfo})
 		return
 	}
-	defer resp.Body.Close()
+	defer response.Body.Close()
 
-	var data GithubUser
-
-	err = json.NewDecoder(resp.Body).Decode(&data)
-	if err != nil {
-		ginContext.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to decode user info"})
+	if response.StatusCode != http.StatusOK {
+		context.JSON(http.StatusBadGateway, gin.H{"error": githubUserRequestFailed})
 		return
 	}
 
-	user, err := users.FindUserByGithubID(int64(data.ID))
+	var githubUser GithubUser
+	if err := json.NewDecoder(response.Body).Decode(&githubUser); err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"error": failedToDecodeUserInfo})
+		return
+	}
 
-	if err != nil {
+	user, err := handler.userRepository.FindByGitHubID(githubUser.ID)
+	switch {
+	case errors.Is(err, users.ErrUserNotFound):
 		user = &users.User{
-			GithubID:       int64(data.ID),
-			GithubUserName: data.Login,
-			Email:          data.Email,
-			AvatarURL:      data.AvatarURL,
+			GithubID:       githubUser.ID,
+			GithubUserName: githubUser.Login,
+			Email:          githubUser.Email,
+			AvatarURL:      githubUser.AvatarURL,
 		}
-		err = user.Save()
-		if err != nil {
-			ginContext.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save user", "err": err})               
+		if err := handler.userRepository.Save(user); err != nil {
+			context.JSON(http.StatusInternalServerError, gin.H{"error": failedToSaveUser})
 			return
 		}
-	} else {
-		user.GithubUserName = data.Login
-		user.Email = data.Email
-		user.AvatarURL = data.AvatarURL
-
-		err = user.Update()
-		if err != nil {
-			ginContext.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user"})
+	case err != nil:
+		context.JSON(http.StatusInternalServerError, gin.H{"error": failedToLoadUser})
+		return
+	default:
+		user.GithubUserName = githubUser.Login
+		user.Email = githubUser.Email
+		user.AvatarURL = githubUser.AvatarURL
+		if err := handler.userRepository.Update(user); err != nil {
+			context.JSON(http.StatusInternalServerError, gin.H{"error": failedToUpdateUser})
 			return
 		}
 	}
 
-	jwtToken, err := utils.GenerateToken(data.Email, user.ID)
+	jwtToken, err := utils.GenerateToken(githubUser.Email, user.ID)
 	if err != nil {
-		ginContext.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
+		context.JSON(http.StatusInternalServerError, gin.H{"error": failedToGenerateToken})
 		return
 	}
-	log.Print("User logged in: ", data)
 
-	ginContext.JSON(http.StatusOK, gin.H{"user": user, "token": jwtToken})
+	context.JSON(http.StatusOK, gin.H{"user": user, "token": jwtToken})
 }

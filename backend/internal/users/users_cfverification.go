@@ -11,9 +11,11 @@ type VerificationTokenStore struct {
 	expiries map[int64]time.Time
 }
 
-var tokenStore = VerificationTokenStore{
-	tokens:   make(map[int64]string),
-	expiries: make(map[int64]time.Time),
+func NewVerificationTokenStore() *VerificationTokenStore {
+	return &VerificationTokenStore{
+		tokens:   make(map[int64]string),
+		expiries: make(map[int64]time.Time),
+	}
 }
 
 // SetToken stores a token for a user with an expiration time

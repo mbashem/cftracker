@@ -5,14 +5,26 @@ import (
 	"errors"
 )
 
+var ErrUserNotFound = errors.New("user not found")
+
+type UserRepository interface {
+	FindByID(id int64) (*User, error)
+	UpdateCFHandle(user *User, cfHandle string) error
+	UpdateCFVerified(user *User, cfVerified bool) error
+}
+
+type AuthUserRepository interface {
+	FindByGitHubID(githubID int64) (*User, error)
+	Save(user *User) error
+	Update(user *User) error
+}
+
 type Repository struct {
 	db *sql.DB
 }
 
 func NewRepository(db *sql.DB) *Repository {
-	return &Repository{
-		db: db,
-	}
+	return &Repository{db: db}
 }
 
 func (repository *Repository) Save(user *User) error {
@@ -22,16 +34,15 @@ func (repository *Repository) Save(user *User) error {
 		RETURNING id;
 	`
 
-	err := repository.db.QueryRow(
+	return repository.db.QueryRow(
 		query,
 		user.GithubID,
 		user.GithubUserName,
 		user.Email,
 		user.AvatarURL,
 		user.CFHandle,
-		user.CFVerified).Scan(&user.ID)
-
-	return err
+		user.CFVerified,
+	).Scan(&user.ID)
 }
 
 func (repository *Repository) Update(user *User) error {
@@ -41,13 +52,15 @@ func (repository *Repository) Update(user *User) error {
 		WHERE id = $1
 		RETURNING id;
 	`
+
 	err := repository.db.QueryRow(
 		query,
 		user.ID,
 		user.GithubUserName,
 		user.Email,
-		user.AvatarURL).Scan(&user.ID)
-	return err
+		user.AvatarURL,
+	).Scan(&user.ID)
+	return userQueryError(err)
 }
 
 func (repository *Repository) UpdateCFHandle(user *User, cfHandle string) error {
@@ -57,12 +70,13 @@ func (repository *Repository) UpdateCFHandle(user *User, cfHandle string) error 
 		WHERE id = $1
 		RETURNING id;
 	`
-	err := repository.db.QueryRow(query, user.ID, cfHandle).Scan(&user.ID)
-	if err == sql.ErrNoRows {
-		return errors.New("user not found")
+
+	if err := repository.db.QueryRow(query, user.ID, cfHandle).Scan(&user.ID); err != nil {
+		return userQueryError(err)
 	}
 	user.CFHandle = cfHandle
-	return err
+	user.CFVerified = false
+	return nil
 }
 
 func (repository *Repository) UpdateCFVerified(user *User, cfVerified bool) error {
@@ -72,12 +86,12 @@ func (repository *Repository) UpdateCFVerified(user *User, cfVerified bool) erro
 		WHERE id = $1
 		RETURNING id;
 	`
-	err := repository.db.QueryRow(query, user.ID, cfVerified).Scan(&user.ID)
-	if err == sql.ErrNoRows {
-		return errors.New("user not found")
+
+	if err := repository.db.QueryRow(query, user.ID, cfVerified).Scan(&user.ID); err != nil {
+		return userQueryError(err)
 	}
 	user.CFVerified = cfVerified
-	return err
+	return nil
 }
 
 func (repository *Repository) UpdateAdmin(user *User, admin bool) error {
@@ -87,76 +101,100 @@ func (repository *Repository) UpdateAdmin(user *User, admin bool) error {
 		WHERE id = $1
 		RETURNING id;
 	`
-	err := repository.db.QueryRow(query, user.ID, admin).Scan(&user.ID)
-	if err == sql.ErrNoRows {
-		return errors.New("user not found")
+
+	if err := repository.db.QueryRow(query, user.ID, admin).Scan(&user.ID); err != nil {
+		return userQueryError(err)
 	}
 	user.Admin = admin
-	return err
+	return nil
 }
 
-func (repository *Repository) FindUserByID(id int64) (*User, error) {
+func (repository *Repository) FindByID(id int64) (*User, error) {
 	query := `
 		SELECT id, github_id, github_username, email, avatar_url, cf_handle, cf_verified, admin
 		FROM users
 		WHERE id = $1;
 	`
+
 	user := &User{}
 	err := repository.db.QueryRow(query, id).Scan(
-		&user.ID, &user.GithubID, &user.GithubUserName, &user.Email, &user.AvatarURL,
-		&user.CFHandle, &user.CFVerified, &user.Admin)
+		&user.ID,
+		&user.GithubID,
+		&user.GithubUserName,
+		&user.Email,
+		&user.AvatarURL,
+		&user.CFHandle,
+		&user.CFVerified,
+		&user.Admin,
+	)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, errors.New("user not found")
-		}
-		return nil, err
+		return nil, userQueryError(err)
 	}
 	return user, nil
 }
 
-func (repository *Repository) FindUserByGithubID(githubID int64) (*User, error) {
+func (repository *Repository) FindByGitHubID(githubID int64) (*User, error) {
 	query := `
 		SELECT id, github_id, github_username, email, avatar_url, cf_handle, cf_verified, admin
 		FROM users
 		WHERE github_id = $1;
 	`
+
 	user := &User{}
 	err := repository.db.QueryRow(query, githubID).Scan(
-		&user.ID, &user.GithubID, &user.GithubUserName, &user.Email, &user.AvatarURL,
-		&user.CFHandle, &user.CFVerified, &user.Admin)
+		&user.ID,
+		&user.GithubID,
+		&user.GithubUserName,
+		&user.Email,
+		&user.AvatarURL,
+		&user.CFHandle,
+		&user.CFVerified,
+		&user.Admin,
+	)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, errors.New("user not found")
-		}
-		return nil, err
+		return nil, userQueryError(err)
 	}
 	return user, nil
 }
 
-func (repository *Repository) GetAllUsers() ([]User, error) {
+func (repository *Repository) GetAll() ([]User, error) {
 	query := `
 		SELECT id, github_id, github_username, email, avatar_url, cf_handle, cf_verified, admin
 		FROM users;
 	`
+
 	rows, err := repository.db.Query(query)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var users []User
+	users := make([]User, 0)
 	for rows.Next() {
-		user := User{}
-		err := rows.Scan(&user.ID, &user.GithubID, &user.GithubUserName, &user.Email, &user.AvatarURL, &user.CFHandle, &user.CFVerified, &user.Admin)
-		if err != nil {
+		var user User
+		if err := rows.Scan(
+			&user.ID,
+			&user.GithubID,
+			&user.GithubUserName,
+			&user.Email,
+			&user.AvatarURL,
+			&user.CFHandle,
+			&user.CFVerified,
+			&user.Admin,
+		); err != nil {
 			return nil, err
 		}
 		users = append(users, user)
 	}
-
-	if err = rows.Err(); err != nil {
+	if err := rows.Err(); err != nil {
 		return nil, err
 	}
-
 	return users, nil
+}
+
+func userQueryError(err error) error {
+	if errors.Is(err, sql.ErrNoRows) {
+		return ErrUserNotFound
+	}
+	return err
 }
