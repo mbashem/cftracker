@@ -61,5 +61,8 @@ func (repository *Repository) GetListItems(listId int64) ([]ListItem, error) {
 		}
 		items = append(items, item)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 	return items, nil
 }

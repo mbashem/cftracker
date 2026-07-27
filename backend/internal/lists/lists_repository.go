@@ -59,5 +59,8 @@ func (repository *Repository) GetAllListByUserId(userId int64) ([]List, error) {
 		}
 		lists = append(lists, list)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 	return lists, nil
 }
