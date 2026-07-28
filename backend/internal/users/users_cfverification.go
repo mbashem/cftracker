@@ -5,6 +5,10 @@ import (
 	"time"
 )
 
+// VerificationTokenStore intentionally keeps one-hour verification tokens in
+// process memory. The app currently runs as a single instance, and losing a
+// pending token on restart is an accepted tradeoff. Use shared storage before
+// running multiple backend instances.
 type VerificationTokenStore struct {
 	mu       sync.Mutex
 	tokens   map[int64]string
