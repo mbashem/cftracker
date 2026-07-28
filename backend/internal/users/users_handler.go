@@ -1,21 +1,15 @@
 package users
 
 import (
-	"encoding/json"
 	"errors"
 	"log"
 	"net/http"
-	"net/url"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	gonanoid "github.com/matoous/go-nanoid/v2"
 	"github.com/mbashem/cftracker/backend/internal/middlewares"
 )
-
-type httpClient interface {
-	Do(request *http.Request) (*http.Response, error)
-}
 
 type API_MESSAGE string
 
@@ -38,24 +32,25 @@ const (
 )
 
 type API struct {
-	userRepository UserRepository
-	tokens         *VerificationTokenStore
-	httpClient     httpClient
-	generateToken  func(int) (string, error)
+	userRepository     UserRepository
+	tokens             *VerificationTokenStore
+	codeforcesProvider CodeforcesProvider
+	generateToken      func(int) (string, error)
 }
 
-func NewAPI(userRepository UserRepository, tokens *VerificationTokenStore, client httpClient) *API {
+func NewAPI(
+	userRepository UserRepository,
+	tokens *VerificationTokenStore,
+	codeforcesProvider CodeforcesProvider,
+) *API {
 	if tokens == nil {
 		tokens = NewVerificationTokenStore()
 	}
-	if client == nil {
-		client = http.DefaultClient
-	}
 
 	return &API{
-		userRepository: userRepository,
-		tokens:         tokens,
-		httpClient:     client,
+		userRepository:     userRepository,
+		tokens:             tokens,
+		codeforcesProvider: codeforcesProvider,
 		generateToken: func(length int) (string, error) {
 			return gonanoid.New(length)
 		},
@@ -134,47 +129,17 @@ func (api *API) VerifyCFVerificationToken(context *gin.Context) {
 		return
 	}
 
-	request, err := http.NewRequestWithContext(
+	verificationValue, err := api.codeforcesProvider.GetVerificationValue(
 		context.Request.Context(),
-		http.MethodGet,
-		"https://codeforces.com/api/user.info?handles="+url.QueryEscape(user.CFHandle),
-		nil,
+		user.CFHandle,
 	)
 	if err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": failedToCreateCodeforcesRequest})
-		return
-	}
-	request.Header.Add("Content-Type", "application/json")
-
-	response, err := api.httpClient.Do(request)
-	if err != nil {
-		log.Printf("Codeforces verification request failed: %v", err)
-		context.JSON(http.StatusInternalServerError, gin.H{"error": failedToCallCodeforces})
-		return
-	}
-	defer response.Body.Close()
-
-	if response.StatusCode != http.StatusOK {
-		context.JSON(http.StatusBadGateway, gin.H{"error": codeforcesRequestFailed})
-		return
-	}
-
-	var payload struct {
-		Result []struct {
-			Token string `json:"firstName"`
-		} `json:"result"`
-	}
-	if err := json.NewDecoder(response.Body).Decode(&payload); err != nil {
-		context.JSON(http.StatusBadGateway, gin.H{"error": failedToParseCodeforcesResponse})
-		return
-	}
-	if len(payload.Result) == 0 {
-		context.JSON(http.StatusBadRequest, gin.H{"error": codeforcesUserNotFound})
+		writeCodeforcesProviderError(context, err)
 		return
 	}
 
 	storedToken, found := api.tokens.GetToken(id)
-	if !found || storedToken != payload.Result[0].Token {
+	if !found || storedToken != verificationValue {
 		context.JSON(http.StatusBadRequest, gin.H{"error": invalidVerificationToken})
 		return
 	}
@@ -194,4 +159,23 @@ func writeUserReadError(context *gin.Context, err error) {
 		return
 	}
 	context.JSON(http.StatusInternalServerError, gin.H{"error": failedToLoadUser})
+}
+
+func writeCodeforcesProviderError(context *gin.Context, err error) {
+	log.Printf("Codeforces provider failed: %v", err)
+
+	switch {
+	case errors.Is(err, ErrCodeforcesRequestCreation):
+		context.JSON(http.StatusInternalServerError, gin.H{"error": failedToCreateCodeforcesRequest})
+	case errors.Is(err, ErrCodeforcesRequest):
+		context.JSON(http.StatusInternalServerError, gin.H{"error": failedToCallCodeforces})
+	case errors.Is(err, ErrCodeforcesRejectedResponse):
+		context.JSON(http.StatusBadGateway, gin.H{"error": codeforcesRequestFailed})
+	case errors.Is(err, ErrCodeforcesInvalidResponse):
+		context.JSON(http.StatusBadGateway, gin.H{"error": failedToParseCodeforcesResponse})
+	case errors.Is(err, ErrCodeforcesUserNotFound):
+		context.JSON(http.StatusBadRequest, gin.H{"error": codeforcesUserNotFound})
+	default:
+		context.JSON(http.StatusInternalServerError, gin.H{"error": failedToCallCodeforces})
+	}
 }

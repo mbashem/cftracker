@@ -10,6 +10,9 @@ DATABASE_URL=postgres://username:password@localhost:port/database?sslmode=disabl
 
 JWT_SECRET=JWT_SECRET_ANY_STRING_WILL_WORK
 
+# Optional Go duration for GitHub and Codeforces requests. Defaults to 10s.
+EXTERNAL_API_TIMEOUT=10s
+
 ## Database migrations
 
 The API only opens and validates the database connection during startup. Apply schema changes separately from the `backend` directory; the Makefile reads `DATABASE_URL` from the environment or `.env`.

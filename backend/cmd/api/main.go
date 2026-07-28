@@ -21,6 +21,11 @@ func main() {
 		log.Fatalf("Error loading environment variables: %v\n", err)
 	}
 
+	providerTimeout, err := configs.GetExternalAPITimeout()
+	if err != nil {
+		log.Fatalf("Invalid provider HTTP timeout: %v", err)
+	}
+
 	utils.Init()
 
 	database, err := db.InitDB()
@@ -29,9 +34,13 @@ func main() {
 	}
 	defer database.Close()
 
+	providerHTTPClient := &http.Client{Timeout: providerTimeout}
+	githubProvider := auth.NewGitHubClient(auth.NewOAuthConfig(), providerHTTPClient, providerTimeout)
+	codeforcesProvider := users.NewCodeforcesClient(providerHTTPClient, providerTimeout)
+
 	userRepository := users.NewRepository(database)
-	userAPI := users.NewAPI(userRepository, users.NewVerificationTokenStore(), http.DefaultClient)
-	authHandler := auth.NewAuthHandler(auth.NewOAuthConfig(), userRepository)
+	userAPI := users.NewAPI(userRepository, users.NewVerificationTokenStore(), codeforcesProvider)
+	authHandler := auth.NewAuthHandler(githubProvider, userRepository)
 	listAPI := lists.NewAPI(lists.NewRepository(database), items.NewRepository(database))
 
 	router := gin.Default()

@@ -1,14 +1,13 @@
 package auth
 
 import (
-	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/mbashem/cftracker/backend/internal/users"
 	"github.com/mbashem/cftracker/backend/internal/utils"
-	"golang.org/x/oauth2"
 )
 
 type API_MESSAGE string
@@ -25,52 +24,26 @@ const (
 )
 
 type AuthHandler struct {
-	oauthConf      *oauth2.Config
+	githubProvider GitHubProvider
 	userRepository users.AuthUserRepository
 }
 
-type GithubUser struct {
-	ID        int64  `json:"id"`
-	Login     string `json:"login"`
-	Email     string `json:"email"`
-	AvatarURL string `json:"avatar_url"`
-}
-
-func NewAuthHandler(oauthConf *oauth2.Config, userRepository users.AuthUserRepository) *AuthHandler {
+func NewAuthHandler(githubProvider GitHubProvider, userRepository users.AuthUserRepository) *AuthHandler {
 	return &AuthHandler{
-		oauthConf:      oauthConf,
+		githubProvider: githubProvider,
 		userRepository: userRepository,
 	}
 }
 
 func (handler *AuthHandler) GitHubLogin(context *gin.Context) {
-	url := handler.oauthConf.AuthCodeURL("state")
+	url := handler.githubProvider.AuthorizationURL("state")
 	context.Redirect(http.StatusTemporaryRedirect, url)
 }
 
 func (handler *AuthHandler) GitHubCallback(context *gin.Context) {
-	requestContext := context.Request.Context()
-	token, err := handler.oauthConf.Exchange(requestContext, context.Query("code"))
+	githubUser, err := handler.githubProvider.Authenticate(context.Request.Context(), context.Query("code"))
 	if err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": failedToExchangeToken})
-		return
-	}
-
-	response, err := handler.oauthConf.Client(requestContext, token).Get("https://api.github.com/user")
-	if err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": failedToGetUserInfo})
-		return
-	}
-	defer response.Body.Close()
-
-	if response.StatusCode != http.StatusOK {
-		context.JSON(http.StatusBadGateway, gin.H{"error": githubUserRequestFailed})
-		return
-	}
-
-	var githubUser GithubUser
-	if err := json.NewDecoder(response.Body).Decode(&githubUser); err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": failedToDecodeUserInfo})
+		writeGitHubProviderError(context, err)
 		return
 	}
 
@@ -107,4 +80,21 @@ func (handler *AuthHandler) GitHubCallback(context *gin.Context) {
 	}
 
 	context.JSON(http.StatusOK, gin.H{"user": user, "token": jwtToken})
+}
+
+func writeGitHubProviderError(context *gin.Context, err error) {
+	log.Printf("GitHub provider failed: %v", err)
+
+	switch {
+	case errors.Is(err, ErrGitHubTokenExchange):
+		context.JSON(http.StatusInternalServerError, gin.H{"error": failedToExchangeToken})
+	case errors.Is(err, ErrGitHubUserRequest):
+		context.JSON(http.StatusInternalServerError, gin.H{"error": failedToGetUserInfo})
+	case errors.Is(err, ErrGitHubRejectedResponse):
+		context.JSON(http.StatusBadGateway, gin.H{"error": githubUserRequestFailed})
+	case errors.Is(err, ErrGitHubInvalidResponse):
+		context.JSON(http.StatusInternalServerError, gin.H{"error": failedToDecodeUserInfo})
+	default:
+		context.JSON(http.StatusInternalServerError, gin.H{"error": failedToGetUserInfo})
+	}
 }
