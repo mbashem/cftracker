@@ -10,21 +10,13 @@ import (
 )
 
 type API struct {
-	listRepository      *Repository
-	listItemsRepository *items.Repository
+	listRepository      ListRepository
+	listItemsRepository items.ListItemRepository
 }
 
 type API_MESSAGE string
 
 const (
-	// failedToCreateList    API_MESSAGE = "Failed to create list"
-	// failedToUpdateList    API_MESSAGE = "Failed to update list"
-	// failedToFindList      API_MESSAGE = "Failed to find the list"
-	// failedToDeleteList    API_MESSAGE = "Failed to delete list"
-	// failedToAddItemToList API_MESSAGE = "Failed to add item to list"
-	// failedToReorderItems  API_MESSAGE = "Failed to reorder items"
-	// failedToGetListItems  API_MESSAGE = "Failed to get list items"
-
 	invalidListId   API_MESSAGE = "Invalid list Id"
 	invalidListItem API_MESSAGE = "Invalid list item"
 	invalidFormat   API_MESSAGE = "Invalid format"
@@ -38,10 +30,10 @@ const (
 	listFound     API_MESSAGE = "List fetched successfully"
 )
 
-func NewAPI(listRepository *Repository, listItemsReposiotry *items.Repository) *API {
+func NewAPI(listRepository ListRepository, listItemsRepository items.ListItemRepository) *API {
 	return &API{
 		listRepository:      listRepository,
-		listItemsRepository: listItemsReposiotry,
+		listItemsRepository: listItemsRepository,
 	}
 }
 

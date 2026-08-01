@@ -4,6 +4,12 @@ import (
 	"database/sql"
 )
 
+type ListItemRepository interface {
+	Create(item *ListItem) error
+	Delete(item *ListItem) error
+	GetItems(listId int64) ([]ListItem, error)
+}
+
 type Repository struct {
 	db *sql.DB
 }
