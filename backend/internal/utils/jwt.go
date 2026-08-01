@@ -2,7 +2,6 @@ package utils
 
 import (
 	"errors"
-	"log"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -13,7 +12,6 @@ var secretKey = "secrect"
 
 func Init() {
 	secretKey = configs.GetEnv(configs.JWT_SECRET)
-	log.Println("Secret key is: ", secretKey)
 }
 
 func GenerateToken(email string, userId int64) (string, error) {
@@ -36,7 +34,6 @@ func VerifyToken(token string) (int64, error) {
 	})
 
 	if err != nil {
-		log.Println(err)
 		return 0, errors.New("could not parse token")
 	}
 

@@ -2,13 +2,16 @@ package lists
 
 import (
 	"database/sql"
+	"errors"
 )
 
+var ErrListNotFound = errors.New("list not found")
+
 type ListRepository interface {
-	Create(list *List) error
-	UpdateName(list *List) error
-	Delete(listId int64) error
-	GetById(listId int64) (*List, error)
+	Create(userId int64, list *List) error
+	UpdateName(userId int64, list *List) error
+	Delete(userId int64, listId int64) error
+	GetById(userId int64, listId int64) (*List, error)
 	GetAllListByUserId(userId int64) ([]List, error)
 }
 
@@ -23,32 +26,36 @@ func NewRepository(db *sql.DB) *Repository {
 }
 
 // Create a new list
-func (repository *Repository) Create(list *List) error {
+func (repository *Repository) Create(userId int64, list *List) error {
 	query := `INSERT INTO lists (user_id, name) VALUES ($1, $2) RETURNING id, created_at`
-	err := repository.db.QueryRow(query, list.UserId, list.Name).Scan(&list.Id, &list.CreatedAt)
-	return err
+	if err := repository.db.QueryRow(query, userId, list.Name).Scan(&list.Id, &list.CreatedAt); err != nil {
+		return err
+	}
+	list.UserId = userId
+	return nil
 }
 
 // Update list name
-func (repository *Repository) UpdateName(list *List) error {
-	query := `UPDATE lists SET name = $1 WHERE id = $2`
-	_, err := repository.db.Exec(query, list.Name, list.Id)
-	return err
+func (repository *Repository) UpdateName(userId int64, list *List) error {
+	query := `UPDATE lists SET name = $1 WHERE id = $2 AND user_id = $3 RETURNING id`
+	return listQueryError(repository.db.QueryRow(query, list.Name, list.Id, userId).Scan(&list.Id))
 }
 
 // Delete a list by Id
-func (repository *Repository) Delete(listId int64) error {
-	query := `DELETE FROM lists WHERE id = $1`
-	_, err := repository.db.Exec(query, listId)
-	return err
+func (repository *Repository) Delete(userId int64, listId int64) error {
+	query := `DELETE FROM lists WHERE id = $1 AND user_id = $2 RETURNING id`
+	return listQueryError(repository.db.QueryRow(query, listId, userId).Scan(&listId))
 }
 
 // Get a list by Id
-func (repository *Repository) GetById(listId int64) (*List, error) {
+func (repository *Repository) GetById(userId int64, listId int64) (*List, error) {
 	list := &List{}
-	query := `SELECT id, user_id, name, created_at FROM lists WHERE id = $1`
-	err := repository.db.QueryRow(query, listId).Scan(&list.Id, &list.UserId, &list.Name, &list.CreatedAt)
-	return list, err
+	query := `SELECT id, user_id, name, created_at FROM lists WHERE id = $1 AND user_id = $2`
+	err := repository.db.QueryRow(query, listId, userId).Scan(&list.Id, &list.UserId, &list.Name, &list.CreatedAt)
+	if err != nil {
+		return nil, listQueryError(err)
+	}
+	return list, nil
 }
 
 // Get all lists of a user
@@ -71,4 +78,11 @@ func (repository *Repository) GetAllListByUserId(userId int64) ([]List, error) {
 		return nil, err
 	}
 	return lists, nil
+}
+
+func listQueryError(err error) error {
+	if errors.Is(err, sql.ErrNoRows) {
+		return ErrListNotFound
+	}
+	return err
 }
