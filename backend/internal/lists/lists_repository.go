@@ -4,6 +4,14 @@ import (
 	"database/sql"
 )
 
+type ListRepository interface {
+	Create(list *List) error
+	UpdateName(list *List) error
+	Delete(listId int64) error
+	GetById(listId int64) (*List, error)
+	GetAllListByUserId(userId int64) ([]List, error)
+}
+
 type Repository struct {
 	db *sql.DB
 }
