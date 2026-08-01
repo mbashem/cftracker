@@ -1,7 +1,6 @@
 package middlewares
 
 import (
-	"log"
 	"net/http"
 	"strings"
 
@@ -15,24 +14,20 @@ const (
 
 func Authenticate(context *gin.Context) {
 	token := context.Request.Header.Get("Authorization")
-	log.Println("Token: ", token)
-	if token == "" || !strings.Contains(token, "Bearer "){
-		log.Println("No token")
+	if token == "" || !strings.HasPrefix(token, "Bearer ") {
 		context.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
 
-	token = strings.Replace(token, "Bearer ", "", 1)
+	token = strings.TrimPrefix(token, "Bearer ")
 
 	userId, err := utils.VerifyToken(token)
 	if err != nil {
-		log.Println(err)
 		context.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
 
 	context.Set(UserIdKey, userId)
-	log.Println("User ID: ", userId)
 
 	context.Next()
 }
