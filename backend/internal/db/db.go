@@ -7,11 +7,10 @@ import (
 	"time"
 
 	_ "github.com/lib/pq"
-	"github.com/mbashem/cftracker/backend/configs"
 )
 
-func InitDB() (*sql.DB, error) {
-	database, err := sql.Open("postgres", configs.GetEnv(configs.DATABASE_URL))
+func InitDB(databaseURL string) (*sql.DB, error) {
+	database, err := sql.Open("postgres", databaseURL)
 	if err != nil {
 		return nil, fmt.Errorf("open database: %w", err)
 	}

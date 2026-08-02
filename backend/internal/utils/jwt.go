@@ -5,13 +5,12 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/mbashem/cftracker/backend/configs"
 )
 
-var secretKey = "secrect"
+var secretKey []byte
 
-func Init() {
-	secretKey = configs.GetEnv(configs.JWT_SECRET)
+func Init(secret string) {
+	secretKey = []byte(secret)
 }
 
 func GenerateToken(email string, userId int64) (string, error) {
@@ -21,7 +20,7 @@ func GenerateToken(email string, userId int64) (string, error) {
 		"exp":    time.Now().Add(time.Hour * 2).Unix(),
 	})
 
-	return token.SignedString([]byte(secretKey))
+	return token.SignedString(secretKey)
 }
 
 func VerifyToken(token string) (int64, error) {
@@ -30,7 +29,7 @@ func VerifyToken(token string) (int64, error) {
 		if !ok {
 			return nil, errors.New("unexpected signing method")
 		}
-		return []byte(secretKey), nil
+		return secretKey, nil
 	})
 
 	if err != nil {

@@ -1,16 +1,15 @@
 package auth
 
 import (
-	"github.com/mbashem/cftracker/backend/configs"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/github"
 )
 
-func NewOAuthConfig() *oauth2.Config {
+func NewOAuthConfig(clientID string, clientSecret string, redirectURL string) *oauth2.Config {
 	return &oauth2.Config{
-		ClientID:     configs.GetEnv(configs.GITHUB_CLIENT_ID),
-		ClientSecret: configs.GetEnv(configs.GITHUB_CLIENT_SECRET),
-		RedirectURL:  configs.GetEnv(configs.GITHUB_REDIRECT_URL),
+		ClientID:     clientID,
+		ClientSecret: clientSecret,
+		RedirectURL:  redirectURL,
 		Scopes:       []string{"user:email"},
 		Endpoint:     github.Endpoint,
 	}

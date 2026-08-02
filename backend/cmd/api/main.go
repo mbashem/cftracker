@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
@@ -17,26 +18,26 @@ import (
 )
 
 func main() {
-	if err := configs.LoadEnv(); err != nil {
-		log.Fatalf("Error loading environment variables: %v\n", err)
-	}
-
-	providerTimeout, err := configs.GetExternalAPITimeout()
+	config, err := configs.Load()
 	if err != nil {
-		log.Fatalf("Invalid provider HTTP timeout: %v", err)
+		log.Fatalf("Invalid configuration: %v", err)
 	}
 
-	utils.Init()
+	utils.Init(config.JWTSecret)
 
-	database, err := db.InitDB()
+	database, err := db.InitDB(config.DatabaseURL)
 	if err != nil {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
 	defer database.Close()
 
-	providerHTTPClient := &http.Client{Timeout: providerTimeout}
-	githubProvider := auth.NewGitHubClient(auth.NewOAuthConfig(), providerHTTPClient, providerTimeout)
-	codeforcesProvider := users.NewCodeforcesClient(providerHTTPClient, providerTimeout)
+	providerHTTPClient := &http.Client{Timeout: config.ExternalAPITimeout}
+	githubProvider := auth.NewGitHubClient(
+		auth.NewOAuthConfig(config.GitHubClientID, config.GitHubClientSecret, config.GitHubRedirectURL),
+		providerHTTPClient,
+		config.ExternalAPITimeout,
+	)
+	codeforcesProvider := users.NewCodeforcesClient(providerHTTPClient, config.ExternalAPITimeout)
 
 	userRepository := users.NewRepository(database)
 	userAPI := users.NewAPI(userRepository, users.NewVerificationTokenStore(), codeforcesProvider)
@@ -46,7 +47,7 @@ func main() {
 	router := gin.Default()
 
 	corsConfig := cors.DefaultConfig()
-	corsConfig.AllowOrigins = []string{"http://localhost:5173"}
+	corsConfig.AllowOrigins = config.CORSAllowedOrigins
 	corsConfig.AddAllowHeaders("Content-Type", "Authorization")
 	corsConfig.AllowCredentials = true
 	router.Use(cors.New(corsConfig))
@@ -57,7 +58,7 @@ func main() {
 		Lists: listAPI,
 	})
 
-	if err := router.Run(":8080"); err != nil {
+	if err := router.Run(fmt.Sprintf(":%d", config.Port)); err != nil {
 		log.Fatalf("Failed to run server: %v", err)
 	}
 }
