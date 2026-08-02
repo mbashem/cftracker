@@ -1,17 +1,36 @@
-# .env file (create a .env file in backend folder)
+# Backend
 
-GITHUB_CLIENT_ID={GITHUB_CLIENT_ID}
+## Configuration
 
-GITHUB_CLIENT_SECRET={GITHUB_CLIENT_SECRET}
+For local development, create `.env` from the committed example and replace its placeholder values:
 
+```sh
+cp .env.example .env
+```
+
+The API loads `.env` when that file exists. Values already present in the process environment take precedence. A `.env` file is not required when the deployment environment provides configuration directly.
+
+Required variables:
+
+```env
+GITHUB_CLIENT_ID=replace-with-github-client-id
+GITHUB_CLIENT_SECRET=replace-with-github-client-secret
 GITHUB_REDIRECT_URL=http://localhost:8080/auth/github/callback
+DATABASE_URL=postgres://postgres:postgrespw@localhost:5432/cftracker?sslmode=disable
+JWT_SECRET=replace-with-generated-secret
+```
 
-DATABASE_URL=postgres://username:password@localhost:port/database?sslmode=disable # example postgres://
+Generate `JWT_SECRET` with `openssl rand -base64 32`; it must contain at least 32 bytes of unpredictable data.
 
-JWT_SECRET=JWT_SECRET_ANY_STRING_WILL_WORK
+Optional variables:
 
-# Optional Go duration for GitHub and Codeforces requests. Defaults to 10s.
+```env
+PORT=8080
 EXTERNAL_API_TIMEOUT=10s
+CORS_ALLOWED_ORIGINS=http://localhost:5173
+```
+
+`PORT` defaults to `8080`. `EXTERNAL_API_TIMEOUT` accepts Go duration values such as `5s` or `1m` and defaults to `10s`. `CORS_ALLOWED_ORIGINS` accepts comma-separated HTTP or HTTPS origins without paths. Missing or invalid entries are logged and skipped; when none are valid, requests without a browser `Origin` header can still be used for API testing. Do not use `*` because the API allows credentialed CORS requests.
 
 ## Database migrations
 
@@ -134,17 +153,16 @@ make migrate-down table=list_items
 make migrate-version
 ```
 
-Ensure an `.env` file exists, then start the API with test-only configuration:
+Start the API with test-only configuration. No `.env` file is required because these values are injected into the process:
 
 ```sh
-touch .env
-
 make run \
   DATABASE_URL="$DATABASE_URL" \
-  JWT_SECRET=test-secret \
+  JWT_SECRET=test-secret-with-at-least-32-bytes \
   GITHUB_CLIENT_ID=test \
   GITHUB_CLIENT_SECRET=test \
-  GITHUB_REDIRECT_URL=http://localhost:8080/auth/github/callback
+  GITHUB_REDIRECT_URL=http://localhost:8080/auth/github/callback \
+  CORS_ALLOWED_ORIGINS=http://localhost:5173
 ```
 
 From another terminal, verify that the server responds:
@@ -173,5 +191,35 @@ set cf firstName as the token recieved from verification token. It is valid for 
 - Go to settings -> social -> firstName
 
 
-# Docker
-local db- postgres://postgres:postgrespw@host.docker.internal:5432/cftracker?sslmode=disable
+## Docker
+
+Build one environment-neutral image from the `backend` directory:
+
+```sh
+docker build -f dockerfile -t cftracker-backend .
+```
+
+Keep production configuration outside the repository and image, restrict its file permissions, and inject it when the container starts:
+
+```sh
+chmod 600 /secure/path/cftracker.env
+docker run --env-file /secure/path/cftracker.env -p 8080:8080 cftracker-backend
+```
+
+With Docker Compose, use `env_file` to inject the same protected host file:
+
+```yaml
+services:
+  backend:
+    image: cftracker-backend
+    env_file:
+      - /secure/path/cftracker.env
+    ports:
+      - "8080:8080"
+```
+
+When PostgreSQL runs on the host during local Docker development, use `host.docker.internal` in `DATABASE_URL`:
+
+```env
+DATABASE_URL=postgres://postgres:postgrespw@host.docker.internal:5432/cftracker?sslmode=disable
+```

@@ -2,12 +2,15 @@ FROM golang:1.22.3-alpine AS builder
 
 WORKDIR /build
 COPY . /build
-RUN go build -o api_bin ./cmd/api/main.go
+RUN CGO_ENABLED=0 go build -o api_bin ./cmd/api
 
 FROM alpine
 
 WORKDIR /app
+RUN apk add --no-cache ca-certificates \
+	&& addgroup -S cftracker \
+	&& adduser -S cftracker -G cftracker
 COPY --from=builder /build/api_bin .
-COPY .env.docker .env
+USER cftracker
 EXPOSE 8080
-CMD [ "/app/api_bin" ]
+CMD ["/app/api_bin"]
