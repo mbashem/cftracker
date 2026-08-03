@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { SearchKeys } from "../../util/constants";
 import useSubmissionsStore from "../../data/hooks/useSubmissionsStore";
 import useTheme from "../../data/hooks/useTheme";
@@ -8,7 +8,7 @@ import usePersistentState from "../../hooks/usePersistentState";
 import useProblemsStore from "../../data/hooks/useProblemsStore";
 import { useAppSelector } from "../../data/store";
 import useToast from "../../hooks/useToast";
-import { List } from "../../types/list";
+import { ListWithItem } from "../../types/list";
 import Problem from "../../types/CF/Problem";
 import { Verdict } from "../../types/CF/Submission";
 import { StorageService } from "../../util/StorageService";
@@ -68,7 +68,8 @@ function useProblemPage() {
 	const { searchParams, updateSearchParam, deleteSearchParam } = useAppSearchParams();
 	const searchTextFromUrl = searchParams.get(SearchKeys.Search) ?? undefined;
 	const [listId, setListId] = useState<number | undefined>(undefined);
-	const [list, setList] = useState<List | undefined>(undefined);
+	const [list, setList] = useState<ListWithItem | undefined>(undefined);
+	const nextListPosition = useRef(0);
 	const { submissions } = useSubmissionsStore();
 	const { theme } = useTheme();
 	const api = useList();
@@ -233,9 +234,14 @@ function useProblemPage() {
 
 	useEffect(() => {
 		if (listId === undefined) return;
+		nextListPosition.current = 0;
 
 		api.getListWithItems(listId).then(listWithItems => {
 			setList(listWithItems);
+			nextListPosition.current = listWithItems.items.reduce(
+				(max, item) => Math.max(max, item.position),
+				-1
+			) + 1;
 			setProblemsAddedToList(new Set(listWithItems.items.map(listItem => listItem.problemId)));
 		}).catch(err => {
 			showErrorToast(err?.message ?? "Failed to find allready added problems");
@@ -293,8 +299,13 @@ function useProblemPage() {
 	async function addProblemToList(problemId: string) {
 		if (listId === undefined) throw new Error("ListId is undefined");
 		try {
-			let res = await api.addProblemToList(listId, problemId);
-			console.log(res);
+			const position = nextListPosition.current;
+			nextListPosition.current += 1;
+			const item = await api.addProblemToList(listId, problemId, position);
+			setList((currentList) => currentList === undefined
+				? currentList
+				: { ...currentList, items: [...currentList.items, item] }
+			);
 			let newProblemsAddedToList = new Set(problemsAddedToList);
 			newProblemsAddedToList.add(problemId);
 			setProblemsAddedToList(newProblemsAddedToList);

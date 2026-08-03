@@ -35,7 +35,7 @@ func (repository *Repository) Create(userId int64, item *ListItem) error {
 		SELECT id, $2, $3
 		FROM lists
 		WHERE id = $1 AND user_id = $4
-		RETURNING list_id
+		RETURNING list_id, created_at
 	`
 	return listQueryError(repository.db.QueryRow(
 		query,
@@ -43,7 +43,7 @@ func (repository *Repository) Create(userId int64, item *ListItem) error {
 		item.ProblemId,
 		item.Position,
 		userId,
-	).Scan(&item.ListId))
+	).Scan(&item.ListId, &item.CreatedAt))
 }
 
 // Delete a problem from a list

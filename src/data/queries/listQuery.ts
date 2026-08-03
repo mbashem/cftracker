@@ -1,6 +1,6 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
 import { createBaseQuery } from './baseQuery';
-import { jsonToList, jsonToListItem, List, ListWithItem } from '../../types/list';
+import { jsonToList, jsonToListItem, List, ListItem, ListWithItem } from '../../types/list';
 
 export enum ListApiTags {
 	Lists = "Lists"
@@ -41,9 +41,20 @@ export const listApi = createApi({
 				method: 'GET',
 			}),
 			transformResponse: (response: any) => {
+				const items = response.items.map((item: any) => jsonToListItem(item));
+				items.sort((first: ListItem, second: ListItem) => {
+					if (first.position !== second.position) {
+						return first.position < second.position ? -1 : 1;
+					}
+
+					const createdAtComparison = first.createdAt.localeCompare(second.createdAt);
+					if (createdAtComparison !== 0) return createdAtComparison;
+
+					return first.problemId.localeCompare(second.problemId);
+				});
 				return {
 					...jsonToList(response.list),
-					items: response.items.map((item: any) => jsonToListItem(item))
+					items,
 				};
 			},
 			providesTags: (_result, _error, arg, _meta) => IndividualPostTag(arg),
@@ -63,12 +74,13 @@ export const listApi = createApi({
 			}),
 			invalidatesTags: [ListApiTags.Lists]
 		}),
-		addToList: builder.mutation<void, { listId: number; problemId: string; }>({
-			query: ({ listId, problemId }) => ({
+		addToList: builder.mutation<ListItem, { listId: number; problemId: string; position: number; }>({
+			query: ({ listId, problemId, position }) => ({
 				url: `/lists/${listId}/item`,
 				method: 'PUT',
-				body: { "problem_id": problemId },
+				body: { "problem_id": problemId, position },
 			}),
+			transformResponse: (response: any) => jsonToListItem(response.item),
 			invalidatesTags: (_result, _error, arg, _meta) => IndividualPostTag(arg.listId),
 		}),
 		deleteFromList: builder.mutation<void, { listId: number; problemId: string; }>({
