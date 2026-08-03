@@ -30,10 +30,9 @@ function useListApi() {
 		}
 	}
 
-	async function addProblemToList(listId: number, problemId: string) {
+	async function addProblemToList(listId: number, problemId: string, position: number) {
 		try {
-			const list: any = await addProblemToListMutation({ listId, problemId }).unwrap();
-			return list;
+			return await addProblemToListMutation({ listId, problemId, position }).unwrap();
 		} catch (err: any) {
 			console.log(err);
 			let errorMessage = err?.data?.error ?? "Failed to add to list!";

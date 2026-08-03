@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/mbashem/cftracker/backend/internal/lists/items"
@@ -17,6 +18,15 @@ type API struct {
 }
 
 type API_MESSAGE string
+
+type listNameRequest struct {
+	Name string `json:"name" binding:"required"`
+}
+
+type addListItemRequest struct {
+	ProblemId string `json:"problem_id" binding:"required,max=100"`
+	Position  *int   `json:"position" binding:"required,gte=0"`
+}
 
 const (
 	failedToCreateList    API_MESSAGE = "Failed to create list"
@@ -53,13 +63,19 @@ func NewAPI(listRepository ListRepository, listItemsRepository items.ListItemRep
 // Create a new list
 func (api *API) CreateListHandler(context *gin.Context) {
 	userId := context.GetInt64(middlewares.UserIdKey)
-	var list List
-	if err := context.ShouldBindJSON(&list); err != nil {
+	var request listNameRequest
+	if err := context.ShouldBindJSON(&request); err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"error": invalidFormat})
+		return
+	}
+	request.Name = strings.TrimSpace(request.Name)
+	if request.Name == "" {
 		context.JSON(http.StatusBadRequest, gin.H{"error": invalidFormat})
 		return
 	}
 
 	// TODO: LIMIT number of list a user can create
+	list := List{Name: request.Name}
 	if err := api.listRepository.Create(userId, &list); err != nil {
 		writeListRepositoryError(context, err, failedToCreateList)
 		return
@@ -75,16 +91,18 @@ func (api *API) UpdateListNameHandler(context *gin.Context) {
 		return
 	}
 
-	var form struct {
-		Name string `json:"name"`
+	var request listNameRequest
+	if err := context.ShouldBindJSON(&request); err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"error": invalidFormat})
+		return
 	}
-
-	if err := context.ShouldBindJSON(&form); err != nil {
+	request.Name = strings.TrimSpace(request.Name)
+	if request.Name == "" {
 		context.JSON(http.StatusBadRequest, gin.H{"error": invalidFormat})
 		return
 	}
 
-	list := &List{Id: listId, Name: form.Name}
+	list := &List{Id: listId, Name: request.Name}
 	if err := api.listRepository.UpdateName(userId, list); err != nil {
 		writeListRepositoryError(context, err, failedToUpdateList)
 		return
@@ -129,13 +147,22 @@ func (api *API) AddToListHandler(context *gin.Context) {
 		return
 	}
 
-	var item items.ListItem
-	if err := context.ShouldBindJSON(&item); err != nil {
+	var request addListItemRequest
+	if err := context.ShouldBindJSON(&request); err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"error": invalidFormat})
+		return
+	}
+	request.ProblemId = strings.TrimSpace(request.ProblemId)
+	if request.ProblemId == "" {
 		context.JSON(http.StatusBadRequest, gin.H{"error": invalidFormat})
 		return
 	}
 
-	item.ListId = listId
+	item := items.ListItem{
+		ListId:    listId,
+		ProblemId: request.ProblemId,
+		Position:  *request.Position,
+	}
 	if err := api.listItemsRepository.Create(userId, &item); err != nil {
 		writeListRepositoryError(context, err, failedToAddItemToList)
 		return

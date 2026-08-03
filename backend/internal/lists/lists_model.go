@@ -9,7 +9,7 @@ import (
 type List struct {
 	Id        int64     `json:"id"`
 	UserId    int64     `json:"user_id"`
-	Name      string    `json:"name" validate:"required"`
+	Name      string    `json:"name"`
 	CreatedAt time.Time `json:"created_at"`
 }
 
