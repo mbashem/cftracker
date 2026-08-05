@@ -36,6 +36,8 @@ CORS_ALLOWED_ORIGINS=http://localhost:5173
 
 The API only opens and validates the database connection during startup. Apply schema changes separately from the `backend` directory; the Makefile reads `DATABASE_URL` from the environment or `.env`.
 
+See [`MIGRATION_FLOW.md`](MIGRATION_FLOW.md) for a code-review guide to migration ordering, checksum verification, rollback behavior, and schema-drift detection.
+
 ```sh
 make migrate-up
 ```
@@ -79,6 +81,21 @@ make migrate-create name=add_feature
 
 Run `make migrate-up` once as a deployment step before starting new application instances. Migrations are versioned in PostgreSQL, and the migration runner serializes concurrent attempts.
 
+Applied migration files are immutable. Never edit or delete an existing migration after it has been applied or shared; create another migration for the correction. `make migrate-up` records SHA-256 checksums for both directions and stops when a previously recorded file has changed. Check them without applying anything:
+
+```sh
+make migrate-check
+```
+
+To detect schema changes made outside migrations, compare the target database with a separate clean reference database. The reference database is brought to the latest version and must be disposable; the target database is only inspected. Both databases should use the same PostgreSQL major version, and `pg_dump` must be installed:
+
+```sh
+make migrate-check-schema \
+  reference_database_url='postgres://postgres:postgrespw@localhost:5432/cftracker_migration_reference?sslmode=disable'
+```
+
+Run the checksum check before deployment and the schema check against production from a trusted deployment environment. GitHub Actions also rejects modified or deleted historical migration files and exercises the complete migration workflow.
+
 ## Test without the frontend
 
 Run these commands from the `backend` directory. They use a separate test database so existing development data is not affected.
@@ -109,7 +126,7 @@ docker compose -f internal/db/docker-compose.yml exec -T postgres \
 
 The database should contain `users`, `lists`, `list_items`, and `schema_migrations`.
 
-Roll back one migration and confirm that the version changes from `3` to `2`:
+Roll back one migration and confirm that the version changes from `4` to `3`:
 
 ```sh
 make migrate direction=down steps=1
@@ -133,7 +150,7 @@ docker compose -f internal/db/docker-compose.yml exec -T postgres \
 make migrate-up
 ```
 
-After `migrate-down`, no application tables should remain. Migration metadata stays in `schema_migrations` and `migration_meta.table_migrations` so named rollback remains resolvable.
+After `migrate-down`, no application tables should remain. Migration metadata stays in `schema_migrations`, `migration_meta.table_migrations`, and `migration_meta.migration_checksums` so named rollback and migration-integrity checks remain available.
 
 To test a table rollback, restore the schema and select a table:
 
@@ -143,9 +160,9 @@ make migrate-down table=lists
 make migrate-version
 ```
 
-The version should be `1`; `users` should remain while `lists` and `list_items` are removed.
+The version should be `2`; `users` should remain while `lists` and `list_items` are removed.
 
-Rolling back only `list_items` should leave both parent tables at version `2`:
+Rolling back only `list_items` should leave both parent tables at version `3`:
 
 ```sh
 make migrate-up

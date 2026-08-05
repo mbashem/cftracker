@@ -1,8 +1,10 @@
 MIGRATE_VERSION ?= v4.17.1
 MIGRATE := go run -tags postgres github.com/golang-migrate/migrate/v4/cmd/migrate@$(MIGRATE_VERSION)
 MIGRATION_TARGET := go run ./cmd/migration-target
+MIGRATION_CHECK := go run ./cmd/migration-check
 MIGRATIONS_DIR ?= migrations
 MIGRATION_DATABASE_URL ?= $(DATABASE_URL)
+SCHEMA_REFERENCE_DATABASE_URL ?= $(reference_database_url)
 MIGRATION_NAME ?= $(name)
 MIGRATION_DIRECTION ?= $(direction)
 MIGRATION_STEPS ?= $(steps)
@@ -13,9 +15,9 @@ include .env
 export
 endif
 
-export MIGRATION_DATABASE_URL MIGRATION_NAME MIGRATION_DIRECTION MIGRATION_STEPS MIGRATION_TABLE
+export MIGRATION_DATABASE_URL MIGRATION_NAME MIGRATION_DIRECTION MIGRATION_STEPS MIGRATION_TABLE SCHEMA_REFERENCE_DATABASE_URL
 
-.PHONY: build clean run test watch migrate migrate-up migrate-down migrate-version migrate-create check-database-url check-migration-name check-migration-direction check-migration-steps
+.PHONY: build clean run test watch migrate migrate-up migrate-down migrate-version migrate-create migrate-check migrate-check-schema check-database-url check-reference-database-url check-pg-dump check-migration-name check-migration-direction check-migration-steps
 
 build:
 	@echo "Building..."
@@ -39,6 +41,22 @@ check-database-url:
 		exit 1; \
 	fi
 
+check-reference-database-url:
+	@if [ -z "$$SCHEMA_REFERENCE_DATABASE_URL" ]; then \
+		echo "A clean reference database is required. Usage: make migrate-check-schema reference_database_url=postgres://..."; \
+		exit 1; \
+	fi; \
+	if [ "$$MIGRATION_DATABASE_URL" = "$$SCHEMA_REFERENCE_DATABASE_URL" ]; then \
+		echo "The reference database must be different from the target database"; \
+		exit 1; \
+	fi
+
+check-pg-dump:
+	@if ! command -v pg_dump >/dev/null 2>&1; then \
+		echo "pg_dump is required and must be available on PATH"; \
+		exit 1; \
+	fi
+
 check-migration-name:
 	@if [ -z "$$MIGRATION_NAME" ]; then \
 		echo "Migration name is required. Usage: make migrate-create name=add_feature"; \
@@ -57,16 +75,29 @@ check-migration-steps:
 		*) ;; \
 	esac
 
-migrate: check-database-url check-migration-direction check-migration-steps
+migrate: check-database-url check-migration-direction check-migration-steps migrate-check
 	@$(MIGRATE) -path "$(MIGRATIONS_DIR)" -database "$$MIGRATION_DATABASE_URL" "$$MIGRATION_DIRECTION" "$$MIGRATION_STEPS"
+	@$(MIGRATION_CHECK) -path "$(MIGRATIONS_DIR)" -database "$$MIGRATION_DATABASE_URL" -sync
 
 migrate-up: check-database-url
+	@$(MIGRATION_CHECK) -path "$(MIGRATIONS_DIR)" -database "$$MIGRATION_DATABASE_URL"
 	@$(MIGRATE) -path "$(MIGRATIONS_DIR)" -database "$$MIGRATION_DATABASE_URL" up
+	@$(MIGRATION_CHECK) -path "$(MIGRATIONS_DIR)" -database "$$MIGRATION_DATABASE_URL" -sync
+
+migrate-check: check-database-url
+	@$(MIGRATION_CHECK) -path "$(MIGRATIONS_DIR)" -database "$$MIGRATION_DATABASE_URL"
+
+migrate-check-schema: check-database-url check-reference-database-url check-pg-dump
+	@$(MIGRATE) -path "$(MIGRATIONS_DIR)" -database "$$SCHEMA_REFERENCE_DATABASE_URL" up
+	@$(MIGRATION_CHECK) -path "$(MIGRATIONS_DIR)" -database "$$SCHEMA_REFERENCE_DATABASE_URL" -sync
+	@./scripts/check-schema-drift.sh "$$MIGRATION_DATABASE_URL" "$$SCHEMA_REFERENCE_DATABASE_URL"
 
 # A table rollback target is resolved from migration metadata stored in PostgreSQL.
-migrate-down: check-database-url
+migrate-down: check-database-url migrate-check
 	@if [ -z "$$MIGRATION_TABLE" ]; then \
-		exec $(MIGRATE) -path "$(MIGRATIONS_DIR)" -database "$$MIGRATION_DATABASE_URL" down -all; \
+		$(MIGRATE) -path "$(MIGRATIONS_DIR)" -database "$$MIGRATION_DATABASE_URL" down -all; \
+		$(MIGRATION_CHECK) -path "$(MIGRATIONS_DIR)" -database "$$MIGRATION_DATABASE_URL" -sync; \
+		exit 0; \
 	fi; \
 	target="$$($(MIGRATION_TARGET) "$$MIGRATION_TABLE")" || exit $$?; \
 	current="$$($(MIGRATE) -path "$(MIGRATIONS_DIR)" -database "$$MIGRATION_DATABASE_URL" version 2>&1)"; \
@@ -85,7 +116,8 @@ migrate-down: check-database-url
 		$(MIGRATE) -path "$(MIGRATIONS_DIR)" -database "$$MIGRATION_DATABASE_URL" down -all; \
 	else \
 		$(MIGRATE) -path "$(MIGRATIONS_DIR)" -database "$$MIGRATION_DATABASE_URL" goto "$$target"; \
-	fi
+	fi; \
+	$(MIGRATION_CHECK) -path "$(MIGRATIONS_DIR)" -database "$$MIGRATION_DATABASE_URL" -sync
 
 migrate-version: check-database-url
 	@$(MIGRATE) -path "$(MIGRATIONS_DIR)" -database "$$MIGRATION_DATABASE_URL" version
