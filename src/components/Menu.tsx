@@ -10,7 +10,7 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { memo, useState } from "react";
 import { Nav, Navbar, OverlayTrigger, Popover } from "react-bootstrap";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { Path } from "../util/route/path";
 import { ThemesType } from "../util/Theme";
 import siteLogo from "../util/assets/siteLogo.png";
