@@ -93,6 +93,13 @@ func Load() (Config, error) {
 	return config, errors.Join(validationErrors...)
 }
 
+func LoadDatabaseURL() (string, error) {
+	if err := loadLocalEnv(); err != nil {
+		return "", err
+	}
+	return getEnv(DATABASE_URL), nil
+}
+
 func loadLocalEnv() error {
 	if _, err := os.Stat(".env"); err != nil {
 		if errors.Is(err, os.ErrNotExist) {

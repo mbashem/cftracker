@@ -1,0 +1,1 @@
+-- Migration metadata is retained so integrity checks survive full rollbacks.

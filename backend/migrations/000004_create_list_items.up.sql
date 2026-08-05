@@ -1,5 +1,5 @@
 INSERT INTO migration_meta.table_migrations (table_name, rollback_version)
-VALUES ('list_items', 2)
+VALUES ('list_items', 3)
 ON CONFLICT (table_name) DO UPDATE
 SET rollback_version = EXCLUDED.rollback_version;
 

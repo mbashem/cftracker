@@ -1,12 +1,5 @@
-CREATE SCHEMA IF NOT EXISTS migration_meta;
-
-CREATE TABLE IF NOT EXISTS migration_meta.table_migrations (
-    table_name TEXT PRIMARY KEY,
-    rollback_version BIGINT NOT NULL CHECK (rollback_version >= 0)
-);
-
 INSERT INTO migration_meta.table_migrations (table_name, rollback_version)
-VALUES ('users', 0)
+VALUES ('users', 1)
 ON CONFLICT (table_name) DO UPDATE
 SET rollback_version = EXCLUDED.rollback_version;
 
