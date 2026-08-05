@@ -23,13 +23,13 @@ For local development workflows, see [DEVELOPMENT.md](./DEVELOPMENT.md). For con
 - Redux Toolkit and RTK Query
 - Bootstrap and React Bootstrap
 - Chart.js and D3
-- Optional backend: Go 1.22, Gin, PostgreSQL, GitHub OAuth
+- Optional backend: Go 1.26.5, Gin, PostgreSQL, GitHub OAuth
 
 ## Requirements
 
-- Node.js 20.19.x, or Node.js 22.12 or newer
+- Node.js 22.22 or newer
 - npm 10 or newer
-- Optional backend: Go 1.22 or newer, Docker, and PostgreSQL
+- Optional backend: Go 1.26.5 or newer, Docker, and PostgreSQL
 
 ## Frontend Setup
 

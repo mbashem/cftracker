@@ -17,8 +17,8 @@ import type * as Prisma from "./prismaNamespace"
 
 const config: runtime.GetPrismaClientConfig = {
   "previewFeatures": [],
-  "clientVersion": "7.8.0",
-  "engineVersion": "3c6e192761c0362d496ed980de936e2f3cebcd3a",
+  "clientVersion": "7.9.1",
+  "engineVersion": "e922089b7d7502aff4249d5da3420f6fa55fc6ad",
   "activeProvider": "postgresql",
   "inlineSchema": "// Set the datasource provider to PostgreSQL\ndatasource db {\n  provider = \"postgresql\"\n}\n\n// Generate the Prisma client for TypeScript\ngenerator client {\n  provider = \"prisma-client\"\n  output   = \"./generated/client\"\n}\n\n// Define the Problem model\nmodel Problem {\n  name      String\n  contestId Int\n  index     String\n  rating    Int?\n\n  // Define foreign key relationship to Contest\n  contest Contest @relation(fields: [contestId], references: [contestId])\n\n  @@id([contestId, index])\n}\n\n// Define the Contest model\nmodel Contest {\n  contestId           Int             @id\n  name                String\n  Problem             Problem[]\n  SharedContest       SharedContest[] @relation(\"contest\")\n  parentSharedContest SharedContest[] @relation(\"parentContest\")\n}\n\n// Define the SharedContest model\nmodel SharedContest {\n  contestId       Int @unique\n  parentContestId Int\n\n  // Define foreign key relationships to Contest\n  Contest       Contest @relation(\"contest\", fields: [contestId], references: [contestId])\n  parentContest Contest @relation(\"parentContest\", fields: [parentContestId], references: [contestId])\n\n  @@id([contestId, parentContestId])\n}\n",
   "runtimeDataModel": {
@@ -82,7 +82,7 @@ export interface PrismaClientConstructor {
     LogOpts extends LogOptions<Options> = LogOptions<Options>,
     OmitOpts extends Prisma.PrismaClientOptions['omit'] = Options extends { omit: infer U } ? U : Prisma.PrismaClientOptions['omit'],
     ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs
-  >(options: Prisma.Subset<Options, Prisma.PrismaClientOptions> ): PrismaClient<LogOpts, OmitOpts, ExtArgs>
+  >(options: Prisma.PrismaClientConstructorArgs<Options>): PrismaClient<LogOpts, OmitOpts, ExtArgs>
 }
 
 /**
@@ -103,7 +103,7 @@ export interface PrismaClientConstructor {
 
 export interface PrismaClient<
   in LogOpts extends Prisma.LogLevel = never,
-  in out OmitOpts extends Prisma.PrismaClientOptions['omit'] = undefined,
+  in out OmitOpts extends Prisma.PrismaClientOptions['omit'] = Prisma.PrismaClientOptions['omit'],
   in out ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs
 > {
   [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['other'] }
