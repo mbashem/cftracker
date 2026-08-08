@@ -9,15 +9,17 @@ MIGRATION_NAME ?= $(name)
 MIGRATION_DIRECTION ?= $(direction)
 MIGRATION_STEPS ?= $(steps)
 MIGRATION_TABLE ?= $(table)
+TEST_DATABASE_URL ?=
+COVERAGE_FILE ?= ../coverage/backend.out
 
 ifneq (,$(wildcard .env))
 include .env
 export
 endif
 
-export MIGRATION_DATABASE_URL MIGRATION_NAME MIGRATION_DIRECTION MIGRATION_STEPS MIGRATION_TABLE SCHEMA_REFERENCE_DATABASE_URL
+export MIGRATION_DATABASE_URL MIGRATION_NAME MIGRATION_DIRECTION MIGRATION_STEPS MIGRATION_TABLE SCHEMA_REFERENCE_DATABASE_URL TEST_DATABASE_URL
 
-.PHONY: build clean run test watch migrate migrate-up migrate-down migrate-version migrate-create migrate-check migrate-check-schema check-database-url check-reference-database-url check-pg-dump check-migration-name check-migration-direction check-migration-steps
+.PHONY: build clean run test test-unit test-integration test-race test-cover test-all watch migrate migrate-up migrate-down migrate-version migrate-create migrate-check migrate-check-schema check-database-url check-test-database-url check-reference-database-url check-pg-dump check-migration-name check-migration-direction check-migration-steps
 
 build:
 	@echo "Building..."
@@ -32,12 +34,41 @@ run:
 	@go run cmd/api/main.go
 
 test:
-	@echo "Testing..."
-	@go test ./... -v
+	@$(MAKE) test-unit
+
+test-unit:
+	@echo "Running unit tests..."
+	@go test ./...
+
+test-integration: check-test-database-url
+	@echo "Running integration tests..."
+	@go test -p 1 -count=1 -tags=integration ./...
+
+test-race:
+	@echo "Running race detector..."
+	@go test -race ./...
+
+test-cover:
+	@echo "Running coverage..."
+	@mkdir -p "$(dir $(COVERAGE_FILE))"
+	@go test -coverprofile="$(COVERAGE_FILE)" ./...
+	@go tool cover -func="$(COVERAGE_FILE)"
+
+test-all:
+	@$(MAKE) test-unit
+	@$(MAKE) test-race
+	@go vet ./...
+	@$(MAKE) test-integration
 
 check-database-url:
 	@if [ -z "$$MIGRATION_DATABASE_URL" ]; then \
 		echo "DATABASE_URL or MIGRATION_DATABASE_URL is required"; \
+		exit 1; \
+	fi
+
+check-test-database-url:
+	@if [ -z "$$TEST_DATABASE_URL" ]; then \
+		echo "TEST_DATABASE_URL is required for integration tests"; \
 		exit 1; \
 	fi
 

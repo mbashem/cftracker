@@ -37,6 +37,7 @@ CORS_ALLOWED_ORIGINS=http://localhost:5173
 The API only opens and validates the database connection during startup. Apply schema changes separately from the `backend` directory; the Makefile reads `DATABASE_URL` from the environment or `.env`.
 
 See [`MIGRATION_FLOW.md`](MIGRATION_FLOW.md) for a code-review guide to migration ordering, checksum verification, rollback behavior, and schema-drift detection.
+See [`TESTING.md`](TESTING.md) for unit, integration, race, and coverage test commands.
 
 ```sh
 make migrate-up
