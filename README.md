@@ -2,7 +2,7 @@
 
 CFTracker is a Codeforces companion app for browsing contests and problems, checking solve status for one or more handles, and building practice lists.
 
-The app can run as a frontend-only tracker using public Codeforces data. An optional Go backend enables GitHub login and saved problem lists.
+Backend setup and development documentation is available in the [backend README](./backend/README.md).
 
 ## Features
 
@@ -10,7 +10,6 @@ The app can run as a frontend-only tracker using public Codeforces data. An opti
 - Problem browser with search, rating range, contest ID range, tags, solve status filters, sorting, pagination, and random problem selection.
 - Multi-handle submission sync from Codeforces.
 - Stats page with verdict charts, rating breakdowns, contest category solve percentages, and a submissions heat map.
-- Optional authenticated lists for saving and organizing practice problems.
 - Dark and light themes.
 
 For local development workflows, see [DEVELOPMENT.md](./DEVELOPMENT.md). For contribution rules and pull request expectations, see [CONTRIBUTING.md](./CONTRIBUTING.md).
@@ -23,13 +22,11 @@ For local development workflows, see [DEVELOPMENT.md](./DEVELOPMENT.md). For con
 - Redux Toolkit and RTK Query
 - Bootstrap and React Bootstrap
 - Chart.js and D3
-- Optional backend: Go 1.26.5, Gin, PostgreSQL, GitHub OAuth
 
 ## Requirements
 
 - Node.js 22.22 or newer
 - npm 10 or newer
-- Optional backend: Go 1.26.5 or newer, Docker, and PostgreSQL
 
 ## Frontend Setup
 
@@ -42,52 +39,17 @@ npm run dev
 
 Open the local URL printed by Vite in the terminal.
 
-The frontend-only app does not require environment variables. Contest and shared-problem data are loaded from checked-in generated files. Problemset data is fetched from the public Codeforces API unless debug mode is enabled.
+The frontend does not require environment variables. Contest and shared-problem data are loaded from checked-in generated files. Problemset data is fetched from the public Codeforces API unless debug mode is enabled.
 
 ## Frontend Configuration
 
-Create `.env` in the repository root only when enabling backend-backed features:
+Create `.env` in the repository root only when enabling debug mode:
 
 ```bash
 VITE_DEBUG_MODE=true
-VITE_BACKEND_API_URL=http://localhost:8080/api
-VITE_IS_BACKEND_AVAILABLE=true
-VITE_GITHUB_OAUTH_CLIENT_ID=your_github_oauth_client_id
-VITE_GITHUB_OAUTH_REDIRECT_URI=http://localhost:5173/callback/auth-gh
 ```
 
 Set `VITE_DEBUG_MODE=true` to use the checked-in problem snapshot and local 30-minute Codeforces API cache while developing. Leave it unset to use live Codeforces problem data.
-
-Leave `VITE_IS_BACKEND_AVAILABLE` unset for frontend-only mode. Backend UI is enabled only when it is set to the literal value `true`.
-
-## Backend Setup
-
-The backend is optional. It powers GitHub authentication and saved problem lists.
-
-1. Start PostgreSQL:
-
-```bash
-cd backend
-docker compose -f internal/db/docker-compose.yml up -d
-```
-
-2. Create `backend/.env`:
-
-```bash
-GITHUB_CLIENT_ID=your_github_oauth_client_id
-GITHUB_CLIENT_SECRET=your_github_oauth_client_secret
-GITHUB_REDIRECT_URL=http://localhost:5173/callback/auth-gh
-DATABASE_URL=postgres://postgres:postgrespw@localhost:5432/cftracker?sslmode=disable
-JWT_SECRET=replace_with_a_long_random_string
-```
-
-3. Run the API:
-
-```bash
-make run
-```
-
-The API runs on `http://localhost:8080` and allows requests from `http://localhost:5173`.
 
 ## Scripts
 
@@ -96,15 +58,6 @@ npm run dev      # Start the Vite dev server
 npm run build    # Build the frontend for production
 npm run lint     # Run ESLint
 npm run typecheck # Run the TypeScript project check
-```
-
-Backend scripts are available from `backend/`:
-
-```bash
-make run         # Run the Go API
-make build       # Build backend/tmp/main
-make test        # Run Go tests
-make watch       # Run with air if available
 ```
 
 ## Data Refresh
@@ -126,10 +79,9 @@ node fetch_problems.mjs
 src/components/contest/    Contest page hook and modular contest table views
 src/components/problem/    Problem page hook, filters, and problem table views
 src/components/stats/      Stats page and charts
-src/components/list/       Authenticated problem-list views
+src/components/list/       Problem-list views
 src/data/                  Redux store, reducers, RTK Query APIs, and data loaders
 src/types/                 Codeforces and app domain types
-backend/                   Optional Go API for auth and lists
 scripts/                   Data refresh scripts
 ```
 
