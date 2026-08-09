@@ -23,6 +23,57 @@ make test-all
 
 `make test-integration` runs with the `integration` build tag and `-p 1`. The package-level parallelism is disabled because integration tests share one destructive test database reset helper. Do not call `t.Parallel()` in tests that use that database.
 
+## Current Unit Coverage
+
+The configuration, JWT, and verification-token packages can be checked independently while working in those areas:
+
+```sh
+go test ./configs ./internal/utils ./internal/users
+go test -race ./internal/users ./internal/utils
+```
+
+The current tests cover:
+
+- `configs`: application defaults, invalid port and external API timeout values, CORS parsing, required configuration, GitHub redirect URL validation, JWT secret length, process-environment precedence over `.env`, value trimming, and database URL loading from `.env`.
+- `internal/utils`: JWT generation and verification, claims and expiration, invalid signatures, unsupported signing methods, and missing or invalid `userId` claims.
+- `internal/users`: verification-token storage, lookup, replacement, deletion, immediate expiration with a negative duration, isolation between users, and concurrent access.
+
+These are unit tests and do not use PostgreSQL. The configuration tests temporarily change process environment variables, the working directory, and the standard logger output. JWT tests initialize a package-level signing secret. Do not call `t.Parallel()` in these tests while they share process-wide state.
+
+## Phase 2 Coverage
+
+The following tested production files must maintain 100% statement coverage:
+
+- `configs/configs.go`
+- `internal/utils/jwt.go`
+- `internal/users/users_cfverification.go`
+
+Run `make test-cover` to generate `coverage/backend.out` and print function-level coverage. The overall `internal/users` package percentage is lower because that package also contains providers, handlers, repositories, and routes whose tests belong to later phases. Judge the Phase 2 token-store scope by the `users_cfverification.go` function entries in the coverage report; every entry must be `100.0%`.
+
+Latest measured statement coverage, recorded on `2026-08-09`:
+
+| Scope | Coverage |
+| --- | ---: |
+| `configs/configs.go` | 100.0% |
+| `internal/utils/jwt.go` | 100.0% |
+| `internal/users/users_cfverification.go` | 100.0% |
+| Entire `internal/users` package | 11.5% |
+
+The package percentage is included only as a reference for later phases. It does not reduce the 100% file-level coverage of `users_cfverification.go`.
+
+For a focused coverage report while changing these files:
+
+```sh
+go test -coverprofile=/tmp/cftracker-configs.out ./configs
+go tool cover -func=/tmp/cftracker-configs.out
+
+go test -coverprofile=/tmp/cftracker-utils.out ./internal/utils
+go tool cover -func=/tmp/cftracker-utils.out
+
+go test -coverprofile=/tmp/cftracker-users.out ./internal/users
+go tool cover -func=/tmp/cftracker-users.out
+```
+
 ## Integration Database
 
 Integration tests require `TEST_DATABASE_URL`. The helper refuses to run unless the connected database name ends in `_test` or `_integration`. It also rejects a `TEST_DATABASE_URL` that exactly matches `DATABASE_URL`.

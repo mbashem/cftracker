@@ -32,12 +32,33 @@ CORS_ALLOWED_ORIGINS=http://localhost:5173
 
 `PORT` defaults to `8080`. `EXTERNAL_API_TIMEOUT` accepts Go duration values such as `5s` or `1m` and defaults to `10s`. `CORS_ALLOWED_ORIGINS` accepts comma-separated HTTP or HTTPS origins without paths. Missing or invalid entries are logged and skipped; when none are valid, requests without a browser `Origin` header can still be used for API testing. Do not use `*` because the API allows credentialed CORS requests.
 
+## Testing
+
+See the [`TESTING.md`](TESTING.md) backend testing guide for the complete unit, integration, race, coverage, and database-safety workflow.
+
+Unit tests do not require PostgreSQL. Run the complete unit suite and race detector from the `backend` directory:
+
+```sh
+make test-unit
+make test-race
+```
+
+The configuration, JWT, and Codeforces verification-token tests can be run directly while working on those packages:
+
+```sh
+go test ./configs ./internal/utils ./internal/users
+go test -race ./internal/users ./internal/utils
+```
+
+Configuration tests cover defaults, invalid values, process-environment precedence over `.env`, and database URL loading from `.env`. JWT tests cover generation, verification, expiration, signatures, signing methods, and invalid `userId` claims. Verification-token tests cover storage, replacement, deletion, expiration, and concurrent access.
+
+The Phase 2 production files `configs/configs.go`, `internal/utils/jwt.go`, and `internal/users/users_cfverification.go` each maintain 100% statement coverage. Integration tests require a disposable PostgreSQL database; follow the testing guide before running them.
+
 ## Database migrations
 
 The API only opens and validates the database connection during startup. Apply schema changes separately from the `backend` directory; the Makefile reads `DATABASE_URL` from the environment or `.env`.
 
 See [`MIGRATION_FLOW.md`](MIGRATION_FLOW.md) for a code-review guide to migration ordering, checksum verification, rollback behavior, and schema-drift detection.
-See [`TESTING.md`](TESTING.md) for unit, integration, race, and coverage test commands.
 
 ```sh
 make migrate-up
