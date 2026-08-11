@@ -43,16 +43,16 @@ make test-unit
 make test-race
 ```
 
-The configuration, JWT, and Codeforces verification-token tests can be run directly while working on those packages:
+The configuration, authentication middleware, JWT, and Codeforces verification-token tests can be run directly while working on those packages:
 
 ```sh
-go test ./configs ./internal/utils ./internal/users
-go test -race ./internal/users ./internal/utils
+go test ./configs ./internal/middlewares ./internal/utils ./internal/users
+go test -race ./internal/middlewares ./internal/users ./internal/utils
 ```
 
-Configuration tests cover defaults, invalid values, process-environment precedence over `.env`, and database URL loading from `.env`. JWT tests cover generation, verification, expiration, signatures, signing methods, and invalid `userId` claims. Verification-token tests cover storage, replacement, deletion, expiration, and concurrent access.
+Configuration tests cover defaults, invalid values, process-environment precedence over `.env`, and database URL loading from `.env`. Authentication middleware tests cover rejected credentials, endpoint abortion, and propagation of a verified `int64 userId`. JWT tests cover generation, verification, expiration, signatures, signing methods, and invalid `userId` claims. Verification-token tests cover storage, replacement, deletion, expiration, and concurrent access.
 
-The Phase 2 production files `configs/configs.go`, `internal/utils/jwt.go`, and `internal/users/users_cfverification.go` each maintain 100% statement coverage. Integration tests require a disposable PostgreSQL database; follow the testing guide before running them.
+The currently tested production files `configs/configs.go`, `internal/middlewares/auth.go`, `internal/utils/jwt.go`, and `internal/users/users_cfverification.go` each maintain 100% statement coverage. Integration tests require a disposable PostgreSQL database; follow the testing guide before running them.
 
 ## Database migrations
 

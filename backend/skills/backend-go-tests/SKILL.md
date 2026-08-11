@@ -6,6 +6,7 @@ description: Backend-specific Go test conventions for the cftracker repository. 
 # Backend Go Tests
 
 - Give table-test cases self-explanatory names that describe the input and expected behavior shown by `go test -v`.
+- Initialize process-global test state explicitly in every test or subtest; do not depend on test execution order.
 - Keep repeated dummy data in constants or small mock-data helpers. Keep one-off test literals inline when that is clearer.
 - Build fixtures from one default mock-data helper and pass override groups for scenario-specific changes.
 - Pass fixture data into setup helpers instead of letting helpers silently choose default values.

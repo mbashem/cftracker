@@ -1,0 +1,4 @@
+interface:
+  display_name: "Develop CFTracker Backend"
+  short_description: "Apply consistent CFTracker backend practices"
+  default_prompt: "Use $develop-backend to implement this backend change with clear naming, established architecture, and appropriate verification."
