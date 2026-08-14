@@ -25,7 +25,7 @@ make test-all
 
 ## Current Unit Coverage
 
-The configuration, authentication middleware, JWT, verification-token, and list-handler packages can be checked independently while working in those areas:
+The configuration, authentication middleware, JWT, list-handler, user-handler, and verification-token packages can be checked independently while working in those areas:
 
 ```sh
 go test ./configs ./internal/lists/... ./internal/middlewares ./internal/utils ./internal/users
@@ -38,9 +38,9 @@ The current tests cover:
 - `internal/lists`: list and list-item handler success responses, request validation, whitespace normalization, missing and foreign lists, repository failures, idempotent item-deletion responses, and exact authenticated repository arguments.
 - `internal/middlewares`: missing or malformed authorization, unsupported schemes, invalid signatures, expiration, invalid `userId` claims, request abortion, and propagation of the authenticated `int64 userId`.
 - `internal/utils`: JWT generation and verification, claims and expiration, invalid signatures, unsupported signing methods, and missing or invalid `userId` claims.
-- `internal/users`: verification-token storage, lookup, replacement, deletion, immediate expiration with a negative duration, isolation between users, and concurrent access.
+- `internal/users`: profile and Codeforces-handle responses, deterministic verification-token creation and reuse, verification state transitions, provider error mapping, verification-token storage and expiration, user isolation, and concurrent token-store access.
 
-These are unit tests and do not use PostgreSQL. The configuration tests temporarily change process environment variables, the working directory, and the standard logger output. Authentication middleware and JWT tests initialize a package-level signing secret, while middleware and list-handler tests also change Gin's process-wide mode. Do not call `t.Parallel()` in these tests while they share process-wide state.
+These are unit tests and do not use PostgreSQL or external HTTP services. The configuration tests temporarily change process environment variables, the working directory, and the standard logger output. Authentication middleware and JWT tests initialize a package-level signing secret, while middleware, list-handler, and user-handler tests also change process-wide Gin or logger state. Do not call `t.Parallel()` in these tests while they share process-wide state.
 
 ## Tested File Coverage
 
@@ -51,10 +51,11 @@ The following tested production files must maintain 100% statement coverage:
 - `internal/middlewares/auth.go`
 - `internal/utils/jwt.go`
 - `internal/users/users_cfverification.go`
+- `internal/users/users_handler.go`
 
-Run `make test-cover` to generate `coverage/backend.out` and print function-level coverage. The overall `internal/lists` and `internal/users` package percentages are lower because those packages also contain repositories, routes, providers, and handlers whose tests belong to other phases. Judge each completed phase by its production-file function entries in the coverage report; every entry for the files listed above must be `100.0%`.
+Run `make test-cover` to generate `coverage/backend.out` and print function-level coverage. The overall `internal/lists` and `internal/users` package percentages are lower because those packages also contain repositories, routes, and providers whose tests belong to other phases. Judge each completed phase by its production-file function entries in the coverage report; every entry for the files listed above must be `100.0%`.
 
-Latest measured statement coverage, recorded on `2026-08-13`:
+Latest measured statement coverage, recorded on `2026-08-14`:
 
 | Scope | Coverage |
 | --- | ---: |
@@ -64,9 +65,10 @@ Latest measured statement coverage, recorded on `2026-08-13`:
 | `internal/middlewares/auth.go` | 100.0% |
 | `internal/utils/jwt.go` | 100.0% |
 | `internal/users/users_cfverification.go` | 100.0% |
-| Entire `internal/users` package | 11.5% |
+| `internal/users/users_handler.go` | 100.0% |
+| Entire `internal/users` package | 53.9% |
 
-The package percentages are included only as references for later phases. They do not reduce the 100% file-level coverage of `lists_handler.go` or `users_cfverification.go`.
+The package percentages are included only as references for later phases. They do not reduce the 100% file-level coverage of `lists_handler.go`, `users_cfverification.go`, or `users_handler.go`.
 
 For a focused coverage report while changing these files:
 
