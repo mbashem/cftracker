@@ -127,8 +127,6 @@ Create root `.env` only when enabling backend-backed features in the Vite app:
 VITE_DEBUG_MODE=true
 VITE_BACKEND_API_URL=http://localhost:8080/api
 VITE_IS_BACKEND_AVAILABLE=true
-VITE_GITHUB_OAUTH_CLIENT_ID=your_github_oauth_client_id
-VITE_GITHUB_OAUTH_REDIRECT_URI=http://localhost:5173/callback/auth-gh
 ```
 
 Leave `VITE_DEBUG_MODE` unset to use live Codeforces problem data. Leave `VITE_IS_BACKEND_AVAILABLE` unset for frontend-only mode. Backend UI is enabled only when it is set to the literal value `true`.
@@ -140,8 +138,6 @@ Root frontend envs currently read by the app:
 | `VITE_DEBUG_MODE` | Optional | Uses the checked-in problem snapshot and enables 30-minute local Codeforces API caching only when set to `true`. |
 | `VITE_BACKEND_API_URL` | Only with backend features | RTK Query base URL. Use `http://localhost:8080/api` locally. |
 | `VITE_IS_BACKEND_AVAILABLE` | Only with backend features | Shows backend-only nav/auth/list UI only when set to `true`. |
-| `VITE_GITHUB_OAUTH_CLIENT_ID` | Only with GitHub login | GitHub OAuth login link. |
-| `VITE_GITHUB_OAUTH_REDIRECT_URI` | Only with GitHub login | GitHub OAuth redirect target, usually `http://localhost:5173/callback/auth-gh`. |
 | `VITE_BACKEND_NOT_AVAILBLE_MESSAGE` | Optional | Currently exported from `src/util/env.ts`; not central to the main flow. |
 
 ### Backend `.env`

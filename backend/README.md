@@ -15,7 +15,7 @@ Required variables:
 ```env
 GITHUB_CLIENT_ID=replace-with-github-client-id
 GITHUB_CLIENT_SECRET=replace-with-github-client-secret
-GITHUB_REDIRECT_URL=http://localhost:8080/auth/github/callback
+GITHUB_REDIRECT_URL=http://localhost:5173/callback/auth-gh
 DATABASE_URL=postgres://postgres:postgrespw@localhost:5432/cftracker?sslmode=disable
 JWT_SECRET=replace-with-generated-secret
 ```
@@ -32,6 +32,8 @@ CORS_ALLOWED_ORIGINS=http://localhost:5173
 
 `PORT` defaults to `8080`. `EXTERNAL_API_TIMEOUT` accepts Go duration values such as `5s` or `1m` and defaults to `10s`. `CORS_ALLOWED_ORIGINS` accepts comma-separated HTTP or HTTPS origins without paths. Missing or invalid entries are logged and skipped; when none are valid, requests without a browser `Origin` header can still be used for API testing. Do not use `*` because the API allows credentialed CORS requests.
 
+GitHub sign-in must start at `/api/auth/github/login`. The handler stores the short-lived OAuth state in an HTTP-only cookie, and the frontend forwards GitHub's returned `state` with the authorization code. A new login replaces any pending login in the same browser profile. HTTPS deployments behind a reverse proxy must set `X-Forwarded-Proto: https` so the state cookie is marked `Secure`.
+
 ## Testing
 
 See the [`TESTING.md`](TESTING.md) backend testing guide for the complete unit, integration, race, coverage, and database-safety workflow.
@@ -46,8 +48,8 @@ make test-race
 The configuration, authentication middleware, JWT, and Codeforces verification-token tests can be run directly while working on those packages:
 
 ```sh
-go test ./configs ./internal/middlewares ./internal/utils ./internal/users
-go test -race ./internal/middlewares ./internal/users ./internal/utils
+go test ./configs ./internal/auth ./internal/middlewares ./internal/utils ./internal/users
+go test -race ./internal/auth ./internal/middlewares ./internal/users ./internal/utils
 ```
 
 Configuration tests cover defaults, invalid values, process-environment precedence over `.env`, and database URL loading from `.env`. Authentication middleware tests cover rejected credentials, endpoint abortion, and propagation of a verified `int64 userId`. JWT tests cover generation, verification, expiration, signatures, signing methods, and invalid `userId` claims. Verification-token tests cover storage, replacement, deletion, expiration, and concurrent access.
@@ -200,7 +202,7 @@ make run \
   JWT_SECRET=test-secret-with-at-least-32-bytes \
   GITHUB_CLIENT_ID=test \
   GITHUB_CLIENT_SECRET=test \
-  GITHUB_REDIRECT_URL=http://localhost:8080/auth/github/callback \
+  GITHUB_REDIRECT_URL=http://localhost:5173/callback/auth-gh \
   CORS_ALLOWED_ORIGINS=http://localhost:5173
 ```
 
@@ -214,10 +216,10 @@ A `404` response is expected because `/` has no registered route. It confirms th
 
 # API
 
-/
+- `GET /api/auth/github/login` - initialize GitHub login and OAuth state
+- `GET /api/auth/github/callback?code={code}&state={state}` - return user info and a JWT
 
-- /auth/github/login - initialize github login
-- /auth/github/callback - retuns user info and jwt token
+The equivalent routes without the `/api` prefix remain available for direct backend clients.
 
 Authorization header with token 'Bearer {token}' required for following
 GET - /user/profile - returns users info ,

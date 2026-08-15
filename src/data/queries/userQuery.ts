@@ -6,9 +6,10 @@ export const userApi = createApi({
 	reducerPath: 'userApi',
 	baseQuery: createBaseQuery(),
 	endpoints: (builder) => ({
-		authenticate: builder.query<User, { code: string }>({
+		authenticate: builder.query<User, { code: string; state: string }>({
 			query: (body) => ({
-				url: `/auth/github/callback?code=${body.code}`,
+				url: "/auth/github/callback",
+				params: body,
 				method: 'GET'
 			}),
 			transformResponse: (response: any) => {
