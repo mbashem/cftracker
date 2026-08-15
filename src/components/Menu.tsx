@@ -15,7 +15,7 @@ import { Path } from "../util/route/path";
 import { ThemesType } from "../util/Theme";
 import siteLogo from "../util/assets/siteLogo.png";
 import useTheme from "../data/hooks/useTheme";
-import { GITHUB_OAUTH_CLIENT_ID, GITHUB_OAUTH_REDIRECT_URI, IS_BACKEND_AVAILABLE } from "../util/env";
+import { BACKEND_API_URL, IS_BACKEND_AVAILABLE } from "../util/env";
 import useToast from "../hooks/useToast";
 import useUser from "../hooks/useUser";
 import useUserStore from "../data/hooks/useUserStore";
@@ -191,8 +191,8 @@ function Menu() {
                 <li className="nav-item">
                   <a
                     className="nav-link"
-                    title="Refresh Submissions"
-                    href={`https://github.com/login/oauth/authorize?client_id=${GITHUB_OAUTH_CLIENT_ID}&redirect_uri=${GITHUB_OAUTH_REDIRECT_URI}&scope=user:email`}
+                    title="Sign in with GitHub"
+                    href={`${BACKEND_API_URL}/auth/github/login`}
                   >
                     <FontAwesomeIcon icon={faSignIn} />
                   </a>

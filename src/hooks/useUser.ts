@@ -11,9 +11,9 @@ function useUser() {
 	const user = userList.user;
 	const [authenticate] = useLazyAuthenticateQuery();
 
-	async function handleGithubCallback(code: string) {
+	async function handleGithubCallback(code: string, state: string) {
 		try {
-			const user = await authenticate({ code }).unwrap();
+			const user = await authenticate({ code, state }).unwrap();
 			dispatch(setUser(user));
 			StorageService.setJWTToken(user.jwtToken);
 			return;

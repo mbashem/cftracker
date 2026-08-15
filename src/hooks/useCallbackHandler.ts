@@ -14,10 +14,16 @@ function useCallbackHandler() {
 	useEffect(() => {
 		const query = new URLSearchParams(location.search);
 		const code = query.get('code');
+		const state = query.get('state');
 
 		if (matchPath(location.pathname, "/callback/auth-gh") && code !== null) {
+			if (state === null) {
+				showErrorToast("Authentication failed!");
+				navigate(Path.CONTESTS);
+				return;
+			}
 			showGeneralToast("Authenticating...");
-			handleGithubCallback(code)
+			handleGithubCallback(code, state)
 				.catch(err => showErrorToast(err?.message ?? "Authentication failed!"));
 			navigate(Path.CONTESTS);
 		}
