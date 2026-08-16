@@ -25,7 +25,7 @@ make test-all
 
 ## Current Unit Coverage
 
-The configuration, GitHub OAuth state, authentication middleware, JWT, list-handler, user-handler, and verification-token packages can be checked independently while working in those areas:
+The configuration, concrete external providers, GitHub OAuth state, authentication middleware, JWT, list-handler, user-handler, and verification-token packages can be checked independently while working in those areas:
 
 ```sh
 go test ./configs ./internal/auth ./internal/lists/... ./internal/middlewares ./internal/utils ./internal/users
@@ -35,11 +35,11 @@ go test -race ./internal/auth ./internal/lists/... ./internal/middlewares ./inte
 The current tests cover:
 
 - `configs`: application defaults, invalid port and external API timeout values, CORS parsing, required configuration, GitHub redirect URL validation, JWT secret length, process-environment precedence over `.env`, value trimming, and database URL loading from `.env`.
-- `internal/auth`: cryptographically generated GitHub OAuth state, login redirects, HTTP and HTTPS cookie attributes, callback state validation and cookie deletion, new-user and returning-user persistence, provider and repository failures, token-generation failures, and JWT user IDs without GitHub network access.
+- `internal/auth`: cryptographically generated GitHub OAuth state, login redirects, HTTP and HTTPS cookie attributes, callback state validation and cookie deletion, new-user and returning-user persistence, provider and repository failures, token-generation failures, JWT user IDs, and concrete GitHub token and user responses without GitHub network access.
 - `internal/lists`: list and list-item handler success responses, request validation, whitespace normalization, missing and foreign lists, repository failures, idempotent item-deletion responses, and exact authenticated repository arguments.
 - `internal/middlewares`: missing or malformed authorization, unsupported schemes, invalid signatures, expiration, invalid `userId` claims, request abortion, and propagation of the authenticated `int64 userId`.
 - `internal/utils`: JWT generation and verification, claims and expiration, invalid signatures, unsupported signing methods, and missing or invalid `userId` claims.
-- `internal/users`: profile and Codeforces-handle responses, deterministic verification-token creation and reuse, verification state transitions, provider error mapping, verification-token storage and expiration, user isolation, and concurrent token-store access.
+- `internal/users`: profile and Codeforces-handle responses, deterministic verification-token creation and reuse, verification state transitions, provider error mapping, concrete Codeforces responses and URL escaping, verification-token storage and expiration, user isolation, and concurrent token-store access.
 
 These are unit tests and do not use PostgreSQL or external HTTP services. The configuration tests temporarily change process environment variables, the working directory, and the standard logger output. Authentication middleware and JWT tests initialize a package-level signing secret, while OAuth-state, middleware, list-handler, and user-handler tests also change process-wide Gin or logger state. Do not call `t.Parallel()` in these tests while they share process-wide state.
 
@@ -54,24 +54,26 @@ The following tested production files must maintain 100% statement coverage:
 - `internal/users/users_cfverification.go`
 - `internal/users/users_handler.go`
 
-Run `make test-cover` to generate `coverage/backend.out` and print function-level coverage. The overall `internal/lists` and `internal/users` package percentages are lower because those packages also contain repositories, routes, and providers whose tests belong to other phases. Judge each completed phase by its production-file function entries in the coverage report; every entry for the files listed above must be `100.0%`.
+Run `make test-cover` to generate `coverage/backend.out` and print function-level coverage. The overall package percentages are lower because those packages also contain repositories, routes, or configuration whose tests belong to other phases. Judge each completed phase by its production-file function entries in the coverage report; every entry for the files listed above must be `100.0%`.
 
-Latest measured statement coverage, recorded on `2026-08-15`:
+Latest measured statement coverage, recorded on `2026-08-16`:
 
 | Scope | Coverage |
 | --- | ---: |
 | `configs/configs.go` | 100.0% |
 | `internal/auth/auth_handlers.go` | 98.4% |
-| Entire `internal/auth` package | 73.9% |
+| `internal/auth/github_provider.go` | 95.2% |
+| Entire `internal/auth` package | 96.6% |
 | `internal/lists/lists_handler.go` | 100.0% |
 | Entire `internal/lists` package | 70.0% |
 | `internal/middlewares/auth.go` | 100.0% |
 | `internal/utils/jwt.go` | 100.0% |
+| `internal/users/codeforces_provider.go` | 94.7% |
 | `internal/users/users_cfverification.go` | 100.0% |
 | `internal/users/users_handler.go` | 100.0% |
-| Entire `internal/users` package | 53.9% |
+| Entire `internal/users` package | 64.8% |
 
-The package percentages are included only as references for later phases. They do not reduce the 100% file-level coverage of `lists_handler.go`, `users_cfverification.go`, or `users_handler.go`. Every function in `auth_handlers.go` is fully covered except the error return from `crypto/rand.Read`, which Go 1.26 handles by terminating the process instead of returning the error.
+The package percentages are included only as references for later phases. They do not reduce the 100% file-level coverage of `lists_handler.go`, `users_cfverification.go`, or `users_handler.go`. The fixed provider URLs and non-nil derived contexts make request-construction failures unreachable without adding test-only state to the clients, leaving one uncovered statement in each provider. Every function in `auth_handlers.go` is fully covered except the error return from `crypto/rand.Read`, which Go 1.26 handles by terminating the process instead of returning the error.
 
 For a focused coverage report while changing these files:
 
