@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"context"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -15,6 +14,7 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"github.com/mbashem/cftracker/backend/internal/testutil"
 	"github.com/mbashem/cftracker/backend/internal/users"
 	"github.com/mbashem/cftracker/backend/internal/utils"
 )
@@ -68,7 +68,7 @@ func TestGitHubLoginStoresGeneratedOAuthState(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			state := newMockAuthState()
-			handler := newAuthHandlerTestHandler(state)
+			handler, githubProvider := newAuthHandlerTestHandler(state)
 			generateStateCalls := 0
 			handler.generateState = func() (string, error) {
 				generateStateCalls++
@@ -91,8 +91,8 @@ func TestGitHubLoginStoresGeneratedOAuthState(t *testing.T) {
 			if generateStateCalls != 1 {
 				t.Fatalf("generateState calls = %d, want 1", generateStateCalls)
 			}
-			expectedCalls := []authDependencyCall{{operation: authorizationURLOperation, oauthState: testGitHubOAuthState}}
-			assertAuthDependencyCalls(t, state, expectedCalls)
+			assertGitHubProviderCalls(t, githubProvider, []string{testGitHubOAuthState}, nil)
+			assertAuthDependencyCalls(t, state, nil)
 			expectedLocation := testGitHubAuthorization + "?state=" + url.QueryEscape(testGitHubOAuthState)
 			if location := response.Header().Get("Location"); location != expectedLocation {
 				t.Fatalf("redirect location = %q, want %q", location, expectedLocation)
@@ -104,13 +104,14 @@ func TestGitHubLoginStoresGeneratedOAuthState(t *testing.T) {
 
 func TestGitHubLoginHandlesOAuthStateGenerationFailure(t *testing.T) {
 	state := newMockAuthState()
-	handler := newAuthHandlerTestHandler(state)
+	handler, githubProvider := newAuthHandlerTestHandler(state)
 	handler.generateState = func() (string, error) { return "", errors.New(testDependencyFailure) }
 	router := newAuthHandlerTestRouter(handler)
 
 	response := performAuthRequest(router, testGitHubLoginPath, "", "")
 
 	assertAuthErrorResponse(t, response, http.StatusInternalServerError, failedToInitializeGitHub)
+	assertGitHubProviderCalls(t, githubProvider, nil, nil)
 	assertAuthDependencyCalls(t, state, nil)
 	if len(response.Result().Cookies()) != 0 {
 		t.Fatalf("response cookies = %+v, want none", response.Result().Cookies())
@@ -134,21 +135,20 @@ func TestGenerateGitHubOAuthState(t *testing.T) {
 // Callback state validation.
 
 func TestGitHubCallbackValidatesAndConsumesOAuthState(t *testing.T) {
-	authenticateCall := authDependencyCall{operation: authenticateOperation, oauthCode: testGitHubOAuthCode}
 	testCases := []struct {
-		name                  string
-		storedState           string
-		providedState         string
-		expectedStatus        int
-		expectedError         API_MESSAGE
-		expectedCalls         []authDependencyCall
-		expectedCookieDeleted bool
+		name                        string
+		storedState                 string
+		providedState               string
+		expectedStatus              int
+		expectedError               API_MESSAGE
+		expectedAuthenticationCodes []string
+		expectedCookieDeleted       bool
 	}{
 		{
 			name:        "matching state reaches GitHub authentication and deletes the cookie",
 			storedState: testGitHubOAuthState, providedState: testGitHubOAuthState,
 			expectedStatus: http.StatusInternalServerError, expectedError: failedToExchangeToken,
-			expectedCalls: []authDependencyCall{authenticateCall}, expectedCookieDeleted: true,
+			expectedAuthenticationCodes: []string{testGitHubOAuthCode}, expectedCookieDeleted: true,
 		},
 		{name: "missing cookie is rejected", providedState: testGitHubOAuthState, expectedStatus: http.StatusBadRequest, expectedError: invalidGitHubOAuthState},
 		{name: "missing callback state is rejected without deleting the cookie", storedState: testGitHubOAuthState, expectedStatus: http.StatusBadRequest, expectedError: invalidGitHubOAuthState},
@@ -159,12 +159,14 @@ func TestGitHubCallbackValidatesAndConsumesOAuthState(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			state := newMockAuthState()
 			state.operationErrors[authenticateOperation] = fmt.Errorf("authenticate: %w", ErrGitHubTokenExchange)
-			router := newAuthHandlerTestRouter(newAuthHandlerTestHandler(state))
+			handler, githubProvider := newAuthHandlerTestHandler(state)
+			router := newAuthHandlerTestRouter(handler)
 
 			response := performAuthRequest(router, testGitHubCallbackPath, testCase.storedState, testCase.providedState)
 
 			assertAuthErrorResponse(t, response, testCase.expectedStatus, testCase.expectedError)
-			assertAuthDependencyCalls(t, state, testCase.expectedCalls)
+			assertGitHubProviderCalls(t, githubProvider, nil, testCase.expectedAuthenticationCodes)
+			assertAuthDependencyCalls(t, state, nil)
 			if testCase.expectedCookieDeleted {
 				assertOAuthStateCookie(t, response, "", -1, false)
 			} else if len(response.Result().Cookies()) != 0 {
@@ -190,7 +192,6 @@ func TestGitHubCallback(t *testing.T) {
 	updatedUser.GithubUserName = githubUser.Login
 	updatedUser.Email = githubUser.Email
 	updatedUser.AvatarURL = githubUser.AvatarURL
-	authenticateCall := authDependencyCall{operation: authenticateOperation, oauthCode: testGitHubOAuthCode}
 	findCall := authDependencyCall{operation: findByGitHubIDOperation, githubID: githubUser.ID}
 
 	testCases := []authHandlerTestCase{
@@ -198,7 +199,6 @@ func TestGitHubCallback(t *testing.T) {
 			name:           "new GitHub user is saved and receives a valid JWT",
 			expectedStatus: http.StatusOK, expectedUser: &savedUser, expectedStoredUser: &savedUser,
 			expectedCalls: []authDependencyCall{
-				authenticateCall,
 				findCall,
 				{operation: saveOperation, user: newUser},
 				{operation: generateTokenOperation, email: githubUser.Email, userID: savedUser.ID},
@@ -209,27 +209,25 @@ func TestGitHubCallback(t *testing.T) {
 			setup: storeAuthUserSetup(existingUser), expectedStatus: http.StatusOK,
 			expectedUser: &updatedUser, expectedStoredUser: &updatedUser,
 			expectedCalls: []authDependencyCall{
-				authenticateCall,
 				findCall,
 				{operation: updateOperation, user: updatedUser},
 				{operation: generateTokenOperation, email: githubUser.Email, userID: existingUser.ID},
 			},
 		},
-		providerFailureCase("token exchange failure is mapped", ErrGitHubTokenExchange, http.StatusInternalServerError, failedToExchangeToken, authenticateCall),
-		providerFailureCase("GitHub user request failure is mapped", ErrGitHubUserRequest, http.StatusInternalServerError, failedToGetUserInfo, authenticateCall),
-		providerFailureCase("GitHub rejected response is mapped", ErrGitHubRejectedResponse, http.StatusBadGateway, githubUserRequestFailed, authenticateCall),
-		providerFailureCase("invalid GitHub response is mapped", ErrGitHubInvalidResponse, http.StatusInternalServerError, failedToDecodeUserInfo, authenticateCall),
-		providerFailureCase("unknown GitHub failure is mapped", errors.New(testDependencyFailure), http.StatusInternalServerError, failedToGetUserInfo, authenticateCall),
+		providerFailureCase("token exchange failure is mapped", ErrGitHubTokenExchange, http.StatusInternalServerError, failedToExchangeToken),
+		providerFailureCase("GitHub user request failure is mapped", ErrGitHubUserRequest, http.StatusInternalServerError, failedToGetUserInfo),
+		providerFailureCase("GitHub rejected response is mapped", ErrGitHubRejectedResponse, http.StatusBadGateway, githubUserRequestFailed),
+		providerFailureCase("invalid GitHub response is mapped", ErrGitHubInvalidResponse, http.StatusInternalServerError, failedToDecodeUserInfo),
+		providerFailureCase("unknown GitHub failure is mapped", errors.New(testDependencyFailure), http.StatusInternalServerError, failedToGetUserInfo),
 		{
 			name: "user lookup failure is returned", setup: operationFailureSetup(findByGitHubIDOperation),
 			expectedStatus: http.StatusInternalServerError, expectedError: failedToLoadUser,
-			expectedCalls: []authDependencyCall{authenticateCall, findCall},
+			expectedCalls: []authDependencyCall{findCall},
 		},
 		{
 			name: "new user save failure is returned", setup: operationFailureSetup(saveOperation),
 			expectedStatus: http.StatusInternalServerError, expectedError: failedToSaveUser,
 			expectedCalls: []authDependencyCall{
-				authenticateCall,
 				findCall,
 				{operation: saveOperation, user: newUser},
 			},
@@ -240,7 +238,6 @@ func TestGitHubCallback(t *testing.T) {
 			expectedStatus: http.StatusInternalServerError, expectedError: failedToUpdateUser,
 			expectedStoredUser: &existingUser,
 			expectedCalls: []authDependencyCall{
-				authenticateCall,
 				findCall,
 				{operation: updateOperation, user: updatedUser},
 			},
@@ -251,7 +248,6 @@ func TestGitHubCallback(t *testing.T) {
 			expectedStatus: http.StatusInternalServerError, expectedError: failedToGenerateToken,
 			expectedStoredUser: &savedUser,
 			expectedCalls: []authDependencyCall{
-				authenticateCall,
 				findCall,
 				{operation: saveOperation, user: newUser},
 				{operation: generateTokenOperation, email: githubUser.Email, userID: savedUser.ID},
@@ -263,10 +259,10 @@ func TestGitHubCallback(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			utils.Init(testJWTSecret)
 			state := newMockAuthState()
-			handler := newAuthHandlerTestHandler(state)
 			if testCase.setup != nil {
 				testCase.setup(state)
 			}
+			handler, githubProvider := newAuthHandlerTestHandler(state)
 			response := performAuthRequest(newAuthHandlerTestRouter(handler), testGitHubCallbackPath, testGitHubOAuthState, testGitHubOAuthState)
 
 			if testCase.expectedError != "" {
@@ -274,6 +270,7 @@ func TestGitHubCallback(t *testing.T) {
 			} else {
 				assertSuccessfulAuthResponse(t, response, testCase.expectedUser)
 			}
+			assertGitHubProviderCalls(t, githubProvider, nil, []string{testGitHubOAuthCode})
 			assertAuthDependencyCalls(t, state, testCase.expectedCalls)
 			assertStoredAuthUser(t, state, testCase.expectedStoredUser)
 			assertOAuthStateCookie(t, response, "", -1, false)
@@ -283,14 +280,13 @@ func TestGitHubCallback(t *testing.T) {
 
 // Test case builders.
 
-func providerFailureCase(name string, providerError error, status int, message API_MESSAGE, expectedCall authDependencyCall) authHandlerTestCase {
+func providerFailureCase(name string, providerError error, status int, message API_MESSAGE) authHandlerTestCase {
 	return authHandlerTestCase{
 		name: name,
 		setup: func(state *mockAuthState) {
 			state.operationErrors[authenticateOperation] = fmt.Errorf("provider failure: %w", providerError)
 		},
 		expectedStatus: status, expectedError: message,
-		expectedCalls: []authDependencyCall{expectedCall},
 	}
 }
 
@@ -314,8 +310,13 @@ func combineAuthSetups(setups ...func(*mockAuthState)) func(*mockAuthState) {
 
 // HTTP test setup.
 
-func newAuthHandlerTestHandler(state *mockAuthState) *AuthHandler {
-	handler := NewAuthHandler(mockGitHubProvider{state}, mockAuthUserRepository{state})
+func newAuthHandlerTestHandler(state *mockAuthState) (*AuthHandler, *testutil.GitHubProviderMock[GitHubUser]) {
+	githubProvider := testutil.NewGitHubProviderMock(
+		testGitHubAuthorization,
+		map[string]GitHubUser{testGitHubOAuthCode: state.githubUser},
+	)
+	githubProvider.AuthenticationError = state.operationErrors[authenticateOperation]
+	handler := NewAuthHandler(githubProvider, mockAuthUserRepository{state})
 	handler.generateToken = func(email string, userID int64) (string, error) {
 		state.record(authDependencyCall{operation: generateTokenOperation, email: email, userID: userID})
 		if err := state.operationErrors[generateTokenOperation]; err != nil {
@@ -323,7 +324,7 @@ func newAuthHandlerTestHandler(state *mockAuthState) *AuthHandler {
 		}
 		return utils.GenerateToken(email, userID)
 	}
-	return handler
+	return handler, githubProvider
 }
 
 func newAuthHandlerTestRouter(handler *AuthHandler) *gin.Engine {
@@ -395,6 +396,21 @@ func assertAuthDependencyCalls(t *testing.T, state *mockAuthState, expectedCalls
 	}
 }
 
+func assertGitHubProviderCalls(
+	t *testing.T,
+	provider *testutil.GitHubProviderMock[GitHubUser],
+	expectedStates []string,
+	expectedCodes []string,
+) {
+	t.Helper()
+	if !slices.Equal(provider.AuthorizationStates, expectedStates) {
+		t.Fatalf("GitHub authorization states = %v, want %v", provider.AuthorizationStates, expectedStates)
+	}
+	if !slices.Equal(provider.AuthenticationCodes, expectedCodes) {
+		t.Fatalf("GitHub authentication codes = %v, want %v", provider.AuthenticationCodes, expectedCodes)
+	}
+}
+
 func assertStoredAuthUser(t *testing.T, state *mockAuthState, expectedUser *users.User) {
 	t.Helper()
 	if expectedUser == nil {
@@ -453,22 +469,19 @@ func newExistingAuthUserFixture() users.User {
 type authDependencyOperation string
 
 const (
-	authorizationURLOperation authDependencyOperation = "authorization URL"
-	authenticateOperation     authDependencyOperation = "authenticate"
-	findByGitHubIDOperation   authDependencyOperation = "find by GitHub ID"
-	saveOperation             authDependencyOperation = "save"
-	updateOperation           authDependencyOperation = "update"
-	generateTokenOperation    authDependencyOperation = "generate token"
+	authenticateOperation   authDependencyOperation = "authenticate"
+	findByGitHubIDOperation authDependencyOperation = "find by GitHub ID"
+	saveOperation           authDependencyOperation = "save"
+	updateOperation         authDependencyOperation = "update"
+	generateTokenOperation  authDependencyOperation = "generate token"
 )
 
 type authDependencyCall struct {
-	operation  authDependencyOperation
-	oauthState string
-	oauthCode  string
-	githubID   int64
-	user       users.User
-	email      string
-	userID     int64
+	operation authDependencyOperation
+	githubID  int64
+	user      users.User
+	email     string
+	userID    int64
 }
 
 type mockAuthState struct {
@@ -492,22 +505,6 @@ func (state *mockAuthState) record(call authDependencyCall) {
 
 func (state *mockAuthState) storeUser(user users.User) {
 	state.storedUsers[user.GithubID] = user
-}
-
-type mockGitHubProvider struct{ *mockAuthState }
-
-func (provider mockGitHubProvider) AuthorizationURL(state string) string {
-	provider.record(authDependencyCall{operation: authorizationURLOperation, oauthState: state})
-	return testGitHubAuthorization + "?state=" + url.QueryEscape(state)
-}
-
-func (provider mockGitHubProvider) Authenticate(_ context.Context, code string) (*GitHubUser, error) {
-	provider.record(authDependencyCall{operation: authenticateOperation, oauthCode: code})
-	if err := provider.operationErrors[authenticateOperation]; err != nil {
-		return nil, err
-	}
-	githubUser := provider.githubUser
-	return &githubUser, nil
 }
 
 type mockAuthUserRepository struct{ *mockAuthState }
