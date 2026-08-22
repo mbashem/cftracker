@@ -5,12 +5,13 @@ package testutil
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"os"
 	"strings"
 	"testing"
 	"time"
 
-	_ "github.com/lib/pq"
+	"github.com/lib/pq"
 )
 
 const (
@@ -67,6 +68,18 @@ func ResetTestDB(t *testing.T, database *sql.DB) {
 
 	if _, err := database.ExecContext(ctx, `TRUNCATE list_items, lists, users RESTART IDENTITY CASCADE`); err != nil {
 		t.Fatalf("reset test database: %v", err)
+	}
+}
+
+func AssertPostgresErrorCode(t *testing.T, err error, expectedCode string) {
+	t.Helper()
+
+	var postgresError *pq.Error
+	if !errors.As(err, &postgresError) {
+		t.Fatalf("error = %v, want PostgreSQL error code %s", err, expectedCode)
+	}
+	if string(postgresError.Code) != expectedCode {
+		t.Fatalf("PostgreSQL error code = %s, want %s", postgresError.Code, expectedCode)
 	}
 }
 
