@@ -16,10 +16,13 @@ make test-unit
 make test-race
 make test-cover
 make test-integration
+make test-migrations
 make test-all
 ```
 
 `make test` is an alias for `make test-unit`.
+
+`make test-migrations` is an explicitly invoked destructive integration check and is not included in `make test` or `make test-all`. It replaces and later removes only its fixed, reserved disposable databases; see [MIGRATION_FLOW.md](MIGRATION_FLOW.md#local-migration-tests) for the required URLs, safety checks, and covered migration behavior.
 
 `make test-integration` runs with the `integration` build tag and `-p 1`. The package-level parallelism is disabled because integration tests share one destructive test database reset helper. Do not call `t.Parallel()` in tests that use that database.
 

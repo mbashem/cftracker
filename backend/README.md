@@ -120,6 +120,8 @@ make migrate-check-schema \
 
 Run the checksum check before deployment and the schema check against production from a trusted deployment environment.
 
+Run the complete migration lifecycle and negative checks manually with `make test-migrations`. The command is intentionally excluded from default tests and automation; see [MIGRATION_FLOW.md](MIGRATION_FLOW.md#local-migration-tests) for its required disposable database URLs and safety behavior.
+
 ## Test without the frontend
 
 Run these commands from the `backend` directory. They use a separate test database so existing development data is not affected.
