@@ -8,7 +8,8 @@ description: CFTracker commit and pull-request conventions. Use whenever Codex c
 ## Commits
 
 - Review the status and staged diff before committing, and include only the intended changes.
-- Give every Codex-created or Codex-amended commit a clear imperative subject and a concise body describing the meaningful changes, reasons, and relevant verification.
+- Follow the commit-message policy in `CONTRIBUTING.md`; treat it as the source of truth for subject format and type selection.
+- Give every Codex-created or Codex-amended commit a concise body describing the meaningful changes, reasons, and relevant verification.
 - End the commit message, after a blank line, with this trailer:
 
 ```text
