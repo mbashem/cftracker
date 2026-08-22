@@ -88,13 +88,40 @@ make test
 
 ## Commit Messages
 
-Use clear, imperative commit messages:
+Use this Conventional Commit format:
 
 ```text
-Refactor problem page into hook and views
-Fix contest category multiselect reset
-Document backend setup
+<type>(<optional-scope>): <imperative summary>
 ```
+
+Allowed types:
+
+- `feat`: Add or change user-facing behavior.
+- `fix`: Correct a defect, security issue, or unintended behavior.
+- `refactor`: Restructure code without changing its behavior.
+- `perf`: Improve performance without changing behavior.
+- `test`: Change tests, fixtures, or test infrastructure only.
+- `docs`: Change documentation only.
+- `build`: Change dependencies, build tooling, or packaging.
+- `ci`: Change continuous-integration or delivery automation.
+- `chore`: Perform repository maintenance that does not fit another type.
+- `revert`: Revert an earlier commit.
+
+Choose the type from the commit's primary purpose. Tests and documentation that support a feature or fix belong in that `feat` or `fix` commit; use `test` or `docs` when they are the commit's main purpose. Split unrelated purposes into separate commits.
+
+Begin the summary with a lowercase imperative verb, keep it no longer than 72 characters, and omit the final period. Preserve the normal capitalization of proper nouns such as GitHub and OAuth. Use a short lowercase scope only when it adds useful context. Add a body after a blank line when the reason, behavior, or verification is not clear from the subject.
+
+Examples:
+
+```text
+feat(lists): allow items to be reordered
+fix(auth): reject mismatched OAuth state
+test: cover repository ownership isolation
+docs: document local migration checks
+chore: update repository guidance
+```
+
+For a breaking change, add `!` before the colon and explain the break in a `BREAKING CHANGE:` footer.
 
 ## Pull Request Checklist
 
