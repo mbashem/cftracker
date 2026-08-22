@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useId, useMemo } from "react";
 import Theme from "../../util/Theme";
 import { clampNumber } from "../../util/util";
 import InputNumber from "./forms/Input/InputNumber";
@@ -15,6 +15,7 @@ interface PaginationProps {
 }
 
 function Pagination(props: PaginationProps) {
+  const pageSizeSelectId = useId();
   let linkClassName = "page-link " + props.theme.bgText;
   let linkWrapperClassName = "page-item";
   const isRandomActive = props.isRandomActive ?? false;
@@ -108,11 +109,12 @@ function Pagination(props: PaginationProps) {
           <div className="d-flex justify-content-between w-100">
             <div className="input-group mb-3">
               <div className="input-group-prepend">
-                <label className={"input-group-text " + props.theme.bgText} htmlFor="inputGroupSelect01">
+                <label className={"input-group-text " + props.theme.bgText} htmlFor={pageSizeSelectId}>
                   Per Page
                 </label>
               </div>
               <select
+                id={pageSizeSelectId}
                 className={"custom-select " + props.theme.bgText}
                 value={isRandomActive ? 1 : props.perPage}
                 disabled={isPageSizeDisabled}

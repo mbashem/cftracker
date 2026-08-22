@@ -2,12 +2,14 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import CustomModal from "../common/CustomModal";
 import CheckList from "../common/forms/CheckList";
 import useListPage from "./useListPage";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { faPlus, faTrash } from "@fortawesome/free-solid-svg-icons";
 import IndividualListPage from "./individual-list/IndividualListPage";
 import { faEdit } from "@fortawesome/free-regular-svg-icons";
 
 function ListPage() {
+  const createListNameId = useId();
+  const updateListNameId = useId();
   const {
     theme,
     activeList,
@@ -50,11 +52,11 @@ function ListPage() {
                 }}
               >
                 <div className="form-group">
-                  <label htmlFor="listName">List Name</label>
+                  <label htmlFor={createListNameId}>List Name</label>
                   <input
                     type="text"
                     className="form-control"
-                    id="listName"
+                    id={createListNameId}
                     placeholder="Enter list name"
                     value={newListName}
                     onChange={(e) => setNewListName(e.target.value)}
@@ -85,7 +87,7 @@ function ListPage() {
                 >
                   <div className="form-group">
                     <div className="d-flex align-items-center justify-content-between">
-                      <label htmlFor="listName">Enter New Name</label>
+                      <label htmlFor={updateListNameId}>Enter New Name</label>
                       <CustomModal
                         title={`Do you want to delete ${activeList.name}?`}
                         theme={theme}
@@ -116,7 +118,7 @@ function ListPage() {
                     <input
                       type="text"
                       className="form-control mt-1"
-                      id="listName"
+                      id={updateListNameId}
                       placeholder="Enter list name"
                       value={updateListNameValue}
                       onChange={(e) => setUpdateListNameValue(e.target.value)}
