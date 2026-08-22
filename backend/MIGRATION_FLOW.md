@@ -153,6 +153,29 @@ The command:
 
 The target database is inspected but not migrated by this command. The reference database must be disposable and should use the same PostgreSQL major version as the target.
 
+## Local migration tests
+
+Run the complete migration lifecycle test explicitly from the `backend` directory:
+
+```sh
+make test-migrations \
+  TEST_DATABASE_ADMIN_URL='postgres://postgres:postgrespw@localhost:5432/postgres?sslmode=disable' \
+  TEST_DATABASE_URL='postgres://postgres:postgrespw@localhost:5432/cftracker_test?sslmode=disable' \
+  SCHEMA_REFERENCE_DATABASE_URL='postgres://postgres:postgrespw@localhost:5432/cftracker_test_reference?sslmode=disable'
+```
+
+This target is not part of `make test`, `make test-all`, or any CI workflow. PostgreSQL must already be running, and `createdb`, `dropdb`, `pg_dump`, and `psql` must be available on `PATH`. The command never starts, stops, removes, or recreates a database container.
+
+The names `cftracker_test` and `cftracker_test_reference` are reserved as disposable databases for this command. At startup it removes leftovers from an interrupted or crashed earlier run without forcing active connections to close, then recreates both databases. It verifies that all three URLs connect to the expected PostgreSQL server and databases and removes only those two databases when it exits. If either database is actively in use, PostgreSQL rejects the initial drop and the test stops without disrupting that connection.
+
+The test verifies:
+
+1. A fresh migration reaches version `4` with all application tables.
+2. A full rollback removes every application table and can be reapplied.
+3. Named rollbacks stop at the registered `list_items`, `lists`, and `users` boundaries.
+4. Changing a copied applied migration fails with the expected checksum error.
+5. Adding a column directly to the target fails comparison with the clean reference schema.
+
 ## Code review map
 
 | File | Responsibility |
@@ -161,6 +184,7 @@ The target database is inspected but not migrated by this command. The reference
 | `cmd/migration-check/main.go` | Discovers migration pairs, computes hashes, validates history, and records new checksums. |
 | `cmd/migration-target/main.go` | Resolves a table name to its rollback version. |
 | `scripts/check-schema-drift.sh` | Compares normalized PostgreSQL schema dumps. |
+| `scripts/test-migrations.sh` | Runs the explicitly requested migration lifecycle and negative tests against disposable databases. |
 | `migrations/*.sql` | Defines ordered up and down schema changes. |
 
 Review these invariants when changing migration code:
@@ -171,3 +195,4 @@ Review these invariants when changing migration code:
 - Application tables register their rollback target in PostgreSQL.
 - Checksum metadata survives rollback.
 - Schema checks use a clean disposable reference database.
+- Local migration tests create and remove only their fixed disposable databases.
