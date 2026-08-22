@@ -153,17 +153,6 @@ The command:
 
 The target database is inspected but not migrated by this command. The reference database must be disposable and should use the same PostgreSQL major version as the target.
 
-## Continuous integration
-
-`.github/workflows/backend_migrations.yml` performs the following checks:
-
-1. Rejects modified, renamed, or deleted historical migration files after the initial checksum baseline is established.
-2. Creates clean PostgreSQL test and reference databases.
-3. Applies all migrations.
-4. Verifies stored checksums.
-5. Runs a full rollback and reapplies the migrations.
-6. Runs the schema-drift comparison.
-
 ## Code review map
 
 | File | Responsibility |

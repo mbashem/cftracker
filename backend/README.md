@@ -118,7 +118,7 @@ make migrate-check-schema \
   reference_database_url='postgres://postgres:postgrespw@localhost:5432/cftracker_migration_reference?sslmode=disable'
 ```
 
-Run the checksum check before deployment and the schema check against production from a trusted deployment environment. GitHub Actions also rejects modified or deleted historical migration files and exercises the complete migration workflow.
+Run the checksum check before deployment and the schema check against production from a trusted deployment environment.
 
 ## Test without the frontend
 
