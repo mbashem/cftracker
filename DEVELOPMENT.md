@@ -218,9 +218,11 @@ npm run dev        # Start Vite
 npm run build      # Build production assets
 npm run lint       # Run ESLint with zero warnings
 npm run typecheck  # Run the TypeScript project check
+npm run verify:ci  # Run policy and all required frontend checks
+npm run verify     # Also run backend unit tests
 ```
 
-Use `npm ci` for a reproducible install from the committed root `package-lock.json`. Use `npm install` when intentionally changing dependencies, and commit the resulting manifest and lockfile changes together.
+Use `npm ci` for a reproducible install from the committed root `package-lock.json`; it also configures this clone to use the tracked hooks under `.githooks/`. Use `npm run hooks:install` to restore that configuration without reinstalling dependencies. Use `npm install` when intentionally changing dependencies, and commit the resulting manifest and lockfile changes together.
 
 Backend:
 
@@ -236,22 +238,34 @@ Data refresh:
 
 ```bash
 cd scripts
-npm install
-node fetch_contests.mjs
-node fetch_problems.mjs
+node fetch_contests.mts
+node fetch_problems.mts
 ```
 
 ## Validation Notes
 
-Run every frontend validation command before pushing:
+Run the shared frontend and policy gate before pushing:
 
 ```bash
-npm run typecheck
-npm run lint
-npm run build
+npm run verify:ci
 ```
 
-The root lint configuration covers the frontend and Vite configuration. Generated API snapshots and the separate backend, scripts, and `manage-contests` projects are excluded from this frontend gate.
+The validation layers are:
+
+| Layer | Enforced checks |
+| --- | --- |
+| `commit-msg` | Allowed Conventional Commit type, lowercase kebab-case scope, lowercase-leading summary, 72-character summary limit, punctuation, body separation, and breaking-change marker/footer pairing. |
+| `pre-commit` | Staged whitespace, repository hygiene, Secretlint's recommended rules, ESLint on staged root TS/TSX and Vite files, and `gofmt` on staged backend Go files. Checks read the staged blobs, so partially staged files are handled correctly. |
+| `pre-push` | Policy tests, tracked-file hygiene, Secretlint, full root typecheck/lint/build, and backend unit tests only when the pushed range changes `backend/`. |
+| GitHub `Policy` | Commit messages in the pushed or pull-request range, policy tests, tracked-file hygiene, and Secretlint with GitHub annotations. Git-generated merge commits are excluded from message validation. |
+| GitHub `Frontend` | Reproducible install, TypeScript check, zero-warning ESLint, and production build. |
+| GitHub `Required verification` | Aggregate status that succeeds only when both `Policy` and `Frontend` succeed. |
+
+The Verify workflow runs for every pull request, pushes to `main` and `dev`, and manual dispatches. Backend checks are deliberately local-only for now and are not part of the GitHub Actions workflow.
+
+Local hooks are useful feedback but remain bypassable with Git's `--no-verify` option. Configure the protected-branch ruleset to require the stable `Required verification` check and restrict direct pushes for authoritative enforcement; that repository setting is external to the tracked workflow.
+
+The root lint configuration covers the frontend and Vite configuration. Generated API snapshots, frontend tests, and the separate backend, scripts, and `manage-contests` projects are excluded from this frontend lint gate. The separate `manage-contests` utility is not currently gated.
 
 ## Adding a New Page
 

@@ -1,40 +1,59 @@
-name: Cache Contests Api Response
+name: Refresh Codeforces snapshots
 
 on:
   schedule:
     - cron: "0 17 * * *"
   workflow_dispatch:
 
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-codeforces-snapshots
+  cancel-in-progress: false
+
 jobs:
-  setup:
+  refresh:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
         with:
-          node-version: "14"
-      - name: Run Scripts
-        working-directory: ./scripts
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Refresh snapshots
+        working-directory: scripts
         run: |
-          npm install node-fetch
-          node --experimental-modules fetch_contests.mjs
-          node --experimental-modules fetch_problems.mjs
+          node fetch_contests.mts
+          node fetch_problems.mts
 
       - name: Check for modified files
         id: git-check
-        run: echo ::set-output name=modified::$(if [ -n "$(git status --porcelain)" ]; then echo "true"; else echo "false"; fi)
+        run: |
+          if git diff --quiet -- src/data/saved_api/contests_data.ts src/data/saved_api/problems_data.ts; then
+            echo "modified=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "modified=true" >> "$GITHUB_OUTPUT"
+          fi
 
-      - name: Commit files
+      - name: Install validation dependencies
+        if: steps.git-check.outputs.modified == 'true'
+        run: npm ci
+
+      - name: Commit verified snapshots
         if: steps.git-check.outputs.modified == 'true'
         run: |
-          git status
           git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git diff --quiet && git diff --staged --quiet || git commit -am "Bot: data upd"
+          git add src/data/saved_api/contests_data.ts src/data/saved_api/problems_data.ts
+          git commit -m "chore(data): update Codeforces snapshots"
 
-      - name: Push changes
-        uses: ad-m/github-push-action@master
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: ${{ github.ref }}
+      - name: Push verified snapshots
+        if: steps.git-check.outputs.modified == 'true'
+        run: git push origin "HEAD:${GITHUB_REF_NAME}"

@@ -1,0 +1,5 @@
+#!/bin/sh
+set -eu
+
+repository_root=$(git rev-parse --show-toplevel)
+exec node "$repository_root/scripts/validation/validate-commits.mts" --file "$1"

@@ -70,21 +70,26 @@ Use:
 
 Run the app locally and manually test the affected flow before pushing your branch.
 
-Install the exact dependency tree and run all frontend checks before pushing:
+Install the exact dependency tree. This also enables the repository-managed Git hooks for the current clone:
 
 ```bash
 npm ci
-npm run typecheck
-npm run lint
-npm run build
+npm run verify:ci
 ```
 
-For backend changes:
+`verify:ci` runs the policy tests, tracked-file hygiene scan, Secretlint's recommended ruleset, TypeScript check, zero-warning lint, and production build. For backend changes, run the full local verifier instead:
 
 ```bash
-cd backend
-make test
+npm run verify
 ```
+
+The hooks provide earlier feedback:
+
+- `commit-msg` validates the machine-checkable commit-message rules below.
+- `pre-commit` rejects staged whitespace errors, disallowed environment/log files, Secretlint findings, root frontend lint failures, and Go files that are not `gofmt`-formatted.
+- `pre-push` runs `verify:ci` and also runs backend unit tests when the pushed commits change `backend/`.
+
+Run `npm run hooks:install` to restore the hooks if they are disabled. Local hooks can be bypassed with `--no-verify`, so the `Policy`, `Frontend`, and aggregate `Required verification` GitHub checks must also pass. Repository administrators should require `Required verification` in the protected-branch ruleset to make that merge gate authoritative.
 
 ## Commit Messages
 
@@ -109,7 +114,7 @@ Allowed types:
 
 Choose the type from the commit's primary purpose. Tests and documentation that support a feature or fix belong in that `feat` or `fix` commit; use `test` or `docs` when they are the commit's main purpose. Split unrelated purposes into separate commits.
 
-Begin the summary with a lowercase imperative verb, keep it no longer than 72 characters, and omit the final period. Preserve the normal capitalization of proper nouns such as GitHub and OAuth. Use a short lowercase scope only when it adds useful context. Add a body after a blank line when the reason, behavior, or verification is not clear from the subject.
+Begin the summary with a lowercase imperative verb, keep the summary no longer than 72 characters, and omit trailing whitespace and the final period. Preserve the normal capitalization of proper nouns such as GitHub and OAuth. Use a lowercase kebab-case scope only when it adds useful context. Add a body after a blank line when the reason, behavior, or verification is not clear from the subject. The validator enforces the syntax and lowercase first letter; whether the wording is genuinely imperative remains a review criterion.
 
 Examples:
 
@@ -121,7 +126,7 @@ docs: document local migration checks
 chore: update repository guidance
 ```
 
-For a breaking change, add `!` before the colon and explain the break in a `BREAKING CHANGE:` footer.
+For a breaking change, add `!` before the colon and explain the break in a non-empty `BREAKING CHANGE:` footer after a blank line. The marker and footer are both required.
 
 ## Pull Request Checklist
 
@@ -130,8 +135,8 @@ Before opening a PR, confirm:
 - A related issue exists and has maintainer approval.
 - The change is scoped and described clearly.
 - The affected flow was run and tested locally before pushing.
-- `npm run typecheck`, `npm run lint`, and `npm run build` pass.
-- Backend tests pass for backend changes, or the PR explains why they could not be run.
+- `npm run verify:ci` and the `Required verification` GitHub check pass.
+- `npm run verify:backend` passes for backend changes, or the PR explains why it could not be run.
 - New or changed behavior is documented.
 - User-facing behavior changes include screenshots or notes when helpful.
 - The PR does not include unrelated generated files, logs, local env files, or credentials.

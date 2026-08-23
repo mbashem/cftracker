@@ -1,0 +1,99 @@
+name: Verify
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - dev
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  policy:
+    name: Policy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository history
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install policy dependencies
+        run: npm ci
+
+      - name: Validate pull request commits
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: node scripts/validation/validate-commits.mts --range "$BASE_SHA" "$HEAD_SHA"
+
+      - name: Validate pushed commits
+        if: github.event_name == 'push'
+        env:
+          BASE_SHA: ${{ github.event.before }}
+          HEAD_SHA: ${{ github.sha }}
+        run: |
+          if [[ "$BASE_SHA" =~ ^0+$ ]]; then
+            node scripts/validation/validate-commits.mts --commit "$HEAD_SHA"
+          else
+            node scripts/validation/validate-commits.mts --range "$BASE_SHA" "$HEAD_SHA"
+          fi
+
+      - name: Validate manually selected commit
+        if: github.event_name == 'workflow_dispatch'
+        run: node scripts/validation/validate-commits.mts --commit HEAD
+
+      - name: Test commit and repository policy
+        run: npm run test:policy
+
+      - name: Scan for secrets
+        run: npm run lint:secrets:ci
+
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type-check, lint, and build
+        run: npm run verify:frontend
+
+  required:
+    name: Required verification
+    if: always()
+    needs:
+      - policy
+      - frontend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Confirm required jobs passed
+        env:
+          POLICY_RESULT: ${{ needs.policy.result }}
+          FRONTEND_RESULT: ${{ needs.frontend.result }}
+        run: |
+          test "$POLICY_RESULT" = "success"
+          test "$FRONTEND_RESULT" = "success"

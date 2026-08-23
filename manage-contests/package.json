@@ -9,7 +9,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
+    "lint": "node --experimental-strip-types node_modules/eslint/bin/eslint.js --flag unstable_native_nodejs_ts_config",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -47,6 +47,6 @@
     "@types/react-dom": "19.2.3"
   },
   "engines": {
-    "node": "^20.19.0 || ^22.12.0 || >=24.0"
+    "node": ">=22.22.0"
   }
 }

@@ -1,0 +1,2 @@
+.githooks/* text eol=lf
+scripts/validation/*.mts text eol=lf
