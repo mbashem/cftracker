@@ -68,9 +68,8 @@ For a manual refresh:
 
 ```bash
 cd scripts
-npm install
-node fetch_contests.mjs
-node fetch_problems.mjs
+node fetch_contests.mts
+node fetch_problems.mts
 ```
 
 ## Project Layout
@@ -94,5 +93,5 @@ In short:
 1. Open an issue and wait for maintainer approval before starting new work.
 2. Create a focused feature branch.
 3. Run and test the affected flow locally before pushing.
-4. Run `npm run build` before opening a pull request.
+4. Install the repository hooks and run the checks required by [CONTRIBUTING.md](./CONTRIBUTING.md) before opening a pull request.
 5. Update docs when behavior, setup, or development workflow changes.

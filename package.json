@@ -39,8 +39,18 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "lint": "eslint . --max-warnings 0",
-    "typecheck": "tsc -b"
+    "lint": "node --experimental-strip-types node_modules/eslint/bin/eslint.js --flag unstable_native_nodejs_ts_config . --max-warnings 0",
+    "typecheck": "tsc -b",
+    "hooks:install": "node scripts/validation/install-hooks.mts",
+    "prepare": "npm run hooks:install",
+    "test:policy": "node --test scripts/validation/*.test.mts && node scripts/validation/check-repository-hygiene.mts --tracked",
+    "lint:secrets": "secretlint --no-color \"**/*\"",
+    "lint:secrets:ci": "secretlint --format github \"**/*\"",
+    "verify:policy": "npm run test:policy && npm run lint:secrets",
+    "verify:frontend": "npm run typecheck && npm run lint && npm run build",
+    "verify:ci": "npm run verify:policy && npm run verify:frontend",
+    "verify:backend": "make -C backend test",
+    "verify": "npm run verify:ci && npm run verify:backend"
   },
   "browserslist": {
     "production": [
@@ -56,6 +66,8 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@secretlint/secretlint-rule-preset-recommend": "^13.0.4",
+    "@types/node": "^22.18.0",
     "@types/d3": "^7.4.3",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
@@ -64,6 +76,7 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.3",
     "globals": "^17.7.0",
+    "secretlint": "^13.0.4",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.63.0",
     "vite": "^8.1.4"
