@@ -1,9 +1,12 @@
 import { fetchAndSaveAllContests } from "@/features/contests/services/ContestDBService";
+import { isError } from "@/utils/result";
 import { NextResponse } from "next/server";
 
 export async function GET() {
-	const res = await fetchAndSaveAllContests();
-	console.log(res);
+	const result = await fetchAndSaveAllContests();
+	if (isError(result)) {
+		return NextResponse.json({ error: result.error }, { status: 502 });
+	}
 
-	return NextResponse.json(res);
+	return NextResponse.json(result.value);
 }

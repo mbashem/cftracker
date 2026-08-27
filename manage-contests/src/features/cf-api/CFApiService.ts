@@ -1,19 +1,125 @@
 import 'server-only'
 
 import axios from "axios";
-import { CFAPIContest, CFAPIResult } from "./CFApiTypes";
+import { CFAPIContest, CFAPIProblem } from "./CFApiTypes";
 import crypto from "crypto";
+import { err, isError, ok, Result } from "@/utils/result";
 
 type Params = Record<string, string | number | boolean>;
+type ContestSummary = Pick<CFAPIContest, "id" | "name">;
+type ProblemSummary = Pick<CFAPIProblem, "contestId" | "index" | "name"> & {
+  rating?: number;
+};
+type ContestWithProblems = {
+  contest: ContestSummary;
+  problems: ProblemSummary[];
+};
+
 const requestConfig = {
   timeout: 30_000,
   maxContentLength: 25 * 1024 * 1024,
 };
 
-function getRequiredEnvironmentVariable(name: "CF_API_KEY" | "CF_API_SECRET"): string {
+function getRequiredEnvironmentVariable(
+  name: "CF_API_KEY" | "CF_API_SECRET"
+): Result<string> {
   const value = process.env[name];
-  if (!value) throw new Error(`${name} is required for authenticated Codeforces API calls`);
-  return value;
+  if (!value) {
+    return err({
+      code: "CONFIGURATION_ERROR",
+      publicMessage: `${name} is required for authenticated Codeforces API calls`,
+      retryable: false,
+    });
+  }
+
+  return ok(value);
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function isContest(value: unknown): value is ContestSummary {
+  return (
+    isRecord(value) &&
+    typeof value.id === "number" &&
+    Number.isSafeInteger(value.id) &&
+    value.id > 0 &&
+    typeof value.name === "string" &&
+    value.name.length > 0
+  );
+}
+
+function isProblem(value: unknown): value is ProblemSummary {
+  return (
+    isRecord(value) &&
+    typeof value.contestId === "number" &&
+    Number.isSafeInteger(value.contestId) &&
+    value.contestId > 0 &&
+    typeof value.index === "string" &&
+    value.index.length > 0 &&
+    typeof value.name === "string" &&
+    value.name.length > 0 &&
+    (value.rating === undefined || typeof value.rating === "number")
+  );
+}
+
+function isContestWithProblems(value: unknown): value is ContestWithProblems {
+  return (
+    isRecord(value) &&
+    isContest(value.contest) &&
+    Array.isArray(value.problems) &&
+    value.problems.every(isProblem)
+  );
+}
+
+function invalidCodeforcesResponse() {
+  return err({
+    code: "CODEFORCES_INVALID_RESPONSE",
+    publicMessage: "Codeforces returned an invalid response.",
+    retryable: false,
+  });
+}
+
+function parseCodeforcesResponse<T>(
+  data: unknown,
+  isValidResult: (value: unknown) => value is T
+): Result<T> {
+  if (
+    !isRecord(data) ||
+    data.status !== "OK" ||
+    !isValidResult(data.result)
+  ) {
+    return invalidCodeforcesResponse();
+  }
+
+  return ok(data.result);
+}
+
+function logCodeforcesRequestError(operation: string, error: unknown): void {
+  if (axios.isAxiosError(error)) {
+    // Do not log the request URL: authenticated URLs contain API credentials.
+    console.error(`[CFApiService.${operation}] Codeforces request failed`, {
+      name: error.name,
+      code: error.code,
+      message: error.message,
+      status: error.response?.status,
+    });
+    return;
+  }
+
+  console.error(`[CFApiService.${operation}] Codeforces request failed`, {
+    name: error instanceof Error ? error.name : "UnknownError",
+    message: error instanceof Error ? error.message : "Unknown request error",
+  });
+}
+
+function codeforcesRequestError() {
+  return err({
+    code: "CODEFORCES_ERROR",
+    publicMessage: "Could not fetch data from Codeforces.",
+    retryable: true,
+  });
 }
 
 function generateAuthenticatedApiUrl(
@@ -21,7 +127,7 @@ function generateAuthenticatedApiUrl(
   apiKey: string,
   apiSecret: string,
   params: Params = {}
-): string {
+): Result<string> {
   const baseUrl = "https://codeforces.com/api";
 
   // 1. Add required params
@@ -46,51 +152,119 @@ function generateAuthenticatedApiUrl(
     .map(([key, value]) => `${key}=${value}`)
     .join("&");
 
-  // 4. Generate random 6-char string
-  const rand = crypto.randomBytes(3).toString("hex");
+  let rand: string;
+  let hash: string;
 
-  // 5. Create string to hash
-  const stringToHash = `${rand}/${methodName}?${queryString}#${apiSecret}`;
+  try {
+    // 4. Generate random 6-char string
+    rand = crypto.randomBytes(3).toString("hex");
 
-  // 6. SHA-512 hash
-  const hash = crypto
-    .createHash("sha512")
-    .update(stringToHash)
-    .digest("hex");
+    // 5. Create string to hash
+    const stringToHash = `${rand}/${methodName}?${queryString}#${apiSecret}`;
+
+    // 6. SHA-512 hash
+    hash = crypto
+      .createHash("sha512")
+      .update(stringToHash)
+      .digest("hex");
+  } catch (error) {
+    console.error("[CFApiService.generateAuthenticatedApiUrl] Crypto operation failed", {
+      name: error instanceof Error ? error.name : "UnknownError",
+      message: error instanceof Error ? error.message : "Unknown crypto error",
+    });
+    return err({
+      code: "INTERNAL_ERROR",
+      publicMessage: "Could not prepare the authenticated Codeforces request.",
+      retryable: true,
+    });
+  }
 
   // 7. Final apiSig
   const apiSig = `${rand}${hash}`;
 
   // 8. Final URL
-  return `${baseUrl}/${methodName}?${queryString}&apiSig=${apiSig}`;
+  return ok(`${baseUrl}/${methodName}?${queryString}&apiSig=${apiSig}`);
 }
 
-export async function getAuthenticatedContestWithProblemByIdFromCF(contestID: number) {
-  const url = generateAuthenticatedApiUrl(
+export async function getAuthenticatedContestWithProblemByIdFromCF(
+  contestID: number
+): Promise<Result<ContestWithProblems>> {
+  const apiKeyResult = getRequiredEnvironmentVariable("CF_API_KEY");
+  if (isError(apiKeyResult)) return apiKeyResult;
+
+  const apiSecretResult = getRequiredEnvironmentVariable("CF_API_SECRET");
+  if (isError(apiSecretResult)) return apiSecretResult;
+
+  const urlResult = generateAuthenticatedApiUrl(
     "contest.standings",
-    getRequiredEnvironmentVariable("CF_API_KEY"),
-    getRequiredEnvironmentVariable("CF_API_SECRET"),
+    apiKeyResult.value,
+    apiSecretResult.value,
     { contestId: contestID, from: 1, count: 1, showUnofficial: false }
   );
+  if (isError(urlResult)) return urlResult;
 
-  const res = await axios.get(url, requestConfig);
+  try {
+    const response = await axios.get<unknown>(urlResult.value, requestConfig);
+    const result = parseCodeforcesResponse(response.data, isContestWithProblems);
+    if (isError(result)) return result;
+    if (
+      result.value.contest.id !== contestID ||
+      result.value.problems.some((problem) => problem.contestId !== contestID)
+    ) {
+      return invalidCodeforcesResponse();
+    }
 
-  return res.data.result as CFAPIResult;
+    return result;
+  } catch (error) {
+    logCodeforcesRequestError(
+      "getAuthenticatedContestWithProblemByIdFromCF",
+      error
+    );
+    return codeforcesRequestError();
+  }
 }
 
-export async function getContestWithProblemByIdFromCF(contestID: number) {
+export async function getContestWithProblemByIdFromCF(
+  contestID: number
+): Promise<Result<ContestWithProblems>> {
   const url = `https://codeforces.com/api/contest.standings?contestId=${contestID}`;
-  const res = await axios.get(url, requestConfig);
 
-  return res.data.result as CFAPIResult;
+  try {
+    const response = await axios.get<unknown>(url, requestConfig);
+    const result = parseCodeforcesResponse(response.data, isContestWithProblems);
+    if (isError(result)) return result;
+    if (
+      result.value.contest.id !== contestID ||
+      result.value.problems.some((problem) => problem.contestId !== contestID)
+    ) {
+      return invalidCodeforcesResponse();
+    }
+
+    return result;
+  } catch (error) {
+    logCodeforcesRequestError("getContestWithProblemByIdFromCF", error);
+    return codeforcesRequestError();
+  }
 }
 
-export async function getAllContestsFromCF(gym = false) {
-  const res = await axios.get(
-    `https://codeforces.com/api/contest.list?lang=en&gym=${gym ? "true" : "false"
-    }`,
-    requestConfig
-  );
+export async function getAllContestsFromCF(
+  gym = false
+): Promise<Result<ContestSummary[]>> {
+  try {
+    const response = await axios.get<unknown>(
+      `https://codeforces.com/api/contest.list?lang=en&gym=${
+        gym ? "true" : "false"
+      }`,
+      requestConfig
+    );
 
-  return res.data.result as CFAPIContest[];
+    return parseCodeforcesResponse(
+      response.data,
+      (value): value is ContestSummary[] =>
+        Array.isArray(value) && value.every(isContest)
+    );
+  } catch (error) {
+    logCodeforcesRequestError("getAllContestsFromCF", error);
+    return codeforcesRequestError();
+  }
 }

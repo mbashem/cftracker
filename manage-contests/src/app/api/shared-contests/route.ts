@@ -1,5 +1,6 @@
 
 import { createOrUpdateSharedContest, getAllSharedContestGroupByParent } from "@/features/shared-contests/services/SharedContestsDBService";
+import { isError } from "@/utils/result";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET() {
@@ -13,10 +14,19 @@ export async function POST(req: NextRequest) {
 		"status": "OK",
 	};
 	const data = await req.json();
-	let contestId = data["contestId"] as number;
-	let parentId = data["parentId"] as number;
+	const contestId = data["contestId"] as number;
+	const parentId = data["parentId"] as number;
 
-	await createOrUpdateSharedContest(contestId, parentId);
+	const result = await createOrUpdateSharedContest(contestId, parentId);
+	if (isError(result)) {
+		return NextResponse.json({
+			status: "ERROR",
+			error: result.error
+		}, { status: result.error.code === "DATABASE_ERROR" ? 500 : 400 });
+	}
 
-	return NextResponse.json(res);
+	return NextResponse.json({
+		...res,
+		result: result.value
+	});
 }
