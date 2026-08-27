@@ -1,11 +1,18 @@
 import { getGroupedSharedProblems } from "@/features/shared-contests/services/CreateSharedService";
+import { isError } from "@/utils/result";
 import { NextResponse } from "next/server";
 
 export async function GET() {
-	const res = await getGroupedSharedProblems();
-	console.log(res);
+	const result = await getGroupedSharedProblems();
+	if (isError(result)) {
+		return NextResponse.json({
+			status: "ERROR",
+			error: result.error
+		}, { status: 500 });
+	}
+
 	return NextResponse.json({
 		status: "OK",
-		result: res
+		result: result.value
 	});
 }

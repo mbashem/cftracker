@@ -1,12 +1,11 @@
 "use server";
 
 import { getAllContests } from "@/features/contests/services/ContestDBService";
+import { isError } from "@/utils/result";
 import { revalidatePath } from "next/cache";
 import { createOrUpdateSharedContest, deleteSharedContest } from "../services/SharedContestsDBService";
 import groupContestAsShared from "../services/GroupContestService";
-import { getGroupedSharedProblems } from "../services/CreateSharedService";
-import path from "path";
-import { writeFile } from "fs";
+import { writeRelatedTs } from "../services/RelatedFileService";
 
 export async function deleteSharedContestAction(contestId: number) {
 	console.log("Deleting: shared contest, contestID:" + contestId);
@@ -17,8 +16,13 @@ export async function deleteSharedContestAction(contestId: number) {
 
 export async function createSharedContestAction(parentId: number, childId: number) {
 	console.log("Server: Creating shared contest, parentID:" + parentId + " childID:" + childId + ")");
-	const res = await createOrUpdateSharedContest(childId, parentId);
-	console.log(res);
+	const result = await createOrUpdateSharedContest(childId, parentId);
+	if (isError(result)) {
+		console.error("Unable to create shared contest", result.error);
+		return;
+	}
+
+	console.log(result.value);
 	revalidatePath("/shared-contests");
 }
 
@@ -26,22 +30,22 @@ export async function groupContestsAction() {
 	console.log("Server: Grouping contests");
 
 	const contestList = await getAllContests();
-	await groupContestAsShared(contestList);
+	const result = await groupContestAsShared(contestList);
+	if (isError(result)) {
+		console.error("Unable to group shared contests", result.error);
+		return;
+	}
+
 	revalidatePath("/shared-contests");
 };
 
 export async function saveSharedContestsToFileAction() {
 	console.log("Server: Saving shared contests to file");
-	const filePath = path.join(process.cwd(), "../src/data/saved_api/related.ts");
+	const result = await writeRelatedTs();
+	if (isError(result)) {
+		console.error("Unable to save the related contests file", result.error);
+		return;
+	}
 
-	const groupedSharedProblems = await getGroupedSharedProblems();
-	console.log("filePath: ", filePath);
-	const jsonData = "export const jsonData = {\"status\":\"OK\",\"result\":" + JSON.stringify(groupedSharedProblems) + "}";
-	writeFile(filePath, jsonData, (err) => {
-		if (err) {
-			console.error("Error writing file: ", err);
-		} else {
-			console.log("File written successfully");
-		}
-	});
+	console.log(`Related contests file ${result.value.status}: ${result.value.outputPath}`);
 }

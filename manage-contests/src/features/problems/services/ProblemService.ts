@@ -2,36 +2,73 @@
 import { getContestWithProblemByIdFromCF } from "@/features/cf-api/CFApiService";
 import { createOrUpdateContest } from "@/features/contests/services/ContestDBService";
 import { createOrUpdateProblem } from "./ProblemDBService";
-import { Problem } from "@/prisma/generated/client/client";
 import scrapProblemsFromContest from "@/scrapper/scrapProblemsFromContest";
+import { Contest, Problem } from "@/prisma/generated/client/client";
+import { isError, ok, Result } from "@/utils/result";
 
-export async function fetchAndSaveProblemsByContestId(contestId: number) {
-	const res = await getContestWithProblemByIdFromCF(contestId);
+type SavedContestProblems = Readonly<{
+	insertedContest: Contest;
+	problemsList: Problem[];
+}>;
 
-	const insertedContest = await createOrUpdateContest(res.contest.id, res.contest.name);
+type SavedProblems = Readonly<{
+	problemsList: Problem[];
+}>;
+
+export async function fetchAndSaveProblemsByContestId(
+	contestId: number
+): Promise<Result<SavedContestProblems>> {
+	const contestResult = await getContestWithProblemByIdFromCF(contestId);
+	if (isError(contestResult)) return contestResult;
+
+	const insertedContestResult = await createOrUpdateContest(
+		contestResult.value.contest.id,
+		contestResult.value.contest.name
+	);
+	if (isError(insertedContestResult)) return insertedContestResult;
 
 	const problemsList: Problem[] = [];
 
-	for (const problem of res.problems) {
-		const insertedProblem = await createOrUpdateProblem(problem.contestId, problem.index, problem.name, problem.rating);
-		problemsList.push(insertedProblem as Problem);
+	for (const problem of contestResult.value.problems) {
+		const insertedProblemResult = await createOrUpdateProblem(
+			problem.contestId,
+			problem.index,
+			problem.name,
+			problem.rating
+		);
+		if (isError(insertedProblemResult)) return insertedProblemResult;
+
+		problemsList.push(insertedProblemResult.value);
 	}
-	return {
-		insertedContest,
+
+	return ok({
+		insertedContest: insertedContestResult.value,
 		problemsList,
-	}
+	});
 }
 
-export async function scrapAndSaveProblemsByContestId(contestId: number) {
-	const problems = await scrapProblemsFromContest(contestId);
-	console.log("Scraped problems: ", problems);
+export async function scrapAndSaveProblemsByContestId(
+	contestId: number
+): Promise<Result<SavedProblems>> {
+	const problemsResult = await scrapProblemsFromContest(contestId);
+	if (isError(problemsResult)) return problemsResult;
+
+	console.log("Scraped problems: ", problemsResult.value);
 	const problemsList: Problem[] = [];
 
-	for (const problem of problems) {
-		const insertedProblem = await createOrUpdateProblem(problem.contestId, problem.index, problem.name, problem.rating === null ? undefined : problem.rating);
-		problemsList.push(insertedProblem as Problem);
+	for (const problem of problemsResult.value) {
+		const insertedProblemResult = await createOrUpdateProblem(
+			problem.contestId,
+			problem.index,
+			problem.name,
+			problem.rating === null ? undefined : problem.rating
+		);
+		if (isError(insertedProblemResult)) return insertedProblemResult;
+
+		problemsList.push(insertedProblemResult.value);
 	}
-	return {
+
+	return ok({
 		problemsList,
-	}
+	});
 }
