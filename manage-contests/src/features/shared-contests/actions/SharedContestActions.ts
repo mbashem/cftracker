@@ -30,12 +30,7 @@ export async function groupContestsAction() {
 	console.log("Server: Grouping contests");
 
 	const contestList = await getAllContests();
-	const result = await groupContestAsShared(contestList);
-	if (isError(result)) {
-		console.error("Unable to group shared contests", result.error);
-		return;
-	}
-
+	await groupContestAsShared(contestList);
 	revalidatePath("/shared-contests");
 };
 
@@ -47,5 +42,5 @@ export async function saveSharedContestsToFileAction() {
 		return;
 	}
 
-	console.log(`Related contests file ${result.value.status}: ${result.value.outputPath}`);
+	console.log(`Related contests file written: ${result.value.outputPath}`);
 }

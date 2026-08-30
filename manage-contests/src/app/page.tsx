@@ -89,8 +89,8 @@ export default function Home() {
         sharedContest.parentContestId
       );
       if (isError(sharedContestResult)) {
-        console.error("Unable to restore shared contest", sharedContestResult.error);
-        return;
+        console.warn("Skipping shared contest during restore", sharedContestResult.error);
+        continue;
       }
     }
     console.log("Server: synced DB");
