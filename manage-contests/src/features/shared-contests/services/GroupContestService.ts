@@ -1,5 +1,5 @@
 import { Contest } from "@/prisma/generated/client/client";
-import { isError, ok, Result } from "@/utils/result";
+import { isError } from "@/utils/result";
 import { createOrUpdateSharedContest } from "./SharedContestsDBService";
 
 const check = (child_name: string, parent_name: string): boolean => {
@@ -26,7 +26,7 @@ const check = (child_name: string, parent_name: string): boolean => {
  * Will consider div. 1 as parent contest and div. 2 as child contest.
  * Doesn't cover all cases
  */
-const groupContestAsShared = async (contests: Contest[]): Promise<Result<void>> => {
+const groupContestAsShared = async (contests: Contest[]): Promise<void> => {
 	console.log("HHHH");
 	console.log(contests);
 
@@ -45,16 +45,18 @@ const groupContestAsShared = async (contests: Contest[]): Promise<Result<void>> 
 
 		if (curr.length !== 0) {
 			const parentResult = await createOrUpdateSharedContest(contests[i].contestId, contests[i].contestId);
-			if (isError(parentResult)) return parentResult;
+			if (isError(parentResult)) {
+				throw new Error(parentResult.error.publicMessage);
+			}
 
 			for (const cont of curr) {
 				const childResult = await createOrUpdateSharedContest(cont.contestId, contests[i].contestId);
-				if (isError(childResult)) return childResult;
+				if (isError(childResult)) {
+					throw new Error(childResult.error.publicMessage);
+				}
 			}
 		}
 	}
-
-	return ok(undefined);
 };
 
 export default groupContestAsShared;

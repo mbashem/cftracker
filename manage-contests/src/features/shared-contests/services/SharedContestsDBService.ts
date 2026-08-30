@@ -244,11 +244,15 @@ export async function createOrUpdateSharedContest(
 				});
 			}
 
-			const mapping = await transaction.sharedContest.create({
-				data: {
+			const mapping = await transaction.sharedContest.upsert({
+				where: {
+					contestId
+				},
+				create: {
 					parentContestId,
 					contestId
-				}
+				},
+				update: {}
 			});
 
 			return ok({

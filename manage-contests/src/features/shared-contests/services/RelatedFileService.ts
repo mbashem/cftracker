@@ -1,29 +1,27 @@
 import "server-only";
 
 import { writeFile } from "node:fs/promises";
-import { err, isError, ok, Result } from "@/utils/result";
-import { getGroupedSharedProblems } from "./CreateSharedService";
+import type { RelatedProblem } from "./CreateSharedService";
+import { err, isError, ok, type Result } from "@/utils/result";
 
 const DEFAULT_OUTPUT_PATH = "../src/data/saved_api/related.ts";
 
 export type WriteRelatedTsResult = {
-	status: "written";
 	outputPath: string;
 	relatedProblemCount: number;
 };
 
-export async function writeRelatedTs(outputPath?: string): Promise<Result<WriteRelatedTsResult>> {
-	const relatedProblemsResult = await getGroupedSharedProblems();
-	if (isError(relatedProblemsResult)) return relatedProblemsResult;
-
-	const targetPath = outputPath ?? DEFAULT_OUTPUT_PATH;
+export async function writeRelatedTsFile(
+	relatedProblems: RelatedProblem[],
+	outputPath = DEFAULT_OUTPUT_PATH
+): Promise<Result<WriteRelatedTsResult>> {
 	const fileContents = `export const jsonData = ${JSON.stringify({
 		status: "OK",
-		result: relatedProblemsResult.value
+		result: relatedProblems
 	})};\n`;
 
 	try {
-		await writeFile(targetPath, fileContents, "utf8");
+		await writeFile(outputPath, fileContents, "utf8");
 	} catch (cause) {
 		console.error("Failed to write related.ts", cause);
 		return err({
@@ -34,8 +32,15 @@ export async function writeRelatedTs(outputPath?: string): Promise<Result<WriteR
 	}
 
 	return ok({
-		status: "written",
-		outputPath: targetPath,
-		relatedProblemCount: relatedProblemsResult.value.length
+		outputPath,
+		relatedProblemCount: relatedProblems.length
 	});
+}
+
+export async function writeRelatedTs(outputPath?: string): Promise<Result<WriteRelatedTsResult>> {
+	const { getGroupedSharedProblems } = await import("./CreateSharedService");
+	const relatedProblemsResult = await getGroupedSharedProblems();
+	if (isError(relatedProblemsResult)) return relatedProblemsResult;
+
+	return writeRelatedTsFile(relatedProblemsResult.value, outputPath);
 }
