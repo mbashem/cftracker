@@ -10,7 +10,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "node --experimental-strip-types node_modules/eslint/bin/eslint.js --flag unstable_native_nodejs_ts_config",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:mcp:inspection": "node --conditions=react-server --import tsx tests/mcp/inspection.ts"
   },
   "dependencies": {
     "@emotion/cache": "^11.14.0",
@@ -36,6 +37,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@modelcontextprotocol/inspector": "^2.0.0",
     "@types/node": "^22",
     "@types/pg": "^8.16.0",
     "@types/react": "19.2.17",
@@ -43,6 +45,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.0",
     "prisma": "^7.9.1",
+    "tsx": "^4.20.6",
     "typescript": "^6.0.3"
   },
   "overrides": {
