@@ -1,17 +1,47 @@
-import "server-only";
-
 import type { CallToolResult, McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
-import { fetchAndSaveAllContests, getAllUngroupedContests } from "@/features/contests/services/ContestDBService";
-import { getAllProblems } from "@/features/problems/services/ProblemDBService";
-import { fetchAndSaveProblemsByContestId } from "@/features/problems/services/ProblemService";
-import {
-	createOrUpdateSharedContest,
-	getAllSharedContestGroupsWithDetails
-} from "@/features/shared-contests/services/SharedContestsDBService";
-import { writeRelatedTs } from "@/features/shared-contests/services/RelatedFileService";
 import { isError } from "@/utils/result";
 import type { AppError, Result } from "@/utils/result";
+
+type Contest = {
+	contestId: number;
+	name: string;
+};
+
+type Problem = {
+	contestId: number;
+	index: string;
+	name: string;
+	rating: number | null;
+};
+
+type SharedContestGroup = {
+	parentContestId: number;
+	parentContest: Contest;
+	contests: Array<Contest & { problems: Problem[] }>;
+};
+
+export type ManageContestsMcpDependencies = {
+	syncContests: () => Promise<Result<Contest[]>>;
+	syncContestProblems: (contestId: number) => Promise<Result<{
+		insertedContest: Contest;
+		problemsList: Problem[];
+	}>>;
+	linkContestToSharedParent: (contestId: number, parentContestId: number) => Promise<Result<{
+		status: "created" | "unchanged";
+		mapping: {
+			contestId: number;
+			parentContestId: number;
+		};
+	}>>;
+	listUngroupedContests: () => Promise<Result<Contest[]>>;
+	listProblems: () => Promise<Result<Problem[]>>;
+	listSharedContestGroups: () => Promise<Result<SharedContestGroup[]>>;
+	writeRelatedTs: (outputPath?: string) => Promise<Result<{
+		outputPath: string;
+		relatedProblemCount: number;
+	}>>;
+};
 
 const emptyInputSchema = z.object({}).strict();
 const contestIdSchema = z.number().int().positive();
@@ -75,7 +105,10 @@ async function runTool<T>(
 	}
 }
 
-export function registerManageContestsTools(server: McpServer) {
+export function registerManageContestsTools(
+	server: McpServer,
+	dependencies: ManageContestsMcpDependencies
+) {
 	server.registerTool(
 		"sync_contests",
 		{
@@ -96,7 +129,7 @@ export function registerManageContestsTools(server: McpServer) {
 		async () => {
 			return runTool(
 				"sync_contests",
-				() => fetchAndSaveAllContests(false),
+				dependencies.syncContests,
 				(synchronizedContests) => {
 					const contests = synchronizedContests
 						.toSorted((left, right) => left.contestId - right.contestId);
@@ -140,7 +173,7 @@ export function registerManageContestsTools(server: McpServer) {
 		async ({ contestId }) => {
 			return runTool(
 				"sync_contest_problems",
-				() => fetchAndSaveProblemsByContestId(contestId),
+				() => dependencies.syncContestProblems(contestId),
 				({ insertedContest, problemsList }) => {
 				const problems = problemsList.toSorted((left, right) => {
 					if (left.index === right.index) return 0;
@@ -187,7 +220,7 @@ export function registerManageContestsTools(server: McpServer) {
 		async ({ parentContestId, contestId }) => {
 			return runTool(
 				"link_contest_to_shared_parent",
-				() => createOrUpdateSharedContest(contestId, parentContestId),
+				() => dependencies.linkContestToSharedParent(contestId, parentContestId),
 				(output) => {
 				return {
 					content: [{
@@ -223,7 +256,7 @@ export function registerManageContestsTools(server: McpServer) {
 		async () => {
 			return runTool(
 				"list_ungrouped_contests",
-				getAllUngroupedContests,
+				dependencies.listUngroupedContests,
 				(contests) => {
 				const output = {
 					count: contests.length,
@@ -262,7 +295,7 @@ export function registerManageContestsTools(server: McpServer) {
 		async () => {
 			return runTool(
 				"list_problems",
-				getAllProblems,
+				dependencies.listProblems,
 				(problems) => {
 				const output = {
 					count: problems.length,
@@ -301,7 +334,7 @@ export function registerManageContestsTools(server: McpServer) {
 		async () => {
 			return runTool(
 				"list_shared_contest_groups",
-				getAllSharedContestGroupsWithDetails,
+				dependencies.listSharedContestGroups,
 				(groups) => {
 				const output = {
 					groupCount: groups.length,
@@ -329,7 +362,6 @@ export function registerManageContestsTools(server: McpServer) {
 				outputPath: z.string().min(1).optional().describe("Optional output path; relative paths are resolved from the server's current directory")
 			}).strict(),
 			outputSchema: z.object({
-				status: z.literal("written"),
 				outputPath: z.string(),
 				relatedProblemCount: z.number().int().nonnegative()
 			}),
@@ -343,7 +375,7 @@ export function registerManageContestsTools(server: McpServer) {
 		async ({ outputPath }) => {
 			return runTool(
 				"write_related_ts",
-				() => writeRelatedTs(outputPath),
+				() => dependencies.writeRelatedTs(outputPath),
 				(output) => {
 				return {
 					content: [{
