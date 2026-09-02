@@ -23,7 +23,7 @@ Node.js 22.22 or newer is required.
 ```bash
 cd manage-contests
 npm install
-npm run dev
+npm run dev -- -H 127.0.0.1 -p 3000
 ```
 
 Open the local URL printed by Next.js in the terminal.
@@ -38,38 +38,82 @@ http://localhost:3000/api/mcp
 
 The server is intended to let Codex or another MCP client perform the same contest-maintenance operations as the admin UI. Start the Next.js server only when MCP access is needed; the MCP server is not a separate long-running process.
 
+### Set up in Codex
+
+The MCP endpoint uses the `DATABASE_URL` from `manage-contests/.env`. Confirm that it points to the database you intend to update before starting the server.
+
+1. Install the application dependencies:
+
+   ```bash
+   cd manage-contests
+   npm install
+   ```
+
+2. Start Next.js on the fixed port expected by the MCP configuration. Keep this terminal running while Codex uses the tools:
+
+   ```bash
+   npm run dev -- -H 127.0.0.1 -p 3000
+   ```
+
+   Wait until Next.js reports that it is ready. The MCP endpoint is then available at `http://localhost:3000/api/mcp`.
+
+3. In another terminal, register the endpoint with the local Codex client:
+
+   ```bash
+   codex mcp add manage-contests --url http://localhost:3000/api/mcp
+   codex mcp list
+   ```
+
+   `codex mcp list` confirms that the registration exists. The equivalent manual entry in `~/.codex/config.toml` is:
+
+   ```toml
+   [mcp_servers.manage-contests]
+   url = "http://localhost:3000/api/mcp"
+   ```
+
+4. Start a new Codex session after adding the configuration, or reconnect the MCP server from the client. The `manage-contests` tools should then be available to that session.
+
+5. When maintenance is complete, stop Next.js with `Ctrl+C`. The Codex registration can remain in place; it will connect again the next time the Next.js server is started.
+
+If Codex cannot connect, verify that Next.js is still running on port `3000`, that the configured URL ends with `/api/mcp`, and that the server was started before the Codex session tried to connect. Port `3000` is pinned intentionally so Next.js cannot silently select a different port. You can verify the live endpoint with the `tools/list` command under [Manual Inspector checks](#manual-inspector-checks).
+
+The endpoint has no authentication. Keep it bound to your local development environment and do not expose it publicly. See the [official Codex MCP documentation](https://developers.openai.com/codex/mcp/) for Codex-wide MCP configuration details.
+
+### Available tools
+
 The endpoint currently exposes these tools:
 
 | Tool | Purpose | Input |
 | --- | --- | --- |
 | `sync_contests` | Fetch non-gym Codeforces contests and save them to the database. | None |
 | `sync_contest_problems` | Fetch and save one contest and all its problems. | `contestId` |
-| `link_contest_to_shared_parent` | Link one contest to a confirmed shared-contest parent. | `parentContestId`, `contestId` |
+| `sync_shared_contest_group` | Group one confirmed array of contest IDs and synchronize every contest's problems serially. | `contestIds` |
 | `list_ungrouped_contests` | Return contests that do not have a shared-contest mapping. | None |
 | `list_problems` | Return all saved problems. | None |
 | `list_shared_contest_groups` | Return shared groups with contest and problem details. | None |
 | `write_related_ts` | Generate and write `related.ts` to the default or supplied path. | Optional `outputPath` |
 
-Grouping contests automatically is deliberately not exposed. The MCP client must identify the likely contests, obtain operator confirmation, and then create each mapping explicitly.
+`sync_shared_contest_group` accepts exactly one operator-confirmed group. It sorts the IDs, chooses the smallest as parent, creates every mapping serially, and waits two seconds immediately before each serial problem synchronization. A one-ID array is valid and creates a self-mapping.
+
+Codex should use the repository runbook at [`../.agents/skills/update-shared-codeforces-contests/SKILL.md`](../.agents/skills/update-shared-codeforces-contests/SKILL.md). Its reliability scenarios cover candidate ambiguity, rejected confirmation, failures, and same-conversation resume.
 
 ### Expected automation workflow
 
 When the operator says that a shared Codeforces contest has concluded, an MCP client should:
 
 1. Call `sync_contests`.
-2. Inspect the synchronized, ungrouped, and existing shared-contest data to identify the contests that likely belong together.
-3. Ask the operator to confirm the proposed contest IDs. Do not create mappings before confirmation.
-4. Select the smallest confirmed contest ID as `parentContestId`.
-5. Call `link_contest_to_shared_parent` sequentially in ascending contest-ID order. The first call must link the parent to itself, followed by each child contest.
-6. Call `sync_contest_problems` for every confirmed contest, sequentially.
-7. Call `write_related_ts` and report the result.
+2. Call `list_ungrouped_contests` and identify exactly one candidate group. Do not call `list_shared_contest_groups` for discovery.
+3. Present one non-empty `contestIds` array and ask the operator to confirm that every ID belongs to the same group. One ID is allowed.
+4. Call `sync_shared_contest_group` once with the confirmed array.
+5. Call `write_related_ts` and report the result.
 
-Each call depends on the preceding call. If a tool returns an error, stop the workflow and report the failed step. The operator may later request that the same conversation resume from the first incomplete step. Completed idempotent calls can safely be repeated; an existing identical shared-contest link returns `unchanged`.
+Each call depends on the preceding call. If a tool returns an error, stop the workflow and report the failed step. On same-conversation resume, repeat the composite group call with the same confirmed array if it failed or was uncertain; retry only `write_related_ts` if grouping completed.
 
 ### Implementation structure
 
 - `src/app/api/mcp/route.ts` creates the HTTP handler and supplies the real application services.
 - `src/features/mcp/McpServer.ts` defines the seven tool contracts and accepts its service dependencies explicitly.
+- `src/features/shared-contests/services/GroupContestService.ts` owns confirmed-group mapping, the two-second pre-fetch delay, and serial problem synchronization.
 - Service boundaries return `Result<T>` for expected Codeforces, database, validation, and filesystem failures.
 - The MCP boundary converts a failed result into `isError: true` with a JSON text payload containing `code`, `message`, and `retryable`.
 - The MCP boundary catches an unexpected exception defensively and returns `INTERNAL_ERROR`.
@@ -90,12 +134,13 @@ npm run test:mcp:inspection
 
 The suite verifies:
 
-- initialization and server identity;
+- initialization, server identity, and server-wide workflow instructions;
 - all seven tool names, titles, descriptions, complete input/output schemas, and annotations;
 - the complete sequential shared-contest workflow;
 - every tool's success and typed failure behavior;
-- idempotent syncing, linking, listing, and writing;
-- self-mapping, mapping validation, and mapping conflicts;
+- idempotent syncing, grouping, listing, and writing;
+- single-contest groups, smallest-parent mapping, mapping conflicts, and stop-on-first-failure behavior;
+- the two-second delay before every serial group problem synchronization;
 - deterministic contest, problem, group, and group-member ordering;
 - rejection of unexpected arguments by no-input tools;
 - default and supplied `related.ts` paths;
@@ -109,7 +154,7 @@ The suite verifies:
 Start the application first:
 
 ```bash
-npm run dev
+npm run dev -- -H 127.0.0.1 -p 3000
 ```
 
 List the available tools:

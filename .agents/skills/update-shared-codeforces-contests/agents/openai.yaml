@@ -1,0 +1,4 @@
+interface:
+  display_name: "Update Shared Codeforces Contests"
+  short_description: "Run confirmed shared-contest maintenance"
+  default_prompt: "Use $update-shared-codeforces-contests to process the newly concluded shared Codeforces contest."

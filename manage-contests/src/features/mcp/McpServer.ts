@@ -27,12 +27,22 @@ export type ManageContestsMcpDependencies = {
 		insertedContest: Contest;
 		problemsList: Problem[];
 	}>>;
-	linkContestToSharedParent: (contestId: number, parentContestId: number) => Promise<Result<{
-		status: "created" | "unchanged";
-		mapping: {
-			contestId: number;
-			parentContestId: number;
-		};
+	syncSharedContestGroup: (contestIds: number[]) => Promise<Result<{
+		parentContestId: number;
+		contestIds: number[];
+		mappings: Array<{
+			status: "created" | "unchanged";
+			mapping: {
+				contestId: number;
+				parentContestId: number;
+			};
+		}>;
+		synchronizedContests: Array<{
+			contest: Contest;
+			problemCount: number;
+			problems: Problem[];
+		}>;
+		totalProblemCount: number;
 	}>>;
 	listUngroupedContests: () => Promise<Result<Contest[]>>;
 	listProblems: () => Promise<Result<Problem[]>>;
@@ -43,8 +53,23 @@ export type ManageContestsMcpDependencies = {
 	}>>;
 };
 
+export const MANAGE_CONTESTS_MCP_INSTRUCTIONS = `Use this server to process a newly concluded shared Codeforces contest or resume that workflow in the same conversation.
+
+Call tools sequentially, never in parallel. A notification that a contest concluded starts discovery but is not confirmation to create a group. First call sync_contests, then list_ungrouped_contests. Identify exactly one plausible candidate group from those ungrouped contests. Treat an operator-supplied name as the strongest anchor, compare common event/name stems and complementary division or round labels, and use nearby IDs only as supporting evidence. One contest is a valid group. If exactly one group cannot be selected confidently, ask for the contest name or IDs; do not propose multiple groups for one confirmation.
+
+Present one non-empty contestIds array with IDs and names sorted ascending, state that the smallest ID will be the parent, and ask the operator to confirm that every listed contest belongs to the same group. Never call sync_shared_contest_group before confirmation. After confirmation, call sync_shared_contest_group once with that exact array, then call write_related_ts, using its default path unless the operator supplied a path. The composite tool owns mapping order, two-second waits, and serial problem synchronization; do not reproduce those operations with the standalone sync_contest_problems tool.
+
+Stop immediately after the first tool error and do not run later steps. Keep the confirmed contestIds and the first incomplete tool in the conversation. On same-conversation resume, repeat sync_shared_contest_group with the same array if it failed or was uncertain, or retry only write_related_ts if group synchronization completed. Ask for confirmation again only if the array changed.`;
+
 const emptyInputSchema = z.object({}).strict();
 const contestIdSchema = z.number().int().positive();
+const confirmedContestIdsSchema = z.array(contestIdSchema)
+	.min(1)
+	.refine(
+		(contestIds) => new Set(contestIds).size === contestIds.length,
+		{ message: "contestIds must not contain duplicates" }
+	)
+	.describe("One or more unique, operator-confirmed contest IDs belonging to exactly one shared group");
 
 const contestSchema = z.object({
 	contestId: contestIdSchema,
@@ -133,18 +158,18 @@ export function registerManageContestsTools(
 				(synchronizedContests) => {
 					const contests = synchronizedContests
 						.toSorted((left, right) => left.contestId - right.contestId);
-				const output = {
-					syncedCount: contests.length,
-					contests
-				};
+					const output = {
+						syncedCount: contests.length,
+						contests
+					};
 
-				return {
-					content: [{
-						type: "text" as const,
-						text: `Synchronized ${contests.length} contests from Codeforces.`
-					}],
-					structuredContent: output
-				};
+					return {
+						content: [{
+							type: "text" as const,
+							text: `Synchronized ${contests.length} contests from Codeforces.`
+						}],
+						structuredContent: output
+					};
 				}
 			);
 		}
@@ -175,62 +200,69 @@ export function registerManageContestsTools(
 				"sync_contest_problems",
 				() => dependencies.syncContestProblems(contestId),
 				({ insertedContest, problemsList }) => {
-				const problems = problemsList.toSorted((left, right) => {
-					if (left.index === right.index) return 0;
-					return left.index < right.index ? -1 : 1;
-				});
-				const output = {
-					contest: insertedContest,
-					problemCount: problems.length,
-					problems
-				};
+					const problems = problemsList.toSorted((left, right) => {
+						if (left.index === right.index) return 0;
+						return left.index < right.index ? -1 : 1;
+					});
+					const output = {
+						contest: insertedContest,
+						problemCount: problems.length,
+						problems
+					};
 
-				return {
-					content: [{
-						type: "text" as const,
-						text: `Synchronized ${problems.length} problems for contest ${contestId}.`
-					}],
-					structuredContent: output
-				};
+					return {
+						content: [{
+							type: "text" as const,
+							text: `Synchronized ${problems.length} problems for contest ${contestId}.`
+						}],
+						structuredContent: output
+					};
 				}
 			);
 		}
 	);
 
 	server.registerTool(
-		"link_contest_to_shared_parent",
+		"sync_shared_contest_group",
 		{
-			title: "Link contest to shared parent",
-			description: "Create one directional shared-contest mapping. The parent ID must not exceed the contest ID, a parent must be linked to itself before its children, identical calls are unchanged, and an existing mapping is never reassigned.",
+			title: "Sync shared contest group",
+			description: "Create one operator-confirmed shared-contest group from one or more contest IDs, using the smallest ID as parent, then wait two seconds before fetching and saving each contest's problems serially.",
 			inputSchema: z.object({
-				parentContestId: contestIdSchema.describe("Smallest confirmed contest ID and shared-group parent"),
-				contestId: contestIdSchema.describe("Contest to link, including the parent itself on the first call")
+				contestIds: confirmedContestIdsSchema
 			}).strict(),
 			outputSchema: z.object({
-				status: z.enum(["created", "unchanged"]),
-				mapping: sharedContestMappingSchema
+				parentContestId: contestIdSchema,
+				contestIds: z.array(contestIdSchema).min(1),
+				mappings: z.array(z.object({
+					status: z.enum(["created", "unchanged"]),
+					mapping: sharedContestMappingSchema
+				})),
+				synchronizedContests: z.array(z.object({
+					contest: contestSchema,
+					problemCount: z.number().int().nonnegative(),
+					problems: z.array(problemSchema)
+				})),
+				totalProblemCount: z.number().int().nonnegative()
 			}),
 			annotations: {
 				readOnlyHint: false,
-				destructiveHint: false,
+				destructiveHint: true,
 				idempotentHint: true,
-				openWorldHint: false
+				openWorldHint: true
 			}
 		},
-		async ({ parentContestId, contestId }) => {
+		async ({ contestIds }) => {
 			return runTool(
-				"link_contest_to_shared_parent",
-				() => dependencies.linkContestToSharedParent(contestId, parentContestId),
+				"sync_shared_contest_group",
+				() => dependencies.syncSharedContestGroup(contestIds),
 				(output) => {
-				return {
-					content: [{
-						type: "text" as const,
-						text: output.status === "created"
-							? `Linked contest ${contestId} to shared parent ${parentContestId}.`
-							: `Contest ${contestId} was already linked to shared parent ${parentContestId}.`
-					}],
-					structuredContent: output
-				};
+					return {
+						content: [{
+							type: "text" as const,
+							text: `Synchronized shared group ${output.parentContestId} with ${output.contestIds.length} contest${output.contestIds.length === 1 ? "" : "s"} and ${output.totalProblemCount} problems.`
+						}],
+						structuredContent: output
+					};
 				}
 			);
 		}
