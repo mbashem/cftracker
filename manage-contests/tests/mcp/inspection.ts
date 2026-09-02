@@ -7,16 +7,21 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { createMcpHandler } from "mcp-handler";
 import {
+	MANAGE_CONTESTS_MCP_INSTRUCTIONS,
 	registerManageContestsTools,
 	type ManageContestsMcpDependencies
 } from "../../src/features/mcp/McpServer";
+import {
+	SHARED_CONTEST_PROBLEM_SYNC_DELAY_MS,
+	syncSharedContestGroup
+} from "../../src/features/shared-contests/services/GroupContestService";
 import { writeRelatedTsFile } from "../../src/features/shared-contests/services/RelatedFileService";
 import { err, isError, ok, type AppError } from "../../src/utils/result";
 
 const toolNames = [
 	"sync_contests",
 	"sync_contest_problems",
-	"link_contest_to_shared_parent",
+	"sync_shared_contest_group",
 	"list_ungrouped_contests",
 	"list_problems",
 	"list_shared_contest_groups",
@@ -24,6 +29,17 @@ const toolNames = [
 ] as const;
 
 type ToolName = typeof toolNames[number];
+
+type GroupOperation =
+	| Readonly<{ operation: "link"; contestId: number; parentContestId: number }>
+	| Readonly<{ operation: "wait"; milliseconds: number }>
+	| Readonly<{ operation: "syncProblems"; contestId: number }>;
+
+type GroupFailure = Readonly<{
+	operation: "link" | "syncProblems";
+	contestId: number;
+	error: AppError;
+}>;
 
 type Contest = {
 	contestId: number;
@@ -86,10 +102,11 @@ class FakeManageContestsServices {
 	readonly contests = new Map<number, Contest>();
 	readonly problems = new Map<string, Problem>();
 	readonly mappings = new Map<number, number>();
+	readonly groupOperations: GroupOperation[] = [];
 	readonly calls: Record<ToolName, number> = {
 		sync_contests: 0,
 		sync_contest_problems: 0,
-		link_contest_to_shared_parent: 0,
+		sync_shared_contest_group: 0,
 		list_ungrouped_contests: 0,
 		list_problems: 0,
 		list_shared_contest_groups: 0,
@@ -98,6 +115,7 @@ class FakeManageContestsServices {
 	writtenOutputPath?: string;
 	nextError?: AppError;
 	nextThrow = false;
+	groupFailure?: GroupFailure;
 
 	private startCall(toolName: ToolName) {
 		this.calls[toolName] += 1;
@@ -116,6 +134,91 @@ class FakeManageContestsServices {
 		return undefined;
 	}
 
+	private takeGroupFailure(operation: GroupFailure["operation"], contestId: number) {
+		if (
+			this.groupFailure?.operation !== operation
+			|| this.groupFailure.contestId !== contestId
+		) {
+			return undefined;
+		}
+
+		const error = this.groupFailure.error;
+		this.groupFailure = undefined;
+		return err(error);
+	}
+
+	private readonly saveContestProblems = async (contestId: number) => {
+		const contest = this.contests.get(contestId);
+		const problems = synchronizedProblems.get(contestId);
+		if (!contest || !problems) {
+			return err({
+				code: "CONTEST_NOT_FOUND",
+				publicMessage: `Contest not found: ${contestId}`,
+				retryable: false
+			});
+		}
+
+		for (const problem of problems) {
+			this.problems.set(`${problem.contestId}-${problem.index}`, problem);
+		}
+		return ok({ insertedContest: contest, problemsList: [...problems] });
+	};
+
+	private readonly linkGroupContest = async (contestId: number, parentContestId: number) => {
+		this.groupOperations.push({ operation: "link", contestId, parentContestId });
+		const configuredFailure = this.takeGroupFailure("link", contestId);
+		if (configuredFailure) return configuredFailure;
+
+		if (!this.contests.has(contestId) || !this.contests.has(parentContestId)) {
+			return err({
+				code: "CONTEST_NOT_FOUND",
+				publicMessage: "Contest not found",
+				retryable: false
+			});
+		}
+		if (parentContestId > contestId) {
+			return err({
+				code: "INVALID_PARENT_ORDER",
+				publicMessage: `Parent contest ${parentContestId} cannot be greater than contest ${contestId}`,
+				retryable: false
+			});
+		}
+		if (contestId !== parentContestId && this.mappings.get(parentContestId) !== parentContestId) {
+			return err({
+				code: "PARENT_NOT_INITIALIZED",
+				publicMessage: `Parent contest ${parentContestId} must be linked to itself first`,
+				retryable: false
+			});
+		}
+
+		const existingParent = this.mappings.get(contestId);
+		if (existingParent !== undefined && existingParent !== parentContestId) {
+			return err({
+				code: "MAPPING_CONFLICT",
+				publicMessage: `Contest ${contestId} is already linked to parent ${existingParent}`,
+				retryable: false
+			});
+		}
+
+		this.mappings.set(contestId, parentContestId);
+		return ok({
+			status: existingParent === parentContestId ? "unchanged" as const : "created" as const,
+			mapping: { contestId, parentContestId }
+		});
+	};
+
+	private readonly syncGroupContestProblems = async (contestId: number) => {
+		this.groupOperations.push({ operation: "syncProblems", contestId });
+		const configuredFailure = this.takeGroupFailure("syncProblems", contestId);
+		if (configuredFailure) return configuredFailure;
+
+		return this.saveContestProblems(contestId);
+	};
+
+	private readonly waitForGroupContest = async (milliseconds: number) => {
+		this.groupOperations.push({ operation: "wait", milliseconds });
+	};
+
 	readonly dependencies: ManageContestsMcpDependencies = {
 		syncContests: async () => {
 			const failure = this.startCall("sync_contests");
@@ -130,60 +233,16 @@ class FakeManageContestsServices {
 			const failure = this.startCall("sync_contest_problems");
 			if (failure) return failure;
 
-			const contest = this.contests.get(contestId);
-			const problems = synchronizedProblems.get(contestId);
-			if (!contest || !problems) {
-				return err({
-					code: "CONTEST_NOT_FOUND",
-					publicMessage: `Contest not found: ${contestId}`,
-					retryable: false
-				});
-			}
-
-			for (const problem of problems) {
-				this.problems.set(`${problem.contestId}-${problem.index}`, problem);
-			}
-			return ok({ insertedContest: contest, problemsList: [...problems] });
+			return this.saveContestProblems(contestId);
 		},
-		linkContestToSharedParent: async (contestId, parentContestId) => {
-			const failure = this.startCall("link_contest_to_shared_parent");
+		syncSharedContestGroup: async (contestIds) => {
+			const failure = this.startCall("sync_shared_contest_group");
 			if (failure) return failure;
 
-			if (!this.contests.has(contestId) || !this.contests.has(parentContestId)) {
-				return err({
-					code: "CONTEST_NOT_FOUND",
-					publicMessage: "Contest not found",
-					retryable: false
-				});
-			}
-			if (parentContestId > contestId) {
-				return err({
-					code: "INVALID_PARENT_ORDER",
-					publicMessage: `Parent contest ${parentContestId} cannot be greater than contest ${contestId}`,
-					retryable: false
-				});
-			}
-			if (contestId !== parentContestId && this.mappings.get(parentContestId) !== parentContestId) {
-				return err({
-					code: "PARENT_NOT_INITIALIZED",
-					publicMessage: `Parent contest ${parentContestId} must be linked to itself first`,
-					retryable: false
-				});
-			}
-
-			const existingParent = this.mappings.get(contestId);
-			if (existingParent !== undefined && existingParent !== parentContestId) {
-				return err({
-					code: "MAPPING_CONFLICT",
-					publicMessage: `Contest ${contestId} is already linked to parent ${existingParent}`,
-					retryable: false
-				});
-			}
-
-			this.mappings.set(contestId, parentContestId);
-			return ok({
-				status: existingParent === parentContestId ? "unchanged" : "created",
-				mapping: { contestId, parentContestId }
+			return syncSharedContestGroup(contestIds, {
+				linkContest: this.linkGroupContest,
+				syncContestProblems: this.syncGroupContestProblems,
+				wait: this.waitForGroupContest
 			});
 		},
 		listUngroupedContests: async () => {
@@ -284,6 +343,10 @@ const problemSchema = objectSchema({
 	name: { type: "string" },
 	rating: nullableIntegerSchema
 });
+const sharedContestMappingSchema = objectSchema({
+	contestId: positiveIntegerSchema,
+	parentContestId: positiveIntegerSchema
+});
 const emptyInputSchema = rootObjectSchema({}, []);
 
 const expectedTools = [
@@ -313,21 +376,42 @@ const expectedTools = [
 		annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: true }
 	},
 	{
-		name: "link_contest_to_shared_parent",
-		title: "Link contest to shared parent",
-		description: "Create one directional shared-contest mapping. The parent ID must not exceed the contest ID, a parent must be linked to itself before its children, identical calls are unchanged, and an existing mapping is never reassigned.",
+		name: "sync_shared_contest_group",
+		title: "Sync shared contest group",
+		description: "Create one operator-confirmed shared-contest group from one or more contest IDs, using the smallest ID as parent, then wait two seconds before fetching and saving each contest's problems serially.",
 		inputSchema: rootObjectSchema({
-			parentContestId: { ...positiveIntegerSchema, description: "Smallest confirmed contest ID and shared-group parent" },
-			contestId: { ...positiveIntegerSchema, description: "Contest to link, including the parent itself on the first call" }
+			contestIds: {
+				description: "One or more unique, operator-confirmed contest IDs belonging to exactly one shared group",
+				type: "array",
+				items: positiveIntegerSchema,
+				minItems: 1
+			}
 		}),
 		outputSchema: rootObjectSchema({
-			status: { type: "string", enum: ["created", "unchanged"] },
-			mapping: objectSchema({
-				contestId: positiveIntegerSchema,
-				parentContestId: positiveIntegerSchema
-			})
+			parentContestId: positiveIntegerSchema,
+			contestIds: {
+				type: "array",
+				items: positiveIntegerSchema,
+				minItems: 1
+			},
+			mappings: {
+				type: "array",
+				items: objectSchema({
+					status: { type: "string", enum: ["created", "unchanged"] },
+					mapping: sharedContestMappingSchema
+				})
+			},
+			synchronizedContests: {
+				type: "array",
+				items: objectSchema({
+					contest: contestSchema,
+					problemCount: nonnegativeIntegerSchema,
+					problems: { type: "array", items: problemSchema }
+				})
+			},
+			totalProblemCount: nonnegativeIntegerSchema
 		}),
-		annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false }
+		annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: true }
 	},
 	{
 		name: "list_ungrouped_contests",
@@ -419,6 +503,7 @@ async function startTestServer(dependencies: ManageContestsMcpDependencies) {
 			name: "cftracker-manage-contests",
 			version: "0.1.0"
 		},
+		instructions: MANAGE_CONTESTS_MCP_INSTRUCTIONS,
 		maxSubscriptions: 0
 	});
 
@@ -556,6 +641,10 @@ async function verifyServerContract(serverUrl: string) {
 		name: "cftracker-manage-contests",
 		version: "0.1.0"
 	});
+	assert.equal(
+		initialized.json?.result.instructions,
+		MANAGE_CONTESTS_MCP_INSTRUCTIONS
+	);
 
 	const listed = await runInspector(serverUrl, "tools/list");
 	assert.deepEqual(
@@ -565,42 +654,65 @@ async function verifyServerContract(serverUrl: string) {
 	assert.deepEqual(listed.json?.result.tools, expectedTools);
 }
 
-async function verifyMappingValidation(serverUrl: string) {
-	const cases = [
-		{
-			arguments: { parentContestId: 102, contestId: 103 },
-			error: {
-				code: "PARENT_NOT_INITIALIZED",
-				message: "Parent contest 102 must be linked to itself first",
-				retryable: false
-			}
-		},
-		{
-			arguments: { parentContestId: 103, contestId: 101 },
-			error: {
-				code: "INVALID_PARENT_ORDER",
-				message: "Parent contest 103 cannot be greater than contest 101",
-				retryable: false
-			}
-		},
-		{
-			arguments: { parentContestId: 101, contestId: 999 },
-			error: {
-				code: "CONTEST_NOT_FOUND",
-				message: "Contest not found",
-				retryable: false
-			}
-		}
+function expectedSynchronizedContest(contestId: number) {
+	const contest = synchronizedContests.find((candidate) => candidate.contestId === contestId)!;
+	const problems = [...synchronizedProblems.get(contestId)!].toSorted(compareProblems);
+	return {
+		contest,
+		problemCount: problems.length,
+		problems
+	};
+}
+
+function expectedSharedGroupResult(
+	contestIds: number[],
+	statuses: Array<"created" | "unchanged">
+) {
+	const orderedContestIds = [...contestIds].toSorted((left, right) => left - right);
+	const parentContestId = orderedContestIds[0];
+	const synchronizedGroupContests = orderedContestIds.map(expectedSynchronizedContest);
+	return {
+		parentContestId,
+		contestIds: orderedContestIds,
+		mappings: orderedContestIds.map((contestId, index) => ({
+			status: statuses[index],
+			mapping: { contestId, parentContestId }
+		})),
+		synchronizedContests: synchronizedGroupContests,
+		totalProblemCount: synchronizedGroupContests.reduce(
+			(total, contest) => total + contest.problemCount,
+			0
+		)
+	};
+}
+
+async function verifySharedGroupInputValidation(
+	serverUrl: string,
+	services: FakeManageContestsServices
+) {
+	const invalidArguments: Record<string, unknown>[] = [
+		{},
+		{ contestIds: [] },
+		{ contestIds: [101, 101] },
+		{ contestIds: [0] },
+		{ contestIds: [-1] },
+		{ contestIds: [101.5] },
+		{ contestIds: ["101"] },
+		{ contestIds: [101], unexpected: true }
 	];
 
-	for (const testCase of cases) {
+	for (const toolArguments of invalidArguments) {
+		const callsBefore = services.calls.sync_shared_contest_group;
+		const operationsBefore = services.groupOperations.length;
 		const invocation = await callTool(
 			serverUrl,
-			"link_contest_to_shared_parent",
-			testCase.arguments,
+			"sync_shared_contest_group",
+			toolArguments,
 			5
 		);
-		assert.deepEqual(errorContent(invocation), testCase.error);
+		assert.equal(invocation.json?.result.isError, true);
+		assert.equal(services.calls.sync_shared_contest_group, callsBefore);
+		assert.equal(services.groupOperations.length, operationsBefore);
 	}
 }
 
@@ -622,7 +734,8 @@ async function verifyWorkflow(serverUrl: string, services: FakeManageContestsSer
 	);
 	assert.deepEqual(ungrouped, { count: 5, contests: orderedContests });
 
-	await verifyMappingValidation(serverUrl);
+	await verifySharedGroupInputValidation(serverUrl, services);
+	assert.equal(SHARED_CONTEST_PROBLEM_SYNC_DELAY_MS, 2000);
 
 	const mappings = [
 		{ parentContestId: 101, contestId: 101 },
@@ -631,36 +744,142 @@ async function verifyWorkflow(serverUrl: string, services: FakeManageContestsSer
 		{ parentContestId: 201, contestId: 201 },
 		{ parentContestId: 201, contestId: 202 }
 	];
-	for (const mapping of mappings) {
-		const linked = successfulContent(await callTool(
-			serverUrl,
-			"link_contest_to_shared_parent",
-			mapping
-		));
-		assert.deepEqual(linked, { status: "created", mapping });
-	}
 
-	const repeatedChild = successfulContent(await callTool(
+	const standaloneContest = synchronizedContests.find((contest) => contest.contestId === 202)!;
+	const standaloneProblems = [...synchronizedProblems.get(202)!].toSorted(compareProblems);
+	const standaloneSync = successfulContent(await callTool(
 		serverUrl,
-		"link_contest_to_shared_parent",
-		{ parentContestId: 101, contestId: 102 }
+		"sync_contest_problems",
+		{ contestId: 202 }
 	));
-	assert.deepEqual(repeatedChild, {
-		status: "unchanged",
-		mapping: { parentContestId: 101, contestId: 102 }
+	assert.deepEqual(standaloneSync, {
+		contest: standaloneContest,
+		problemCount: standaloneProblems.length,
+		problems: standaloneProblems
 	});
+	assert.deepEqual(
+		successfulContent(await callTool(serverUrl, "sync_contest_problems", { contestId: 202 })),
+		standaloneSync
+	);
+	assert.deepEqual(services.groupOperations, []);
 
+	const firstGroupOperationIndex = services.groupOperations.length;
+	const firstGroup = successfulContent(
+		await callTool(
+			serverUrl,
+			"sync_shared_contest_group",
+			{ contestIds: [103, 101, 102] }
+		),
+		"Synchronized shared group 101 with 3 contests and 5 problems."
+	);
+	assert.deepEqual(
+		firstGroup,
+		expectedSharedGroupResult([103, 101, 102], ["created", "created", "created"])
+	);
+	assert.deepEqual(services.groupOperations.slice(firstGroupOperationIndex), [
+		{ operation: "link", contestId: 101, parentContestId: 101 },
+		{ operation: "link", contestId: 102, parentContestId: 101 },
+		{ operation: "link", contestId: 103, parentContestId: 101 },
+		{ operation: "wait", milliseconds: 2000 },
+		{ operation: "syncProblems", contestId: 101 },
+		{ operation: "wait", milliseconds: 2000 },
+		{ operation: "syncProblems", contestId: 102 },
+		{ operation: "wait", milliseconds: 2000 },
+		{ operation: "syncProblems", contestId: 103 }
+	]);
+
+	const mappingsBeforeRepeat = services.mappings.size;
+	const problemsBeforeRepeat = services.problems.size;
+	const repeatedGroupOperationIndex = services.groupOperations.length;
+	const repeatedGroup = successfulContent(await callTool(
+		serverUrl,
+		"sync_shared_contest_group",
+		{ contestIds: [103, 101, 102] }
+	));
+	assert.deepEqual(
+		repeatedGroup,
+		expectedSharedGroupResult([103, 101, 102], ["unchanged", "unchanged", "unchanged"])
+	);
+	assert.equal(services.mappings.size, mappingsBeforeRepeat);
+	assert.equal(services.problems.size, problemsBeforeRepeat);
+	assert.deepEqual(services.groupOperations.slice(repeatedGroupOperationIndex), [
+		{ operation: "link", contestId: 101, parentContestId: 101 },
+		{ operation: "link", contestId: 102, parentContestId: 101 },
+		{ operation: "link", contestId: 103, parentContestId: 101 },
+		{ operation: "wait", milliseconds: 2000 },
+		{ operation: "syncProblems", contestId: 101 },
+		{ operation: "wait", milliseconds: 2000 },
+		{ operation: "syncProblems", contestId: 102 },
+		{ operation: "wait", milliseconds: 2000 },
+		{ operation: "syncProblems", contestId: 103 }
+	]);
+
+	const singletonOperationIndex = services.groupOperations.length;
+	const singletonGroup = successfulContent(
+		await callTool(
+			serverUrl,
+			"sync_shared_contest_group",
+			{ contestIds: [201] }
+		),
+		"Synchronized shared group 201 with 1 contest and 2 problems."
+	);
+	assert.deepEqual(singletonGroup, expectedSharedGroupResult([201], ["created"]));
+	assert.deepEqual(services.groupOperations.slice(singletonOperationIndex), [
+		{ operation: "link", contestId: 201, parentContestId: 201 },
+		{ operation: "wait", milliseconds: 2000 },
+		{ operation: "syncProblems", contestId: 201 }
+	]);
+
+	const extendedGroupOperationIndex = services.groupOperations.length;
+	const extendedGroup = successfulContent(await callTool(
+		serverUrl,
+		"sync_shared_contest_group",
+		{ contestIds: [202, 201] }
+	));
+	assert.deepEqual(
+		extendedGroup,
+		expectedSharedGroupResult([202, 201], ["unchanged", "created"])
+	);
+	assert.deepEqual(services.groupOperations.slice(extendedGroupOperationIndex), [
+		{ operation: "link", contestId: 201, parentContestId: 201 },
+		{ operation: "link", contestId: 202, parentContestId: 201 },
+		{ operation: "wait", milliseconds: 2000 },
+		{ operation: "syncProblems", contestId: 201 },
+		{ operation: "wait", milliseconds: 2000 },
+		{ operation: "syncProblems", contestId: 202 }
+	]);
+
+	const conflictOperationIndex = services.groupOperations.length;
 	const conflict = await callTool(
 		serverUrl,
-		"link_contest_to_shared_parent",
-		{ parentContestId: 102, contestId: 102 },
+		"sync_shared_contest_group",
+		{ contestIds: [102] },
 		5
 	);
 	assert.deepEqual(errorContent(conflict), {
 		code: "MAPPING_CONFLICT",
-		message: "Contest 102 is already linked to parent 101",
+		message: "Could not link contest 102 to shared parent 102: Contest 102 is already linked to parent 101",
 		retryable: false
 	});
+	assert.deepEqual(services.groupOperations.slice(conflictOperationIndex), [
+		{ operation: "link", contestId: 102, parentContestId: 102 }
+	]);
+
+	const missingOperationIndex = services.groupOperations.length;
+	const missingContest = await callTool(
+		serverUrl,
+		"sync_shared_contest_group",
+		{ contestIds: [999] },
+		5
+	);
+	assert.deepEqual(errorContent(missingContest), {
+		code: "CONTEST_NOT_FOUND",
+		message: "Could not link contest 999 to shared parent 999: Contest not found",
+		retryable: false
+	});
+	assert.deepEqual(services.groupOperations.slice(missingOperationIndex), [
+		{ operation: "link", contestId: 999, parentContestId: 999 }
+	]);
 
 	const noUngrouped = successfulContent(await callTool(serverUrl, "list_ungrouped_contests", {}));
 	assert.deepEqual(noUngrouped, { count: 0, contests: [] });
@@ -669,22 +888,8 @@ async function verifyWorkflow(serverUrl: string, services: FakeManageContestsSer
 		noUngrouped
 	);
 
-	for (const contest of orderedContests) {
-		const expectedProblems = [...synchronizedProblems.get(contest.contestId)!].toSorted(compareProblems);
-		const synchronizedContest = successfulContent(await callTool(
-			serverUrl,
-			"sync_contest_problems",
-			{ contestId: contest.contestId }
-		));
-		assert.deepEqual(synchronizedContest, {
-			contest,
-			problemCount: expectedProblems.length,
-			problems: expectedProblems
-		});
-	}
-
 	const problemCount = [...synchronizedProblems.values()].flat().length;
-	const problemsBeforeRepeat = services.problems.size;
+	const problemsBeforeStandaloneRepeat = services.problems.size;
 	const repeatedProblemSync = successfulContent(await callTool(
 		serverUrl,
 		"sync_contest_problems",
@@ -694,7 +899,7 @@ async function verifyWorkflow(serverUrl: string, services: FakeManageContestsSer
 		(repeatedProblemSync.problems as Problem[]).map((problem) => problem.index),
 		["A", "B"]
 	);
-	assert.equal(services.problems.size, problemsBeforeRepeat);
+	assert.equal(services.problems.size, problemsBeforeStandaloneRepeat);
 	assert.equal(services.problems.size, problemCount);
 
 	const orderedProblems = [...synchronizedProblems.values()].flat().toSorted(compareProblems);
@@ -759,8 +964,8 @@ async function verifyEveryToolFailure(serverUrl: string, services: FakeManageCon
 			error: { code: "CODEFORCES_INVALID_RESPONSE", publicMessage: "Could not synchronize problems", retryable: false }
 		},
 		{
-			toolName: "link_contest_to_shared_parent",
-			arguments: { parentContestId: 101, contestId: 101 },
+			toolName: "sync_shared_contest_group",
+			arguments: { contestIds: [101] },
 			error: { code: "DATABASE_ERROR", publicMessage: "Could not save mapping", retryable: true }
 		},
 		{
@@ -809,6 +1014,126 @@ async function verifyEveryToolFailure(serverUrl: string, services: FakeManageCon
 		message: "An unexpected internal error occurred",
 		retryable: false
 	});
+}
+
+async function verifySharedGroupStopAndRetry() {
+	const services = new FakeManageContestsServices();
+	const testServer = await startTestServer(services.dependencies);
+
+	try {
+		successfulContent(await callTool(testServer.url, "sync_contests", {}));
+
+		services.groupFailure = {
+			operation: "link",
+			contestId: 102,
+			error: {
+				code: "DATABASE_ERROR",
+				publicMessage: "Could not save mapping",
+				retryable: true
+			}
+		};
+		const mappingFailure = await callTool(
+			testServer.url,
+			"sync_shared_contest_group",
+			{ contestIds: [103, 101, 102] },
+			5
+		);
+		assert.deepEqual(errorContent(mappingFailure), {
+			code: "DATABASE_ERROR",
+			message: "Could not link contest 102 to shared parent 101: Could not save mapping",
+			retryable: true
+		});
+		assert.deepEqual(services.groupOperations, [
+			{ operation: "link", contestId: 101, parentContestId: 101 },
+			{ operation: "link", contestId: 102, parentContestId: 101 }
+		]);
+		assert.deepEqual([...services.mappings.entries()], [[101, 101]]);
+		assert.equal(services.problems.size, 0);
+
+		const mappingRetryOperationIndex = services.groupOperations.length;
+		const mappingRetry = successfulContent(await callTool(
+			testServer.url,
+			"sync_shared_contest_group",
+			{ contestIds: [103, 101, 102] }
+		));
+		assert.deepEqual(
+			mappingRetry,
+			expectedSharedGroupResult([103, 101, 102], ["unchanged", "created", "created"])
+		);
+		assert.deepEqual(services.groupOperations.slice(mappingRetryOperationIndex), [
+			{ operation: "link", contestId: 101, parentContestId: 101 },
+			{ operation: "link", contestId: 102, parentContestId: 101 },
+			{ operation: "link", contestId: 103, parentContestId: 101 },
+			{ operation: "wait", milliseconds: 2000 },
+			{ operation: "syncProblems", contestId: 101 },
+			{ operation: "wait", milliseconds: 2000 },
+			{ operation: "syncProblems", contestId: 102 },
+			{ operation: "wait", milliseconds: 2000 },
+			{ operation: "syncProblems", contestId: 103 }
+		]);
+
+		services.problems.clear();
+		services.groupFailure = {
+			operation: "syncProblems",
+			contestId: 102,
+			error: {
+				code: "CODEFORCES_INVALID_RESPONSE",
+				publicMessage: "Could not synchronize problems",
+				retryable: false
+			}
+		};
+		const problemFailureOperationIndex = services.groupOperations.length;
+		const problemFailure = await callTool(
+			testServer.url,
+			"sync_shared_contest_group",
+			{ contestIds: [102, 103, 101] },
+			5
+		);
+		assert.deepEqual(errorContent(problemFailure), {
+			code: "CODEFORCES_INVALID_RESPONSE",
+			message: "Could not synchronize problems for contest 102: Could not synchronize problems",
+			retryable: false
+		});
+		assert.deepEqual(services.groupOperations.slice(problemFailureOperationIndex), [
+			{ operation: "link", contestId: 101, parentContestId: 101 },
+			{ operation: "link", contestId: 102, parentContestId: 101 },
+			{ operation: "link", contestId: 103, parentContestId: 101 },
+			{ operation: "wait", milliseconds: 2000 },
+			{ operation: "syncProblems", contestId: 101 },
+			{ operation: "wait", milliseconds: 2000 },
+			{ operation: "syncProblems", contestId: 102 }
+		]);
+		assert.equal(services.problems.size, synchronizedProblems.get(101)!.length);
+		assert.ok([...services.problems.values()].every((problem) => problem.contestId === 101));
+
+		const problemRetryOperationIndex = services.groupOperations.length;
+		const problemRetry = successfulContent(await callTool(
+			testServer.url,
+			"sync_shared_contest_group",
+			{ contestIds: [102, 103, 101] }
+		));
+		assert.deepEqual(
+			problemRetry,
+			expectedSharedGroupResult([102, 103, 101], ["unchanged", "unchanged", "unchanged"])
+		);
+		assert.deepEqual(services.groupOperations.slice(problemRetryOperationIndex), [
+			{ operation: "link", contestId: 101, parentContestId: 101 },
+			{ operation: "link", contestId: 102, parentContestId: 101 },
+			{ operation: "link", contestId: 103, parentContestId: 101 },
+			{ operation: "wait", milliseconds: 2000 },
+			{ operation: "syncProblems", contestId: 101 },
+			{ operation: "wait", milliseconds: 2000 },
+			{ operation: "syncProblems", contestId: 102 },
+			{ operation: "wait", milliseconds: 2000 },
+			{ operation: "syncProblems", contestId: 103 }
+		]);
+		assert.equal(
+			services.problems.size,
+			[101, 102, 103].flatMap((contestId) => synchronizedProblems.get(contestId)!).length
+		);
+	} finally {
+		await testServer.close();
+	}
 }
 
 async function verifyNoInputToolsRejectArguments(
@@ -885,10 +1210,12 @@ async function main() {
 		await verifyEveryToolFailure(testServer.url, services);
 		await verifyNoInputToolsRejectArguments(testServer.url, services);
 		await verifyTemporaryFileWriting();
-		console.log("MCP Inspector tests passed.");
 	} finally {
 		await testServer.close();
 	}
+
+	await verifySharedGroupStopAndRetry();
+	console.log("MCP Inspector tests passed.");
 }
 
 main().catch((cause) => {
