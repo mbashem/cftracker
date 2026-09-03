@@ -153,14 +153,6 @@ export async function createOrUpdateSharedContest(
 		});
 	}
 
-	if (parentContestId > contestId) {
-		return err({
-			code: "INVALID_PARENT_ORDER",
-			publicMessage: `Parent contest ${parentContestId} cannot be greater than contest ${contestId}`,
-			retryable: false
-		});
-	}
-
 	try {
 		return await prismaClient.$transaction(async (transaction): Promise<Result<CreateOrUpdateSharedContestResult>> => {
 			const contests = await transaction.contest.findMany({

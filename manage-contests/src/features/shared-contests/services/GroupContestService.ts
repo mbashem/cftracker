@@ -42,6 +42,7 @@ function operationError(error: AppError, context: string) {
 
 export async function syncSharedContestGroup(
 	contestIds: readonly number[],
+	requestedParentContestId?: number,
 	dependencies = defaultSyncSharedContestGroupDependencies
 ): Promise<Result<SyncSharedContestGroupResult>> {
 	if (
@@ -55,9 +56,18 @@ export async function syncSharedContestGroup(
 			retryable: false
 		});
 	}
+	if (requestedParentContestId !== undefined && (
+		!Number.isSafeInteger(requestedParentContestId) || requestedParentContestId <= 0
+	)) {
+		return err({
+			code: "INVALID_CONTEST_ID",
+			publicMessage: "parentContestId must be a positive integer",
+			retryable: false
+		});
+	}
 
 	const orderedContestIds = [...contestIds].toSorted((left, right) => left - right);
-	const parentContestId = orderedContestIds[0];
+	const parentContestId = requestedParentContestId ?? orderedContestIds[0];
 	const mappings: CreateOrUpdateSharedContestResult[] = [];
 
 	for (const contestId of orderedContestIds) {

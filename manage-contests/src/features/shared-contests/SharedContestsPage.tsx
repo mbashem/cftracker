@@ -20,6 +20,9 @@ export default async function SharedContestsPage() {
     getFetchedProblemsContestIdList(),
   ]);
 
+  const sharedContestsDescending = sharedContests.toReversed();
+  const contestsDescending = contests.toReversed();
+
   return (
     <Container component={Paper}>
       <Stack direction="row" spacing={2} alignItems="center">
@@ -31,8 +34,8 @@ export default async function SharedContestsPage() {
         </form>
       </Stack>
       <SharedContestList
-        sharedContests={sharedContests}
-        contests={contests}
+        sharedContests={sharedContestsDescending}
+        contests={contestsDescending}
         fetchedContests={fetchedContests}
       />
     </Container>
