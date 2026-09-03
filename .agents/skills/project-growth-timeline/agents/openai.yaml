@@ -1,0 +1,4 @@
+interface:
+  display_name: Project growth timeline
+  short_description: Generate main-only cloc history and SVG growth graphs
+  default_prompt: Generate the project's six-month cloc timeline and SVG graph.
