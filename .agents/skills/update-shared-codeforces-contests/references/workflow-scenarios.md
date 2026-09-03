@@ -6,7 +6,7 @@ Use these scenarios as behavioral checks when executing the shared-contest workf
 
 The MCP tools cannot connect.
 
-Expected behavior: start `npm run dev -- -H 127.0.0.1 -p 3000` from `manage-contests` in a persistent command-line session, wait for Next.js readiness, reconnect, and then begin discovery. If startup or reconnection fails, stop that process, report it, and stop the workflow.
+Expected behavior: report that the externally managed server must be started and that Codex may need a new session or an explicit MCP reconnect. Stop the workflow; do not start or stop the server.
 
 ## 2. No contest name supplied
 
@@ -49,7 +49,7 @@ Expected calls:
 
 The client does not add waits or call standalone `sync_contest_problems`; the composite tool owns that work.
 
-After `write_related_ts` succeeds, stop the Next.js process only if this workflow started it.
+After `write_related_ts` succeeds, leave the externally managed Next.js process running.
 
 ## 8. Composite failure and resume
 
@@ -74,3 +74,15 @@ Expected behavior: mark `sync_shared_contest_group` incomplete. On resume, repea
 `sync_shared_contest_group` reports that one contest belongs to a different parent.
 
 Expected behavior: stop and report the conflict for operator resolution. Do not call `write_related_ts`.
+
+## 12. Add a child to an existing group
+
+The operator confirms that contest `2131` belongs to the existing group whose self-mapped parent is `2129`.
+
+Expected calls:
+
+1. `sync_shared_contest_group({ contestIds: [2131], parentContestId: 2129 })`
+2. `write_related_ts({})`
+
+The server maps and synchronizes only contest `2131`. It rejects the operation if `2129` is not a self-mapped parent or if `2131` already belongs to a different parent.
+The explicit parent may also be numerically higher than the child; numeric ordering is enforced only when the server chooses the parent because `parentContestId` was omitted.

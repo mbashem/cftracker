@@ -87,13 +87,13 @@ The endpoint currently exposes these tools:
 | --- | --- | --- |
 | `sync_contests` | Fetch non-gym Codeforces contests and save them to the database. | None |
 | `sync_contest_problems` | Fetch and save one contest and all its problems. | `contestId` |
-| `sync_shared_contest_group` | Group one confirmed array of contest IDs and synchronize every contest's problems serially. | `contestIds` |
+| `sync_shared_contest_group` | Create or extend one confirmed group and synchronize the supplied contests' problems serially. | `contestIds`, optional `parentContestId` |
 | `list_ungrouped_contests` | Return contests that do not have a shared-contest mapping. | None |
 | `list_problems` | Return all saved problems. | None |
 | `list_shared_contest_groups` | Return shared groups with contest and problem details. | None |
 | `write_related_ts` | Generate and write `related.ts` to the default or supplied path. | Optional `outputPath` |
 
-`sync_shared_contest_group` accepts exactly one operator-confirmed group. It sorts the IDs, chooses the smallest as parent, creates every mapping serially, and waits two seconds immediately before each serial problem synchronization. A one-ID array is valid and creates a self-mapping.
+`sync_shared_contest_group` accepts exactly one operator-confirmed group. It sorts the IDs and creates every mapping serially, then waits two seconds immediately before each supplied contest's serial problem synchronization. Omit `parentContestId` to create a group using the smallest supplied ID as parent. To merge one or more new children into an existing group, supply its self-mapped `parentContestId`; it may be numerically higher or lower than its children. For example: `{ "contestIds": [2131], "parentContestId": 2129 }`. A one-ID array without `parentContestId` remains valid and creates a self-mapping.
 
 Codex should use the repository runbook at [`../.agents/skills/update-shared-codeforces-contests/SKILL.md`](../.agents/skills/update-shared-codeforces-contests/SKILL.md). Its reliability scenarios cover candidate ambiguity, rejected confirmation, failures, and same-conversation resume.
 
@@ -107,7 +107,7 @@ When the operator says that a shared Codeforces contest has concluded, an MCP cl
 4. Call `sync_shared_contest_group` once with the confirmed array.
 5. Call `write_related_ts` and report the result.
 
-Each call depends on the preceding call. If a tool returns an error, stop the workflow and report the failed step. On same-conversation resume, repeat the composite group call with the same confirmed array if it failed or was uncertain; retry only `write_related_ts` if grouping completed.
+Each call depends on the preceding call. If a tool returns an error, stop the workflow and report the failed step. On same-conversation resume, repeat the composite group call with the same confirmed array and optional parent ID if it failed or was uncertain; retry only `write_related_ts` if grouping completed.
 
 ### Implementation structure
 

@@ -27,7 +27,7 @@ export type ManageContestsMcpDependencies = {
 		insertedContest: Contest;
 		problemsList: Problem[];
 	}>>;
-	syncSharedContestGroup: (contestIds: number[]) => Promise<Result<{
+	syncSharedContestGroup: (contestIds: number[], parentContestId?: number) => Promise<Result<{
 		parentContestId: number;
 		contestIds: number[];
 		mappings: Array<{
@@ -57,9 +57,9 @@ export const MANAGE_CONTESTS_MCP_INSTRUCTIONS = `Use this server to process a ne
 
 Call tools sequentially, never in parallel. A notification that a contest concluded starts discovery but is not confirmation to create a group. First call sync_contests, then list_ungrouped_contests. Identify exactly one plausible candidate group from those ungrouped contests. Treat an operator-supplied name as the strongest anchor, compare common event/name stems and complementary division or round labels, and use nearby IDs only as supporting evidence. One contest is a valid group. If exactly one group cannot be selected confidently, ask for the contest name or IDs; do not propose multiple groups for one confirmation.
 
-Present one non-empty contestIds array with IDs and names sorted ascending, state that the smallest ID will be the parent, and ask the operator to confirm that every listed contest belongs to the same group. Never call sync_shared_contest_group before confirmation. After confirmation, call sync_shared_contest_group once with that exact array, then call write_related_ts, using its default path unless the operator supplied a path. The composite tool owns mapping order, two-second waits, and serial problem synchronization; do not reproduce those operations with the standalone sync_contest_problems tool.
+Present one non-empty contestIds array with IDs and names sorted ascending and ask the operator to confirm that every listed contest belongs to the same group. For a new group, omit parentContestId and state that the smallest ID will be the parent. To add the confirmed contests to an existing group, pass its self-mapped parent as parentContestId. Never call sync_shared_contest_group before confirmation. After confirmation, call sync_shared_contest_group once, then call write_related_ts, using its default path unless the operator supplied a path. The composite tool owns mapping order, two-second waits, and serial problem synchronization; do not reproduce those operations with the standalone sync_contest_problems tool.
 
-Stop immediately after the first tool error and do not run later steps. Keep the confirmed contestIds and the first incomplete tool in the conversation. On same-conversation resume, repeat sync_shared_contest_group with the same array if it failed or was uncertain, or retry only write_related_ts if group synchronization completed. Ask for confirmation again only if the array changed.`;
+Stop immediately after the first tool error and do not run later steps. Keep the confirmed contestIds, optional parentContestId, and first incomplete tool in the conversation. On same-conversation resume, repeat sync_shared_contest_group with the same arguments if it failed or was uncertain, or retry only write_related_ts if group synchronization completed. Ask for confirmation again only if either grouping argument changed.`;
 
 const emptyInputSchema = z.object({}).strict();
 const contestIdSchema = z.number().int().positive();
@@ -226,9 +226,12 @@ export function registerManageContestsTools(
 		"sync_shared_contest_group",
 		{
 			title: "Sync shared contest group",
-			description: "Create one operator-confirmed shared-contest group from one or more contest IDs, using the smallest ID as parent, then wait two seconds before fetching and saving each contest's problems serially.",
+			description: "Create or extend one operator-confirmed shared-contest group, using parentContestId when supplied or otherwise the smallest contest ID as parent, then wait two seconds before fetching and saving each supplied contest's problems serially.",
 			inputSchema: z.object({
-				contestIds: confirmedContestIdsSchema
+				contestIds: confirmedContestIdsSchema,
+				parentContestId: contestIdSchema
+					.optional()
+					.describe("Existing self-mapped parent contest ID; omit when creating a group whose smallest supplied ID is the parent")
 			}).strict(),
 			outputSchema: z.object({
 				parentContestId: contestIdSchema,
@@ -251,15 +254,15 @@ export function registerManageContestsTools(
 				openWorldHint: true
 			}
 		},
-		async ({ contestIds }) => {
+		async ({ contestIds, parentContestId }) => {
 			return runTool(
 				"sync_shared_contest_group",
-				() => dependencies.syncSharedContestGroup(contestIds),
+				() => dependencies.syncSharedContestGroup(contestIds, parentContestId),
 				(output) => {
 					return {
 						content: [{
 							type: "text" as const,
-							text: `Synchronized shared group ${output.parentContestId} with ${output.contestIds.length} contest${output.contestIds.length === 1 ? "" : "s"} and ${output.totalProblemCount} problems.`
+							text: `Synchronized shared group ${output.parentContestId} with ${output.contestIds.length} contest${output.contestIds.length === 1 ? "" : "s"} and ${output.totalProblemCount} problem${output.totalProblemCount === 1 ? "" : "s"}.`
 						}],
 						structuredContent: output
 					};
