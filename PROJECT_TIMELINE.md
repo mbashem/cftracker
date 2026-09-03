@@ -20,23 +20,24 @@ The latest major milestone, delivered across commits `20bc9e4` through `1a656e4`
 
 ## Whole-project growth at six-month intervals
 
-Each point uses the latest commit on `origin/main` available on or before the timestamp. `cloc` was run against an archived snapshot of that main-line commit, excluding `.git`, `node_modules`, `dist`, and `build`, and all `.json` files. “Code lines” means `cloc`’s `SUM.code` value. The source measurements are saved in [`docs/cloc-main-six-monthly.csv`](docs/cloc-main-six-monthly.csv).
+Each historical point uses the latest commit on `origin/main` available on or before the timestamp. The final “latest” point uses the current branch (`dev`) and `HEAD`. `cloc` was run against archived snapshots, excluding `.git`, `node_modules`, `dist`, `build`, and all `.json` files. “Code lines” means `cloc`’s `SUM.code` value. The source measurements are saved in [`docs/cloc-main-six-monthly.csv`](docs/cloc-main-six-monthly.csv).
 
 ![Project growth](docs/project-growth.svg)
 
-Non-JSON files grew from 11 to 245 across the same snapshots. The charts show non-JSON code lines and file count; the complete measurements are below.
-| Timestamp | Snapshot | Files | Code lines |
-|---|---:|---:|---:|
-| 2021-02-01 | `a450d15` | 11 | 162 |
-| 2021-08-01 | `a3c2907` | 47 | 3,247 |
-| 2022-02-01 | `0ceeb36` | 58 | 3,642 |
-| 2022-08-01 | `731ee5b` | 58 | 3,651 |
-| 2023-02-01 | `ed716c3` | 58 | 3,706 |
-| 2023-08-01 | `3872091` | 58 | 3,683 |
-| 2024-02-01 | `44efdba` | 100 | 5,100 |
-| 2024-08-01 | `2bf42bb` | 131 | 6,338 |
-| 2025-02-01 | `0ce7e5b` | 182 | 8,371 |
-| 2025-08-01 | `f33f074` | 182 | 8,371 |
-| 2026-02-01 | `3853b64` | 194 | 10,945 |
-| 2026-08-01 | `9829286` | 195 | 12,355 |
-| 2026-09-02 (latest) | `98b5f23` | 245 | 18,446 |
+Non-JSON files grew from 11 to 261 across the same snapshots. The charts show non-JSON code lines and file count; the complete measurements are below.
+| Timestamp | Branch | Snapshot | Files | Code lines |
+|---|---|---:|---:|---:|
+| 2021-02-01 | main | `a450d15` | 11 | 162 |
+| 2021-08-01 | main | `a3c2907` | 47 | 3,247 |
+| 2022-02-01 | main | `0ceeb36` | 58 | 3,642 |
+| 2022-08-01 | main | `731ee5b` | 58 | 3,651 |
+| 2023-02-01 | main | `ed716c3` | 58 | 3,706 |
+| 2023-08-01 | main | `3872091` | 58 | 3,683 |
+| 2024-02-01 | main | `44efdba` | 100 | 5,100 |
+| 2024-08-01 | main | `2bf42bb` | 131 | 6,338 |
+| 2025-02-01 | main | `0ce7e5b` | 182 | 8,371 |
+| 2025-08-01 | main | `f33f074` | 182 | 8,371 |
+| 2026-02-01 | main | `3853b64` | 194 | 10,945 |
+| 2026-08-01 | main | `9829286` | 195 | 12,355 |
+| 2026-09-02 | main | `98b5f23` | 245 | 18,446 |
+| 2026-09-03 (latest) | dev | `f1b9c62` | 261 | 21,106 |
