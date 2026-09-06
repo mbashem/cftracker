@@ -6,6 +6,7 @@ Backend setup and development documentation is available in the [backend README]
 
 ## Features
 
+- Handle-aware Home dashboard with a weekly practice snapshot and quick actions.
 - Contest grid grouped by contest category, with problem ratings, solve coloring, dates, and random contest selection.
 - Problem browser with search, rating range, contest ID range, tags, solve status filters, sorting, pagination, and random problem selection.
 - Multi-handle submission sync from Codeforces.

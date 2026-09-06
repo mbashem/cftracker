@@ -9,7 +9,7 @@ import { StorageService } from "../../util/StorageService";
 import { SearchKeys } from "../../util/constants";
 import { ParticipantType } from "../../types/CF/Party";
 import useContestStore from "../../data/hooks/useContestStore";
-import { isDefined, isFunction, overrideObject } from "../../util/util";
+import { getRandomInteger, isDefined, isFunction, overrideObject } from "../../util/util";
 import useProblemsStore from "../../data/hooks/useProblemsStore";
 import usePersistentState from "../../hooks/usePersistentState";
 
@@ -31,8 +31,9 @@ function useContestPage() {
 	const { problemList } = useProblemsStore();
 
 	const { theme } = useTheme();
-	const { searchParams, updateSearchParam, deleteSearchParam } = useAppSearchParams();
+	const { searchParams, updateSearchParam, deleteSearchParam, consumeSearchParams } = useAppSearchParams();
 	const searchTextFromUrl = searchParams.get(SearchKeys.Search) ?? undefined;
+	const isRandomRequested = searchParams.get(SearchKeys.Random) === "true";
 	const { submissions: userSubmissions } = useSubmissionsStore();
 	const { contests, loading: isContestListLoading, error: contestListError } = useContestStore();
 	const state = useMemo(
@@ -53,6 +54,7 @@ function useContestPage() {
 	}>({ contests: [], error: "" });
 
 	const [randomContest, setRandomContest] = useState<number | undefined>(undefined);
+	const [hasPendingRandomRequest, setHasPendingRandomRequest] = useState(false);
 
 	const defaultFilt: Filter = {
 		perPage: 100,
@@ -137,16 +139,37 @@ function useContestPage() {
 		return status && searchIncluded && contest.count !== 0 && catIn;
 	};
 
+	const filteredContests = useMemo(
+		() => contests.filter((contest) => filterContest(contest)),
+		[contests, filter, solveStatus, submissions]
+	);
+
 	useEffect(() => {
 		StorageService.saveObject(StorageService.Keys.Contest.Filter, filter);
 		if (filter.search.trim().length) updateSearchParam(SearchKeys.Search, filter.search.trim());
 		else deleteSearchParam(SearchKeys.Search);
 
-		const newContestList = contests.filter((contest) => filterContest(contest));
-
-		setContestList({ ...contestList, contests: newContestList });
+		setContestList({ contests: filteredContests, error: "" });
 		setRandomContest(undefined);
-	}, [contests, filter, problemList.problems, solveStatus, submissions]);
+	}, [deleteSearchParam, filter, filteredContests, problemList.problems, updateSearchParam]);
+
+	useEffect(() => {
+		if (!isRandomRequested) return;
+
+		setHasPendingRandomRequest(true);
+		consumeSearchParams([SearchKeys.Random]);
+	}, [consumeSearchParams, isRandomRequested]);
+
+	useEffect(() => {
+		if (!hasPendingRandomRequest || isPaginationLoading) return;
+
+		setHasPendingRandomRequest(false);
+		setRandomContest(
+			filteredContests.length > 0
+				? getRandomInteger(0, filteredContests.length)
+				: undefined
+		);
+	}, [filteredContests, hasPendingRandomRequest, isPaginationLoading]);
 
 	useEffect(() => {
 		if (!filter.canSelectMultipleCategories && filter.selectedCategories.length !== 1) {

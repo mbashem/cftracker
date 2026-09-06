@@ -63,6 +63,12 @@ Persisted storage key names belong under `StorageService.Keys`. Do not define st
 
 ## Main Feature Areas
 
+### Home
+
+Location: `src/components/home/`
+
+The Home page provides a handle-aware weekly snapshot and quick links into existing problem and contest flows. Its statistics are derived from raw submissions so shared-problem expansion does not inflate counts. One-shot `random` and `status` query parameters activate the corresponding persisted filters and selection behaviour on destination pages.
+
 ### Contests
 
 Location: `src/components/contest/`

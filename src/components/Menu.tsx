@@ -8,7 +8,7 @@ import {
   faSync,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { memo, useState } from "react";
+import { memo } from "react";
 import { Nav, Navbar, OverlayTrigger, Popover } from "react-bootstrap";
 import { Link } from "react-router";
 import { Path } from "../util/route/path";
@@ -19,17 +19,16 @@ import { BACKEND_API_URL, IS_BACKEND_AVAILABLE } from "../util/env";
 import useToast from "../hooks/useToast";
 import useUser from "../hooks/useUser";
 import useUserStore from "../data/hooks/useUserStore";
+import EditableText from "./common/EditableText";
 
 function Menu() {
   const { userList, updateUsers, syncUserSubmissions } = useUserStore();
   const { theme, changeThemeMod } = useTheme();
   const { isAuthenticated, logout } = useUser();
 
-  const [handle, setHandle] = useState(userList.handles.length ? userList.handles.toString() : "");
-
   const { showGeneralToast } = useToast();
 
-  const submitUser = () => {
+  const submitUser = (handle: string) => {
     showGeneralToast(`Handles entered: ${handle}`);
     updateUsers(handle);
   };
@@ -153,23 +152,19 @@ function Menu() {
             </li>
 
             <li className="nav-item">
-              <form
-                className="form-inline d-flex my-2 my-lg-0 nav-item"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  submitUser();
-                }}
-              >
-                <input
-                  name="handle"
-                  className={"form-control " + theme.bgText}
-                  type="text"
-                  placeholder="handle1,handle2,.."
-                  aria-label="handles"
-                  value={handle}
-                  onChange={(e) => setHandle(e.target.value)}
-                />
-              </form>
+              <EditableText
+                value={userList.handles.join(",")}
+                displayValue={userList.handles
+                  .map((handle) => handle.startsWith("@") ? handle : `@${handle}`)
+                  .join(", ")}
+                label="Handles"
+                placeholder="handle1,handle2,.."
+                formClassName="form-inline d-flex my-2 my-lg-0 nav-item"
+                inputClassName={theme.bgText}
+                viewClassName="my-2 my-lg-0"
+                editTitle="Click to edit handles"
+                onSubmit={submitUser}
+              />
             </li>
 
             {IS_BACKEND_AVAILABLE && isAuthenticated ? (

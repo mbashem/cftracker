@@ -26,7 +26,10 @@ function App() {
   const { theme } = useTheme();
 
   return (
-    <div className={"App container-fluid p-0 min-vh-100 d-flex  flex-column " + theme.bgText}>
+    <div
+      className={"App container-fluid p-0 min-vh-100 d-flex  flex-column " + theme.bgText}
+      style={theme.cardVariables}
+    >
       <div className="menu w-100">
         {" "}
         <Menu />
