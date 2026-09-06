@@ -14,7 +14,14 @@ import { Verdict } from "../../types/CF/Submission";
 import { StorageService } from "../../util/StorageService";
 import { RATING_CONSTANTS } from "../../util/cf";
 import { formatDateInputValue } from "../../util/time";
-import { clampNumber, isDefined, overrideObject } from "../../util/util";
+import {
+	clampNumber,
+	getRandomInteger,
+	isDefined,
+	overrideObject,
+	parseNonNegativeSafeInteger,
+	parsePositiveSafeInteger,
+} from "../../util/util";
 import { sortByContestId, sortByRating, sortBySolveCount, SortOrder, SortProblemBy } from "../../util/sortMethods";
 import useContestStore from "../../data/hooks/useContestStore";
 
@@ -48,6 +55,48 @@ export type UpdateProblemFilter = Partial<ProblemFilter> | ((filter: ProblemFilt
 
 type ProblemSortState = Omit<ProblemFilterState, "tags">;
 
+const SELECTABLE_VERDICT_STATUSES = [Verdict.SOLVED, Verdict.ATTEMPTED, Verdict.UNSOLVED];
+const DEFAULT_SOLVE_STATUS = new Set(SELECTABLE_VERDICT_STATUSES);
+
+function getRequestedSolveStatus(value: string | null): Verdict | undefined {
+	switch (value) {
+		case Verdict.SOLVED:
+		case Verdict.ATTEMPTED:
+		case Verdict.UNSOLVED:
+			return value;
+		default:
+			return undefined;
+	}
+}
+
+function getTimestampParam(value: string | null): number | undefined {
+	if (value === null) return undefined;
+
+	const timestamp = Number(value);
+	return Number.isFinite(timestamp) && timestamp >= 0 ? timestamp : undefined;
+}
+
+function getNumberParam(value: string | null): number | undefined {
+	if (value === null) return undefined;
+	const number = Number(value);
+	return Number.isFinite(number) ? number : undefined;
+}
+
+function getStringSet(value: string | null): Set<string> | undefined {
+	if (value === null) return undefined;
+	return new Set(value.split(",").map((item) => item.trim()).filter(Boolean));
+}
+
+function getSolveStatuses(value: string | null): Set<Verdict> | undefined {
+	if (value === null) return undefined;
+	const statuses = new Set<Verdict>();
+	for (const item of value.split(",")) {
+		const status = getRequestedSolveStatus(item);
+		if (status !== undefined) statuses.add(status);
+	}
+	return statuses;
+}
+
 function getRatingRange(minRating: number, maxRating: number): ProblemRatingRange {
 	const { min, max, interval: step } = RATING_CONSTANTS;
 	const boundedMin = clampNumber(minRating, min, max);
@@ -65,8 +114,12 @@ function getRatingRange(minRating: number, maxRating: number): ProblemRatingRang
 }
 
 function useProblemPage() {
-	const { searchParams, updateSearchParam, deleteSearchParam } = useAppSearchParams();
-	const searchTextFromUrl = searchParams.get(SearchKeys.Search) ?? undefined;
+	const { searchParams, updateSearchParams, consumeSearchParams } = useAppSearchParams();
+	const isRandomRequested = searchParams.get(SearchKeys.Random) === "true";
+	const acceptedAfter = getTimestampParam(searchParams.get(SearchKeys.AcceptedAfter));
+	const acceptedBefore = getTimestampParam(searchParams.get(SearchKeys.AcceptedBefore));
+	const submissionSolveStatus = getSolveStatuses(searchParams.get(SearchKeys.SubmissionStatus));
+	const useFilterStorage = searchParams.get(SearchKeys.UseFilterStorage) !== "false";
 	const [listId, setListId] = useState<number | undefined>(undefined);
 	const [list, setList] = useState<ListWithItem | undefined>(undefined);
 	const nextListPosition = useRef(0);
@@ -91,26 +144,70 @@ function useProblemPage() {
 		search: "",
 	};
 
-	const selectableVerdictStatuses = useMemo(() => [Verdict.SOLVED, Verdict.ATTEMPTED, Verdict.UNSOLVED], []);
-	const defaultSolveStatus = useMemo(() => new Set(selectableVerdictStatuses), [selectableVerdictStatuses]);
+	const getFilterFromUrl = useCallback((baseFilter: ProblemFilter): ProblemFilter => overrideObject(baseFilter, {
+		...(searchParams.has(SearchKeys.Search) ? { search: searchParams.get(SearchKeys.Search) ?? "" } : {}),
+		...(parsePositiveSafeInteger(searchParams.get(SearchKeys.PerPage)) !== undefined
+			? { perPage: parsePositiveSafeInteger(searchParams.get(SearchKeys.PerPage)) } : {}),
+		...(getNumberParam(searchParams.get(SearchKeys.MinRating)) !== undefined
+			? { minRating: getNumberParam(searchParams.get(SearchKeys.MinRating)) } : {}),
+		...(getNumberParam(searchParams.get(SearchKeys.MaxRating)) !== undefined
+			? { maxRating: getNumberParam(searchParams.get(SearchKeys.MaxRating)) } : {}),
+		...(searchParams.has(SearchKeys.ShowUnrated)
+			? { showUnrated: searchParams.get(SearchKeys.ShowUnrated) !== "false" } : {}),
+		...(getNumberParam(searchParams.get(SearchKeys.MinContestId)) !== undefined
+			? { minContestId: getNumberParam(searchParams.get(SearchKeys.MinContestId)) } : {}),
+		...(getNumberParam(searchParams.get(SearchKeys.MaxContestId)) !== undefined
+			? { maxContestId: getNumberParam(searchParams.get(SearchKeys.MaxContestId)) } : {}),
+		...(searchParams.has(SearchKeys.MinContestDate)
+			? { minContestDate: searchParams.get(SearchKeys.MinContestDate) || undefined } : {}),
+		...(searchParams.has(SearchKeys.MaxContestDate)
+			? { maxContestDate: searchParams.get(SearchKeys.MaxContestDate) || undefined } : {}),
+	}), [searchParams]);
+	const getInitialFilter = () => getFilterFromUrl(
+		useFilterStorage
+			? StorageService.getObject(StorageService.Keys.Problem.Filter, defaultFilter)
+			: defaultFilter
+	);
 	const [filter, setFilter] = usePersistentState(
 		StorageService.Keys.Problem.Filter,
 		defaultFilter,
-		searchTextFromUrl === undefined
-			? undefined
-			: () => overrideObject(StorageService.getObject(StorageService.Keys.Problem.Filter, defaultFilter), { search: searchTextFromUrl })
+		getInitialFilter,
+		useFilterStorage,
 	);
-	const [tags, setTags] = usePersistentState(StorageService.Keys.Problem.Tags, new Set<string>());
+	const [tags, setTags] = usePersistentState(
+		StorageService.Keys.Problem.Tags,
+		new Set<string>(),
+		() => getStringSet(searchParams.get(SearchKeys.Tags)) ?? (
+			useFilterStorage
+				? StorageService.getSet(StorageService.Keys.Problem.Tags, []) as Set<string>
+				: new Set<string>()
+		),
+		useFilterStorage,
+	);
 	const [filterSortState, setFilterSortState] = useState<ProblemSortState>({
 		sortBy: SortProblemBy.SolveCount,
 		order: SortOrder.Descending,
 	});
 	const [solveStatus, setSolveStatus] = usePersistentState<Set<Verdict>>(
 		StorageService.Keys.Problem.SolveStatus,
-		defaultSolveStatus
+		submissionSolveStatus ?? getSolveStatuses(searchParams.get(SearchKeys.Status)) ?? DEFAULT_SOLVE_STATUS,
+		() => submissionSolveStatus ?? getSolveStatuses(searchParams.get(SearchKeys.Status)) ?? (
+			useFilterStorage
+				? StorageService.getSet(StorageService.Keys.Problem.SolveStatus, DEFAULT_SOLVE_STATUS) as Set<Verdict>
+				: DEFAULT_SOLVE_STATUS
+		),
+		useFilterStorage,
 	);
 	const [randomProblem, setRandomProblem] = useState<number | undefined>(undefined);
-	const [selected, setSelected] = usePersistentState(StorageService.Keys.Problem.Page, 0);
+	const [hasPendingRandomRequest, setHasPendingRandomRequest] = useState(false);
+	const [selected, setSelected] = usePersistentState(
+		StorageService.Keys.Problem.Page,
+		0,
+		() => parseNonNegativeSafeInteger(searchParams.get(SearchKeys.Page)) ?? (
+			useFilterStorage ? StorageService.getObject(StorageService.Keys.Problem.Page, 0) : 0
+		),
+		useFilterStorage,
+	);
 
 	const filterState = useMemo<ProblemFilterState>(
 		() => ({
@@ -147,15 +244,23 @@ function useProblemPage() {
 	const { solved, attempted } = useMemo(() => {
 		const solved = new Set<string>();
 		const attempted = new Set<string>();
+		const filterByAcceptedSubmission = acceptedAfter !== undefined
+			|| acceptedBefore !== undefined;
 
 		for (const submission of submissions) {
+			if (filterByAcceptedSubmission && (
+				submission.verdict !== Verdict.OK
+				|| (acceptedAfter !== undefined && submission.creationTimeSeconds < acceptedAfter)
+				|| (acceptedBefore !== undefined && submission.creationTimeSeconds >= acceptedBefore)
+			)) continue;
+
 			const problemId = submission.contestId.toString() + submission.index;
 			if (submission.verdict === Verdict.OK) solved.add(problemId);
 			else attempted.add(problemId);
 		}
 
 		return { solved, attempted };
-	}, [submissions]);
+	}, [acceptedAfter, acceptedBefore, submissions]);
 
 	const getProblemStatus = useCallback(
 		(problem: Problem) => {
@@ -254,15 +359,84 @@ function useProblemPage() {
 		setListId(listIdString ? parseInt(listIdString) : undefined);
 	}, [searchParams]);
 
+	const searchParamsKey = searchParams.toString();
+	const lastAppliedSearchParams = useRef(searchParamsKey);
+	const isApplyingSearchParams = useRef(false);
+
 	useEffect(() => {
-		const trimmedSearch = filter.search.trim();
-		if (trimmedSearch.length) updateSearchParam(SearchKeys.Search, trimmedSearch);
-		else deleteSearchParam(SearchKeys.Search);
-	}, [filter]);
+		if (lastAppliedSearchParams.current === searchParamsKey) return;
+		lastAppliedSearchParams.current = searchParamsKey;
+		isApplyingSearchParams.current = true;
+		const baseFilter = useFilterStorage
+			? StorageService.getObject(StorageService.Keys.Problem.Filter, defaultFilter)
+			: defaultFilter;
+		setFilter(getFilterFromUrl(baseFilter));
+		setTags(getStringSet(searchParams.get(SearchKeys.Tags)) ?? (
+			useFilterStorage
+				? StorageService.getSet(StorageService.Keys.Problem.Tags, []) as Set<string>
+				: new Set<string>()
+		));
+		const statuses = getSolveStatuses(searchParams.get(SearchKeys.SubmissionStatus))
+			?? getSolveStatuses(searchParams.get(SearchKeys.Status));
+		setSolveStatus(statuses ?? (
+			useFilterStorage
+				? StorageService.getSet(StorageService.Keys.Problem.SolveStatus, DEFAULT_SOLVE_STATUS) as Set<Verdict>
+				: DEFAULT_SOLVE_STATUS
+		));
+		setSelected(parseNonNegativeSafeInteger(searchParams.get(SearchKeys.Page)) ?? (
+			useFilterStorage ? StorageService.getObject(StorageService.Keys.Problem.Page, 0) : 0
+		));
+	}, [defaultFilter, getFilterFromUrl, searchParams, searchParamsKey, setFilter, setSelected, setSolveStatus, setTags, useFilterStorage]);
+
+	useEffect(() => {
+		if (isApplyingSearchParams.current) {
+			isApplyingSearchParams.current = false;
+			return;
+		}
+
+		const statusKey = searchParams.has(SearchKeys.SubmissionStatus)
+			? SearchKeys.SubmissionStatus
+			: SearchKeys.Status;
+		const otherStatusKey = statusKey === SearchKeys.Status
+			? SearchKeys.SubmissionStatus
+			: SearchKeys.Status;
+		updateSearchParams(new Map<SearchKeys, string | undefined>([
+			[SearchKeys.Search, filter.search.trim() || undefined],
+			[SearchKeys.PerPage, String(filter.perPage)],
+			[SearchKeys.MinRating, String(filter.minRating)],
+			[SearchKeys.MaxRating, String(filter.maxRating)],
+			[SearchKeys.ShowUnrated, String(filter.showUnrated)],
+			[SearchKeys.MinContestId, String(filter.minContestId)],
+			[SearchKeys.MaxContestId, String(filter.maxContestId)],
+			[SearchKeys.MinContestDate, filter.minContestDate],
+			[SearchKeys.MaxContestDate, filter.maxContestDate],
+			[SearchKeys.Tags, tags.size > 0 ? [...tags].sort().join(",") : undefined],
+			[statusKey, [...solveStatus].join(",")],
+			[otherStatusKey, undefined],
+			[SearchKeys.Page, selected > 0 ? String(selected) : undefined],
+		]));
+	}, [filter, searchParams, searchParamsKey, selected, solveStatus, tags, updateSearchParams]);
 
 	useEffect(() => {
 		setRandomProblem(undefined);
 	}, [filteredProblems]);
+
+	useEffect(() => {
+		if (!isRandomRequested) return;
+		setHasPendingRandomRequest(true);
+		consumeSearchParams([SearchKeys.Random]);
+	}, [consumeSearchParams, isRandomRequested]);
+
+	useEffect(() => {
+		if (!hasPendingRandomRequest || problemStore.loading) return;
+
+		setHasPendingRandomRequest(false);
+		setRandomProblem(
+			filteredProblems.length > 0
+				? getRandomInteger(0, filteredProblems.length)
+				: undefined
+		);
+	}, [filteredProblems, hasPendingRandomRequest, problemStore.loading]);
 
 	const updateFilter = useCallback((value: UpdateProblemFilter) => {
 		setFilter((previousFilter) => ({
@@ -343,10 +517,14 @@ function useProblemPage() {
 		solved,
 		attempted,
 		currentPageProblems,
-		selectableVerdictStatuses,
+		selectableVerdictStatuses: SELECTABLE_VERDICT_STATUSES,
 		showAddToList: isDefined(listId),
 		problemsAddedToList,
 		isRandomActive: randomProblem !== undefined,
+		acceptedRange: {
+			after: acceptedAfter,
+			before: acceptedBefore,
+		},
 		updateFilter,
 		setSelected,
 		setSolveStatus: updateSolveStatus,

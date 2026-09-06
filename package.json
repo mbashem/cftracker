@@ -6,8 +6,6 @@
     "node": ">=22.22.0"
   },
   "dependencies": {
-    "@emotion/react": "^11.14.0",
-    "@emotion/styled": "^11.14.1",
     "@fortawesome/fontawesome-svg-core": "^7.3.1",
     "@fortawesome/free-brands-svg-icons": "^7.3.1",
     "@fortawesome/free-regular-svg-icons": "^7.3.1",
@@ -43,11 +41,12 @@
     "typecheck": "tsc -b",
     "hooks:install": "node scripts/validation/install-hooks.mts",
     "prepare": "npm run hooks:install",
+    "test:home": "node --experimental-strip-types --test src/components/home/homeStatistics.test.ts",
     "test:policy": "node --test scripts/validation/*.test.mts && node scripts/validation/check-repository-hygiene.mts --tracked",
     "lint:secrets": "secretlint --no-color \"**/*\"",
     "lint:secrets:ci": "secretlint --format github \"**/*\"",
     "verify:policy": "npm run test:policy && npm run lint:secrets",
-    "verify:frontend": "npm run typecheck && npm run lint && npm run build",
+    "verify:frontend": "npm run test:home && npm run typecheck && npm run lint && npm run build",
     "verify:ci": "npm run verify:policy && npm run verify:frontend",
     "verify:backend": "make -C backend test",
     "verify": "npm run verify:ci && npm run verify:backend"
@@ -67,8 +66,8 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@secretlint/secretlint-rule-preset-recommend": "^13.0.4",
-    "@types/node": "^22.18.0",
     "@types/d3": "^7.4.3",
+    "@types/node": "^22.18.0",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.3",

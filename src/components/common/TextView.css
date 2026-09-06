@@ -1,0 +1,12 @@
+.common-text-view__item {
+  background: var(--common-card-accent-soft);
+  border: 1px solid color-mix(in srgb, var(--common-card-accent) 35%, transparent);
+  color: inherit;
+  font: inherit;
+  font-size: 0.875rem;
+  padding: 0.4rem 0.75rem;
+}
+
+button.common-text-view__item {
+  cursor: pointer;
+}

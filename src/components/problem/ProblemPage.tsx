@@ -24,6 +24,7 @@ function ProblemPage() {
     showAddToList,
     problemsAddedToList,
     isRandomActive,
+    acceptedRange,
     updateFilter,
     setSelected,
     setSolveStatus,
@@ -37,6 +38,17 @@ function ProblemPage() {
   return (
     <>
       <div>
+        {(acceptedRange.after !== undefined || acceptedRange.before !== undefined) && (
+          <div className="alert alert-info mb-3" role="status">
+            Accepted submissions
+            {acceptedRange.after !== undefined && (
+              <> from {new Date(acceptedRange.after * 1_000).toLocaleDateString("en-GB")}</>
+            )}
+            {acceptedRange.before !== undefined && (
+              <> before {new Date(acceptedRange.before * 1_000).toLocaleDateString("en-GB")}</>
+            )}
+          </div>
+        )}
         <Filter
           search={filter.search}
           searchName="problemSearch"

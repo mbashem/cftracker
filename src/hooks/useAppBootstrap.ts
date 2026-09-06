@@ -23,7 +23,7 @@ function useAppBootstrap() {
   useEffect(() => {
     if (!isContestListLoading && !isProblemListLoading)
       syncUserSubmissions(userList.handles.length > 2 ? true : false);
-  }, [isContestListLoading, isProblemListLoading, userList.handles]);
+  }, [isContestListLoading, isProblemListLoading, userList.id]);
 
   const showErrorMessage = (message: string | undefined) => {
     if (message === undefined || message.length === 0) return;

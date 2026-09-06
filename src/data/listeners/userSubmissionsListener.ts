@@ -37,12 +37,14 @@ userSubmissionsListener.startListening({
           if (response.status !== "OK") {
             listenerApi.dispatch(errorFetchingUserSubmissions({
               error: `Failed To fetch Submissions for User with handle:${handle}`,
+              handle,
               requestId,
             }));
             continue;
           }
 
           listenerApi.dispatch(addUserSubmissions({
+            handle,
             requestId,
             submissions: getValidSubmissions(response.result),
           }));
@@ -52,6 +54,7 @@ userSubmissionsListener.startListening({
           console.log(error);
           listenerApi.dispatch(errorFetchingUserSubmissions({
             error: `Failed To fetch Submissions for User:${handle}`,
+            handle,
             requestId,
           }));
         }

@@ -51,4 +51,3 @@ const userSlice = createSlice({
 export const { addHandle, removeHandle, removeAllHandle, setUser, removeUser, errorAuthenticatingUser } = userSlice.actions;
 
 export default userSlice.reducer;
-
