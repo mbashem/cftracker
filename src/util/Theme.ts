@@ -55,6 +55,7 @@ export default class Theme {
   btnClose: string;
   btnDanger: string;
   btnSuccess: string;
+  cardVariables: Record<string, string>;
 
   constructor(selected?: ThemesType) {
     switch (selected) {
@@ -72,6 +73,14 @@ export default class Theme {
 
         this.btn = "btn btn-dark";
         this.btnClose = "btn-close btn-close-white";
+        this.cardVariables = {
+          "--common-card-accent": "#79aaff",
+          "--common-card-accent-soft": "rgba(121, 170, 255, 0.15)",
+          "--common-card-border": "#444c56",
+          "--common-card-muted": "#adbac7",
+          "--common-card-surface": "#2d333b",
+          "--common-card-surface-hover": "#343b44",
+        };
         break;
       case ThemesType.LIGHT:
       default:
@@ -88,6 +97,14 @@ export default class Theme {
 
         this.btn = "btn btn-light";
         this.btnClose = "btn-close";
+        this.cardVariables = {
+          "--common-card-accent": "#0d6efd",
+          "--common-card-accent-soft": "rgba(13, 110, 253, 0.12)",
+          "--common-card-border": "#d7dce2",
+          "--common-card-muted": "#5f6b76",
+          "--common-card-surface": "#ffffff",
+          "--common-card-surface-hover": "#f7faff",
+        };
         break;
     }
 

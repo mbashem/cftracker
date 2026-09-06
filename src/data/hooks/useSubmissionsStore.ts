@@ -3,10 +3,11 @@ import { useAppSelector } from "../store";
 import { sortByCompare } from "../../util/sortMethods";
 import lowerBound from "../../util/lowerBound";
 import Problem, { ProblemShared } from "../../types/CF/Problem";
-import Submission, { SubmissionData } from "../../types/CF/Submission";
+import Submission, { compareSubmissionData, SubmissionData } from "../../types/CF/Submission";
 import { Compared } from "../../util/Comparator";
 import useSharedProblemsStore from "./useSharedProblemsStore";
 import { EMPTY_ARRAY } from "../../util/constants";
+import type { HandleSubmissionState } from "../reducers/userSubmissionsSlice";
 
 const addSharedToSubmissions = (
   userSubmissions: Submission[],
@@ -92,10 +93,24 @@ const hydrateSubmissions = createSelector(
   (submissions) => submissions.map((submission) => new Submission(submission))
 );
 
+const combineSubmissions = createSelector(
+  [(submissionsByHandle: Record<string, HandleSubmissionState>) => submissionsByHandle],
+  (submissionsByHandle) => {
+    const submissions: SubmissionData[] = [];
+
+    for (const handleState of Object.values(submissionsByHandle)) {
+      submissions.push(...handleState.submissions);
+    }
+
+    return submissions.sort(compareSubmissionData);
+  }
+);
+
 function useSubmissionsStore() {
   const { sharedProblems } = useSharedProblemsStore();
   const userSubmissions = useAppSelector((state) => state.userSubmissions);
-  const rawSubmissions = hydrateSubmissions(userSubmissions.submissions);
+  const submissionData = combineSubmissions(userSubmissions.submissionsByHandle);
+  const rawSubmissions = hydrateSubmissions(submissionData);
   const submissions = calculateSubmissions(rawSubmissions, sharedProblems.problems);
 
   return {

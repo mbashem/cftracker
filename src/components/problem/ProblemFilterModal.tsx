@@ -81,7 +81,7 @@ function ProblemFilterModal({
         onMaxChange={(num: number) => updateFilter({ maxContestId: num })}
       />
       <InputDateRange
-        name="Date"
+        name="Contest Date"
         minValue={filter.minContestDate}
         maxValue={filter.maxContestDate}
         theme={theme}

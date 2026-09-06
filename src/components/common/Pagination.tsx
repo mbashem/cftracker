@@ -42,10 +42,9 @@ function Pagination(props: PaginationProps) {
   const pageSizeOptions = useMemo(() => {
     if (isRandomActive) return [1];
 
-    let sizes = [10, 20, 50, 100];
-    if (!sizes.includes(props.totalCount)) sizes.push(props.totalCount);
-    return sizes;
-  }, [isRandomActive, props.totalCount]);
+    const sizes = new Set([10, 20, 50, 100, props.totalCount, props.perPage]);
+    return [...sizes].filter((size) => size > 0).sort((first, second) => first - second);
+  }, [isRandomActive, props.perPage, props.totalCount]);
 
   return (
     <nav aria-label="Page navigation example d-flex justify-content-center" style={{ height: "50px" }}>

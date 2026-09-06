@@ -50,7 +50,7 @@ function Filter(props: PropsType) {
               type="button"
               className={"btn btn-transparent text-secondary"}
               onClick={() => {
-                if (props.length > 0) props.setRandom(getRandomInteger(0, props.length - 1));
+                if (props.length > 0) props.setRandom(getRandomInteger(0, props.length));
               }}
               title={"Find Random " + props.name}
             >

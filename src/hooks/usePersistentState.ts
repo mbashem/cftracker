@@ -32,19 +32,23 @@ type GetInitialValue<T> = () => T;
 function usePersistentState<T>(
   key: string,
   defaultValue: T,
-  getInitialValue?: GetInitialValue<T>
+  getInitialValue?: GetInitialValue<T>,
+  useStorage: boolean = true,
 ): [T, Dispatch<SetStateAction<T>>] {
   const [value, setValue] = useState<T>(() => {
-    if (getInitialValue === undefined) return getPersistentValue(key, defaultValue);
+    if (getInitialValue === undefined) {
+      return useStorage ? getPersistentValue(key, defaultValue) : defaultValue;
+    }
 
     const initialValue = getInitialValue();
-    savePersistentValue(key, initialValue);
+    if (useStorage) savePersistentValue(key, initialValue);
     return initialValue;
   });
 
   useEffect(() => {
+    if (!useStorage) return;
     savePersistentValue(key, value);
-  }, [key, value]);
+  }, [key, useStorage, value]);
 
   return [value, setValue];
 }
