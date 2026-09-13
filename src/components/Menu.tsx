@@ -162,6 +162,7 @@ function Menu() {
                 formClassName="form-inline d-flex my-2 my-lg-0 nav-item"
                 inputClassName={theme.bgText}
                 viewClassName="my-2 my-lg-0"
+                viewVariant="inverse"
                 editTitle="Click to edit handles"
                 onSubmit={submitUser}
               />

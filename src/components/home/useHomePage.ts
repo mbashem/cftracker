@@ -7,9 +7,14 @@ import { useAppSelector } from "../../data/store";
 import {
   getAttemptedUnsolvedProblems,
   getHomeStatistics,
-  getWeeklySolvedProblems,
+  getSnapshotDateRange,
+  getSolvedProblems,
+  SnapshotPeriod,
+  type SnapshotCustomRange,
 } from "./homeStatistics";
 import { getProblemContestIdRange, isRatedProblem } from "../../util/submissionProblems";
+import usePersistentState from "../../hooks/usePersistentState";
+import { StorageService } from "../../util/StorageService";
 
 function useHomePage() {
   const { theme } = useTheme();
@@ -18,22 +23,33 @@ function useHomePage() {
   const { isLoading: areProblemsLoading } = codeforcesApi.useGetProblemsQuery();
   const { isLoading: areContestsLoading } = codeforcesApi.useGetContestQuery();
   const submissionRequestId = useAppSelector((state) => state.userSubmissions.requestId);
+  const [snapshotPeriod, setSnapshotPeriod] = usePersistentState<SnapshotPeriod>(
+    StorageService.Keys.Home.SnapshotPeriod,
+    SnapshotPeriod.WEEK,
+  );
+  const [customRange, setCustomRange] = usePersistentState<SnapshotCustomRange>(
+    StorageService.Keys.Home.SnapshotCustomRange,
+    {},
+  );
+  const snapshotRange = useMemo(
+    () => getSnapshotDateRange(snapshotPeriod, customRange),
+    [customRange, snapshotPeriod],
+  );
   const statistics = useMemo(
-    () => getHomeStatistics(rawSubmissions, new Date()),
-    [rawSubmissions]
+    () => getHomeStatistics(rawSubmissions, snapshotRange),
+    [rawSubmissions, snapshotRange]
   );
   const statisticDetails = useMemo(() => {
-    const referenceDate = new Date();
-    const weeklyProblems = getWeeklySolvedProblems(rawSubmissions, referenceDate)
+    const solvedProblems = getSolvedProblems(rawSubmissions, snapshotRange)
       .map((submission) => submission.problem);
     return {
-      weeklyContestRange: getProblemContestIdRange(weeklyProblems),
-      weeklyRatedContestRange: getProblemContestIdRange(weeklyProblems.filter(isRatedProblem)),
+      solvedContestRange: getProblemContestIdRange(solvedProblems),
+      ratedContestRange: getProblemContestIdRange(solvedProblems.filter(isRatedProblem)),
       attemptedContestRange: getProblemContestIdRange(
-        getAttemptedUnsolvedProblems(rawSubmissions).map((submission) => submission.problem),
+        getAttemptedUnsolvedProblems(rawSubmissions, snapshotRange).map((submission) => submission.problem),
       ),
     };
-  }, [rawSubmissions]);
+  }, [rawSubmissions, snapshotRange]);
   const handles = userList.handles;
   const hasHandles = handles.length > 0;
   const hasSubmissions = rawSubmissions.length > 0;
@@ -50,6 +66,11 @@ function useHomePage() {
     removeHandle,
     statistics,
     statisticDetails,
+    snapshotPeriod,
+    snapshotRange,
+    customRange,
+    setSnapshotPeriod,
+    setCustomRange,
     hasHandles,
     hasSubmissions,
     isLoading,

@@ -2,10 +2,7 @@ const Keys = {
   JwtToken: "jwtToken",
   StateV2: "statev2",
   Problem: {
-    Filter: "PROBLEM_FILTER",
-    Page: "PROBLEM_PAGE",
-    Tags: "PROBLEM_TAGS",
-    SolveStatus: "PROBLEM_SOLVE_STATUS",
+    State: "PROBLEM_STATE",
   },
   Contest: {
     Filter: "CONTEST_FILTER",
@@ -18,6 +15,10 @@ const Keys = {
   },
   Stats: {
     SubmissionHeatMapYear: "STATS_SUBMISSION_HEATMAP_YEAR",
+  },
+  Home: {
+    SnapshotPeriod: "HOME_SNAPSHOT_PERIOD",
+    SnapshotCustomRange: "HOME_SNAPSHOT_CUSTOM_RANGE",
   },
 } as const;
 
@@ -112,6 +113,22 @@ function getObject<T>(storageKey: string, defaultValue: T): T {
   return defaultValue;
 }
 
+function getValue<T>(storageKey: string, defaultValue: T): T {
+  if (defaultValue instanceof Set) {
+    return getSet(storageKey, defaultValue as Iterable<unknown>) as T;
+  }
+  if (defaultValue instanceof Map) {
+    return getMap(storageKey, defaultValue as Iterable<[unknown, unknown]>) as T;
+  }
+  return getObject(storageKey, defaultValue);
+}
+
+function saveValue<T>(storageKey: string, value: T): boolean {
+  if (value instanceof Set) return saveSet(storageKey, value);
+  if (value instanceof Map) return saveMap(storageKey, value);
+  return saveObject(storageKey, value);
+}
+
 export const StorageService = {
   Keys,
   getJWTToken,
@@ -123,4 +140,6 @@ export const StorageService = {
   getMap,
   saveObject,
   getObject,
+  saveValue,
+  getValue,
 } as const;

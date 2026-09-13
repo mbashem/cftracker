@@ -12,6 +12,7 @@ import useContestStore from "../../data/hooks/useContestStore";
 import { getRandomInteger, isDefined, isFunction, overrideObject } from "../../util/util";
 import useProblemsStore from "../../data/hooks/useProblemsStore";
 import usePersistentState from "../../hooks/usePersistentState";
+import { validators } from "../../util/validators";
 
 export interface Filter {
 	perPage: number;
@@ -31,9 +32,9 @@ function useContestPage() {
 	const { problemList } = useProblemsStore();
 
 	const { theme } = useTheme();
-	const { searchParams, updateSearchParam, deleteSearchParam, consumeSearchParams } = useAppSearchParams();
-	const searchTextFromUrl = searchParams.get(SearchKeys.Search) ?? undefined;
-	const isRandomRequested = searchParams.get(SearchKeys.Random) === "true";
+	const { getSearchParam, updateSearchParam, deleteSearchParam, consumeSearchParams } = useAppSearchParams();
+	const searchTextFromUrl = getSearchParam(SearchKeys.Search);
+	const isRandomRequested = validators.boolean(getSearchParam(SearchKeys.Random), false);
 	const { submissions: userSubmissions } = useSubmissionsStore();
 	const { contests, loading: isContestListLoading, error: contestListError } = useContestStore();
 	const state = useMemo(

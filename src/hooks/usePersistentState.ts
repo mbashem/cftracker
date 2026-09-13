@@ -1,32 +1,6 @@
 import { type Dispatch, type SetStateAction, useEffect, useState } from "react";
 import { StorageService } from "../util/StorageService";
 
-function getPersistentValue<T>(key: string, defaultValue: T): T {
-  if (defaultValue instanceof Set) {
-    return StorageService.getSet(key, defaultValue as Iterable<unknown>) as T;
-  }
-
-  if (defaultValue instanceof Map) {
-    return StorageService.getMap(key, defaultValue as Iterable<[unknown, unknown]>) as T;
-  }
-
-  return StorageService.getObject(key, defaultValue);
-}
-
-function savePersistentValue<T>(key: string, value: T) {
-  if (value instanceof Set) {
-    StorageService.saveSet(key, value as Set<unknown>);
-    return;
-  }
-
-  if (value instanceof Map) {
-    StorageService.saveMap(key, value as Map<unknown, unknown>);
-    return;
-  }
-
-  StorageService.saveObject(key, value);
-}
-
 type GetInitialValue<T> = () => T;
 
 function usePersistentState<T>(
@@ -37,17 +11,17 @@ function usePersistentState<T>(
 ): [T, Dispatch<SetStateAction<T>>] {
   const [value, setValue] = useState<T>(() => {
     if (getInitialValue === undefined) {
-      return useStorage ? getPersistentValue(key, defaultValue) : defaultValue;
+      return useStorage ? StorageService.getValue(key, defaultValue) : defaultValue;
     }
 
     const initialValue = getInitialValue();
-    if (useStorage) savePersistentValue(key, initialValue);
+    if (useStorage) StorageService.saveValue(key, initialValue);
     return initialValue;
   });
 
   useEffect(() => {
     if (!useStorage) return;
-    savePersistentValue(key, value);
+    StorageService.saveValue(key, value);
   }, [key, useStorage, value]);
 
   return [value, setValue];
