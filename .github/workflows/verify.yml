@@ -50,6 +50,8 @@ jobs:
           if [[ "$BASE_SHA" =~ ^0+$ ]]; then
             node scripts/validation/validate-commits.mts --commit "$HEAD_SHA"
           else
+            # Force pushes can leave the previous head unreachable from current refs.
+            git fetch --no-tags origin "$BASE_SHA"
             node scripts/validation/validate-commits.mts --range "$BASE_SHA" "$HEAD_SHA"
           fi
 

@@ -60,6 +60,7 @@ function ProblemPage() {
               title="Submission range"
               description={getSubmissionRangeText(submissionRange.after, submissionRange.before)}
               icon={<FontAwesomeIcon icon={faCalendarDays} />}
+              innerClassName="container px-0 py-3"
             />
           </div>
         )}

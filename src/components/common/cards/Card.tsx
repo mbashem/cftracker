@@ -8,14 +8,15 @@ export interface CardProps {
   content?: ReactNode;
   description?: ReactNode;
   icon?: ReactNode;
+  innerClassName?: string;
   onClick?: () => void;
 }
 
-function Card({ type, title, content, description, icon, onClick }: CardProps) {
+function Card({ type, title, content, description, icon, innerClassName = "", onClick }: CardProps) {
   const isInteractive = onClick !== undefined;
   const className = `common-card common-card--${type}${isInteractive ? " common-card--interactive" : ""}`;
   const cardContent = (
-    <>
+    <span className={`common-card__inner ${innerClassName}`.trim()}>
       {icon !== undefined && (
         <span className="common-card__icon" aria-hidden="true">
           {icon}
@@ -26,7 +27,7 @@ function Card({ type, title, content, description, icon, onClick }: CardProps) {
         {content !== undefined && <span className="common-card__content">{content}</span>}
         {description !== undefined && <span className="common-card__description">{description}</span>}
       </span>
-    </>
+    </span>
   );
 
   if (isInteractive) {
