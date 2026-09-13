@@ -8,13 +8,18 @@
   width: 100%;
 }
 
-.common-card--stacked {
+.common-card__inner {
+  height: 100%;
+  width: 100%;
+}
+
+.common-card--stacked > .common-card__inner {
   display: flex;
   flex-direction: column;
   padding: 1.5rem;
 }
 
-.common-card--inline {
+.common-card--inline > .common-card__inner {
   align-items: flex-start;
   display: flex;
   gap: 1rem;
