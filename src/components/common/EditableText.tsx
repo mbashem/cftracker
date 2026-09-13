@@ -10,6 +10,7 @@ interface EditableTextProps {
   formClassName?: string;
   inputClassName?: string;
   viewClassName?: string;
+  viewVariant?: "default" | "inverse";
   editTitle?: string;
   onSubmit: (value: string) => void;
 }
@@ -22,6 +23,7 @@ function EditableText({
   formClassName = "",
   inputClassName = "",
   viewClassName = "",
+  viewVariant = "default",
   editTitle = "Click to edit",
   onSubmit,
 }: EditableTextProps) {
@@ -58,6 +60,7 @@ function EditableText({
     <TextView
       text={displayValue}
       label={label}
+      variant={viewVariant}
       className={viewClassName}
       title={editTitle}
       onClick={() => setIsEditing(true)}

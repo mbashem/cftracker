@@ -14,3 +14,8 @@ Apply this skill to the main CFTracker frontend, including files under `src/` an
 - A request to implement, diagnose, test, verify, or review frontend code does not by itself authorize running the application.
 - Static code inspection and non-interactive unit tests, typechecking, linting, and production builds remain allowed unless the user restricts them.
 - If adequate verification requires the running application but the user has not requested it, report that the live-app check was not run.
+
+## Use The Repository Node Version
+
+- Before running Node or npm commands, read `.nvmrc` and use that exact Node version.
+- If the inherited shell resolves a different version, run the command through NVM with the `.nvmrc` version. Do not add compatibility flags or weaken repository scripts to accommodate the inherited version.

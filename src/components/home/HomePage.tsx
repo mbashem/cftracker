@@ -1,7 +1,7 @@
 import HomeHeader from "./HomeHeader";
 import HomeStatus from "./HomeStatus";
 import QuickActions from "./QuickActions";
-import WeeklySnapshot from "./WeeklySnapshot";
+import Snapshot from "./Snapshot";
 import useHomePage from "./useHomePage";
 import "./HomePage.css";
 
@@ -13,6 +13,11 @@ function HomePage() {
     removeHandle,
     statistics,
     statisticDetails,
+    snapshotPeriod,
+    snapshotRange,
+    customRange,
+    setSnapshotPeriod,
+    setCustomRange,
     hasHandles,
     hasSubmissions,
     isLoading,
@@ -29,13 +34,18 @@ function HomePage() {
         isLoading={isLoading}
         error={error}
       />
-      <WeeklySnapshot
+      <Snapshot
         statistics={statistics}
         statisticDetails={statisticDetails}
+        period={snapshotPeriod}
+        range={snapshotRange}
+        customRange={customRange}
         hasHandles={hasHandles}
         hasSubmissions={hasSubmissions}
         hasError={error !== undefined}
         isLoading={isLoading}
+        onPeriodChange={setSnapshotPeriod}
+        onCustomRangeChange={setCustomRange}
       />
       <QuickActions />
     </main>

@@ -1,6 +1,6 @@
 import React from 'react';
 import useUser from '../../hooks/useUser';
-import { useNavigate } from 'react-router';
+import { Navigate } from 'react-router';
 import { Path } from './path';
 
 interface AuthGuardProps {
@@ -8,12 +8,10 @@ interface AuthGuardProps {
 }
 
 function AuthGuard({ children }: AuthGuardProps): React.ReactNode {
-	const navigate = useNavigate();
 	const { isAuthenticated } = useUser();
 
 	if (!isAuthenticated) {
-		navigate(Path.Home);
-		return;
+		return React.createElement(Navigate, { to: Path.Home, replace: true });
 	}
 
 	return children;

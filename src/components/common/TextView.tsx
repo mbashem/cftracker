@@ -3,6 +3,7 @@ import "./TextView.css";
 interface TextViewProps {
   text: string;
   label: string;
+  variant?: "default" | "inverse";
   className?: string;
   title?: string;
   onClick?: () => void;
@@ -11,11 +12,12 @@ interface TextViewProps {
 function TextView({
   text,
   label,
+  variant = "default",
   className = "",
   title,
   onClick,
 }: TextViewProps) {
-  const textClassName = `common-text-view__item rounded-pill ${className}`.trim();
+  const textClassName = `common-text-view__item common-text-view__item--${variant} rounded-pill ${className}`.trim();
 
   if (onClick !== undefined) {
     return (

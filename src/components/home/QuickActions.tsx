@@ -5,7 +5,7 @@ import {
   type IconDefinition,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useNavigate } from "react-router";
+import useAppNavigation from "../../hooks/useAppNavigation";
 import { Verdict } from "../../types/CF/Submission";
 import { SearchKeys } from "../../util/constants";
 import { Path } from "../../util/route/path";
@@ -16,32 +16,39 @@ interface QuickAction {
   title: string;
   description: string;
   icon: IconDefinition;
-  link: string;
+  path: Path;
+  searchParams: URLSearchParams;
 }
 
 const actions: readonly QuickAction[] = [
   {
     title: "Random problem",
-    description: "Pick a random problem using your saved filters.",
-    link: `${Path.PROBLEMS}?${SearchKeys.Random}=true`,
+    description: "Pick a random problem using temporary filters.",
+    path: Path.RANDOM_PROBLEM,
+    searchParams: new URLSearchParams({
+      [SearchKeys.Random]: "true",
+      [SearchKeys.UseFilterStorage]: "false",
+    }),
     icon: faDice,
   },
   {
     title: "Random contest",
     description: "Pick a random contest using your saved filters.",
-    link: `${Path.CONTESTS}?${SearchKeys.Random}=true`,
+    path: Path.CONTESTS,
+    searchParams: new URLSearchParams({ [SearchKeys.Random]: "true" }),
     icon: faTrophy,
   },
   {
     title: "Attempted problems",
     description: "Return to problems that still need an accepted solution.",
-    link: `${Path.PROBLEMS}?${SearchKeys.Status}=${Verdict.ATTEMPTED}`,
+    path: Path.PROBLEMS,
+    searchParams: new URLSearchParams({ [SearchKeys.Status]: Verdict.ATTEMPTED }),
     icon: faListCheck,
   },
 ];
 
 function QuickActions() {
-  const navigate = useNavigate();
+  const { navigateTo } = useAppNavigation();
 
   return (
     <section aria-labelledby="quick-actions-heading" className="mb-3">
@@ -58,7 +65,7 @@ function QuickActions() {
               title={action.title}
               description={action.description}
               icon={<FontAwesomeIcon icon={action.icon} />}
-              onClick={() => navigate(action.link)}
+              onClick={() => navigateTo(action.path, action.searchParams)}
             />
           </li>
         ))}

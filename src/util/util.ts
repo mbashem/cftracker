@@ -28,20 +28,6 @@ export function splitStringBySeparator(value: string, separator: string): string
   return value.trim().split(separator);
 }
 
-/** Parses a positive safe integer, returning undefined for invalid input. */
-export function parsePositiveSafeInteger(value: string | null): number | undefined {
-  if (value === null || value.trim() === "") return undefined;
-  const number = Number(value);
-  return Number.isSafeInteger(number) && number > 0 ? number : undefined;
-}
-
-/** Parses a non-negative safe integer, returning undefined for invalid input. */
-export function parseNonNegativeSafeInteger(value: string | null): number | undefined {
-  if (value === null || value.trim() === "") return undefined;
-  const number = Number(value);
-  return Number.isSafeInteger(number) && number >= 0 ? number : undefined;
-}
-
 /** Returns the character shifted by the given character-code offset. */
 export function increment(char: string, by: number) {
   return String.fromCharCode(char.charCodeAt(0) + by);

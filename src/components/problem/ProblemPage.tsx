@@ -1,9 +1,24 @@
+import { faCalendarDays } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import Card from "../common/cards/Card";
+import { CardType } from "../common/cards/CardType";
 import Filter from "../common/Filter";
 import Loading from "../common/Loading";
 import Pagination from "../common/Pagination";
 import ProblemFilterModal from "./ProblemFilterModal";
 import ProblemTable from "./problem-list/ProblemTable";
 import useProblemPage from "./useProblemPage";
+
+function formatSubmissionDate(timestamp: number) {
+  return new Date(timestamp * 1_000).toLocaleDateString("en-GB");
+}
+
+function getSubmissionRangeText(after?: number, before?: number) {
+  const range = [];
+  if (after !== undefined) range.push(`From ${formatSubmissionDate(after)}`);
+  if (before !== undefined) range.push(`Before ${formatSubmissionDate(before)}`);
+  return range.join(" · ");
+}
 
 function ProblemPage() {
   const {
@@ -24,7 +39,7 @@ function ProblemPage() {
     showAddToList,
     problemsAddedToList,
     isRandomActive,
-    acceptedRange,
+    submissionRange,
     updateFilter,
     setSelected,
     setSolveStatus,
@@ -38,15 +53,14 @@ function ProblemPage() {
   return (
     <>
       <div>
-        {(acceptedRange.after !== undefined || acceptedRange.before !== undefined) && (
-          <div className="alert alert-info mb-3" role="status">
-            Accepted submissions
-            {acceptedRange.after !== undefined && (
-              <> from {new Date(acceptedRange.after * 1_000).toLocaleDateString("en-GB")}</>
-            )}
-            {acceptedRange.before !== undefined && (
-              <> before {new Date(acceptedRange.before * 1_000).toLocaleDateString("en-GB")}</>
-            )}
+        {(submissionRange.after !== undefined || submissionRange.before !== undefined) && (
+          <div className="mb-3" role="status">
+            <Card
+              type={CardType.Inline}
+              title="Submission range"
+              description={getSubmissionRangeText(submissionRange.after, submissionRange.before)}
+              icon={<FontAwesomeIcon icon={faCalendarDays} />}
+            />
           </div>
         )}
         <Filter
