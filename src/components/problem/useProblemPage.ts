@@ -193,7 +193,7 @@ function useProblemPage() {
 						break;
 					}
 
-			const ratingInside = problem.rating > 0
+			const ratingInside = typeof problem.rating === "number"
 				? problem.rating <= ratingRange.maxValue && problem.rating >= ratingRange.minValue
 				: filter.showUnrated;
 			const contestIdInside = problem.contestId <= filter.maxContestId && problem.contestId >= filter.minContestId;

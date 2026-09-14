@@ -10,7 +10,7 @@ export interface ContestIdRange {
 }
 
 export function isRatedProblem(problem: SubmissionProblem): boolean {
-  return typeof problem.rating === "number" && Number.isFinite(problem.rating) && problem.rating > 0;
+  return typeof problem.rating === "number";
 }
 
 export function getProblemContestIdRange(

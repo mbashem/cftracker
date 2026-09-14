@@ -10,7 +10,7 @@ export interface ProblemData extends ProblemLiteData {
   name: string;
   type: string;
   points?: number;
-  rating: number;
+  rating?: number;
   tags: string[];
   solvedCount: number;
 }
@@ -70,7 +70,7 @@ export default class Problem extends ProblemLite {
   name: string;
   type: string;
   points?: number;
-  rating: number;
+  rating?: number;
   tags: string[];
   solvedCount: number;
 
@@ -79,7 +79,7 @@ export default class Problem extends ProblemLite {
     index: string,
     name: string,
     type: string,
-    rating: number = -1,
+    rating: number | undefined,
     tags: string[],
     solvedCount?: number
   ) {

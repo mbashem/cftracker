@@ -82,7 +82,7 @@ export function normalizeProblemResult(result: ProblemSetResult): ProblemData[] 
 			index: problem.index,
 			name: problem.name,
 			type: problem.type,
-			rating: problem.rating ?? 0,
+			rating: problem.rating,
 			tags: [...problem.tags],
 			solvedCount: problemStatistics[index]?.solvedCount ?? 0,
 		});
