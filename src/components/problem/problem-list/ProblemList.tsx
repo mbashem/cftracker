@@ -55,7 +55,9 @@ const ProblemList = (props: ProblemListProps): React.JSX.Element => {
             {problem.name}
           </a>
         </td>
-        <td className={"rating p-2 " + classes}>{problem.rating > 0 ? problem.rating : "Not Rated(0)"}</td>
+        <td className={"rating p-2 " + classes}>
+          {typeof problem.rating === "number" ? problem.rating : "Not Rated"}
+        </td>
 
         <td className={"solvedCount p-2 " + classes}>{problem.solvedCount}</td>
         {props.showAddToList && (

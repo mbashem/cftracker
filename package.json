@@ -41,7 +41,7 @@
     "typecheck": "tsc -b",
     "hooks:install": "node scripts/validation/install-hooks.mts",
     "prepare": "npm run hooks:install",
-    "test:home": "node --experimental-strip-types --test src/components/home/homeStatistics.test.ts",
+    "test:home": "node --experimental-transform-types --test src/components/home/homeStatistics.test.ts",
     "test:policy": "node --test scripts/validation/*.test.mts && node scripts/validation/check-repository-hygiene.mts --tracked",
     "lint:secrets": "secretlint --no-color \"**/*\"",
     "lint:secrets:ci": "secretlint --format github \"**/*\"",

@@ -1,30 +1,9 @@
 import Comparator, { Compared } from "../../util/Comparator";
 import Party from "./Party";
 import Problem, { ProblemData } from "./Problem";
+import { Verdict } from "./Verdict";
 
-export enum Verdict {
-  FAILED = "FAILED",
-  OK = "OK",
-  PARTIAL = "PARTIAL",
-  COMPILATION_ERROR = "COMPILATION_ERROR",
-  RUNTIME_ERROR = "RUNTIME_ERROR",
-  WRONG_ANSWER = "WRONG_ANSWER",
-  PRESENTATION_ERROR = "PRESENTATION_ERROR",
-  TIME_LIMIT_EXCEEDED = "TIME_LIMIT_EXCEEDED",
-  MEMORY_LIMIT_EXCEEDED = "MEMORY_LIMIT_EXCEEDED",
-  IDLENESS_LIMIT_EXCEEDED = "IDLENESS_LIMIT_EXCEEDED",
-  SECURITY_VIOLATED = "SECURITY_VIOLATED",
-  CRASHED = "CRASHED",
-  INPUT_PREPARATION_CRASHED = "INPUT_PREPARATION_CRASHED",
-  CHALLENGED = "CHALLENGED",
-  SKIPPED = "SKIPPED",
-  TESTING = "TESTING",
-  REJECTED = "REJECTED",
-  // Custom Verdict
-  SOLVED = "SOLVED",
-  ATTEMPTED = "ATTEMPTED",
-  UNSOLVED = "UNSOLVED",
-}
+export { Verdict } from "./Verdict";
 
 export enum SimpleVerdict {
   SOLVED = "SOLVED",

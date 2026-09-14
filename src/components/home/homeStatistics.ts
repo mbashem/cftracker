@@ -1,4 +1,5 @@
-const ACCEPTED_VERDICT = "OK";
+import { Verdict } from "../../types/CF/Verdict.ts";
+
 const DAYS_IN_WEEK = 7;
 const MILLISECONDS_PER_SECOND = 1_000;
 
@@ -23,7 +24,7 @@ export interface SnapshotDateRange {
 
 export interface HomeStatisticsSubmission {
   readonly creationTimeSeconds: number;
-  readonly verdict: string;
+  readonly verdict: Verdict;
   readonly problem: {
     readonly id: string;
     readonly contestId?: number;
@@ -103,8 +104,7 @@ export function getSnapshotDateRange(
 }
 
 function isRated(submission: HomeStatisticsSubmission): boolean {
-  const { rating } = submission.problem;
-  return typeof rating === "number" && Number.isFinite(rating) && rating > 0;
+  return typeof submission.problem.rating === "number";
 }
 
 function preferRatedSubmission(
@@ -139,7 +139,7 @@ function analyseSubmissions(
 
   for (const submission of submissions) {
     if (!isInsideRange(submission, range)) continue;
-    if (submission.verdict !== ACCEPTED_VERDICT) {
+    if (submission.verdict !== Verdict.OK) {
       if (!attemptedUnsolvedProblems.has(submission.problem.id)) {
         attemptedUnsolvedProblems.set(submission.problem.id, submission);
       }
@@ -158,7 +158,7 @@ function calculateAverageRating(submissions: Iterable<HomeStatisticsSubmission>)
   let ratedProblemCount = 0;
   for (const submission of submissions) {
     const { rating } = submission.problem;
-    if (typeof rating !== "number" || !Number.isFinite(rating) || rating <= 0) continue;
+    if (typeof rating !== "number") continue;
     ratingTotal += rating;
     ratedProblemCount += 1;
   }

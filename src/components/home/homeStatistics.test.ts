@@ -14,6 +14,7 @@ import {
 } from "./homeStatistics.ts";
 import { getProblemContestIdRange } from "../../util/submissionProblems.ts";
 import { validators } from "../../util/validators.ts";
+import { Verdict } from "../../types/CF/Verdict.ts";
 
 interface TestSubmission extends HomeStatisticsSubmission {
   readonly handle: string;
@@ -25,7 +26,7 @@ interface TestSubmission extends HomeStatisticsSubmission {
 
 interface SubmissionOptions {
   readonly problemId: string;
-  readonly verdict: string;
+  readonly verdict: Verdict;
   readonly submittedAt: Date;
   readonly rating?: number | null;
   readonly handle?: string;
@@ -114,8 +115,8 @@ test("returns neutral statistics for an empty submission history", () => {
 
 test("deduplicates accepted submissions using problem.id", () => {
   const submissions = [
-    createSubmission({ problemId: "100A", verdict: "OK", submittedAt: new Date(2026, 7, 31, 10), contestId: 100 }),
-    createSubmission({ problemId: "100A", verdict: "OK", submittedAt: new Date(2026, 7, 31, 11), contestId: 999 }),
+    createSubmission({ problemId: "100A", verdict: Verdict.OK, submittedAt: new Date(2026, 7, 31, 10), contestId: 100 }),
+    createSubmission({ problemId: "100A", verdict: Verdict.OK, submittedAt: new Date(2026, 7, 31, 11), contestId: 999 }),
   ];
 
   assert.deepEqual(getHomeStatistics(submissions, WEEK_RANGE), {
@@ -129,11 +130,11 @@ test("deduplicates accepted submissions using problem.id", () => {
 
 test("removes a solved problem from the attempted set regardless of submission order", () => {
   const submissions = [
-    createSubmission({ problemId: "failed-then-solved", verdict: "WRONG_ANSWER", submittedAt: new Date(2026, 7, 31, 9) }),
-    createSubmission({ problemId: "failed-then-solved", verdict: "OK", submittedAt: new Date(2026, 8, 1, 9) }),
-    createSubmission({ problemId: "solved-then-failed", verdict: "OK", submittedAt: new Date(2026, 8, 1, 10) }),
-    createSubmission({ problemId: "solved-then-failed", verdict: "TIME_LIMIT_EXCEEDED", submittedAt: new Date(2026, 8, 1, 11) }),
-    createSubmission({ problemId: "still-attempted", verdict: "COMPILATION_ERROR", submittedAt: new Date(2026, 8, 2, 9) }),
+    createSubmission({ problemId: "failed-then-solved", verdict: Verdict.WRONG_ANSWER, submittedAt: new Date(2026, 7, 31, 9) }),
+    createSubmission({ problemId: "failed-then-solved", verdict: Verdict.OK, submittedAt: new Date(2026, 8, 1, 9) }),
+    createSubmission({ problemId: "solved-then-failed", verdict: Verdict.OK, submittedAt: new Date(2026, 8, 1, 10) }),
+    createSubmission({ problemId: "solved-then-failed", verdict: Verdict.TIME_LIMIT_EXCEEDED, submittedAt: new Date(2026, 8, 1, 11) }),
+    createSubmission({ problemId: "still-attempted", verdict: Verdict.COMPILATION_ERROR, submittedAt: new Date(2026, 8, 2, 9) }),
   ];
 
   const attemptedProblems = getAttemptedUnsolvedProblems(submissions, WEEK_RANGE);
@@ -143,12 +144,9 @@ test("removes a solved problem from the attempted set regardless of submission o
 
 test("calculates the mean from rated solved problems only", () => {
   const submissions = [
-    createSubmission({ problemId: "negative", verdict: "OK", submittedAt: new Date(2026, 7, 31, 9), rating: -1 }),
-    createSubmission({ problemId: "zero", verdict: "OK", submittedAt: new Date(2026, 7, 31, 10), rating: 0 }),
-    createSubmission({ problemId: "missing", verdict: "OK", submittedAt: new Date(2026, 7, 31, 11), rating: undefined }),
-    createSubmission({ problemId: "nan", verdict: "OK", submittedAt: new Date(2026, 7, 31, 12), rating: Number.NaN }),
-    createSubmission({ problemId: "800", verdict: "OK", submittedAt: new Date(2026, 7, 31, 13), rating: 800 }),
-    createSubmission({ problemId: "1000", verdict: "OK", submittedAt: new Date(2026, 7, 31, 14), rating: 1_000 }),
+    createSubmission({ problemId: "missing", verdict: Verdict.OK, submittedAt: new Date(2026, 7, 31, 11), rating: undefined }),
+    createSubmission({ problemId: "800", verdict: Verdict.OK, submittedAt: new Date(2026, 7, 31, 13), rating: 800 }),
+    createSubmission({ problemId: "1000", verdict: Verdict.OK, submittedAt: new Date(2026, 7, 31, 14), rating: 1_000 }),
   ];
 
   assert.equal(getHomeStatistics(submissions, WEEK_RANGE).averageSolvedRating, 900);
@@ -156,10 +154,10 @@ test("calculates the mean from rated solved problems only", () => {
 
 test("uses inclusive start and exclusive end boundaries", () => {
   const submissions = [
-    createSubmission({ problemId: "previous", verdict: "OK", submittedAt: new Date(2026, 7, 30, 23, 59, 59) }),
-    createSubmission({ problemId: "start", verdict: "OK", submittedAt: new Date(2026, 7, 31) }),
-    createSubmission({ problemId: "inside", verdict: "OK", submittedAt: new Date(2026, 8, 6, 23, 59, 59), rating: 1_000 }),
-    createSubmission({ problemId: "end", verdict: "OK", submittedAt: new Date(2026, 8, 7) }),
+    createSubmission({ problemId: "previous", verdict: Verdict.OK, submittedAt: new Date(2026, 7, 30, 23, 59, 59) }),
+    createSubmission({ problemId: "start", verdict: Verdict.OK, submittedAt: new Date(2026, 7, 31) }),
+    createSubmission({ problemId: "inside", verdict: Verdict.OK, submittedAt: new Date(2026, 8, 6, 23, 59, 59), rating: 1_000 }),
+    createSubmission({ problemId: "end", verdict: Verdict.OK, submittedAt: new Date(2026, 8, 7) }),
   ];
 
   assert.deepEqual(getHomeStatistics(submissions, WEEK_RANGE), {
@@ -172,9 +170,9 @@ test("uses inclusive start and exclusive end boundaries", () => {
 
 test("counts each active local date once", () => {
   const submissions = [
-    createSubmission({ problemId: "one", verdict: "OK", submittedAt: new Date(2026, 8, 2, 9) }),
-    createSubmission({ problemId: "two", verdict: "OK", submittedAt: new Date(2026, 8, 2, 10) }),
-    createSubmission({ problemId: "one", verdict: "OK", submittedAt: new Date(2026, 8, 3, 10) }),
+    createSubmission({ problemId: "one", verdict: Verdict.OK, submittedAt: new Date(2026, 8, 2, 9) }),
+    createSubmission({ problemId: "two", verdict: Verdict.OK, submittedAt: new Date(2026, 8, 2, 10) }),
+    createSubmission({ problemId: "one", verdict: Verdict.OK, submittedAt: new Date(2026, 8, 3, 10) }),
   ];
 
   assert.equal(getHomeStatistics(submissions, WEEK_RANGE).activeDays, 2);
@@ -182,8 +180,8 @@ test("counts each active local date once", () => {
 
 test("applies the selected period to attempted problems as well as solved problems", () => {
   const submissions = [
-    createSubmission({ problemId: "outside", verdict: "WRONG_ANSWER", submittedAt: new Date(2026, 7, 30) }),
-    createSubmission({ problemId: "inside", verdict: "WRONG_ANSWER", submittedAt: new Date(2026, 8, 1) }),
+    createSubmission({ problemId: "outside", verdict: Verdict.WRONG_ANSWER, submittedAt: new Date(2026, 7, 30) }),
+    createSubmission({ problemId: "inside", verdict: Verdict.WRONG_ANSWER, submittedAt: new Date(2026, 8, 1) }),
   ];
 
   assert.equal(getHomeStatistics(submissions, WEEK_RANGE).attemptedUnsolvedCount, 1);
@@ -192,9 +190,9 @@ test("applies the selected period to attempted problems as well as solved proble
 
 test("combines handles so one handle's acceptance solves the problem", () => {
   const submissions = [
-    createSubmission({ problemId: "shared", verdict: "WRONG_ANSWER", submittedAt: new Date(2026, 7, 31, 9), handle: "first" }),
-    createSubmission({ problemId: "shared", verdict: "OK", submittedAt: new Date(2026, 8, 1, 9), handle: "second" }),
-    createSubmission({ problemId: "other", verdict: "WRONG_ANSWER", submittedAt: new Date(2026, 8, 1, 11), handle: "second" }),
+    createSubmission({ problemId: "shared", verdict: Verdict.WRONG_ANSWER, submittedAt: new Date(2026, 7, 31, 9), handle: "first" }),
+    createSubmission({ problemId: "shared", verdict: Verdict.OK, submittedAt: new Date(2026, 8, 1, 9), handle: "second" }),
+    createSubmission({ problemId: "other", verdict: Verdict.WRONG_ANSWER, submittedAt: new Date(2026, 8, 1, 11), handle: "second" }),
   ];
 
   assert.deepEqual(getHomeStatistics(submissions, WEEK_RANGE), {
