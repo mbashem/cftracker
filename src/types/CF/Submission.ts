@@ -61,6 +61,15 @@ export function compareSubmissionData(a: SubmissionLiteData, b: SubmissionLiteDa
   return Compared.GREATER;
 }
 
+export function compareSubmissionTime(
+  first: Pick<SubmissionData, "creationTimeSeconds">,
+  second: Pick<SubmissionData, "creationTimeSeconds">,
+): number {
+  if (first.creationTimeSeconds < second.creationTimeSeconds) return Compared.LESS;
+  if (first.creationTimeSeconds > second.creationTimeSeconds) return Compared.GREATER;
+  return Compared.EQUAL;
+}
+
 export class SubmissionLite implements Comparator<SubmissionLite> {
   contestId: number;
   index: string;

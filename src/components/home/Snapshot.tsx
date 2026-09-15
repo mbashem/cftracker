@@ -7,7 +7,6 @@ import type { ContestIdRange } from "../../util/submissionProblems";
 import CheckList from "../common/forms/CheckList";
 import InputDateRange from "../common/forms/Input/InputDateRange";
 import Card from "../common/cards/Card";
-import { CardType } from "../common/cards/CardType";
 import {
   SnapshotPeriod,
   type HomeStatistics,
@@ -134,7 +133,7 @@ function Snapshot({
     },
     {
       label: "Average solved rating",
-      value: canShowStatistics && statistics.averageSolvedRating !== null
+      value: canShowStatistics && statistics.averageSolvedRating !== undefined
         ? (
           <span className={theme.color(statistics.averageSolvedRating)}>
             {formatNumber(Math.round(statistics.averageSolvedRating))}
@@ -185,7 +184,7 @@ function Snapshot({
         {cards.map((card) => (
           <li className="col-12 col-sm-6 col-xl-3" key={card.label}>
             <Card
-              type={CardType.Stacked}
+              type="stacked"
               title={card.label}
               content={isLoading ? (
                 <>

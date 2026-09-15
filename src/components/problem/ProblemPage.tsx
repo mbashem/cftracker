@@ -1,7 +1,6 @@
 import { faCalendarDays } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Card from "../common/cards/Card";
-import { CardType } from "../common/cards/CardType";
 import Filter from "../common/Filter";
 import Loading from "../common/Loading";
 import Pagination from "../common/Pagination";
@@ -56,7 +55,7 @@ function ProblemPage() {
         {(submissionRange.after !== undefined || submissionRange.before !== undefined) && (
           <div className="mb-3" role="status">
             <Card
-              type={CardType.Inline}
+              type="inline"
               title="Submission range"
               description={getSubmissionRangeText(submissionRange.after, submissionRange.before)}
               icon={<FontAwesomeIcon icon={faCalendarDays} />}

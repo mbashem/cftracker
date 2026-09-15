@@ -3,12 +3,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
-  getAttemptedUnsolvedProblems,
   getHomeStatistics,
   getSnapshotDateRange,
-  getSolvedProblems,
   getStartOfCurrentWeek,
   SnapshotPeriod,
+  type HomeStatistics,
   type HomeStatisticsSubmission,
   type SnapshotDateRange,
 } from "./homeStatistics.ts";
@@ -28,7 +27,7 @@ interface SubmissionOptions {
   readonly problemId: string;
   readonly verdict: Verdict;
   readonly submittedAt: Date;
-  readonly rating?: number | null;
+  readonly rating?: number;
   readonly handle?: string;
   readonly contestId?: number;
   readonly index?: string;
@@ -59,6 +58,18 @@ function createSubmission(options: SubmissionOptions): TestSubmission {
 function assertRange(range: SnapshotDateRange, start: Date | undefined, end: Date | undefined) {
   assert.equal(range.startTimeSeconds, start === undefined ? undefined : start.getTime() / 1_000);
   assert.equal(range.endTimeSeconds, end === undefined ? undefined : end.getTime() / 1_000);
+}
+
+function assertStatisticCounts(
+  statistics: HomeStatistics,
+  expected: Omit<HomeStatistics, "solvedProblems" | "attemptedUnsolvedProblems">,
+) {
+  assert.deepEqual({
+    solvedCount: statistics.solvedCount,
+    activeDays: statistics.activeDays,
+    averageSolvedRating: statistics.averageSolvedRating,
+    attemptedUnsolvedCount: statistics.attemptedUnsolvedCount,
+  }, expected);
 }
 
 test("starts the current local week at Monday midnight without mutating the input", () => {
@@ -105,27 +116,37 @@ test("supports open-ended custom ranges with an inclusive final date", () => {
 });
 
 test("returns neutral statistics for an empty submission history", () => {
-  assert.deepEqual(getHomeStatistics([], WEEK_RANGE), {
+  const statistics = getHomeStatistics([], WEEK_RANGE);
+  assertStatisticCounts(statistics, {
     solvedCount: 0,
     activeDays: 0,
-    averageSolvedRating: null,
+    averageSolvedRating: undefined,
     attemptedUnsolvedCount: 0,
   });
+  assert.deepEqual(statistics.solvedProblems, []);
+  assert.deepEqual(statistics.attemptedUnsolvedProblems, []);
 });
 
 test("deduplicates accepted submissions using problem.id", () => {
   const submissions = [
     createSubmission({ problemId: "100A", verdict: Verdict.OK, submittedAt: new Date(2026, 7, 31, 10), contestId: 100 }),
-    createSubmission({ problemId: "100A", verdict: Verdict.OK, submittedAt: new Date(2026, 7, 31, 11), contestId: 999 }),
+    createSubmission({
+      problemId: "100A",
+      verdict: Verdict.OK,
+      submittedAt: new Date(2026, 7, 31, 11),
+      contestId: 999,
+      rating: 2_000,
+    }),
   ];
 
-  assert.deepEqual(getHomeStatistics(submissions, WEEK_RANGE), {
+  const statistics = getHomeStatistics(submissions, WEEK_RANGE);
+  assertStatisticCounts(statistics, {
     solvedCount: 1,
     activeDays: 1,
     averageSolvedRating: 800,
     attemptedUnsolvedCount: 0,
   });
-  assert.equal(getSolvedProblems(submissions, WEEK_RANGE).length, 1);
+  assert.equal(statistics.solvedProblems.length, 1);
 });
 
 test("removes a solved problem from the attempted set regardless of submission order", () => {
@@ -137,7 +158,7 @@ test("removes a solved problem from the attempted set regardless of submission o
     createSubmission({ problemId: "still-attempted", verdict: Verdict.COMPILATION_ERROR, submittedAt: new Date(2026, 8, 2, 9) }),
   ];
 
-  const attemptedProblems = getAttemptedUnsolvedProblems(submissions, WEEK_RANGE);
+  const attemptedProblems = getHomeStatistics(submissions, WEEK_RANGE).attemptedUnsolvedProblems;
   assert.equal(attemptedProblems.length, 1);
   assert.equal(attemptedProblems[0]?.problem.id, "still-attempted");
 });
@@ -160,7 +181,7 @@ test("uses inclusive start and exclusive end boundaries", () => {
     createSubmission({ problemId: "end", verdict: Verdict.OK, submittedAt: new Date(2026, 8, 7) }),
   ];
 
-  assert.deepEqual(getHomeStatistics(submissions, WEEK_RANGE), {
+  assertStatisticCounts(getHomeStatistics(submissions, WEEK_RANGE), {
     solvedCount: 2,
     activeDays: 2,
     averageSolvedRating: 900,
@@ -184,8 +205,9 @@ test("applies the selected period to attempted problems as well as solved proble
     createSubmission({ problemId: "inside", verdict: Verdict.WRONG_ANSWER, submittedAt: new Date(2026, 8, 1) }),
   ];
 
-  assert.equal(getHomeStatistics(submissions, WEEK_RANGE).attemptedUnsolvedCount, 1);
-  assert.equal(getAttemptedUnsolvedProblems(submissions, WEEK_RANGE)[0]?.problem.id, "inside");
+  const statistics = getHomeStatistics(submissions, WEEK_RANGE);
+  assert.equal(statistics.attemptedUnsolvedCount, 1);
+  assert.equal(statistics.attemptedUnsolvedProblems[0]?.problem.id, "inside");
 });
 
 test("combines handles so one handle's acceptance solves the problem", () => {
@@ -195,7 +217,7 @@ test("combines handles so one handle's acceptance solves the problem", () => {
     createSubmission({ problemId: "other", verdict: Verdict.WRONG_ANSWER, submittedAt: new Date(2026, 8, 1, 11), handle: "second" }),
   ];
 
-  assert.deepEqual(getHomeStatistics(submissions, WEEK_RANGE), {
+  assertStatisticCounts(getHomeStatistics(submissions, WEEK_RANGE), {
     solvedCount: 1,
     activeDays: 1,
     averageSolvedRating: 800,

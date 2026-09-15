@@ -1,7 +1,7 @@
 export interface SubmissionProblem {
   readonly id: string;
   readonly contestId?: number;
-  readonly rating?: number | null;
+  readonly rating?: number;
 }
 
 export interface ContestIdRange {

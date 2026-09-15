@@ -3,7 +3,7 @@ import { useAppSelector } from "../store";
 import { sortByCompare } from "../../util/sortMethods";
 import lowerBound from "../../util/lowerBound";
 import Problem, { ProblemShared } from "../../types/CF/Problem";
-import Submission, { compareSubmissionData, SubmissionData } from "../../types/CF/Submission";
+import Submission, { compareSubmissionTime, SubmissionData } from "../../types/CF/Submission";
 import { Compared } from "../../util/Comparator";
 import useSharedProblemsStore from "./useSharedProblemsStore";
 import { EMPTY_ARRAY } from "../../util/constants";
@@ -102,7 +102,7 @@ const combineSubmissions = createSelector(
       submissions.push(...handleState.submissions);
     }
 
-    return submissions.sort(compareSubmissionData);
+    return submissions.sort(compareSubmissionTime);
   }
 );
 

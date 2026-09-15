@@ -19,3 +19,9 @@ Apply this skill to the main CFTracker frontend, including files under `src/` an
 
 - Before running Node or npm commands, read `.nvmrc` and use that exact Node version.
 - If the inherited shell resolves a different version, run the command through NVM with the `.nvmrc` version. Do not add compatibility flags or weaken repository scripts to accommodate the inherited version.
+
+## Prefer Undefined For Missing Values
+
+- Use `undefined` for absent or unspecified application values.
+- Use `null` only when a platform, library, external API, or persisted-data contract requires it, or when a React component intentionally renders nothing.
+- Preserve `null` at those boundaries unless the application deliberately normalizes the value to `undefined`.

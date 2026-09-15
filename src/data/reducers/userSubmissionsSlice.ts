@@ -1,5 +1,5 @@
 import { createSlice, nanoid, PayloadAction } from '@reduxjs/toolkit';
-import { compareSubmissionData, SubmissionData } from '../../types/CF/Submission';
+import { compareSubmissionTime, SubmissionData } from '../../types/CF/Submission';
 import { removeAllHandle, removeHandle } from './userSlice';
 
 export interface HandleSubmissionState {
@@ -64,7 +64,7 @@ const userSubmissionsSlice = createSlice({
 
       state.loading = Math.max(0, state.loading - 1);
       handleState.loading = false;
-      handleState.submissions = [...action.payload.submissions].sort(compareSubmissionData);
+      handleState.submissions = [...action.payload.submissions].sort(compareSubmissionTime);
     },
     errorFetchingUserSubmissions(
       state,

@@ -10,7 +10,6 @@ import { Verdict } from "../../types/CF/Submission";
 import { SearchKeys } from "../../util/constants";
 import { Path } from "../../util/route/path";
 import Card from "../common/cards/Card";
-import { CardType } from "../common/cards/CardType";
 
 interface QuickAction {
   title: string;
@@ -61,7 +60,7 @@ function QuickActions() {
         {actions.map((action) => (
           <li className="col-12 col-md-6 col-xl-4" key={action.title}>
             <Card
-              type={CardType.Inline}
+              type="inline"
               title={action.title}
               description={action.description}
               icon={<FontAwesomeIcon icon={action.icon} />}

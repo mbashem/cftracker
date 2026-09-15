@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
-import { CardType } from "./CardType";
 import "./Card.css";
+
+export type CardType = "stacked" | "inline";
 
 export interface CardProps {
   type: CardType;
