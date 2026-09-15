@@ -1,6 +1,6 @@
 .common-text-view__item {
-  background: var(--common-card-accent-soft);
-  border: 1px solid color-mix(in srgb, var(--common-card-accent) 35%, transparent);
+  background: var(--theme-accent-soft);
+  border: 1px solid var(--theme-accent-border);
   color: inherit;
   font: inherit;
   font-size: 0.875rem;

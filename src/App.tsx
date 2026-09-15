@@ -28,7 +28,7 @@ function App() {
   return (
     <div
       className={"App container-fluid p-0 min-vh-100 d-flex  flex-column " + theme.bgText}
-      style={theme.cardVariables}
+      style={theme.variables}
     >
       <div className="menu w-100">
         {" "}

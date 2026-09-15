@@ -7,7 +7,6 @@ import "./HomePage.css";
 
 function HomePage() {
   const {
-    theme,
     handles,
     addHandle,
     removeHandle,
@@ -25,7 +24,7 @@ function HomePage() {
   } = useHomePage();
 
   return (
-    <main className={`home-page home-page--${theme.name} container py-3 py-lg-4`}>
+    <main className="home-page container py-3 py-lg-4">
       <HomeHeader handles={handles} onAddHandle={addHandle} onRemoveHandle={removeHandle} />
       <HomeStatus
         handles={handles}

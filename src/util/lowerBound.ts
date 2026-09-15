@@ -1,4 +1,5 @@
-import Comparator, { Compared } from "./Comparator";
+import type Comparator from "./Comparator.ts";
+import { Compared } from "./Comparator.ts";
 
 const lowerBound = <T extends Comparator<T>>(list: readonly T[], val: T): number => {
   let l: number = 0,

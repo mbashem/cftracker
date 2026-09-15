@@ -1,6 +1,5 @@
 import { useState } from "react";
-import AddButton from "../common/AddButton";
-import CloseButton from "../common/CloseButton";
+import { AddButton, CloseButton } from "../common/IconButton";
 import TextInputForm from "../common/TextInputForm";
 
 interface HomeHeaderProps {
@@ -9,13 +8,8 @@ interface HomeHeaderProps {
   onRemoveHandle: (handle: string) => void;
 }
 
-function formatHandle(handle: string) {
-  return handle.startsWith("@") ? handle : `@${handle}`;
-}
-
 function HomeHeader({ handles, onAddHandle, onRemoveHandle }: HomeHeaderProps) {
   const hasHandles = handles.length > 0;
-  const handleLabel = handles.length === 1 ? "Current handle" : "Current handles";
   const [showHandleInput, setShowHandleInput] = useState(false);
 
   return (
@@ -24,15 +18,17 @@ function HomeHeader({ handles, onAddHandle, onRemoveHandle }: HomeHeaderProps) {
       <div className="d-flex flex-wrap align-items-center gap-2">
         {hasHandles ? (
           <>
-            <span className="home-context-label fw-semibold">{handleLabel}</span>
+            <span className="home-context-label fw-semibold">
+              Current handle{handles.length === 1 ? "" : "s"}
+            </span>
             {handles.map((handle) => (
               <span
                 className="home-handle-badge rounded-pill d-inline-flex align-items-center gap-2"
                 key={handle}
               >
-                <span>{formatHandle(handle)}</span>
+                <span>@{handle}</span>
                 <CloseButton
-                  label={`Remove ${formatHandle(handle)}`}
+                  label={`Remove @${handle}`}
                   onClick={() => onRemoveHandle(handle)}
                 />
               </span>

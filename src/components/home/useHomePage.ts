@@ -1,14 +1,11 @@
 import { useMemo } from "react";
 import useSubmissionsStore from "../../data/hooks/useSubmissionsStore";
-import useTheme from "../../data/hooks/useTheme";
 import useUserStore from "../../data/hooks/useUserStore";
 import { codeforcesApi } from "../../data/queries/codeforcesQuery";
 import { useAppSelector } from "../../data/store";
 import {
-  getAttemptedUnsolvedProblems,
   getHomeStatistics,
   getSnapshotDateRange,
-  getSolvedProblems,
   SnapshotPeriod,
   type SnapshotCustomRange,
 } from "./homeStatistics";
@@ -17,7 +14,6 @@ import usePersistentState from "../../hooks/usePersistentState";
 import { StorageService } from "../../util/StorageService";
 
 function useHomePage() {
-  const { theme } = useTheme();
   const { userList, addHandle, removeHandle } = useUserStore();
   const { rawSubmissions, loading, error } = useSubmissionsStore();
   const { isLoading: areProblemsLoading } = codeforcesApi.useGetProblemsQuery();
@@ -40,16 +36,16 @@ function useHomePage() {
     [rawSubmissions, snapshotRange]
   );
   const statisticDetails = useMemo(() => {
-    const solvedProblems = getSolvedProblems(rawSubmissions, snapshotRange)
+    const solvedProblems = statistics.solvedProblems
       .map((submission) => submission.problem);
     return {
       solvedContestRange: getProblemContestIdRange(solvedProblems),
       ratedContestRange: getProblemContestIdRange(solvedProblems.filter(isRatedProblem)),
       attemptedContestRange: getProblemContestIdRange(
-        getAttemptedUnsolvedProblems(rawSubmissions, snapshotRange).map((submission) => submission.problem),
+        statistics.attemptedUnsolvedProblems.map((submission) => submission.problem),
       ),
     };
-  }, [rawSubmissions, snapshotRange]);
+  }, [statistics]);
   const handles = userList.handles;
   const hasHandles = handles.length > 0;
   const hasSubmissions = rawSubmissions.length > 0;
@@ -60,7 +56,6 @@ function useHomePage() {
   const isLoading = hasHandles && (loading > 0 || isPreparingInitialSync);
 
   return {
-    theme,
     handles,
     addHandle,
     removeHandle,
