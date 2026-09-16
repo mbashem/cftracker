@@ -1,4 +1,3 @@
-import type { AppState } from "../../data/reducers/appSlice";
 import { Verdict } from "../../types/CF/Submission";
 import Theme from "../../util/Theme";
 import CustomModal from "../common/CustomModal";
@@ -8,10 +7,10 @@ import InputDateRange from "../common/forms/Input/InputDateRange";
 import InputRange from "../common/forms/Input/InputRange";
 import InputRangeSlider from "../common/forms/Input/InputRangeSlider";
 import type { ProblemFilter, ProblemFilterState, ProblemRatingRange, UpdateProblemFilter } from "./useProblemPage";
+import { CONTEST_ID_RANGE } from "./useProblemState";
 
 interface ProblemFilterModalProps {
   theme: Theme;
-  appState: AppState;
   filter: ProblemFilter;
   filterState: ProblemFilterState;
   ratingRange: ProblemRatingRange;
@@ -25,7 +24,6 @@ interface ProblemFilterModalProps {
 
 function ProblemFilterModal({
   theme,
-  appState,
   filter,
   filterState,
   ratingRange,
@@ -69,8 +67,8 @@ function ProblemFilterModal({
         />
       </div>
       <InputRange
-        min={appState.minContestId}
-        max={appState.maxContestId}
+        min={CONTEST_ID_RANGE.min}
+        max={CONTEST_ID_RANGE.max}
         minValue={filter.minContestId}
         maxValue={filter.maxContestId}
         theme={theme}

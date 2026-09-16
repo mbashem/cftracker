@@ -5,7 +5,6 @@ import useTheme from "../../data/hooks/useTheme";
 import useList from "../../data/hooks/useListApi";
 import useAppSearchParams from "../../hooks/useSearchParam";
 import useProblemsStore from "../../data/hooks/useProblemsStore";
-import { useAppSelector } from "../../data/store";
 import useToast from "../../hooks/useToast";
 import { ListWithItem } from "../../types/list";
 import Problem from "../../types/CF/Problem";
@@ -23,7 +22,7 @@ import { sortByContestId, sortByRating, sortBySolveCount, SortOrder, SortProblem
 import useContestStore from "../../data/hooks/useContestStore";
 import { useLocation } from "react-router";
 import { Path } from "../../util/route/path";
-import useProblemState, { type ProblemFilter } from "./useProblemState";
+import useProblemState from "./useProblemState";
 import useAppNavigation from "../../hooks/useAppNavigation";
 
 export type { ProblemFilter, UpdateProblemFilter } from "./useProblemState";
@@ -66,7 +65,13 @@ function useProblemPage() {
 	const location = useLocation();
 	const { navigateTo } = useAppNavigation();
 	const { getSearchParam, searchParamsValue } = useAppSearchParams();
-	const pageRequest = useMemo(() => {
+	const {
+		isRandomRequested,
+		listId,
+		submittedAfter,
+		submittedBefore,
+		useFilterStorage,
+	} = useMemo(() => {
 		return {
 			isRandomRequested: validators.boolean(getSearchParam(SearchKeys.Random), false),
 			submittedAfter: validators.nonNegativeInteger(getSearchParam(SearchKeys.SubmittedAfter), undefined),
@@ -75,13 +80,6 @@ function useProblemPage() {
 			useFilterStorage: validators.boolean(getSearchParam(SearchKeys.UseFilterStorage), true),
 		};
 	}, [getSearchParam]);
-	const {
-		isRandomRequested,
-		submittedAfter,
-		submittedBefore,
-		useFilterStorage,
-	} = pageRequest;
-	const listId = pageRequest.listId;
 	const [list, setList] = useState<ListWithItem | undefined>(undefined);
 	const nextListPosition = useRef(0);
 	const { submissions } = useSubmissionsStore();
@@ -89,21 +87,9 @@ function useProblemPage() {
 	const api = useList();
 	const { problemList: problemStore } = useProblemsStore();
 	const [problemsAddedToList, setProblemsAddedToList] = useState<Set<string>>(new Set());
-	const appState = useAppSelector((state) => state.appState);
 	const { contests } = useContestStore();
 	const { showErrorToast } = useToast();
 
-	const defaultFilter = useMemo<ProblemFilter>(() => ({
-		perPage: 100,
-		minRating: RATING_CONSTANTS.min,
-		maxRating: RATING_CONSTANTS.max,
-		showUnrated: true,
-		minContestId: appState.minContestId,
-		maxContestId: appState.maxContestId,
-		minContestDate: undefined,
-		maxContestDate: undefined,
-		search: "",
-	}), [appState.maxContestId, appState.minContestId]);
 	const {
 		filter,
 		tags,
@@ -113,7 +99,7 @@ function useProblemPage() {
 		setTags,
 		setSolveStatus,
 		setSelected,
-	} = useProblemState(defaultFilter, useFilterStorage);
+	} = useProblemState(useFilterStorage);
 	const [filterSortState, setFilterSortState] = useState<ProblemSortState>({
 		sortBy: SortProblemBy.SolveCount,
 		order: SortOrder.Descending,
@@ -137,10 +123,9 @@ function useProblemPage() {
 
 	const state = useMemo(() => {
 		return {
-			appState,
 			problemList: problemStore,
 		};
-	}, [appState, problemStore]);
+	}, [problemStore]);
 
 	const contestDates = useMemo(() => {
 		const dates = new Map<number, string>();
