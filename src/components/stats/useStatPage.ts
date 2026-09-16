@@ -18,7 +18,7 @@ function useStatPage() {
 		}
 
 		for (let submission of rawSubmissions) {
-			if (submission.verdict === Verdict.OK && submission.problem.rating !== undefined)
+			if (submission.verdict === Verdict.OK && isDefined(submission.problem.rating))
 				groupedProblems.get(SimpleVerdict.ATTEMPTED)?.get(submission.problem.rating)?.delete(submission.problem.id);
 		}
 
@@ -32,7 +32,7 @@ function useStatPage() {
 	}
 
 	function addSubmissionsProblemToGroupedBySimpleVerdict(submission: Submission, groupedProblems: Map<SimpleVerdict, Map<number, Set<string>>>) {
-		if (submission.problem.rating === undefined) return;
+		if (!isDefined(submission.problem.rating)) return;
 		const verdict = getSimpleVerdict(submission.verdict);
 		if (!isDefined(groupedProblems.get(verdict))) {
 			groupedProblems.set(verdict, new Map());

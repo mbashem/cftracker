@@ -8,20 +8,13 @@ import {
   getStartOfCurrentWeek,
   SnapshotPeriod,
   type HomeStatistics,
-  type HomeStatisticsSubmission,
   type SnapshotDateRange,
 } from "./homeStatistics.ts";
 import { getProblemContestIdRange } from "../../util/submissionProblems.ts";
 import { validators } from "../../util/validators.ts";
 import { Verdict } from "../../types/CF/Verdict.ts";
-
-interface TestSubmission extends HomeStatisticsSubmission {
-  readonly handle: string;
-  readonly problem: HomeStatisticsSubmission["problem"] & {
-    readonly contestId: number;
-    readonly index: string;
-  };
-}
+import Submission from "../../types/CF/Submission.ts";
+import { ParticipantType } from "../../types/CF/Party.ts";
 
 interface SubmissionOptions {
   readonly problemId: string;
@@ -35,24 +28,46 @@ interface SubmissionOptions {
 
 const REFERENCE_DATE = new Date(2026, 8, 3, 12);
 const WEEK_RANGE = getSnapshotDateRange(SnapshotPeriod.WEEK, {}, REFERENCE_DATE);
+let submissionId = 0;
 
-function createSubmission(options: SubmissionOptions): TestSubmission {
+function createSubmission(options: SubmissionOptions): Submission {
   const {
     problemId,
     verdict,
     submittedAt,
     handle = "tourist",
     contestId = 1,
-    index = "A",
+    index = problemId,
   } = options;
   const rating = "rating" in options ? options.rating : 800;
 
-  return {
+  return new Submission({
+    id: submissionId++,
+    contestId,
+    index,
     creationTimeSeconds: submittedAt.getTime() / 1_000,
+    relativeTimeSeconds: 0,
     verdict,
-    handle,
-    problem: { id: problemId, rating, contestId, index },
-  };
+    problem: {
+      contestId,
+      index,
+      name: problemId,
+      type: "PROGRAMMING",
+      rating,
+      tags: [],
+      solvedCount: 0,
+    },
+    author: {
+      contestId,
+      members: [{ handle }],
+      participantType: ParticipantType.PRACTICE,
+      ghost: false,
+    },
+    programmingLanguage: "GNU C++",
+    passedTestCount: 0,
+    timeConsumedMillis: 0,
+    memoryConsumedBytes: 0,
+  });
 }
 
 function assertRange(range: SnapshotDateRange, start: Date | undefined, end: Date | undefined) {
@@ -134,7 +149,7 @@ test("deduplicates accepted submissions using problem.id", () => {
       problemId: "100A",
       verdict: Verdict.OK,
       submittedAt: new Date(2026, 7, 31, 11),
-      contestId: 999,
+      contestId: 100,
       rating: 2_000,
     }),
   ];
@@ -160,7 +175,7 @@ test("removes a solved problem from the attempted set regardless of submission o
 
   const attemptedProblems = getHomeStatistics(submissions, WEEK_RANGE).attemptedUnsolvedProblems;
   assert.equal(attemptedProblems.length, 1);
-  assert.equal(attemptedProblems[0]?.problem.id, "still-attempted");
+  assert.equal(attemptedProblems[0]?.problem.id, submissions[4].problem.id);
 });
 
 test("calculates the mean from rated solved problems only", () => {
@@ -207,7 +222,7 @@ test("applies the selected period to attempted problems as well as solved proble
 
   const statistics = getHomeStatistics(submissions, WEEK_RANGE);
   assert.equal(statistics.attemptedUnsolvedCount, 1);
-  assert.equal(statistics.attemptedUnsolvedProblems[0]?.problem.id, "inside");
+  assert.equal(statistics.attemptedUnsolvedProblems[0]?.problem.id, submissions[1].problem.id);
 });
 
 test("combines handles so one handle's acceptance solves the problem", () => {

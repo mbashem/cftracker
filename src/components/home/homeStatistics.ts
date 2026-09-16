@@ -1,7 +1,8 @@
 import { Verdict } from "../../types/CF/Verdict.ts";
-import type Comparator from "../../util/Comparator.ts";
-import { Compared } from "../../util/Comparator.ts";
+import type Submission from "../../types/CF/Submission.ts";
+import { compareSubmissionTime } from "../../types/CF/Submission.ts";
 import lowerBound from "../../util/lowerBound.ts";
+import { isNumber } from "../../util/util.ts";
 
 const DAYS_IN_WEEK = 7;
 const MILLISECONDS_PER_SECOND = 1_000;
@@ -25,39 +26,19 @@ export interface SnapshotDateRange {
   readonly endTimeSeconds?: number;
 }
 
-export interface HomeStatisticsSubmission {
-  readonly creationTimeSeconds: number;
-  readonly verdict: Verdict;
-  readonly problem: {
-    readonly id: string;
-    readonly contestId?: number;
-    readonly rating?: number;
-  };
-}
-
 export interface HomeStatistics {
   readonly solvedCount: number;
   readonly activeDays: number;
   readonly averageSolvedRating: number | undefined;
   readonly attemptedUnsolvedCount: number;
-  readonly solvedProblems: readonly HomeStatisticsSubmission[];
-  readonly attemptedUnsolvedProblems: readonly HomeStatisticsSubmission[];
+  readonly solvedProblems: readonly Submission[];
+  readonly attemptedUnsolvedProblems: readonly Submission[];
 }
 
 interface SubmissionSummary {
-  readonly solvedProblems: Map<string, HomeStatisticsSubmission>;
+  readonly solvedProblems: Map<string, Submission>;
   readonly activeDates: Set<string>;
-  readonly attemptedUnsolvedProblems: Map<string, HomeStatisticsSubmission>;
-}
-
-class SubmissionTimestamp implements Comparator<SubmissionTimestamp> {
-  constructor(readonly value: number) {}
-
-  compareTo(other: SubmissionTimestamp): number {
-    if (this.value < other.value) return Compared.LESS;
-    if (this.value > other.value) return Compared.GREATER;
-    return Compared.EQUAL;
-  }
+  readonly attemptedUnsolvedProblems: Map<string, Submission>;
 }
 
 /** Returns a new Date at local midnight on the Monday of the supplied date's week. */
@@ -118,13 +99,13 @@ export function getSnapshotDateRange(
   };
 }
 
-function isRated(submission: HomeStatisticsSubmission): boolean {
-  return typeof submission.problem.rating === "number";
+function isRated(submission: Submission): boolean {
+  return isNumber(submission.problem.rating);
 }
 
 function preferRatedSubmission(
-  submissionsByProblem: Map<string, HomeStatisticsSubmission>,
-  submission: HomeStatisticsSubmission,
+  submissionsByProblem: Map<string, Submission>,
+  submission: Submission,
 ): void {
   const existingSubmission = submissionsByProblem.get(submission.problem.id);
   if (existingSubmission === undefined || (!isRated(existingSubmission) && isRated(submission))) {
@@ -140,30 +121,35 @@ function getLocalDateKey(timestampSeconds: number): string {
 }
 
 function getSubmissionsInRange(
-  submissions: readonly HomeStatisticsSubmission[],
+  submissions: readonly Submission[],
   range: SnapshotDateRange,
-): readonly HomeStatisticsSubmission[] {
+): readonly Submission[] {
   if (range.startTimeSeconds === undefined && range.endTimeSeconds === undefined) return submissions;
 
-  const timestamps = submissions.map(
-    (submission) => new SubmissionTimestamp(submission.creationTimeSeconds),
-  );
   const startIndex = range.startTimeSeconds === undefined
     ? 0
-    : lowerBound(timestamps, new SubmissionTimestamp(range.startTimeSeconds));
+    : lowerBound<Pick<Submission, "creationTimeSeconds">>(
+      submissions,
+      { creationTimeSeconds: range.startTimeSeconds },
+      compareSubmissionTime,
+    );
   const endIndex = range.endTimeSeconds === undefined
     ? submissions.length
-    : lowerBound(timestamps, new SubmissionTimestamp(range.endTimeSeconds));
+    : lowerBound<Pick<Submission, "creationTimeSeconds">>(
+      submissions,
+      { creationTimeSeconds: range.endTimeSeconds },
+      compareSubmissionTime,
+    );
   return submissions.slice(startIndex, endIndex);
 }
 
 function getSubmissionSummary(
-  submissions: readonly HomeStatisticsSubmission[],
+  submissions: readonly Submission[],
   range: SnapshotDateRange,
 ): SubmissionSummary {
-  const solvedProblems = new Map<string, HomeStatisticsSubmission>();
+  const solvedProblems = new Map<string, Submission>();
   const activeDates = new Set<string>();
-  const attemptedUnsolvedProblems = new Map<string, HomeStatisticsSubmission>();
+  const attemptedUnsolvedProblems = new Map<string, Submission>();
 
   for (const submission of getSubmissionsInRange(submissions, range)) {
     if (submission.verdict !== Verdict.OK) {
@@ -180,25 +166,20 @@ function getSubmissionSummary(
   return { solvedProblems, activeDates, attemptedUnsolvedProblems };
 }
 
-function calculateAverageRating(submissions: Iterable<HomeStatisticsSubmission>): number | undefined {
+function calculateAverageRating(submissions: Iterable<Submission>): number | undefined {
   let ratingTotal = 0;
-  const ratedProblemIds = new Set<string>();
+  let ratedProblemCount = 0;
   for (const submission of submissions) {
     const { rating } = submission.problem;
-    if (
-      typeof rating !== "number"
-      || !Number.isFinite(rating)
-      || rating <= 0
-      || ratedProblemIds.has(submission.problem.id)
-    ) continue;
-    ratedProblemIds.add(submission.problem.id);
+    if (!isNumber(rating)) continue;
     ratingTotal += rating;
+    ratedProblemCount += 1;
   }
-  return ratedProblemIds.size === 0 ? undefined : ratingTotal / ratedProblemIds.size;
+  return ratedProblemCount === 0 ? undefined : ratingTotal / ratedProblemCount;
 }
 
 export function getHomeStatistics(
-  submissions: readonly HomeStatisticsSubmission[],
+  submissions: readonly Submission[],
   range: SnapshotDateRange,
 ): HomeStatistics {
   const summary = getSubmissionSummary(submissions, range);

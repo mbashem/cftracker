@@ -1,9 +1,10 @@
-import Comparator, { Compared } from "../../util/Comparator";
-import Party from "./Party";
-import Problem, { ProblemData } from "./Problem";
-import { Verdict } from "./Verdict";
+import type Comparator from "../../util/Comparator.ts";
+import { Compared } from "../../util/Comparator.ts";
+import type Party from "./Party.ts";
+import Problem, { type ProblemData } from "./Problem.ts";
+import { Verdict } from "./Verdict.ts";
 
-export { Verdict } from "./Verdict";
+export { Verdict } from "./Verdict.ts";
 
 export enum SimpleVerdict {
   SOLVED = "SOLVED",
@@ -15,11 +16,11 @@ export interface SubmissionLiteData {
   contestId: number;
   index: string;
   verdict: Verdict;
+  creationTimeSeconds: number;
 }
 
 export interface SubmissionData extends SubmissionLiteData {
   id: number;
-  creationTimeSeconds: number;
   relativeTimeSeconds: number;
   problem: ProblemData;
   author: Party;
@@ -43,24 +44,6 @@ export function getSimpleVerdict(verdict?: Verdict) {
   }
 }
 
-export function compareSubmissionData(a: SubmissionLiteData, b: SubmissionLiteData): number {
-  if (a.contestId === b.contestId) {
-    if (a.index === b.index) {
-      if (a.verdict === b.verdict) return Compared.EQUAL;
-      if (a.verdict === Verdict.OK) return Compared.LESS;
-      if (b.verdict === Verdict.OK) return Compared.GREATER;
-      if (a.verdict < b.verdict) return Compared.LESS;
-      return Compared.GREATER;
-    }
-
-    if (a.index > b.index) return Compared.GREATER;
-    return Compared.LESS;
-  }
-
-  if (a.contestId < b.contestId) return Compared.LESS;
-  return Compared.GREATER;
-}
-
 export function compareSubmissionTime(
   first: Pick<SubmissionData, "creationTimeSeconds">,
   second: Pick<SubmissionData, "creationTimeSeconds">,
@@ -74,23 +57,24 @@ export class SubmissionLite implements Comparator<SubmissionLite> {
   contestId: number;
   index: string;
   verdict: Verdict;
+  creationTimeSeconds: number;
 
   get simpleVerdict() {
     return getSimpleVerdict(this.verdict);
   }
 
-  constructor(contestId: number, index: string, verdict: Verdict) {
+  constructor(contestId: number, index: string, verdict: Verdict, creationTimeSeconds: number) {
     this.contestId = contestId;
     this.index = index;
     this.verdict = verdict;
+    this.creationTimeSeconds = creationTimeSeconds;
   }
 
-  compareTo = (a: SubmissionLite): number => compareSubmissionData(this, a);
+  compareTo = (submission: SubmissionLite): number => compareSubmissionTime(this, submission);
 }
 
 export default class Submission extends SubmissionLite {
   id: number;
-  creationTimeSeconds: number;
   relativeTimeSeconds: number;
   problem: Problem;
   author: Party;
@@ -108,9 +92,8 @@ export default class Submission extends SubmissionLite {
   }
 
   constructor(sub: SubmissionData) {
-    super(sub.contestId, sub.problem.index, sub.verdict);
+    super(sub.contestId, sub.problem.index, sub.verdict, sub.creationTimeSeconds);
     this.id = sub.id;
-    this.creationTimeSeconds = sub.creationTimeSeconds;
     this.relativeTimeSeconds = sub.relativeTimeSeconds;
     this.problem = new Problem(
       sub.problem.contestId,
