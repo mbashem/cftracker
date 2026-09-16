@@ -81,7 +81,6 @@ function ProblemPage() {
         >
           <ProblemFilterModal
             theme={theme}
-            appState={state.appState}
             filter={filter}
             filterState={filterState}
             ratingRange={ratingRange}
