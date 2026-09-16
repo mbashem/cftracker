@@ -16,11 +16,11 @@ export interface SubmissionLiteData {
   contestId: number;
   index: string;
   verdict: Verdict;
-  creationTimeSeconds: number;
 }
 
 export interface SubmissionData extends SubmissionLiteData {
   id: number;
+  creationTimeSeconds: number;
   relativeTimeSeconds: number;
   problem: ProblemData;
   author: Party;
@@ -53,28 +53,25 @@ export function compareSubmissionTime(
   return Compared.EQUAL;
 }
 
-export class SubmissionLite implements Comparator<SubmissionLite> {
+export class SubmissionLite {
   contestId: number;
   index: string;
   verdict: Verdict;
-  creationTimeSeconds: number;
 
   get simpleVerdict() {
     return getSimpleVerdict(this.verdict);
   }
 
-  constructor(contestId: number, index: string, verdict: Verdict, creationTimeSeconds: number) {
+  constructor(contestId: number, index: string, verdict: Verdict) {
     this.contestId = contestId;
     this.index = index;
     this.verdict = verdict;
-    this.creationTimeSeconds = creationTimeSeconds;
   }
-
-  compareTo = (submission: SubmissionLite): number => compareSubmissionTime(this, submission);
 }
 
-export default class Submission extends SubmissionLite {
+export default class Submission extends SubmissionLite implements Comparator<Submission> {
   id: number;
+  creationTimeSeconds: number;
   relativeTimeSeconds: number;
   problem: Problem;
   author: Party;
@@ -91,9 +88,12 @@ export default class Submission extends SubmissionLite {
     return new Date(this.creationTimeSeconds * secondToMillisecond);
   }
 
+  compareTo = (submission: Submission): number => compareSubmissionTime(this, submission);
+
   constructor(sub: SubmissionData) {
-    super(sub.contestId, sub.problem.index, sub.verdict, sub.creationTimeSeconds);
+    super(sub.contestId, sub.problem.index, sub.verdict);
     this.id = sub.id;
+    this.creationTimeSeconds = sub.creationTimeSeconds;
     this.relativeTimeSeconds = sub.relativeTimeSeconds;
     this.problem = new Problem(
       sub.problem.contestId,
