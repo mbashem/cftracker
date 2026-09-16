@@ -16,6 +16,7 @@ import {
 	clampNumber,
 	getRandomInteger,
 	isDefined,
+	isNumber,
 } from "../../util/util";
 import { validators } from "../../util/validators";
 import { sortByContestId, sortByRating, sortBySolveCount, SortOrder, SortProblemBy } from "../../util/sortMethods";
@@ -193,7 +194,7 @@ function useProblemPage() {
 						break;
 					}
 
-			const ratingInside = typeof problem.rating === "number"
+			const ratingInside = isNumber(problem.rating)
 				? problem.rating <= ratingRange.maxValue && problem.rating >= ratingRange.minValue
 				: filter.showUnrated;
 			const contestIdInside = problem.contestId <= filter.maxContestId && problem.contestId >= filter.minContestId;
