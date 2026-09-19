@@ -1,10 +1,10 @@
-import type Comparator from "../../util/Comparator.ts";
-import { Compared } from "../../util/Comparator.ts";
-import type Party from "./Party.ts";
-import Problem, { type ProblemData } from "./Problem.ts";
-import { Verdict } from "./Verdict.ts";
+import type Comparator from "../../util/Comparator";
+import { Compared } from "../../util/Comparator";
+import type Party from "./Party";
+import Problem, { type ProblemData } from "./Problem";
+import { Verdict } from "./Verdict";
 
-export { Verdict } from "./Verdict.ts";
+export { Verdict } from "./Verdict";
 
 export enum SimpleVerdict {
   SOLVED = "SOLVED",

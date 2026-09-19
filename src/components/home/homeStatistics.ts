@@ -1,10 +1,10 @@
-import { Verdict } from "../../types/CF/Verdict.ts";
-import type Problem from "../../types/CF/Problem.ts";
-import type Submission from "../../types/CF/Submission.ts";
-import { compareSubmissionTime } from "../../types/CF/Submission.ts";
-import lowerBound from "../../util/lowerBound.ts";
-import { parseDateInputValue } from "../../util/time.ts";
-import { isNumber } from "../../util/util.ts";
+import { Verdict } from "../../types/CF/Verdict";
+import type Problem from "../../types/CF/Problem";
+import type Submission from "../../types/CF/Submission";
+import { compareSubmissionTime } from "../../types/CF/Submission";
+import lowerBound from "../../util/lowerBound";
+import { parseDateInputValue } from "../../util/time";
+import { isNumber } from "../../util/util";
 
 const DAYS_IN_WEEK = 7;
 const MILLISECONDS_PER_SECOND = 1_000;

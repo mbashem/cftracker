@@ -1,4 +1,4 @@
-import type Member from "./Member.ts";
+import type Member from "./Member";
 
 export enum ParticipantType {
   CONTESTANT = "CONTESTANT",

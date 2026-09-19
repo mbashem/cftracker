@@ -1,4 +1,4 @@
-import { parseDateInputValue } from "./time.ts";
+import { parseDateInputValue } from "./time";
 
 export type Validator<T> = (value: unknown, defaultValue: T) => T;
 export type ValidatorList<T> = readonly Validator<T>[];
