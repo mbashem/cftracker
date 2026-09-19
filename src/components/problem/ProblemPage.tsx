@@ -7,15 +7,12 @@ import Pagination from "../common/Pagination";
 import ProblemFilterModal from "./ProblemFilterModal";
 import ProblemTable from "./problem-list/ProblemTable";
 import useProblemPage from "./useProblemPage";
-
-function formatSubmissionDate(timestamp: number) {
-  return new Date(timestamp * 1_000).toLocaleDateString("en-GB");
-}
+import { formatTimestampDate } from "../../util/time";
 
 function getSubmissionRangeText(after?: number, before?: number) {
   const range = [];
-  if (after !== undefined) range.push(`From ${formatSubmissionDate(after)}`);
-  if (before !== undefined) range.push(`Before ${formatSubmissionDate(before)}`);
+  if (after !== undefined) range.push(`From ${formatTimestampDate(after)}`);
+  if (before !== undefined) range.push(`Before ${formatTimestampDate(before)}`);
   return range.join(" · ");
 }
 
@@ -30,6 +27,7 @@ function ProblemPage() {
     filter,
     filterState,
     ratingRange,
+    contestIdRange,
     solveStatus,
     solved,
     attempted,
@@ -84,6 +82,7 @@ function ProblemPage() {
             filter={filter}
             filterState={filterState}
             ratingRange={ratingRange}
+            contestIdRange={contestIdRange}
             selectableVerdictStatuses={selectableVerdictStatuses}
             solveStatus={solveStatus}
             tags={tagList.tags}

@@ -1,8 +1,14 @@
+import { parseDateInputValue } from "./time.ts";
+
 export type Validator<T> = (value: unknown, defaultValue: T) => T;
+export type ValidatorList<T> = readonly Validator<T>[];
+type ValidatorValue<T> = Validator<T> | ValidatorList<T>;
 export type ValidatorRecord<T> = Partial<{
-  [Key in keyof T]: Validator<T[Key]>;
+  [Key in keyof T]: ValidatorValue<T[Key]>;
 }>;
-export type Validators<T> = T extends object ? Validator<T> | ValidatorRecord<T> : Validator<T>;
+export type Validators<T> = T extends object
+  ? ValidatorValue<T> | ValidatorRecord<T>
+  : ValidatorValue<T>;
 
 export const validators = {
   string(value: unknown, defaultValue: string) {
@@ -15,15 +21,7 @@ export const validators = {
   date(value: unknown, defaultValue: string | undefined) {
     const parsedValue = validators.optionalString(value, defaultValue);
     if (parsedValue === undefined) return parsedValue;
-
-    const [year, month, day] = parsedValue.split("-").map(Number);
-    const date = new Date(year, month - 1, day);
-    return /^\d{4}-\d{2}-\d{2}$/.test(parsedValue)
-      && date.getFullYear() === year
-      && date.getMonth() === month - 1
-      && date.getDate() === day
-      ? parsedValue
-      : defaultValue;
+    return parseDateInputValue(parsedValue) === undefined ? defaultValue : parsedValue;
   },
   number<T extends number | undefined>(value: unknown, defaultValue: T): number | T {
     if (value === null || value === undefined || (typeof value === "string" && value.trim() === "")) {
@@ -100,8 +98,20 @@ function getDefaultValue(value: unknown, defaultValue: unknown): unknown {
   }
 }
 
-export function validateValue<T>(value: unknown, defaultValue: T, validator?: Validators<T>): T {
+function applyValidators<T>(value: unknown, defaultValue: T, validator: ValidatorValue<T>): T {
   if (typeof validator === "function") return validator(value, defaultValue);
+
+  let validatedValue = value;
+  for (const currentValidator of validator) {
+    validatedValue = currentValidator(validatedValue, defaultValue);
+  }
+  return validatedValue as T;
+}
+
+export function validateValue<T>(value: unknown, defaultValue: T, validator?: Validators<T>): T {
+  if (typeof validator === "function" || Array.isArray(validator)) {
+    return applyValidators(value, defaultValue, validator as ValidatorValue<T>);
+  }
   if (!isPlainObject(defaultValue) || !isPlainObject(value)) {
     return getDefaultValue(value, defaultValue) as T;
   }
@@ -113,7 +123,7 @@ export function validateValue<T>(value: unknown, defaultValue: T, validator?: Va
     const propertyValidator = validatorRecord?.[property];
     validatedValue[property] = propertyValidator === undefined
       ? getDefaultValue(inputValue[property as string], defaultValue[property])
-      : propertyValidator(inputValue[property as string], defaultValue[property]);
+      : applyValidators(inputValue[property as string], defaultValue[property], propertyValidator);
   }
   return validatedValue as T;
 }

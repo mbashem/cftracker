@@ -1,9 +1,8 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import useAdvancedState, { type SearchRecord } from "../../hooks/useAdvancedState";
 import { type ValidatorRecord, validators } from "../../util/validators";
 import { Verdict } from "../../types/CF/Submission";
 import { StorageService } from "../../util/StorageService";
-import { RATING_CONSTANTS } from "../../util/cf";
 import { SearchKeys } from "../../util/constants";
 
 export interface ProblemFilter {
@@ -18,23 +17,6 @@ export interface ProblemFilter {
   search: string;
 }
 
-export const CONTEST_ID_RANGE = {
-  min: 1,
-  max: 4000,
-} as const;
-
-const DEFAULT_PROBLEM_FILTER: ProblemFilter = {
-  perPage: 100,
-  minRating: RATING_CONSTANTS.min,
-  maxRating: RATING_CONSTANTS.max,
-  showUnrated: true,
-  minContestId: CONTEST_ID_RANGE.min,
-  maxContestId: CONTEST_ID_RANGE.max,
-  minContestDate: undefined,
-  maxContestDate: undefined,
-  search: "",
-};
-
 export type UpdateProblemFilter = Partial<ProblemFilter> | ((filter: ProblemFilter) => Partial<ProblemFilter>);
 
 interface ProblemState extends ProblemFilter {
@@ -44,12 +26,28 @@ interface ProblemState extends ProblemFilter {
 }
 
 const DEFAULT_SOLVE_STATUS = [Verdict.SOLVED, Verdict.ATTEMPTED, Verdict.UNSOLVED];
-const DEFAULT_PROBLEM_STATE: ProblemState = {
-  ...DEFAULT_PROBLEM_FILTER,
-  tags: [],
-  solveStatus: DEFAULT_SOLVE_STATUS,
-  selected: 0,
-};
+
+function createDefaultProblemState(
+  minRating: number,
+  maxRating: number,
+  minContestId: number,
+  maxContestId: number,
+): ProblemState {
+  return {
+    perPage: 100,
+    minRating,
+    maxRating,
+    showUnrated: true,
+    minContestId,
+    maxContestId,
+    minContestDate: undefined,
+    maxContestDate: undefined,
+    search: "",
+    tags: [],
+    solveStatus: DEFAULT_SOLVE_STATUS,
+    selected: 0,
+  };
+}
 const problemSearchKeys = {
   perPage: SearchKeys.PerPage,
   minRating: SearchKeys.MinRating,
@@ -77,9 +75,21 @@ const problemValidators = {
   selected: validators.nonNegativeInteger,
 } satisfies ValidatorRecord<ProblemState>;
 
-function useProblemState(useStorage: boolean) {
+function useProblemState(
+  useStorage: boolean,
+  minRating: number,
+  maxRating: number,
+  minContestId: number,
+  maxContestId: number,
+) {
+  const [defaultState] = useState(() => createDefaultProblemState(
+    minRating,
+    maxRating,
+    minContestId,
+    maxContestId,
+  ));
   const [state, setState] = useAdvancedState(
-    DEFAULT_PROBLEM_STATE,
+    defaultState,
     useStorage ? StorageService.Keys.Problem.State : undefined,
     problemSearchKeys,
     problemValidators,

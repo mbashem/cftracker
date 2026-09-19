@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import useSubmissionsStore from "../../data/hooks/useSubmissionsStore";
 import useTheme from "../../data/hooks/useTheme";
-import { useAppSelector } from "../../data/store";
+import useAppStateStore from "../../data/hooks/useAppStateStore";
 import useAppSearchParams from "../../hooks/useSearchParam";
+import useSearchParamState from "../../hooks/useSearchParamState";
 import Contest, { ContestCat } from "../../types/CF/Contest";
 import { Verdict } from "../../types/CF/Submission";
 import { StorageService } from "../../util/StorageService";
@@ -28,13 +29,14 @@ export interface Filter {
 export type UpdateFilter = Partial<Filter> | ((filter: Filter) => Partial<Filter>);
 
 function useContestPage() {
-	const appState = useAppSelector((state) => state.appState);
+	const { appState } = useAppStateStore();
 	const { problemList } = useProblemsStore();
 
 	const { theme } = useTheme();
 	const { getSearchParam, updateSearchParam, deleteSearchParam, consumeSearchParams } = useAppSearchParams();
 	const searchTextFromUrl = getSearchParam(SearchKeys.Search);
-	const isRandomRequested = validators.boolean(getSearchParam(SearchKeys.Random), false);
+	const [randomSearchValue] = useSearchParamState<boolean>(SearchKeys.Random);
+	const isRandomRequested = validators.boolean(randomSearchValue, false);
 	const { submissions: userSubmissions } = useSubmissionsStore();
 	const { contests, loading: isContestListLoading, error: contestListError } = useContestStore();
 	const state = useMemo(
@@ -157,8 +159,8 @@ function useContestPage() {
 	useEffect(() => {
 		if (!isRandomRequested) return;
 
-		setHasPendingRandomRequest(true);
 		consumeSearchParams([SearchKeys.Random]);
+		setHasPendingRandomRequest(true);
 	}, [consumeSearchParams, isRandomRequested]);
 
 	useEffect(() => {

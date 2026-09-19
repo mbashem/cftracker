@@ -4,15 +4,19 @@ import { ThemesType } from '../../util/Theme';
 export interface AppState {
   readonly minRating: number;
   readonly maxRating: number;
+  readonly minContestId: number;
+  readonly maxContestId: number;
   errorLog: string[];
   successLog: string[];
   themeMod: ThemesType;
   loaded: boolean;
 }
 
-const initAppState: AppState = {
+export const initialAppState: AppState = {
   minRating: 0,
   maxRating: 4000,
+  minContestId: 1,
+  maxContestId: 4000,
   errorLog: [],
   successLog: [],
   themeMod: ThemesType.DARK,
@@ -21,7 +25,7 @@ const initAppState: AppState = {
 
 const appSlice = createSlice({
   name: 'app',
-  initialState: initAppState,
+  initialState: initialAppState,
   reducers: {
     clearErrorLog(state) {
       state.errorLog = [];

@@ -4,12 +4,13 @@ import useUserStore from "../../data/hooks/useUserStore";
 import { codeforcesApi } from "../../data/queries/codeforcesQuery";
 import { useAppSelector } from "../../data/store";
 import {
+  getProblemContestIdRange,
   getHomeStatistics,
   getSnapshotDateRange,
+  isRatedProblem,
   SnapshotPeriod,
   type SnapshotCustomRange,
 } from "./homeStatistics";
-import { getProblemContestIdRange, isRatedProblem } from "../../util/submissionProblems";
 import usePersistentState from "../../hooks/usePersistentState";
 import { StorageService } from "../../util/StorageService";
 
@@ -36,14 +37,11 @@ function useHomePage() {
     [rawSubmissions, snapshotRange]
   );
   const statisticDetails = useMemo(() => {
-    const solvedProblems = statistics.solvedProblems
-      .map((submission) => submission.problem);
+    const solvedProblems = statistics.solvedProblems;
     return {
       solvedContestRange: getProblemContestIdRange(solvedProblems),
       ratedContestRange: getProblemContestIdRange(solvedProblems.filter(isRatedProblem)),
-      attemptedContestRange: getProblemContestIdRange(
-        statistics.attemptedUnsolvedProblems.map((submission) => submission.problem),
-      ),
+      attemptedContestRange: getProblemContestIdRange(statistics.attemptedUnsolvedProblems),
     };
   }, [statistics]);
   const handles = userList.handles;

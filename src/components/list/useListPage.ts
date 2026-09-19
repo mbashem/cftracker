@@ -57,9 +57,7 @@ function useListPage() {
 
 	function addButtonClicked() {
 		if (activeList === undefined) return;
-		navigateTo(Path.PROBLEMS, new URLSearchParams({
-			[SearchKeys.ListId]: activeList.id.toString(),
-		}));
+		navigateTo(Path.PROBLEMS, { [SearchKeys.ListId]: activeList.id });
 	}
 
 	async function deleteListButtonClicked() {
