@@ -26,7 +26,10 @@ function App() {
   const { theme } = useTheme();
 
   return (
-    <div className={"App container-fluid p-0 min-vh-100 d-flex  flex-column " + theme.bgText}>
+    <div
+      className={"App container-fluid p-0 min-vh-100 d-flex  flex-column " + theme.bgText}
+      style={theme.variables}
+    >
       <div className="menu w-100">
         {" "}
         <Menu />
@@ -43,7 +46,8 @@ function App() {
         >
           <Routes>
             <Route path="/" element={<HomePage />} />
-            <Route path={Path.PROBLEMS} element={<ProblemPage />} />
+            <Route path={Path.PROBLEMS} element={<ProblemPage key="problems" />} />
+            <Route path={Path.RANDOM_PROBLEM} element={<ProblemPage key="random-problem" />} />
             <Route path={Path.CONTESTS} element={<ContestPage />} />
             <Route path={Path.Stats} element={<StatPage />} />
             <Route path={Path.Issues} element={<IssuePage />} />

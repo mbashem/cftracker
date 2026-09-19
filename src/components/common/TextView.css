@@ -1,0 +1,23 @@
+.common-text-view__item {
+  background: var(--theme-accent-soft);
+  border: 1px solid var(--theme-accent-border);
+  color: inherit;
+  font: inherit;
+  font-size: 0.875rem;
+  padding: 0.4rem 0.75rem;
+}
+
+button.common-text-view__item {
+  cursor: pointer;
+}
+
+.common-text-view__item--inverse {
+  background: color-mix(in srgb, currentColor 14%, transparent);
+  border-color: color-mix(in srgb, currentColor 45%, transparent);
+  color: var(--bs-white);
+}
+
+button.common-text-view__item--inverse:hover,
+button.common-text-view__item--inverse:focus-visible {
+  background: color-mix(in srgb, currentColor 22%, transparent);
+}

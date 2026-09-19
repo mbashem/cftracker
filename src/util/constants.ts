@@ -5,5 +5,20 @@ export const ATTEMPTED_CONTESTS = "attemptedContests";
 export const EMPTY_ARRAY: readonly never[] = Object.freeze([]);
 export const enum SearchKeys {
 	Search = "q",
-	ListId = "listId"
+	ListId = "listId",
+	Random = "random",
+	Status = "status",
+	SubmittedAfter = "submittedAfter",
+	SubmittedBefore = "submittedBefore",
+	MinRating = "minRating",
+	MaxRating = "maxRating",
+	ShowUnrated = "showUnrated",
+	MinContestId = "minContestId",
+	MaxContestId = "maxContestId",
+	MinContestDate = "minContestDate",
+	MaxContestDate = "maxContestDate",
+	Tags = "tags",
+	PerPage = "perPage",
+	Page = "page",
+	UseFilterStorage = "useFilterStorage"
 }

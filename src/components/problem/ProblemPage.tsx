@@ -1,9 +1,20 @@
+import { faCalendarDays } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import Card from "../common/cards/Card";
 import Filter from "../common/Filter";
 import Loading from "../common/Loading";
 import Pagination from "../common/Pagination";
 import ProblemFilterModal from "./ProblemFilterModal";
 import ProblemTable from "./problem-list/ProblemTable";
 import useProblemPage from "./useProblemPage";
+import { formatTimestampDate } from "../../util/time";
+
+function getSubmissionRangeText(after?: number, before?: number) {
+  const range = [];
+  if (after !== undefined) range.push(`From ${formatTimestampDate(after)}`);
+  if (before !== undefined) range.push(`Before ${formatTimestampDate(before)}`);
+  return range.join(" · ");
+}
 
 function ProblemPage() {
   const {
@@ -16,6 +27,7 @@ function ProblemPage() {
     filter,
     filterState,
     ratingRange,
+    contestIdRange,
     solveStatus,
     solved,
     attempted,
@@ -24,6 +36,7 @@ function ProblemPage() {
     showAddToList,
     problemsAddedToList,
     isRandomActive,
+    submissionRange,
     updateFilter,
     setSelected,
     setSolveStatus,
@@ -37,6 +50,17 @@ function ProblemPage() {
   return (
     <>
       <div>
+        {(submissionRange.after !== undefined || submissionRange.before !== undefined) && (
+          <div className="mb-3" role="status">
+            <Card
+              type="inline"
+              title="Submission range"
+              description={getSubmissionRangeText(submissionRange.after, submissionRange.before)}
+              icon={<FontAwesomeIcon icon={faCalendarDays} />}
+              innerClassName="container px-0 py-3"
+            />
+          </div>
+        )}
         <Filter
           search={filter.search}
           searchName="problemSearch"
@@ -55,10 +79,10 @@ function ProblemPage() {
         >
           <ProblemFilterModal
             theme={theme}
-            appState={state.appState}
             filter={filter}
             filterState={filterState}
             ratingRange={ratingRange}
+            contestIdRange={contestIdRange}
             selectableVerdictStatuses={selectableVerdictStatuses}
             solveStatus={solveStatus}
             tags={tagList.tags}

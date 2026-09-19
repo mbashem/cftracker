@@ -50,4 +50,20 @@ export default defineConfig([
       "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
     },
   },
+  {
+    files: ["src/**/*.{ts,tsx}"],
+    ignores: ["src/hooks/useAppNavigation.ts"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [{
+            name: "react-router",
+            importNames: ["useNavigate"],
+            message: "Use useAppNavigation instead.",
+          }],
+        },
+      ],
+    },
+  },
 ]);

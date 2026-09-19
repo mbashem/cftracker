@@ -1,18 +1,11 @@
-import { useAppDispatch, useAppSelector } from "../store";
-import Theme, { ThemesType } from "../../util/Theme";
+import Theme from "../../util/Theme";
 import { useMemo } from "react";
-import { changeTheme } from "../reducers/appSlice";
+import useAppStateStore from "./useAppStateStore";
 
 function useTheme() {
-	const themeMod = useAppSelector(state => state.appState.themeMod);
+	const { appState, changeThemeMod } = useAppStateStore();
 
-	const theme = useMemo(() => new Theme(themeMod), [themeMod]);
-
-	const dispatch = useAppDispatch();
-
-	function changeThemeMod(newThemeMod: ThemesType) {
-		dispatch(changeTheme(newThemeMod));
-	}
+	const theme = useMemo(() => new Theme(appState.themeMod), [appState.themeMod]);
 
 	return {
 		theme,

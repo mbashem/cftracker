@@ -12,7 +12,7 @@ export interface AppState {
   loaded: boolean;
 }
 
-const initAppState: AppState = {
+export const initialAppState: AppState = {
   minRating: 0,
   maxRating: 4000,
   minContestId: 1,
@@ -25,7 +25,7 @@ const initAppState: AppState = {
 
 const appSlice = createSlice({
   name: 'app',
-  initialState: initAppState,
+  initialState: initialAppState,
   reducers: {
     clearErrorLog(state) {
       state.errorLog = [];

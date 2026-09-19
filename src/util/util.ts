@@ -24,8 +24,8 @@ export function getUserInfoURL(handle: string) {
 }
 
 /** Splits a trimmed string by the provided separator. */
-export function stringToArray(s: string, separator: string): string[] {
-  return s.trim().split(separator);
+export function splitStringBySeparator(value: string, separator: string): string[] {
+  return value.trim().split(separator);
 }
 
 /** Returns the character shifted by the given character-code offset. */

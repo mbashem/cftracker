@@ -1,7 +1,7 @@
 import Problem from "../../../types/CF/Problem";
 import { Verdict } from "../../../types/CF/Submission";
 import Theme, { ThemesType } from "../../../util/Theme";
-import { getProblemUrl, isDefined } from "../../../util/util";
+import { getProblemUrl, isDefined, isNumber } from "../../../util/util";
 
 interface ContestProblemCellProps {
   problem: Problem;
@@ -60,12 +60,12 @@ function ContestProblemCell({
         className={
           (len !== 3 ? "text-truncate " : "") +
           "text-decoration-none wrap font-bold d-inline-block  " +
-          (showColor ? theme.color(problem.rating ?? 0) : theme.text)
+          (showColor && isNumber(problem.rating) ? theme.color(problem.rating) : theme.text)
         }
         target="_blank"
         rel="noreferrer"
         tabIndex={0}
-        title={problem.name + ",Rating:" + (problem.rating ?? 0 > 0 ? problem.rating : "Not Rated")}
+        title={problem.name + ",Rating:" + (isNumber(problem.rating) ? problem.rating : "Not Rated")}
         data-bs-html="true"
         data-bs-toggle="tooltip"
         data-bs-placement="top"
@@ -79,7 +79,7 @@ function ContestProblemCell({
           <span className="fs-6">
             <br />
             {len == 3 ? "" : "("}
-            {problem.rating ? problem.rating : "N/A"}
+            {isNumber(problem.rating) ? problem.rating : "N/A"}
             {len == 3 ? "" : ")"}
           </span>
         ) : (

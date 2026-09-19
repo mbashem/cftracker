@@ -3,7 +3,7 @@ import logger from "redux-logger";
 import { TypedUseSelectorHook, useDispatch, useSelector } from "react-redux";
 
 import userSubmissions from './reducers/userSubmissionsSlice';
-import appSlice from './reducers/appSlice';
+import appSlice, { initialAppState } from './reducers/appSlice';
 import userSlice from './reducers/userSlice';
 import { userApi } from './queries/userQuery';
 import { StorageService } from '../util/StorageService';
@@ -11,6 +11,7 @@ import { listApi } from './queries/listQuery';
 import { codeforcesApi } from './queries/codeforcesQuery';
 import { userSubmissionsListener } from './listeners/userSubmissionsListener';
 import { IS_DEBUG_MODE } from '../util/env';
+import { validateValue } from '../util/validators';
 
 const IS_REDUX_LOGGING_ENABLED = IS_DEBUG_MODE || sessionStorage.getItem("redux-debug") === "true";
 
@@ -37,10 +38,13 @@ function saveToLocalStorage(state: RootState) {
 
 function loadFromLocalStorage(): any {
   try {
-    const persedData = StorageService.getObject(StorageService.Keys.StateV2, {});
+    const persedData = StorageService.getObject<Record<string, unknown>>(StorageService.Keys.StateV2, {});
 
     console.log(persedData);
-    return persedData;
+    return {
+      ...persedData,
+      appState: validateValue(persedData.appState, initialAppState),
+    };
   } catch (e) {
     console.log(e);
     return {};

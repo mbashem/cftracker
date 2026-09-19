@@ -1,4 +1,3 @@
-import type { AppState } from "../../data/reducers/appSlice";
 import { Verdict } from "../../types/CF/Submission";
 import Theme from "../../util/Theme";
 import CustomModal from "../common/CustomModal";
@@ -7,14 +6,15 @@ import InputChecked from "../common/forms/Input/InputChecked";
 import InputDateRange from "../common/forms/Input/InputDateRange";
 import InputRange from "../common/forms/Input/InputRange";
 import InputRangeSlider from "../common/forms/Input/InputRangeSlider";
-import type { ProblemFilter, ProblemFilterState, ProblemRatingRange, UpdateProblemFilter } from "./useProblemPage";
+import type { ProblemFilterState, ProblemRatingRange } from "./useProblemPage";
+import { ProblemFilter, UpdateProblemFilter } from "./useProblemState";
 
 interface ProblemFilterModalProps {
   theme: Theme;
-  appState: AppState;
   filter: ProblemFilter;
   filterState: ProblemFilterState;
   ratingRange: ProblemRatingRange;
+  contestIdRange: { min: number; max: number };
   selectableVerdictStatuses: Verdict[];
   solveStatus: Set<Verdict>;
   tags: string[];
@@ -25,10 +25,10 @@ interface ProblemFilterModalProps {
 
 function ProblemFilterModal({
   theme,
-  appState,
   filter,
   filterState,
   ratingRange,
+  contestIdRange,
   selectableVerdictStatuses,
   solveStatus,
   tags,
@@ -69,8 +69,8 @@ function ProblemFilterModal({
         />
       </div>
       <InputRange
-        min={appState.minContestId}
-        max={appState.maxContestId}
+        min={contestIdRange.min}
+        max={contestIdRange.max}
         minValue={filter.minContestId}
         maxValue={filter.maxContestId}
         theme={theme}
@@ -81,7 +81,7 @@ function ProblemFilterModal({
         onMaxChange={(num: number) => updateFilter({ maxContestId: num })}
       />
       <InputDateRange
-        name="Date"
+        name="Contest Date"
         minValue={filter.minContestDate}
         maxValue={filter.maxContestDate}
         theme={theme}

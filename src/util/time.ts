@@ -1,18 +1,21 @@
-export function formateDate(time: number) {
-	const date = new Date(time * 1000);
-	//console.log(date);
-	return (
-		date.getDate() +
-		"/" +
-		(date.getMonth() + 1) +
-		"/" +
-		date.getFullYear() +
-		" " +
-		date.getHours() +
-		":" +
-		date.getMinutes()
-	);
-};
+const DATE_LOCALE = "en-GB";
+const DATE_FORMATTER = new Intl.DateTimeFormat(DATE_LOCALE);
+const DATE_TIME_FORMATTER = new Intl.DateTimeFormat(DATE_LOCALE, {
+	dateStyle: "short",
+	timeStyle: "short",
+});
+
+export function formatDate(date: Date) {
+	return DATE_FORMATTER.format(date);
+}
+
+export function formatTimestampDate(timestampSeconds: number) {
+	return formatDate(new Date(timestampSeconds * 1_000));
+}
+
+export function formatTimestampDateTime(timestampSeconds: number) {
+	return DATE_TIME_FORMATTER.format(new Date(timestampSeconds * 1_000));
+}
 
 export function formatDateInputValue(date: Date) {
 	const year = date.getFullYear().toString().padStart(4, "0");
@@ -20,6 +23,22 @@ export function formatDateInputValue(date: Date) {
 	const day = date.getDate().toString().padStart(2, "0");
 
 	return `${year}-${month}-${day}`;
+}
+
+export function parseDateInputValue(value: string) {
+	if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return undefined;
+	const [year, month, day] = value.split("-").map(Number);
+	const date = new Date(year, month - 1, day);
+	return date.getFullYear() === year
+		&& date.getMonth() === month - 1
+		&& date.getDate() === day
+		? date
+		: undefined;
+}
+
+export function formatDateInputLabel(value: string) {
+	const date = parseDateInputValue(value);
+	return date === undefined ? value : formatDate(date);
 }
 
 export function getDaysInYear(year: number) {

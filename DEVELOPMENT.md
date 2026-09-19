@@ -53,6 +53,8 @@ Use these local patterns when adding or refactoring pages:
 
 Use `usePersistentState` for page-local state that must survive reloads. It delegates reads and writes to `StorageService`.
 
+Use `useAdvancedState` when the same state can be persisted and represented in URL search parameters. Its optional second argument is the storage key, its optional third argument maps state properties to search keys, and its optional fourth argument validates and parses incoming values. Omit a storage or search argument to disable that mechanism.
+
 Persisted storage key names belong under `StorageService.Keys`. Do not define storage key strings inside page hooks.
 
 `StorageService` owns the low-level storage handlers:
@@ -62,6 +64,12 @@ Persisted storage key names belong under `StorageService.Keys`. Do not define st
 - `getMap` / `saveMap`
 
 ## Main Feature Areas
+
+### Home
+
+Location: `src/components/home/`
+
+The Home page provides handle-aware weekly, monthly, yearly, and custom snapshots with quick links into existing problem and contest flows. Custom date ranges may be open-ended and the last selection is saved locally. Statistics are derived from raw submissions so shared-problem expansion does not inflate counts. One-shot `random` and `status` query parameters activate the corresponding persisted filters and selection behaviour on destination pages.
 
 ### Contests
 
