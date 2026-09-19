@@ -1,5 +1,5 @@
-import type Comparator from "./Comparator.ts";
-import { Compared } from "./Comparator.ts";
+import type Comparator from "./Comparator";
+import { Compared } from "./Comparator";
 
 type Compare<T> = (first: T, second: T) => number;
 

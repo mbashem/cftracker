@@ -1,5 +1,5 @@
-import type Comparator from "../../util/Comparator.ts";
-import { Compared } from "../../util/Comparator.ts";
+import type Comparator from "../../util/Comparator";
+import { Compared } from "../../util/Comparator";
 
 export interface ProblemLiteData {
   contestId: number;

@@ -1,9 +1,9 @@
 import { type Dispatch, type SetStateAction, useCallback, useEffect, useState } from "react";
-import useSearchParamState, { type SearchKey } from "./useSearchParamState.ts";
-import { StorageService } from "../util/StorageService.ts";
-import { validateValue, type Validators } from "../util/validators.ts";
+import useSearchParamState, { type SearchKey } from "./useSearchParamState";
+import { StorageService } from "../util/StorageService";
+import { validateValue, type Validators } from "../util/validators";
 
-export type { SearchKey, SearchRecord } from "./useSearchParamState.ts";
+export type { SearchKey, SearchRecord } from "./useSearchParamState";
 
 function useAdvancedState<T>(
   defaultValue: T,
