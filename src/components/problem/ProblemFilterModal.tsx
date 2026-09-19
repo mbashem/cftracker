@@ -6,14 +6,15 @@ import InputChecked from "../common/forms/Input/InputChecked";
 import InputDateRange from "../common/forms/Input/InputDateRange";
 import InputRange from "../common/forms/Input/InputRange";
 import InputRangeSlider from "../common/forms/Input/InputRangeSlider";
-import type { ProblemFilter, ProblemFilterState, ProblemRatingRange, UpdateProblemFilter } from "./useProblemPage";
-import { CONTEST_ID_RANGE } from "./useProblemState";
+import type { ProblemFilterState, ProblemRatingRange } from "./useProblemPage";
+import { ProblemFilter, UpdateProblemFilter } from "./useProblemState";
 
 interface ProblemFilterModalProps {
   theme: Theme;
   filter: ProblemFilter;
   filterState: ProblemFilterState;
   ratingRange: ProblemRatingRange;
+  contestIdRange: { min: number; max: number };
   selectableVerdictStatuses: Verdict[];
   solveStatus: Set<Verdict>;
   tags: string[];
@@ -27,6 +28,7 @@ function ProblemFilterModal({
   filter,
   filterState,
   ratingRange,
+  contestIdRange,
   selectableVerdictStatuses,
   solveStatus,
   tags,
@@ -67,8 +69,8 @@ function ProblemFilterModal({
         />
       </div>
       <InputRange
-        min={CONTEST_ID_RANGE.min}
-        max={CONTEST_ID_RANGE.max}
+        min={contestIdRange.min}
+        max={contestIdRange.max}
         minValue={filter.minContestId}
         maxValue={filter.maxContestId}
         theme={theme}

@@ -1,9 +1,9 @@
 import { type Dispatch, type SetStateAction, useCallback, useEffect, useState } from "react";
-import useSearchParamState, { type SearchKey } from "./useSearchParamState";
-import { StorageService } from "../util/StorageService";
-import { validateValue, type Validators } from "../util/validators";
+import useSearchParamState, { type SearchKey } from "./useSearchParamState.ts";
+import { StorageService } from "../util/StorageService.ts";
+import { validateValue, type Validators } from "../util/validators.ts";
 
-export type { SearchKey, SearchRecord } from "./useSearchParamState";
+export type { SearchKey, SearchRecord } from "./useSearchParamState.ts";
 
 function useAdvancedState<T>(
   defaultValue: T,
@@ -11,13 +11,15 @@ function useAdvancedState<T>(
   searchKey?: SearchKey<T>,
   validator?: Validators<T>,
 ): [T, Dispatch<SetStateAction<T>>] {
-  const [storedValue] = useState(() => storageKey === undefined
-    ? defaultValue
-    : validateValue(StorageService.getValue(storageKey, defaultValue), defaultValue, validator));
   const [searchValue, setSearchValue] = useSearchParamState<T>(searchKey);
-  const [value, setValue] = useState(() => searchValue === undefined
-    ? storedValue
-    : validateValue(searchValue, storedValue, validator));
+  const [value, setValue] = useState(() => {
+    const storedValue = storageKey === undefined
+      ? defaultValue
+      : validateValue(StorageService.getValue(storageKey, defaultValue), defaultValue, validator);
+    return searchValue === undefined
+      ? storedValue
+      : validateValue(searchValue, storedValue, validator);
+  });
   const setSafeValue = useCallback((nextValue: unknown) => {
     setValue((previousValue) => {
       const candidateValue = typeof nextValue === "function"

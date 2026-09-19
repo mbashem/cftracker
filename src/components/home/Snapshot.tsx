@@ -1,14 +1,16 @@
-import useAppNavigation from "../../hooks/useAppNavigation";
+import { memo } from "react";
+import useAppNavigation, { type NavigationSearchParams } from "../../hooks/useAppNavigation";
 import useTheme from "../../data/hooks/useTheme";
 import { Verdict } from "../../types/CF/Submission";
 import { SearchKeys } from "../../util/constants";
 import { Path } from "../../util/route/path";
-import type { ContestIdRange } from "../../util/submissionProblems";
+import { formatDateInputLabel } from "../../util/time";
 import CheckList from "../common/forms/CheckList";
 import InputDateRange from "../common/forms/Input/InputDateRange";
 import Card from "../common/cards/Card";
 import {
   SnapshotPeriod,
+  type ContestIdRange,
   type HomeStatistics,
   type SnapshotCustomRange,
   type SnapshotDateRange,
@@ -39,19 +41,19 @@ function formatNumber(value: number) {
   return value.toLocaleString("en-GB");
 }
 
-function addContestRange(searchParams: URLSearchParams, range: ContestIdRange | undefined) {
-  if (range === undefined) return;
-  searchParams.set(SearchKeys.MinContestId, String(range.min));
-  searchParams.set(SearchKeys.MaxContestId, String(range.max));
+function getContestRangeSearchParams(range: ContestIdRange | undefined): NavigationSearchParams {
+  if (range === undefined) return {};
+  return {
+    [SearchKeys.MinContestId]: range.min,
+    [SearchKeys.MaxContestId]: range.max,
+  };
 }
 
-function addSubmissionRange(searchParams: URLSearchParams, range: SnapshotDateRange) {
-  if (range.startTimeSeconds !== undefined) {
-    searchParams.set(SearchKeys.SubmittedAfter, String(range.startTimeSeconds));
-  }
-  if (range.endTimeSeconds !== undefined) {
-    searchParams.set(SearchKeys.SubmittedBefore, String(range.endTimeSeconds));
-  }
+function getSubmissionRangeSearchParams(range: SnapshotDateRange): NavigationSearchParams {
+  return {
+    [SearchKeys.SubmittedAfter]: range.startTimeSeconds,
+    [SearchKeys.SubmittedBefore]: range.endTimeSeconds,
+  };
 }
 
 function getPeriodText(period: SnapshotPeriod) {
@@ -70,10 +72,10 @@ function getPeriodText(period: SnapshotPeriod) {
 function getRangeLabel(period: SnapshotPeriod, customRange: SnapshotCustomRange) {
   if (period !== SnapshotPeriod.CUSTOM) return `Current ${period.toLowerCase()}`;
   if (customRange.minDate !== undefined && customRange.maxDate !== undefined) {
-    return `${customRange.minDate} to ${customRange.maxDate}`;
+    return `${formatDateInputLabel(customRange.minDate)} to ${formatDateInputLabel(customRange.maxDate)}`;
   }
-  if (customRange.minDate !== undefined) return `Since ${customRange.minDate}`;
-  if (customRange.maxDate !== undefined) return `Through ${customRange.maxDate}`;
+  if (customRange.minDate !== undefined) return `Since ${formatDateInputLabel(customRange.minDate)}`;
+  if (customRange.maxDate !== undefined) return `Through ${formatDateInputLabel(customRange.maxDate)}`;
   return "All time";
 }
 
@@ -101,21 +103,23 @@ function Snapshot({
   const unavailableValue = "—";
   const periodText = getPeriodText(period);
   const rangeDayCount = getRangeDayCount(range);
-  const detailsParams = new URLSearchParams({
+  const detailsParams: NavigationSearchParams = {
     [SearchKeys.Status]: Verdict.SOLVED,
-    [SearchKeys.UseFilterStorage]: "false",
-  });
-  addSubmissionRange(detailsParams, range);
-  addContestRange(detailsParams, statisticDetails.solvedContestRange);
-  const averageRatingDetailsParams = new URLSearchParams(detailsParams);
-  averageRatingDetailsParams.set(SearchKeys.ShowUnrated, "false");
-  addContestRange(averageRatingDetailsParams, statisticDetails.ratedContestRange);
-  const attemptedDetailsParams = new URLSearchParams({
+    [SearchKeys.UseFilterStorage]: false,
+    ...getSubmissionRangeSearchParams(range),
+    ...getContestRangeSearchParams(statisticDetails.solvedContestRange),
+  };
+  const averageRatingDetailsParams: NavigationSearchParams = {
+    ...detailsParams,
+    [SearchKeys.ShowUnrated]: false,
+    ...getContestRangeSearchParams(statisticDetails.ratedContestRange),
+  };
+  const attemptedDetailsParams: NavigationSearchParams = {
     [SearchKeys.Status]: Verdict.ATTEMPTED,
-    [SearchKeys.UseFilterStorage]: "false",
-  });
-  addSubmissionRange(attemptedDetailsParams, range);
-  addContestRange(attemptedDetailsParams, statisticDetails.attemptedContestRange);
+    [SearchKeys.UseFilterStorage]: false,
+    ...getSubmissionRangeSearchParams(range),
+    ...getContestRangeSearchParams(statisticDetails.attemptedContestRange),
+  };
   const cards = [
     {
       label: `Solved ${periodText}`,
@@ -204,4 +208,4 @@ function Snapshot({
   );
 }
 
-export default Snapshot;
+export default memo(Snapshot);

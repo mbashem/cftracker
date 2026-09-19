@@ -4,7 +4,9 @@ import useSubmissionsStore from "../../data/hooks/useSubmissionsStore";
 import useTheme from "../../data/hooks/useTheme";
 import useList from "../../data/hooks/useListApi";
 import useAppSearchParams from "../../hooks/useSearchParam";
+import useSearchParamState from "../../hooks/useSearchParamState";
 import useProblemsStore from "../../data/hooks/useProblemsStore";
+import useAppStateStore from "../../data/hooks/useAppStateStore";
 import useToast from "../../hooks/useToast";
 import { ListWithItem } from "../../types/list";
 import Problem from "../../types/CF/Problem";
@@ -20,12 +22,9 @@ import {
 import { validators } from "../../util/validators";
 import { sortByContestId, sortByRating, sortBySolveCount, SortOrder, SortProblemBy } from "../../util/sortMethods";
 import useContestStore from "../../data/hooks/useContestStore";
-import { useLocation } from "react-router";
 import { Path } from "../../util/route/path";
 import useProblemState from "./useProblemState";
 import useAppNavigation from "../../hooks/useAppNavigation";
-
-export type { ProblemFilter, UpdateProblemFilter } from "./useProblemState";
 
 export interface ProblemFilterState {
 	tags: Set<string>;
@@ -62,18 +61,17 @@ function getRatingRange(minRating: number, maxRating: number): ProblemRatingRang
 }
 
 function useProblemPage() {
-	const location = useLocation();
-	const { navigateTo } = useAppNavigation();
-	const { getSearchParam, searchParamsValue } = useAppSearchParams();
+	const { navigateTo, pathName } = useAppNavigation();
+	const { consumeSearchParams, getSearchParam } = useAppSearchParams();
+	const [randomSearchValue] = useSearchParamState<boolean>(SearchKeys.Random);
+	const isRandomRequested = validators.boolean(randomSearchValue, false);
 	const {
-		isRandomRequested,
 		listId,
 		submittedAfter,
 		submittedBefore,
 		useFilterStorage,
 	} = useMemo(() => {
 		return {
-			isRandomRequested: validators.boolean(getSearchParam(SearchKeys.Random), false),
 			submittedAfter: validators.nonNegativeInteger(getSearchParam(SearchKeys.SubmittedAfter), undefined),
 			submittedBefore: validators.nonNegativeInteger(getSearchParam(SearchKeys.SubmittedBefore), undefined),
 			listId: validators.positiveInteger(getSearchParam(SearchKeys.ListId), undefined),
@@ -86,6 +84,13 @@ function useProblemPage() {
 	const { theme } = useTheme();
 	const api = useList();
 	const { problemList: problemStore } = useProblemsStore();
+	const { appState } = useAppStateStore();
+	const {
+		minRating,
+		maxRating,
+		minContestId,
+		maxContestId,
+	} = appState;
 	const [problemsAddedToList, setProblemsAddedToList] = useState<Set<string>>(new Set());
 	const { contests } = useContestStore();
 	const { showErrorToast } = useToast();
@@ -99,7 +104,7 @@ function useProblemPage() {
 		setTags,
 		setSolveStatus,
 		setSelected,
-	} = useProblemState(useFilterStorage);
+	} = useProblemState(useFilterStorage, minRating, maxRating, minContestId, maxContestId);
 	const [filterSortState, setFilterSortState] = useState<ProblemSortState>({
 		sortBy: SortProblemBy.SolveCount,
 		order: SortOrder.Descending,
@@ -119,6 +124,10 @@ function useProblemPage() {
 	const ratingRange = useMemo(
 		() => getRatingRange(filter.minRating, filter.maxRating),
 		[filter.maxRating, filter.minRating]
+	);
+	const contestIdRange = useMemo(
+		() => ({ min: minContestId, max: maxContestId }),
+		[maxContestId, minContestId],
 	);
 
 	const state = useMemo(() => {
@@ -141,14 +150,11 @@ function useProblemPage() {
 	const { solved, attempted } = useMemo(() => {
 		const solved = new Set<string>();
 		const attempted = new Set<string>();
-		const filterBySubmissionDate = submittedAfter !== undefined
-			|| submittedBefore !== undefined;
-
 		for (const submission of submissions) {
-			if (filterBySubmissionDate && (
+			if (
 				(submittedAfter !== undefined && submission.creationTimeSeconds < submittedAfter)
 				|| (submittedBefore !== undefined && submission.creationTimeSeconds >= submittedBefore)
-			)) continue;
+			) continue;
 
 			const problemId = submission.contestId.toString() + submission.index;
 			if (submission.verdict === Verdict.OK) solved.add(problemId);
@@ -254,16 +260,12 @@ function useProblemPage() {
 		setRandomProblem(undefined);
 	}, [filteredProblems]);
 
-	const lastRandomRequest = useRef<string | undefined>(undefined);
 	useEffect(() => {
-		if (!isRandomRequested) {
-			lastRandomRequest.current = undefined;
-			return;
-		}
-		if (lastRandomRequest.current === searchParamsValue) return;
-		lastRandomRequest.current = searchParamsValue;
+		if (!isRandomRequested) return;
+
+		consumeSearchParams([SearchKeys.Random]);
 		setHasPendingRandomRequest(true);
-	}, [isRandomRequested, searchParamsValue]);
+	}, [consumeSearchParams, isRandomRequested]);
 
 	useEffect(() => {
 		if (!hasPendingRandomRequest || problemStore.loading) return;
@@ -277,12 +279,12 @@ function useProblemPage() {
 	}, [filteredProblems, hasPendingRandomRequest, problemStore.loading]);
 
 	const updateRandomProblem = useCallback((problem: number | undefined) => {
-		if (problem === undefined && location.pathname === Path.RANDOM_PROBLEM) {
+		if (problem === undefined && pathName === Path.RANDOM_PROBLEM) {
 			navigateTo(Path.PROBLEMS);
 			return;
 		}
 		setRandomProblem(problem);
-	}, [location.pathname, navigateTo]);
+	}, [navigateTo, pathName]);
 
 	const sortList = useCallback((sortBy: SortProblemBy) => {
 		setFilterSortState((previousFilterState) => {
@@ -344,6 +346,7 @@ function useProblemPage() {
 		filter,
 		filterState,
 		ratingRange,
+		contestIdRange,
 		solveStatus,
 		solved,
 		attempted,

@@ -1,7 +1,9 @@
 import { Verdict } from "../../types/CF/Verdict.ts";
+import type Problem from "../../types/CF/Problem.ts";
 import type Submission from "../../types/CF/Submission.ts";
 import { compareSubmissionTime } from "../../types/CF/Submission.ts";
 import lowerBound from "../../util/lowerBound.ts";
+import { parseDateInputValue } from "../../util/time.ts";
 import { isNumber } from "../../util/util.ts";
 
 const DAYS_IN_WEEK = 7;
@@ -26,19 +28,24 @@ export interface SnapshotDateRange {
   readonly endTimeSeconds?: number;
 }
 
+export interface ContestIdRange {
+  readonly min: number;
+  readonly max: number;
+}
+
 export interface HomeStatistics {
   readonly solvedCount: number;
   readonly activeDays: number;
   readonly averageSolvedRating: number | undefined;
   readonly attemptedUnsolvedCount: number;
-  readonly solvedProblems: readonly Submission[];
-  readonly attemptedUnsolvedProblems: readonly Submission[];
+  readonly solvedProblems: readonly Problem[];
+  readonly attemptedUnsolvedProblems: readonly Problem[];
 }
 
 interface SubmissionSummary {
-  readonly solvedProblems: Map<string, Submission>;
+  readonly solvedProblems: Map<string, Problem>;
   readonly activeDates: Set<string>;
-  readonly attemptedUnsolvedProblems: Map<string, Submission>;
+  readonly attemptedUnsolvedProblems: Map<string, Problem>;
 }
 
 /** Returns a new Date at local midnight on the Monday of the supplied date's week. */
@@ -54,13 +61,6 @@ function getStartOfNextWeek(referenceDate: Date): Date {
   const startOfNextWeek = getStartOfCurrentWeek(referenceDate);
   startOfNextWeek.setDate(startOfNextWeek.getDate() + DAYS_IN_WEEK);
   return startOfNextWeek;
-}
-
-function getLocalDate(dateValue: string): Date | undefined {
-  const [year, month, day] = dateValue.split("-").map(Number);
-  if (!year || !month || !day) return undefined;
-  const date = new Date(year, month - 1, day);
-  return Number.isNaN(date.getTime()) ? undefined : date;
 }
 
 export function getSnapshotDateRange(
@@ -87,8 +87,8 @@ export function getSnapshotDateRange(
       endDate = new Date(today.getFullYear() + 1, 0, 1);
       break;
     case SnapshotPeriod.CUSTOM:
-      startDate = customRange.minDate === undefined ? undefined : getLocalDate(customRange.minDate);
-      endDate = customRange.maxDate === undefined ? undefined : getLocalDate(customRange.maxDate);
+      startDate = customRange.minDate === undefined ? undefined : parseDateInputValue(customRange.minDate);
+      endDate = customRange.maxDate === undefined ? undefined : parseDateInputValue(customRange.maxDate);
       if (endDate !== undefined) endDate.setDate(endDate.getDate() + 1);
       break;
   }
@@ -99,17 +99,31 @@ export function getSnapshotDateRange(
   };
 }
 
-function isRated(submission: Submission): boolean {
-  return isNumber(submission.problem.rating);
+export function isRatedProblem(problem: Pick<Problem, "rating">): boolean {
+  return isNumber(problem.rating);
 }
 
-function preferRatedSubmission(
-  submissionsByProblem: Map<string, Submission>,
-  submission: Submission,
+export function getProblemContestIdRange(
+  problems: Iterable<Pick<Problem, "contestId">>,
+): ContestIdRange | undefined {
+  let min = Number.POSITIVE_INFINITY;
+  let max = Number.NEGATIVE_INFINITY;
+
+  for (const problem of problems) {
+    min = Math.min(min, problem.contestId);
+    max = Math.max(max, problem.contestId);
+  }
+
+  return Number.isFinite(min) && Number.isFinite(max) ? { min, max } : undefined;
+}
+
+function preferRatedProblem(
+  problemsById: Map<string, Problem>,
+  problem: Problem,
 ): void {
-  const existingSubmission = submissionsByProblem.get(submission.problem.id);
-  if (existingSubmission === undefined || (!isRated(existingSubmission) && isRated(submission))) {
-    submissionsByProblem.set(submission.problem.id, submission);
+  const existingProblem = problemsById.get(problem.id);
+  if (existingProblem === undefined || (!isRatedProblem(existingProblem) && isRatedProblem(problem))) {
+    problemsById.set(problem.id, problem);
   }
 }
 
@@ -147,18 +161,18 @@ function getSubmissionSummary(
   submissions: readonly Submission[],
   range: SnapshotDateRange,
 ): SubmissionSummary {
-  const solvedProblems = new Map<string, Submission>();
+  const solvedProblems = new Map<string, Problem>();
   const activeDates = new Set<string>();
-  const attemptedUnsolvedProblems = new Map<string, Submission>();
+  const attemptedUnsolvedProblems = new Map<string, Problem>();
 
   for (const submission of getSubmissionsInRange(submissions, range)) {
     if (submission.verdict !== Verdict.OK) {
       if (!attemptedUnsolvedProblems.has(submission.problem.id)) {
-        attemptedUnsolvedProblems.set(submission.problem.id, submission);
+        attemptedUnsolvedProblems.set(submission.problem.id, submission.problem);
       }
       continue;
     }
-    preferRatedSubmission(solvedProblems, submission);
+    preferRatedProblem(solvedProblems, submission.problem);
     activeDates.add(getLocalDateKey(submission.creationTimeSeconds));
   }
 
@@ -166,11 +180,11 @@ function getSubmissionSummary(
   return { solvedProblems, activeDates, attemptedUnsolvedProblems };
 }
 
-function calculateAverageRating(submissions: Iterable<Submission>): number | undefined {
+function calculateAverageRating(problems: Iterable<Problem>): number | undefined {
   let ratingTotal = 0;
   let ratedProblemCount = 0;
-  for (const submission of submissions) {
-    const { rating } = submission.problem;
+  for (const problem of problems) {
+    const { rating } = problem;
     if (!isNumber(rating)) continue;
     ratingTotal += rating;
     ratedProblemCount += 1;

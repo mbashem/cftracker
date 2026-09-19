@@ -5,7 +5,7 @@ import {
   type IconDefinition,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import useAppNavigation from "../../hooks/useAppNavigation";
+import useAppNavigation, { type NavigationSearchParams } from "../../hooks/useAppNavigation";
 import { Verdict } from "../../types/CF/Submission";
 import { SearchKeys } from "../../util/constants";
 import { Path } from "../../util/route/path";
@@ -16,7 +16,7 @@ interface QuickAction {
   description: string;
   icon: IconDefinition;
   path: Path;
-  searchParams: URLSearchParams;
+  searchParams: NavigationSearchParams;
 }
 
 const actions: readonly QuickAction[] = [
@@ -24,24 +24,24 @@ const actions: readonly QuickAction[] = [
     title: "Random problem",
     description: "Pick a random problem using temporary filters.",
     path: Path.RANDOM_PROBLEM,
-    searchParams: new URLSearchParams({
-      [SearchKeys.Random]: "true",
-      [SearchKeys.UseFilterStorage]: "false",
-    }),
+    searchParams: {
+      [SearchKeys.Random]: true,
+      [SearchKeys.UseFilterStorage]: false,
+    },
     icon: faDice,
   },
   {
     title: "Random contest",
     description: "Pick a random contest using your saved filters.",
     path: Path.CONTESTS,
-    searchParams: new URLSearchParams({ [SearchKeys.Random]: "true" }),
+    searchParams: { [SearchKeys.Random]: true },
     icon: faTrophy,
   },
   {
     title: "Attempted problems",
     description: "Return to problems that still need an accepted solution.",
     path: Path.PROBLEMS,
-    searchParams: new URLSearchParams({ [SearchKeys.Status]: Verdict.ATTEMPTED }),
+    searchParams: { [SearchKeys.Status]: Verdict.ATTEMPTED },
     icon: faListCheck,
   },
 ];

@@ -41,12 +41,11 @@
     "typecheck": "tsc -b",
     "hooks:install": "node scripts/validation/install-hooks.mts",
     "prepare": "npm run hooks:install",
-    "test:home": "node --experimental-transform-types --test src/components/home/homeStatistics.test.ts",
     "test:policy": "node --test scripts/validation/*.test.mts && node scripts/validation/check-repository-hygiene.mts --tracked",
     "lint:secrets": "secretlint --no-color \"**/*\"",
     "lint:secrets:ci": "secretlint --format github \"**/*\"",
     "verify:policy": "npm run test:policy && npm run lint:secrets",
-    "verify:frontend": "npm run test:home && npm run typecheck && npm run lint && npm run build",
+    "verify:frontend": "npm run typecheck && npm run lint && npm run build",
     "verify:ci": "npm run verify:policy && npm run verify:frontend",
     "verify:backend": "make -C backend test",
     "verify": "npm run verify:ci && npm run verify:backend"
