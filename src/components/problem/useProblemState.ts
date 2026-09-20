@@ -67,10 +67,13 @@ const problemValidators = {
   perPage: validators.positiveInteger,
   minRating: validators.nonNegativeInteger,
   maxRating: validators.nonNegativeInteger,
+  showUnrated: validators.boolean,
   minContestId: validators.positiveInteger,
   maxContestId: validators.positiveInteger,
   minContestDate: validators.date,
   maxContestDate: validators.date,
+  search: validators.string,
+  tags: validators.stringArray,
   solveStatus: validators.enumArray(DEFAULT_SOLVE_STATUS),
   selected: validators.nonNegativeInteger,
 } satisfies ValidatorRecord<ProblemState>;

@@ -62,6 +62,10 @@ export const validators = {
       return parsedValue as T[];
     };
   },
+  enumValue<T extends string | number>(acceptedValues: readonly T[]): Validator<T> {
+    const acceptedValueSet = new Set<unknown>(acceptedValues);
+    return (value, defaultValue) => acceptedValueSet.has(value) ? value as T : defaultValue;
+  },
 } as const;
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
@@ -72,34 +76,12 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
     && !(value instanceof Map);
 }
 
-function getDefaultValue(value: unknown, defaultValue: unknown): unknown {
-  if (Array.isArray(defaultValue)) return validators.stringArray(value, defaultValue);
-  if (defaultValue instanceof Set) {
-    const values = validators.stringArray(
-      value instanceof Set ? [...value] : value,
-      [...defaultValue] as string[],
-    );
-    return new Set(values);
-  }
-  if (defaultValue instanceof Map) return value instanceof Map ? value : defaultValue;
-  if (isPlainObject(defaultValue)) return validateValue(value, defaultValue);
-
-  switch (typeof defaultValue) {
-    case "string":
-      return validators.string(value, defaultValue);
-    case "number":
-      return validators.number(value, defaultValue);
-    case "boolean":
-      return validators.boolean(value, defaultValue);
-    case "undefined":
-      return validators.optionalString(value, defaultValue);
-    default:
-      return value !== null && typeof value === "object" ? value : defaultValue;
-  }
+function isValidator<T>(value: ValidatorValue<T>): value is Validator<T> {
+  return typeof value === "function";
 }
 
 function applyValidators<T>(value: unknown, defaultValue: T, validator: ValidatorValue<T>): T {
-  if (typeof validator === "function") return validator(value, defaultValue);
+  if (isValidator(validator)) return validator(value, defaultValue);
 
   let validatedValue = value;
   for (const currentValidator of validator) {
@@ -109,11 +91,12 @@ function applyValidators<T>(value: unknown, defaultValue: T, validator: Validato
 }
 
 export function validateValue<T>(value: unknown, defaultValue: T, validator?: Validators<T>): T {
-  if (typeof validator === "function" || Array.isArray(validator)) {
+  if (validator === undefined) return value as T;
+  if (Array.isArray(validator) || isValidator(validator as ValidatorValue<T>)) {
     return applyValidators(value, defaultValue, validator as ValidatorValue<T>);
   }
   if (!isPlainObject(defaultValue) || !isPlainObject(value)) {
-    return getDefaultValue(value, defaultValue) as T;
+    return defaultValue;
   }
 
   const validatedValue = { ...defaultValue } as Record<keyof T, unknown>;
@@ -121,9 +104,17 @@ export function validateValue<T>(value: unknown, defaultValue: T, validator?: Va
   const validatorRecord = validator as ValidatorRecord<T> | undefined;
   for (const property of Object.keys(defaultValue) as Array<keyof T>) {
     const propertyValidator = validatorRecord?.[property];
-    validatedValue[property] = propertyValidator === undefined
-      ? getDefaultValue(inputValue[property as string], defaultValue[property])
-      : applyValidators(inputValue[property as string], defaultValue[property], propertyValidator);
+    if (propertyValidator === undefined) {
+      validatedValue[property] = Object.prototype.hasOwnProperty.call(inputValue, property)
+        ? inputValue[property as string]
+        : defaultValue[property];
+      continue;
+    }
+    validatedValue[property] = applyValidators(
+      inputValue[property as string],
+      defaultValue[property],
+      propertyValidator,
+    );
   }
   return validatedValue as T;
 }
