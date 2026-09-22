@@ -9,14 +9,36 @@ test("trusts the value when no validator is provided", () => {
   expect(validateValue(value, defaultValue)).toBe(value);
 });
 
-test("trusts unvalidated object properties and defaults missing properties", () => {
+test("trusts unvalidated object properties without restoring missing properties", () => {
   const defaultValue = { page: 1, search: "default", enabled: true };
 
   expect(validateValue(
     { page: "2", search: 3 },
     defaultValue,
     { page: validators.nonNegativeInteger },
-  )).toEqual({ page: 2, search: 3, enabled: true });
+  )).toEqual({ page: 2, search: 3 });
+});
+
+test("lets validators decide how to handle missing object properties", () => {
+  const defaultValue: {
+    minContestDate: string | undefined;
+    maxContestDate: string | undefined;
+    status: string;
+  } = {
+    minContestDate: "2026-01-01",
+    maxContestDate: "2026-06-30",
+    status: "SOLVED",
+  };
+
+  expect(validateValue(
+    { status: "ATTEMPTED" },
+    defaultValue,
+    {
+      minContestDate: validators.date,
+      maxContestDate: validators.date,
+      status: validators.string,
+    },
+  )).toEqual({ status: "ATTEMPTED" });
 });
 
 test("validates a single enum value", () => {

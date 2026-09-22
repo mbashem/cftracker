@@ -199,11 +199,11 @@ test("uses inclusive start and exclusive end boundaries", () => {
   });
 });
 
-test("counts each active local date once", () => {
+test("counts each submission date once regardless of verdict", () => {
   const submissions = [
-    createSubmission({ problemId: "one", verdict: Verdict.OK, submittedAt: new Date(2026, 8, 2, 9) }),
+    createSubmission({ problemId: "one", verdict: Verdict.WRONG_ANSWER, submittedAt: new Date(2026, 8, 2, 9) }),
     createSubmission({ problemId: "two", verdict: Verdict.OK, submittedAt: new Date(2026, 8, 2, 10) }),
-    createSubmission({ problemId: "one", verdict: Verdict.OK, submittedAt: new Date(2026, 8, 3, 10) }),
+    createSubmission({ problemId: "one", verdict: Verdict.COMPILATION_ERROR, submittedAt: new Date(2026, 8, 3, 10) }),
   ];
 
   expect(getHomeStatistics(submissions, WEEK_RANGE).activeDays).toBe(2);
@@ -218,6 +218,7 @@ test("applies the selected period to attempted problems as well as solved proble
   const statistics = getHomeStatistics(submissions, WEEK_RANGE);
   expect(statistics.attemptedUnsolvedCount).toBe(1);
   expect(statistics.attemptedUnsolvedProblems[0]?.id).toBe(submissions[1].problem.id);
+  expect(statistics.activeDays).toBe(1);
 });
 
 test("combines handles so one handle's acceptance solves the problem", () => {
@@ -229,7 +230,7 @@ test("combines handles so one handle's acceptance solves the problem", () => {
 
   assertStatisticCounts(getHomeStatistics(submissions, WEEK_RANGE), {
     solvedCount: 1,
-    activeDays: 1,
+    activeDays: 2,
     averageSolvedRating: 800,
     attemptedUnsolvedCount: 1,
   });

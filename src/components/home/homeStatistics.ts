@@ -166,6 +166,7 @@ function getSubmissionSummary(
   const attemptedUnsolvedProblems = new Map<string, Problem>();
 
   for (const submission of getSubmissionsInRange(submissions, range)) {
+    activeDates.add(getLocalDateKey(submission.creationTimeSeconds));
     if (submission.verdict !== Verdict.OK) {
       if (!attemptedUnsolvedProblems.has(submission.problem.id)) {
         attemptedUnsolvedProblems.set(submission.problem.id, submission.problem);
@@ -173,7 +174,6 @@ function getSubmissionSummary(
       continue;
     }
     preferRatedProblem(solvedProblems, submission.problem);
-    activeDates.add(getLocalDateKey(submission.creationTimeSeconds));
   }
 
   for (const problemId of solvedProblems.keys()) attemptedUnsolvedProblems.delete(problemId);
