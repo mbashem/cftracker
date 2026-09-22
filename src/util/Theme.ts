@@ -55,7 +55,6 @@ export default class Theme {
   btnClose: string;
   btnDanger: string;
   btnSuccess: string;
-  variables: Record<string, string>;
 
   constructor(selected?: ThemesType) {
     switch (selected) {
@@ -73,19 +72,6 @@ export default class Theme {
 
         this.btn = "btn btn-dark";
         this.btnClose = "btn-close btn-close-white";
-        this.variables = {
-          "--theme-accent": "#79aaff",
-          "--theme-accent-border": "rgba(121, 170, 255, 0.35)",
-          "--theme-accent-soft": "rgba(121, 170, 255, 0.15)",
-          "--theme-border": "#444c56",
-          "--theme-danger-border": "rgba(220, 53, 69, 0.45)",
-          "--theme-danger-soft": "rgba(220, 53, 69, 0.12)",
-          "--theme-muted": "#adbac7",
-          "--theme-shadow": "rgba(27, 31, 36, 0.05)",
-          "--theme-shadow-hover": "rgba(27, 31, 36, 0.08)",
-          "--theme-surface": "#2d333b",
-          "--theme-surface-hover": "#343b44",
-        };
         break;
       case ThemesType.LIGHT:
       default:
@@ -102,19 +88,6 @@ export default class Theme {
 
         this.btn = "btn btn-light";
         this.btnClose = "btn-close";
-        this.variables = {
-          "--theme-accent": "#0d6efd",
-          "--theme-accent-border": "rgba(13, 110, 253, 0.35)",
-          "--theme-accent-soft": "rgba(13, 110, 253, 0.12)",
-          "--theme-border": "#d7dce2",
-          "--theme-danger-border": "rgba(220, 53, 69, 0.45)",
-          "--theme-danger-soft": "rgba(220, 53, 69, 0.12)",
-          "--theme-muted": "#5f6b76",
-          "--theme-shadow": "rgba(27, 31, 36, 0.05)",
-          "--theme-shadow-hover": "rgba(27, 31, 36, 0.08)",
-          "--theme-surface": "#ffffff",
-          "--theme-surface-hover": "#f7faff",
-        };
         break;
     }
 

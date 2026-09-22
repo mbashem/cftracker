@@ -23,6 +23,7 @@ interface SnapshotProps {
   statistics: HomeStatistics;
   statisticDetails: {
     solvedContestRange?: ContestIdRange;
+    submittedContestRange?: ContestIdRange;
     ratedContestRange?: ContestIdRange;
     attemptedContestRange?: ContestIdRange;
   };
@@ -109,6 +110,12 @@ function Snapshot({
     ...getSubmissionRangeSearchParams(range),
     ...getContestRangeSearchParams(statisticDetails.solvedContestRange),
   };
+  const activeDayDetailsParams: NavigationSearchParams = {
+    [SearchKeys.Status]: `${Verdict.SOLVED},${Verdict.ATTEMPTED}`,
+    [SearchKeys.UseFilterStorage]: false,
+    ...getSubmissionRangeSearchParams(range),
+    ...getContestRangeSearchParams(statisticDetails.submittedContestRange),
+  };
   const averageRatingDetailsParams: NavigationSearchParams = {
     ...detailsParams,
     [SearchKeys.ShowUnrated]: false,
@@ -132,8 +139,8 @@ function Snapshot({
       value: canShowStatistics
         ? `${formatNumber(statistics.activeDays)}${rangeDayCount === undefined ? "" : ` / ${formatNumber(rangeDayCount)}`}`
         : unavailableValue,
-      description: `Days with at least one accepted solution ${periodText}.`,
-      searchParams: detailsParams,
+      description: `Days with at least one submission ${periodText}.`,
+      searchParams: activeDayDetailsParams,
     },
     {
       label: "Average solved rating",

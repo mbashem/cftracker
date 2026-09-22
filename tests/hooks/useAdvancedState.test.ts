@@ -170,27 +170,50 @@ test("merges partial URL records over stored object values", async () => {
   interface FilterState {
     page: number;
     search: string;
+    minContestDate: string | undefined;
+    maxContestDate: string | undefined;
   }
 
-  localStorage.setItem("advanced-state", JSON.stringify({ page: 2, search: "stored" }));
+  localStorage.setItem("advanced-state", JSON.stringify({
+    page: 2,
+    search: "stored",
+    minContestDate: "2026-01-01",
+    maxContestDate: "2026-06-30",
+  }));
   const hook = await renderAdvancedState<FilterState>({
-    defaultValue: { page: 1, search: "default" },
+    defaultValue: {
+      page: 1,
+      search: "default",
+      minContestDate: undefined,
+      maxContestDate: undefined,
+    },
     storageKey: "advanced-state",
     searchKey: {
       page: SearchKeys.Page,
       search: SearchKeys.Search,
+      minContestDate: SearchKeys.MinContestDate,
+      maxContestDate: SearchKeys.MaxContestDate,
     },
     validator: {
       page: validators.nonNegativeInteger,
       search: validators.string,
+      minContestDate: validators.date,
+      maxContestDate: validators.date,
     },
     initialEntry: `/?${SearchKeys.Search}=url`,
   });
   try {
-    expect(hook.current.value).toEqual({ page: 2, search: "url" });
+    expect(hook.current.value).toEqual({
+      page: 2,
+      search: "url",
+      minContestDate: "2026-01-01",
+      maxContestDate: "2026-06-30",
+    });
     expect(JSON.parse(localStorage.getItem("advanced-state") ?? "")).toEqual({
       page: 2,
       search: "url",
+      minContestDate: "2026-01-01",
+      maxContestDate: "2026-06-30",
     });
   } finally {
     await hook.unmount();

@@ -40,6 +40,10 @@ function useHomePage() {
     const solvedProblems = statistics.solvedProblems;
     return {
       solvedContestRange: getProblemContestIdRange(solvedProblems),
+      submittedContestRange: getProblemContestIdRange([
+        ...solvedProblems,
+        ...statistics.attemptedUnsolvedProblems,
+      ]),
       ratedContestRange: getProblemContestIdRange(solvedProblems.filter(isRatedProblem)),
       attemptedContestRange: getProblemContestIdRange(statistics.attemptedUnsolvedProblems),
     };

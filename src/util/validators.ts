@@ -99,22 +99,21 @@ export function validateValue<T>(value: unknown, defaultValue: T, validator?: Va
     return defaultValue;
   }
 
-  const validatedValue = { ...defaultValue } as Record<keyof T, unknown>;
+  const validatedValue = { ...value } as Record<keyof T, unknown>;
   const inputValue = value as Record<string, unknown>;
-  const validatorRecord = validator as ValidatorRecord<T> | undefined;
-  for (const property of Object.keys(defaultValue) as Array<keyof T>) {
-    const propertyValidator = validatorRecord?.[property];
-    if (propertyValidator === undefined) {
-      validatedValue[property] = Object.prototype.hasOwnProperty.call(inputValue, property)
-        ? inputValue[property as string]
-        : defaultValue[property];
-      continue;
-    }
-    validatedValue[property] = applyValidators(
+  const validatorRecord = validator as ValidatorRecord<T>;
+  for (const property of Object.keys(validatorRecord) as Array<keyof T>) {
+    const propertyValidator = validatorRecord[property];
+    if (propertyValidator === undefined) continue;
+
+    const propertyValue = applyValidators(
       inputValue[property as string],
       defaultValue[property],
       propertyValidator,
     );
+    if (propertyValue !== undefined || Object.prototype.hasOwnProperty.call(inputValue, property)) {
+      validatedValue[property] = propertyValue;
+    }
   }
   return validatedValue as T;
 }

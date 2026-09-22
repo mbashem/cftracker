@@ -5,6 +5,20 @@ import { validateValue, type Validators } from "../util/validators";
 
 export type { SearchKey, SearchRecord } from "./useSearchParamState";
 
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object"
+    && value !== null
+    && !Array.isArray(value)
+    && !(value instanceof Set)
+    && !(value instanceof Map);
+}
+
+function mergeValue<T>(baseValue: T, value: unknown): T {
+  return isPlainObject(baseValue) && isPlainObject(value)
+    ? { ...baseValue, ...value } as T
+    : value as T;
+}
+
 function useAdvancedState<T>(
   defaultValue: T,
   storageKey?: string,
@@ -16,9 +30,8 @@ function useAdvancedState<T>(
     const storedValue = storageKey === undefined
       ? defaultValue
       : validateValue(StorageService.getValue(storageKey, defaultValue), defaultValue, validator);
-    return searchValue === undefined
-      ? storedValue
-      : validateValue(searchValue, storedValue, validator);
+    if (searchValue === undefined) return storedValue;
+    return validateValue(mergeValue(storedValue, searchValue), storedValue, validator);
   });
   const setSafeValue = useCallback((nextValue: unknown) => {
     setValue((previousValue) => {
@@ -31,7 +44,7 @@ function useAdvancedState<T>(
 
   useEffect(() => {
     if (searchValue === undefined) return;
-    setSafeValue(searchValue);
+    setSafeValue((currentValue: T) => mergeValue(currentValue, searchValue));
   }, [searchValue]);
 
   useEffect(() => {
