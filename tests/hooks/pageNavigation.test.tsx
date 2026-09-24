@@ -149,7 +149,7 @@ test("returning from temporary snapshot filters reloads saved preferences on the
   expect(StorageService.getObject(StorageService.Keys.Problem.State, {})).toMatchObject({ ...savedFilter, search: "updated" });
 });
 
-test("storage key changes apply the latest stored value and disabling resets defaults", async () => {
+test("a defined storage key applies its latest value and disabling storage preserves state", async () => {
   render(<TestApp initialEntry="/problems?useFilterStorage=false&minContestId=2&maxContestId=2" />, { reactStrictMode: true });
   const latestFilter = { ...savedFilter, minRating: 1800, maxRating: 2000, search: "latest" };
   StorageService.saveObject(StorageService.Keys.Problem.State, latestFilter);
@@ -162,7 +162,7 @@ test("storage key changes apply the latest stored value and disabling resets def
 
   search.set(SearchKeys.UseFilterStorage, "false");
   await act(async () => navigate({ search: search.toString() }));
-  expect(page.filter).toMatchObject({ minRating: 0, maxRating: 4000, minContestId: 1, maxContestId: 4000, search: "" });
+  expect(page.filter).toMatchObject(latestFilter);
   expect(StorageService.getObject(StorageService.Keys.Problem.State, {})).toMatchObject(latestFilter);
 });
 

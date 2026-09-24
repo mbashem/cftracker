@@ -38,10 +38,10 @@ function useAdvancedState<T>(
     let resolvedValue: T = value;
     if (lastStorageKey.current !== storageKey) {
       lastStorageKey.current = storageKey;
-      updateValue = true;
-      resolvedValue = storageKey === undefined
-        ? defaultValue
-        : StorageService.getValue(storageKey, defaultValue);
+      if (storageKey !== undefined) {
+        updateValue = true;
+        resolvedValue = StorageService.getValue(storageKey, value);
+      }
     }
 
     const searchKeySerialised = serializeValue(searchKey);
