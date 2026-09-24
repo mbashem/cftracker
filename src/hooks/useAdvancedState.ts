@@ -1,24 +1,18 @@
-import { type Dispatch, type SetStateAction, useCallback, useEffect, useState } from "react";
+import { type Dispatch, type SetStateAction, useCallback, useEffect, useRef, useState } from "react";
 import useSearchParamState, { type SearchKey } from "./useSearchParamState";
 import { StorageService } from "../util/StorageService";
+import { mergeValue, serializeValue } from "../util/util";
 import { validateValue, type Validators } from "../util/validators";
 
 export type { SearchKey, SearchRecord } from "./useSearchParamState";
 
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object"
-    && value !== null
-    && !Array.isArray(value)
-    && !(value instanceof Set)
-    && !(value instanceof Map);
-}
-
-function mergeValue<T>(baseValue: T, value: unknown): T {
-  return isPlainObject(baseValue) && isPlainObject(value)
-    ? { ...baseValue, ...value } as T
-    : value as T;
-}
-
+/**
+ * Initializes with the default, then resolves configured sources in order:
+ * storage first and URL search second, so search has higher priority when both
+ * sources change. Each source is read once initially and again when its key changes.
+ * After resolution, every validated state change is synchronized to the currently
+ * configured storage and search keys. Omitting a key disables that source.
+ */
 function useAdvancedState<T>(
   defaultValue: T,
   storageKey?: string,
@@ -26,13 +20,10 @@ function useAdvancedState<T>(
   validator?: Validators<T>,
 ): [T, Dispatch<SetStateAction<T>>] {
   const [searchValue, setSearchValue] = useSearchParamState<T>(searchKey);
-  const [value, setValue] = useState(() => {
-    const storedValue = storageKey === undefined
-      ? defaultValue
-      : validateValue(StorageService.getValue(storageKey, defaultValue), defaultValue, validator);
-    if (searchValue === undefined) return storedValue;
-    return validateValue(mergeValue(storedValue, searchValue), storedValue, validator);
-  });
+  const [value, setValue] = useState(defaultValue);
+  const lastStorageKey = useRef<string | undefined>(undefined);
+  const lastSearchKey = useRef<string | undefined>(undefined);
+
   const setSafeValue = useCallback((nextValue: unknown) => {
     setValue((previousValue) => {
       const candidateValue = typeof nextValue === "function"
@@ -43,13 +34,33 @@ function useAdvancedState<T>(
   }, [validator]);
 
   useEffect(() => {
-    if (searchValue === undefined) return;
-    setSafeValue((currentValue: T) => mergeValue(currentValue, searchValue));
-  }, [searchValue]);
+    let updateValue = false;
+    let resolvedValue: T = value;
+    if (lastStorageKey.current !== storageKey) {
+      lastStorageKey.current = storageKey;
+      updateValue = true;
+      resolvedValue = storageKey === undefined
+        ? defaultValue
+        : StorageService.getValue(storageKey, defaultValue);
+    }
+
+    const searchKeySerialised = serializeValue(searchKey);
+    if (lastSearchKey.current !== searchKeySerialised) {
+      lastSearchKey.current = searchKeySerialised;
+      if (searchKeySerialised !== undefined && searchValue !== undefined) {
+        updateValue = true;
+        resolvedValue = mergeValue(resolvedValue, searchValue);
+      }
+    }
+
+    if (updateValue) setSafeValue(resolvedValue);
+  }, [storageKey, searchKey]);
 
   useEffect(() => {
-    if (storageKey !== undefined) StorageService.saveValue(storageKey, value);
     setSearchValue(value);
+    if (storageKey !== undefined) {
+      StorageService.saveValue(storageKey, value);
+    }
   }, [value]);
 
   return [value, setSafeValue];

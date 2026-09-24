@@ -69,7 +69,7 @@ Persisted storage key names belong under `StorageService.Keys`. Do not define st
 
 Location: `src/components/home/`
 
-The Home page provides handle-aware weekly, monthly, yearly, and custom snapshots with quick links into existing problem and contest flows. Custom date ranges may be open-ended and the last selection is saved locally. Statistics are derived from raw submissions so shared-problem expansion does not inflate counts. One-shot `random` and `status` query parameters activate the corresponding persisted filters and selection behaviour on destination pages.
+The Home page provides handle-aware weekly, monthly, yearly, and custom snapshots with quick links into existing problem and contest flows. Custom date ranges may be open-ended and the last selection is saved locally. Statistics are derived from raw submissions so shared-problem expansion does not inflate counts. The `status` query parameter selects solve-status filters. The `random` query parameter remains in the URL while random mode is active, including after filter changes; cancelling returns to the normal problem or contest page.
 
 ### Contests
 

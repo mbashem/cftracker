@@ -14,6 +14,8 @@ import { getRandomInteger, isDefined, isFunction, overrideObject } from "../../u
 import useProblemsStore from "../../data/hooks/useProblemsStore";
 import usePersistentState from "../../hooks/usePersistentState";
 import { validators } from "../../util/validators";
+import useAppNavigation from "../../hooks/useAppNavigation";
+import { Path } from "../../util/route/path";
 
 export interface Filter {
 	perPage: number;
@@ -33,9 +35,10 @@ function useContestPage() {
 	const { problemList } = useProblemsStore();
 
 	const { theme } = useTheme();
-	const { getSearchParam, updateSearchParam, deleteSearchParam, consumeSearchParams } = useAppSearchParams();
+	const { navigateTo } = useAppNavigation();
+	const { getSearchParam, updateSearchParam, deleteSearchParam } = useAppSearchParams();
 	const searchTextFromUrl = getSearchParam(SearchKeys.Search);
-	const [randomSearchValue] = useSearchParamState<boolean>(SearchKeys.Random);
+	const [randomSearchValue, setRandomSearchValue] = useSearchParamState<boolean>(SearchKeys.Random);
 	const isRandomRequested = validators.boolean(randomSearchValue, false);
 	const { submissions: userSubmissions } = useSubmissionsStore();
 	const { contests, loading: isContestListLoading, error: contestListError } = useContestStore();
@@ -57,7 +60,6 @@ function useContestPage() {
 	}>({ contests: [], error: "" });
 
 	const [randomContest, setRandomContest] = useState<number | undefined>(undefined);
-	const [hasPendingRandomRequest, setHasPendingRandomRequest] = useState(false);
 
 	const defaultFilt: Filter = {
 		perPage: 100,
@@ -153,26 +155,25 @@ function useContestPage() {
 		else deleteSearchParam(SearchKeys.Search);
 
 		setContestList({ contests: filteredContests, error: "" });
-		setRandomContest(undefined);
 	}, [deleteSearchParam, filter, filteredContests, problemList.problems, updateSearchParam]);
 
 	useEffect(() => {
-		if (!isRandomRequested) return;
-
-		consumeSearchParams([SearchKeys.Random]);
-		setHasPendingRandomRequest(true);
-	}, [consumeSearchParams, isRandomRequested]);
-
-	useEffect(() => {
-		if (!hasPendingRandomRequest || isPaginationLoading) return;
-
-		setHasPendingRandomRequest(false);
 		setRandomContest(
-			filteredContests.length > 0
+			isRandomRequested && !isPaginationLoading && filteredContests.length > 0
 				? getRandomInteger(0, filteredContests.length)
 				: undefined
 		);
-	}, [filteredContests, hasPendingRandomRequest, isPaginationLoading]);
+	}, [filteredContests, isRandomRequested, isPaginationLoading]);
+
+	const updateRandomContest = useCallback((contest: number | undefined) => {
+		if (contest === undefined) {
+			setRandomContest(undefined);
+			navigateTo(Path.CONTESTS);
+			return;
+		}
+		setRandomContest(contest);
+		setRandomSearchValue(true);
+	}, [navigateTo, setRandomSearchValue]);
 
 	useEffect(() => {
 		if (!filter.canSelectMultipleCategories && filter.selectedCategories.length !== 1) {
@@ -228,7 +229,7 @@ function useContestPage() {
 		setSelected,
 		setSolveStatus: updateSolveStatus,
 		setParticipant: updateParticipantsType,
-		setRandomContest,
+		setRandomContest: updateRandomContest,
 		setCategories,
 		setUpdatedCanSelectMultipleCategories
 	};
