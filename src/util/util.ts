@@ -108,3 +108,23 @@ export function isFunction(value: any): value is Function {
 export function overrideObject<T extends object>(object: T, override: Partial<T>): T {
   return { ...object, ...override };
 }
+
+export function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object"
+    && value !== null
+    && !Array.isArray(value)
+    && !(value instanceof Set)
+    && !(value instanceof Map);
+}
+
+export function mergeValue<T>(baseValue: T, value: unknown): T {
+  return isPlainObject(baseValue) && isPlainObject(value)
+    ? { ...baseValue, ...value } as T
+    : value as T;
+}
+
+export function serializeValue(value: unknown): string | undefined {
+  if (value === undefined) return undefined;
+  if (value instanceof Set || value instanceof Map) return JSON.stringify([...value]);
+  return JSON.stringify(value);
+}

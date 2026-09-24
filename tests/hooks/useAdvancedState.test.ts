@@ -54,6 +54,7 @@ async function renderAdvancedState<T>(options: HookOptions<T>): Promise<Rendered
     const { search } = useLocation();
     return { value, setValue, navigate, search };
   }, {
+    reactStrictMode: true,
     wrapper: createRouterWrapper(options.initialEntry ?? "/"),
   });
 
@@ -151,7 +152,7 @@ test("validates functional updates before synchronizing storage and the URL", as
   });
 });
 
-test("reacts to URL changes and persists the new value", async () => {
+test("reads a search key once until the key changes", async () => {
   await usingAdvancedState({
     defaultValue: 1,
     storageKey: "advanced-state",
@@ -160,8 +161,8 @@ test("reacts to URL changes and persists the new value", async () => {
     initialEntry: `/?${SearchKeys.Page}=2`,
   }, async (hook) => {
     await hook.navigate(`?${SearchKeys.Page}=8`);
-    expect(hook.current.value).toBe(8);
-    expect(localStorage.getItem("advanced-state")).toBe("8");
+    expect(hook.current.value).toBe(2);
+    expect(localStorage.getItem("advanced-state")).toBe("2");
     expect(new URLSearchParams(hook.current.search).get(SearchKeys.Page)).toBe("8");
   });
 });
@@ -248,4 +249,91 @@ test("does not use persistence when its corresponding key is absent", async () =
     expect(localStorage.length).toBe(0);
     expect(hook.current.search).toBe("");
   });
+});
+
+test("applies changed storage and search keys in order with search taking priority", () => {
+  localStorage.setItem("first-state", "2");
+  localStorage.setItem("second-state", "3");
+  const renderedHook = renderHook(({ storageKey, searchKey }) => {
+    const [value] = useAdvancedState(1, storageKey, searchKey, validators.nonNegativeInteger);
+    return { value, search: useLocation().search };
+  }, {
+    initialProps: {
+      storageKey: "first-state",
+      searchKey: SearchKeys.Page,
+    },
+    reactStrictMode: true,
+    wrapper: createRouterWrapper(`/?${SearchKeys.Page}=7&${SearchKeys.MaxRating}=9`),
+  });
+
+  expect(renderedHook.result.current.value).toBe(7);
+  renderedHook.rerender({
+    storageKey: "second-state",
+    searchKey: SearchKeys.MaxRating,
+  });
+
+  expect(renderedHook.result.current.value).toBe(9);
+  expect(localStorage.getItem("second-state")).toBe("9");
+});
+
+test("reads the latest stored value when only the storage key changes", () => {
+  localStorage.setItem("first-state", "2");
+  localStorage.setItem("second-state", "3");
+  const renderedHook = renderHook(({ storageKey }) => {
+    const [value] = useAdvancedState(1, storageKey, undefined, validators.nonNegativeInteger);
+    return value;
+  }, {
+    initialProps: { storageKey: "first-state" },
+    reactStrictMode: true,
+    wrapper: createRouterWrapper("/"),
+  });
+
+  localStorage.setItem("second-state", "5");
+  renderedHook.rerender({ storageKey: "second-state" });
+
+  expect(renderedHook.result.current).toBe(5);
+  expect(localStorage.getItem("second-state")).toBe("5");
+});
+
+test("reads the latest URL value when only the search key changes", () => {
+  const renderedHook = renderHook(({ searchKey }) => {
+    const [value] = useAdvancedState(1, undefined, searchKey, validators.nonNegativeInteger);
+    return value;
+  }, {
+    initialProps: { searchKey: SearchKeys.Page },
+    reactStrictMode: true,
+    wrapper: createRouterWrapper(`/?${SearchKeys.Page}=7&${SearchKeys.MaxRating}=9`),
+  });
+
+  expect(renderedHook.result.current).toBe(7);
+  renderedHook.rerender({ searchKey: SearchKeys.MaxRating });
+  expect(renderedHook.result.current).toBe(9);
+});
+
+test("synchronizes the current value when an optional key is enabled", () => {
+  const renderedHook = renderHook(({ storageKey, searchKey }) => {
+    const [value] = useAdvancedState(3, storageKey, searchKey, validators.nonNegativeInteger);
+    return { value, search: useLocation().search };
+  }, {
+    initialProps: {
+      storageKey: undefined as string | undefined,
+      searchKey: undefined as SearchKeys | undefined,
+    },
+    reactStrictMode: true,
+    wrapper: createRouterWrapper("/"),
+  });
+
+  renderedHook.rerender({
+    storageKey: undefined,
+    searchKey: SearchKeys.Page,
+  });
+  expect(new URLSearchParams(renderedHook.result.current.search).get(SearchKeys.Page)).toBeNull();
+
+  localStorage.setItem("enabled-state", "6");
+  renderedHook.rerender({
+    storageKey: "enabled-state",
+    searchKey: SearchKeys.Page,
+  });
+  expect(renderedHook.result.current.value).toBe(6);
+  expect(new URLSearchParams(renderedHook.result.current.search).get(SearchKeys.Page)).toBe("6");
 });

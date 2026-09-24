@@ -61,9 +61,9 @@ function getRatingRange(minRating: number, maxRating: number): ProblemRatingRang
 }
 
 function useProblemPage() {
-	const { navigateTo, pathName } = useAppNavigation();
-	const { consumeSearchParams, getSearchParam } = useAppSearchParams();
-	const [randomSearchValue] = useSearchParamState<boolean>(SearchKeys.Random);
+	const { navigateTo } = useAppNavigation();
+	const { getSearchParam } = useAppSearchParams();
+	const [randomSearchValue, setRandomSearchValue] = useSearchParamState<boolean>(SearchKeys.Random);
 	const isRandomRequested = validators.boolean(randomSearchValue, false);
 	const {
 		listId,
@@ -110,7 +110,6 @@ function useProblemPage() {
 		order: SortOrder.Descending,
 	});
 	const [randomProblem, setRandomProblem] = useState<number | undefined>(undefined);
-	const [hasPendingRandomRequest, setHasPendingRandomRequest] = useState(false);
 
 	const filterState = useMemo<ProblemFilterState>(
 		() => ({
@@ -257,34 +256,22 @@ function useProblemPage() {
 	}, [listId]);
 
 	useEffect(() => {
-		setRandomProblem(undefined);
-	}, [filteredProblems]);
-
-	useEffect(() => {
-		if (!isRandomRequested) return;
-
-		consumeSearchParams([SearchKeys.Random]);
-		setHasPendingRandomRequest(true);
-	}, [consumeSearchParams, isRandomRequested]);
-
-	useEffect(() => {
-		if (!hasPendingRandomRequest || problemStore.loading) return;
-
-		setHasPendingRandomRequest(false);
 		setRandomProblem(
-			filteredProblems.length > 0
+			isRandomRequested && !problemStore.loading && filteredProblems.length > 0
 				? getRandomInteger(0, filteredProblems.length)
 				: undefined
 		);
-	}, [filteredProblems, hasPendingRandomRequest, problemStore.loading]);
+	}, [filteredProblems, isRandomRequested, problemStore.loading]);
 
 	const updateRandomProblem = useCallback((problem: number | undefined) => {
-		if (problem === undefined && pathName === Path.RANDOM_PROBLEM) {
+		if (problem === undefined) {
+			setRandomProblem(undefined);
 			navigateTo(Path.PROBLEMS);
 			return;
 		}
 		setRandomProblem(problem);
-	}, [navigateTo, pathName]);
+		setRandomSearchValue(true);
+	}, [navigateTo, setRandomSearchValue]);
 
 	const sortList = useCallback((sortBy: SortProblemBy) => {
 		setFilterSortState((previousFilterState) => {
