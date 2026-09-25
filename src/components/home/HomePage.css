@@ -2,6 +2,13 @@
   max-width: 1180px;
 }
 
+.home-title-lab {
+  position: absolute;
+  top: 0;
+  left: calc(100% + 0.25rem);
+  font-size: 0.65rem;
+}
+
 .home-section-kicker {
   color: var(--theme-accent);
   font-size: 0.75rem;
