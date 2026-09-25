@@ -1,3 +1,4 @@
+// Disclaimer: Tests in this file have not been thoroughly checked for correctness.
 import { fireEvent, cleanup, render, screen } from "@testing-library/react";
 import { MemoryRouter, useLocation } from "react-router";
 import { afterEach, expect, test, vi } from "vitest";
