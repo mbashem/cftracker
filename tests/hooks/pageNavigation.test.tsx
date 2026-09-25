@@ -1,3 +1,4 @@
+// Disclaimer: Tests in this file have not been thoroughly checked for correctness.
 import { act, cleanup, render } from "@testing-library/react";
 import { MemoryRouter, useLocation, useNavigate, type NavigateFunction } from "react-router";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";

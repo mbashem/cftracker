@@ -1,3 +1,4 @@
+// Disclaimer: Tests in this file have not been thoroughly checked for correctness.
 import {
   type Dispatch,
   createElement,
@@ -116,6 +117,21 @@ test("gives the initial URL value priority over storage and saves it", async () 
   }
 });
 
+test("keeps a valid stored value when the URL value is invalid", async () => {
+  localStorage.setItem("advanced-state", "7");
+  await usingAdvancedState({
+    defaultValue: 1,
+    storageKey: "advanced-state",
+    searchKey: SearchKeys.Page,
+    validator: validators.nonNegativeInteger,
+    initialEntry: `/?${SearchKeys.Page}=invalid`,
+  }, (hook) => {
+    expect(hook.current.value).toBe(7);
+    expect(localStorage.getItem("advanced-state")).toBe("7");
+    expect(new URLSearchParams(hook.current.search).get(SearchKeys.Page)).toBe("7");
+  });
+});
+
 test("falls back through invalid URL and storage values to the default", async () => {
   localStorage.setItem("advanced-state", JSON.stringify("invalid"));
   const hook = await renderAdvancedState({
@@ -201,7 +217,7 @@ test("merges partial URL records over stored object values", async () => {
       minContestDate: validators.date,
       maxContestDate: validators.date,
     },
-    initialEntry: `/?${SearchKeys.Search}=url`,
+    initialEntry: `/?${SearchKeys.Search}=url&${SearchKeys.Page}=invalid`,
   });
   try {
     expect(hook.current.value).toEqual({

@@ -9,7 +9,9 @@ export type { SearchKey, SearchRecord } from "./useSearchParamState";
 /**
  * Initializes with the default, then resolves configured sources in order:
  * storage first and URL search second, so search has higher priority when both
- * sources change. Each source is read once initially and again when its key changes.
+ * sources change. Each source is validated against the previous value, letting
+ * invalid URL entries retain valid stored values. Each source is read once
+ * initially and again when its key changes.
  * After resolution, every validated state change is synchronized to the currently
  * configured storage and search keys. Omitting a key disables that source.
  */
@@ -40,7 +42,7 @@ function useAdvancedState<T>(
       lastStorageKey.current = storageKey;
       if (storageKey !== undefined) {
         updateValue = true;
-        resolvedValue = StorageService.getValue(storageKey, value);
+        resolvedValue = validateValue(StorageService.getValue(storageKey, value), value, validator);
       }
     }
 
@@ -49,11 +51,11 @@ function useAdvancedState<T>(
       lastSearchKey.current = searchKeySerialised;
       if (searchKeySerialised !== undefined && searchValue !== undefined) {
         updateValue = true;
-        resolvedValue = mergeValue(resolvedValue, searchValue);
+        resolvedValue = validateValue(mergeValue(resolvedValue, searchValue), resolvedValue, validator);
       }
     }
 
-    if (updateValue) setSafeValue(resolvedValue);
+    if (updateValue) setValue(resolvedValue);
   }, [storageKey, searchKey]);
 
   useEffect(() => {

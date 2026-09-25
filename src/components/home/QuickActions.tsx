@@ -41,7 +41,10 @@ const actions: readonly QuickAction[] = [
     title: "Attempted problems",
     description: "Return to problems that still need an accepted solution.",
     path: Path.PROBLEMS,
-    searchParams: { [SearchKeys.Status]: Verdict.ATTEMPTED },
+    searchParams: {
+      [SearchKeys.Status]: Verdict.ATTEMPTED,
+      [SearchKeys.UseFilterStorage]: false,
+    },
     icon: faListCheck,
   },
 ];

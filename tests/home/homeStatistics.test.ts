@@ -1,3 +1,4 @@
+// Disclaimer: Tests in this file have not been thoroughly checked for correctness.
 import { expect, test } from "vitest";
 import {
   getProblemContestIdRange,
