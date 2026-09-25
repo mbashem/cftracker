@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { faFlask } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { AddButton, CloseButton } from "../common/IconButton";
 import TextInputForm from "../common/TextInputForm";
 
@@ -14,7 +16,10 @@ function HomeHeader({ handles, onAddHandle, onRemoveHandle }: HomeHeaderProps) {
 
   return (
     <header className="mb-4">
-      <h1 className="h2 fw-bold mb-3">Home</h1>
+      <h1 className="h2 fw-bold mb-3 d-inline-block position-relative">
+        Home
+        <FontAwesomeIcon icon={faFlask} className="home-title-lab" title="Experimental" />
+      </h1>
       <div className="d-flex flex-wrap align-items-center gap-2">
         {hasHandles ? (
           <>
@@ -46,6 +51,9 @@ function HomeHeader({ handles, onAddHandle, onRemoveHandle }: HomeHeaderProps) {
             placeholder="Codeforces handle"
             formClassName="home-handle-input"
             inputClassName="bg-transparent text-reset"
+            onBlur={(handle) => {
+              if (handle.trim().length === 0) setShowHandleInput(false);
+            }}
             onSubmit={(handle) => {
               onAddHandle(handle);
               setShowHandleInput(false);
