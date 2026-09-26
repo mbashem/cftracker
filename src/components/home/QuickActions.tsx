@@ -22,12 +22,9 @@ interface QuickAction {
 const actions: readonly QuickAction[] = [
   {
     title: "Random problem",
-    description: "Pick a random problem using temporary filters.",
+    description: "Pick a random problem using your saved filters.",
     path: Path.RANDOM_PROBLEM,
-    searchParams: {
-      [SearchKeys.Random]: true,
-      [SearchKeys.UseFilterStorage]: false,
-    },
+    searchParams: { [SearchKeys.Random]: true },
     icon: faDice,
   },
   {
