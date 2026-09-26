@@ -15,6 +15,24 @@ function LocationProbe() {
   return <output data-testid="location">{pathname}{search}</output>;
 }
 
+test("random problems use saved filters", () => {
+  render(
+    <MemoryRouter>
+      <QuickActions />
+      <LocationProbe />
+    </MemoryRouter>,
+  );
+
+  fireEvent.click(screen.getByRole("button", { name: /Random problem/i }));
+
+  const location = screen.getByTestId("location").textContent ?? "";
+  const [path, search] = location.split("?");
+  const params = new URLSearchParams(search);
+  expect(path).toBe(Path.RANDOM_PROBLEM);
+  expect(params.get(SearchKeys.Random)).toBe("true");
+  expect(params.has(SearchKeys.UseFilterStorage)).toBe(false);
+});
+
 test("attempted problems use URL-only filters", () => {
   render(
     <MemoryRouter>
