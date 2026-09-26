@@ -1,16 +1,16 @@
-import { useAppSelector } from "../../data/store";
+import useTheme from "../../data/hooks/useTheme";
 import { ThemesType } from "../../util/Theme";
 import UtterancesComments from "./UtterancesComments";
 
 function CommentPage() {
-  const themeMod = useAppSelector((state) => state.appState.themeMod);
+  const { theme } = useTheme();
 
   return (
     <>
       <UtterancesComments
         repo="mbashem/cftracker"
         issue_term="pathname"
-        theme={themeMod === ThemesType.DARK ? "dark-blue" : "github-light"}
+        theme={theme.themeType === ThemesType.DARK ? "dark-blue" : "github-light"}
         label="CFTracker Comments"
       />
     </>

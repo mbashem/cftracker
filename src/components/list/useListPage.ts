@@ -4,11 +4,11 @@ import useToast from "../../hooks/useToast";
 import { List } from "../../types/list";
 import { SearchKeys } from "../../util/constants";
 import useAppSearchParams from "../../hooks/useSearchParam";
-import { useNavigate } from "react-router";
 import { Path } from "../../util/route/path";
 import useListApi from "../../data/hooks/useListApi";
 import { isDefined } from "../../util/util";
 import { EMPTY_ARRAY } from "../../util/constants";
+import useAppNavigation from "../../hooks/useAppNavigation";
 
 function useListPage() {
 	const { theme } = useTheme();
@@ -17,7 +17,7 @@ function useListPage() {
 	const api = useListApi();
 	const { data: lists, error, isLoading } = api.useGetAllListsQuery();
 	const { updateSearchParam, deleteSearchParam } = useAppSearchParams();
-	const navigate = useNavigate();
+	const { navigateTo } = useAppNavigation();
 
 	function listClicked(listName: string) {
 		let list = lists?.find(list => list.name === listName);
@@ -57,7 +57,10 @@ function useListPage() {
 
 	function addButtonClicked() {
 		if (activeList === undefined) return;
-		navigate(Path.PROBLEMS + `?${SearchKeys.ListId}=${activeList.id}`);
+		navigateTo(Path.PROBLEMS, {
+			[SearchKeys.ListId]: activeList.id,
+			[SearchKeys.UseFilterStorage]: false,
+		});
 	}
 
 	async function deleteListButtonClicked() {

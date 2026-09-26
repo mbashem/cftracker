@@ -1,7 +1,7 @@
-import { addHandle, removeAllHandle } from "../reducers/userSlice";
+import { addHandle as addHandleAction, removeAllHandle, removeHandle as removeHandleAction } from "../reducers/userSlice";
 import { requestUserSubmissions } from "../reducers/userSubmissionsSlice";
 import { useAppDispatch, useAppSelector } from "../store";
-import { stringToArray } from "../../util/util";
+import { splitStringBySeparator } from "../../util/util";
 
 function useUserStore() {
 	const dispatch = useAppDispatch();
@@ -9,7 +9,9 @@ function useUserStore() {
 
 	function updateUsers(handle: string) {
 		const currentId = Date.now();
-		const handles = stringToArray(handle, ",").map(handle => handle.trim()).filter((handle) => handle.length);
+		const handles = [...new Set(
+			splitStringBySeparator(handle, ",").map(handle => handle.trim()).filter((handle) => handle.length)
+		)];
 
 		if (handles.length === 0) {
 			dispatch(removeAllHandle());
@@ -17,14 +19,22 @@ function useUserStore() {
 		}
 
 		for (const handle of handles)
-			dispatch(addHandle({ handle, id: currentId }));
+			dispatch(addHandleAction({ handle, id: currentId }));
 	}
 
 	function syncUserSubmissions(wait = false) {
 		dispatch(requestUserSubmissions(userList.handles, wait));
 	}
 
-	return { userList, updateUsers, syncUserSubmissions };
+	function addHandle(handle: string) {
+		updateUsers([...userList.handles, handle.trim()].join(","));
+	}
+
+	function removeHandle(handle: string) {
+		dispatch(removeHandleAction({ handle }));
+	}
+
+	return { userList, updateUsers, addHandle, removeHandle, syncUserSubmissions };
 }
 
 export default useUserStore;

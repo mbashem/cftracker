@@ -15,6 +15,8 @@ export enum SortProblemBy {
 }
 
 export const sortByRating = (a: Problem, b: Problem): number => {
+  if (a.rating === undefined) return b.rating === undefined ? 0 : -1;
+  if (b.rating === undefined) return 1;
   if (a.rating < b.rating) return -1;
   if (a.rating > b.rating) return 1;
   return 0;

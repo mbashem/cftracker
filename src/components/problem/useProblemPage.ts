@@ -4,31 +4,27 @@ import useSubmissionsStore from "../../data/hooks/useSubmissionsStore";
 import useTheme from "../../data/hooks/useTheme";
 import useList from "../../data/hooks/useListApi";
 import useAppSearchParams from "../../hooks/useSearchParam";
-import usePersistentState from "../../hooks/usePersistentState";
+import useSearchParamState from "../../hooks/useSearchParamState";
 import useProblemsStore from "../../data/hooks/useProblemsStore";
-import { useAppSelector } from "../../data/store";
+import useAppStateStore from "../../data/hooks/useAppStateStore";
 import useToast from "../../hooks/useToast";
 import { ListWithItem } from "../../types/list";
 import Problem from "../../types/CF/Problem";
 import { Verdict } from "../../types/CF/Submission";
-import { StorageService } from "../../util/StorageService";
 import { RATING_CONSTANTS } from "../../util/cf";
 import { formatDateInputValue } from "../../util/time";
-import { clampNumber, isDefined, overrideObject } from "../../util/util";
+import {
+	clampNumber,
+	getRandomInteger,
+	isDefined,
+	isNumber,
+} from "../../util/util";
+import { validators } from "../../util/validators";
 import { sortByContestId, sortByRating, sortBySolveCount, SortOrder, SortProblemBy } from "../../util/sortMethods";
 import useContestStore from "../../data/hooks/useContestStore";
-
-export interface ProblemFilter {
-	perPage: number;
-	minRating: number;
-	maxRating: number;
-	showUnrated: boolean;
-	minContestId: number;
-	maxContestId: number;
-	minContestDate: string | undefined;
-	maxContestDate: string | undefined;
-	search: string;
-}
+import { Path } from "../../util/route/path";
+import useProblemState from "./useProblemState";
+import useAppNavigation from "../../hooks/useAppNavigation";
 
 export interface ProblemFilterState {
 	tags: Set<string>;
@@ -44,9 +40,9 @@ export interface ProblemRatingRange {
 	maxValue: number;
 }
 
-export type UpdateProblemFilter = Partial<ProblemFilter> | ((filter: ProblemFilter) => Partial<ProblemFilter>);
-
 type ProblemSortState = Omit<ProblemFilterState, "tags">;
+
+const SELECTABLE_VERDICT_STATUSES = [Verdict.SOLVED, Verdict.ATTEMPTED, Verdict.UNSOLVED];
 
 function getRatingRange(minRating: number, maxRating: number): ProblemRatingRange {
 	const { min, max, interval: step } = RATING_CONSTANTS;
@@ -65,52 +61,55 @@ function getRatingRange(minRating: number, maxRating: number): ProblemRatingRang
 }
 
 function useProblemPage() {
-	const { searchParams, updateSearchParam, deleteSearchParam } = useAppSearchParams();
-	const searchTextFromUrl = searchParams.get(SearchKeys.Search) ?? undefined;
-	const [listId, setListId] = useState<number | undefined>(undefined);
+	const { navigateTo } = useAppNavigation();
+	const { getSearchParam } = useAppSearchParams();
+	const [randomSearchValue, setRandomSearchValue] = useSearchParamState<boolean>(SearchKeys.Random);
+	const isRandomRequested = validators.boolean(randomSearchValue, false);
+	const {
+		listId,
+		submittedAfter,
+		submittedBefore,
+		useFilterStorage,
+	} = useMemo(() => {
+		return {
+			submittedAfter: validators.nonNegativeInteger(getSearchParam(SearchKeys.SubmittedAfter), undefined),
+			submittedBefore: validators.nonNegativeInteger(getSearchParam(SearchKeys.SubmittedBefore), undefined),
+			listId: validators.positiveInteger(getSearchParam(SearchKeys.ListId), undefined),
+			useFilterStorage: validators.boolean(getSearchParam(SearchKeys.UseFilterStorage), true),
+		};
+	}, [getSearchParam]);
 	const [list, setList] = useState<ListWithItem | undefined>(undefined);
 	const nextListPosition = useRef(0);
 	const { submissions } = useSubmissionsStore();
 	const { theme } = useTheme();
 	const api = useList();
 	const { problemList: problemStore } = useProblemsStore();
+	const { appState } = useAppStateStore();
+	const {
+		minRating,
+		maxRating,
+		minContestId,
+		maxContestId,
+	} = appState;
 	const [problemsAddedToList, setProblemsAddedToList] = useState<Set<string>>(new Set());
-	const appState = useAppSelector((state) => state.appState);
 	const { contests } = useContestStore();
 	const { showErrorToast } = useToast();
 
-	const defaultFilter: ProblemFilter = {
-		perPage: 100,
-		minRating: RATING_CONSTANTS.min,
-		maxRating: RATING_CONSTANTS.max,
-		showUnrated: true,
-		minContestId: appState.minContestId,
-		maxContestId: appState.maxContestId,
-		minContestDate: undefined,
-		maxContestDate: undefined,
-		search: "",
-	};
-
-	const selectableVerdictStatuses = useMemo(() => [Verdict.SOLVED, Verdict.ATTEMPTED, Verdict.UNSOLVED], []);
-	const defaultSolveStatus = useMemo(() => new Set(selectableVerdictStatuses), [selectableVerdictStatuses]);
-	const [filter, setFilter] = usePersistentState(
-		StorageService.Keys.Problem.Filter,
-		defaultFilter,
-		searchTextFromUrl === undefined
-			? undefined
-			: () => overrideObject(StorageService.getObject(StorageService.Keys.Problem.Filter, defaultFilter), { search: searchTextFromUrl })
-	);
-	const [tags, setTags] = usePersistentState(StorageService.Keys.Problem.Tags, new Set<string>());
+	const {
+		filter,
+		tags,
+		solveStatus,
+		selected,
+		updateFilter,
+		setTags,
+		setSolveStatus,
+		setSelected,
+	} = useProblemState(useFilterStorage, minRating, maxRating, minContestId, maxContestId);
 	const [filterSortState, setFilterSortState] = useState<ProblemSortState>({
 		sortBy: SortProblemBy.SolveCount,
 		order: SortOrder.Descending,
 	});
-	const [solveStatus, setSolveStatus] = usePersistentState<Set<Verdict>>(
-		StorageService.Keys.Problem.SolveStatus,
-		defaultSolveStatus
-	);
 	const [randomProblem, setRandomProblem] = useState<number | undefined>(undefined);
-	const [selected, setSelected] = usePersistentState(StorageService.Keys.Problem.Page, 0);
 
 	const filterState = useMemo<ProblemFilterState>(
 		() => ({
@@ -125,13 +124,16 @@ function useProblemPage() {
 		() => getRatingRange(filter.minRating, filter.maxRating),
 		[filter.maxRating, filter.minRating]
 	);
+	const contestIdRange = useMemo(
+		() => ({ min: minContestId, max: maxContestId }),
+		[maxContestId, minContestId],
+	);
 
 	const state = useMemo(() => {
 		return {
-			appState,
 			problemList: problemStore,
 		};
-	}, [appState, problemStore]);
+	}, [problemStore]);
 
 	const contestDates = useMemo(() => {
 		const dates = new Map<number, string>();
@@ -147,15 +149,19 @@ function useProblemPage() {
 	const { solved, attempted } = useMemo(() => {
 		const solved = new Set<string>();
 		const attempted = new Set<string>();
-
 		for (const submission of submissions) {
+			if (
+				(submittedAfter !== undefined && submission.creationTimeSeconds < submittedAfter)
+				|| (submittedBefore !== undefined && submission.creationTimeSeconds >= submittedBefore)
+			) continue;
+
 			const problemId = submission.contestId.toString() + submission.index;
 			if (submission.verdict === Verdict.OK) solved.add(problemId);
 			else attempted.add(problemId);
 		}
 
 		return { solved, attempted };
-	}, [submissions]);
+	}, [submittedAfter, submittedBefore, submissions]);
 
 	const getProblemStatus = useCallback(
 		(problem: Problem) => {
@@ -178,7 +184,7 @@ function useProblemPage() {
 						break;
 					}
 
-			const ratingInside = problem.rating > 0
+			const ratingInside = isNumber(problem.rating)
 				? problem.rating <= ratingRange.maxValue && problem.rating >= ratingRange.minValue
 				: filter.showUnrated;
 			const contestIdInside = problem.contestId <= filter.maxContestId && problem.contestId >= filter.minContestId;
@@ -250,34 +256,22 @@ function useProblemPage() {
 	}, [listId]);
 
 	useEffect(() => {
-		let listIdString = searchParams.get(SearchKeys.ListId);
-		setListId(listIdString ? parseInt(listIdString) : undefined);
-	}, [searchParams]);
+		setRandomProblem(
+			isRandomRequested && !problemStore.loading && filteredProblems.length > 0
+				? getRandomInteger(0, filteredProblems.length)
+				: undefined
+		);
+	}, [filteredProblems, isRandomRequested, problemStore.loading]);
 
-	useEffect(() => {
-		const trimmedSearch = filter.search.trim();
-		if (trimmedSearch.length) updateSearchParam(SearchKeys.Search, trimmedSearch);
-		else deleteSearchParam(SearchKeys.Search);
-	}, [filter]);
-
-	useEffect(() => {
-		setRandomProblem(undefined);
-	}, [filteredProblems]);
-
-	const updateFilter = useCallback((value: UpdateProblemFilter) => {
-		setFilter((previousFilter) => ({
-			...previousFilter,
-			...(typeof value === "function" ? value(previousFilter) : value),
-		}));
-	}, []);
-
-	const updateSolveStatus = useCallback((status: Set<Verdict>) => {
-		setSolveStatus(status);
-	}, []);
-
-	const updateTags = useCallback((tags: Set<string>) => {
-		setTags(tags);
-	}, []);
+	const updateRandomProblem = useCallback((problem: number | undefined) => {
+		if (problem === undefined) {
+			setRandomProblem(undefined);
+			navigateTo(Path.PROBLEMS);
+			return;
+		}
+		setRandomProblem(problem);
+		setRandomSearchValue(true);
+	}, [navigateTo, setRandomSearchValue]);
 
 	const sortList = useCallback((sortBy: SortProblemBy) => {
 		setFilterSortState((previousFilterState) => {
@@ -339,19 +333,24 @@ function useProblemPage() {
 		filter,
 		filterState,
 		ratingRange,
+		contestIdRange,
 		solveStatus,
 		solved,
 		attempted,
 		currentPageProblems,
-		selectableVerdictStatuses,
+		selectableVerdictStatuses: SELECTABLE_VERDICT_STATUSES,
 		showAddToList: isDefined(listId),
 		problemsAddedToList,
 		isRandomActive: randomProblem !== undefined,
+		submissionRange: {
+			after: submittedAfter,
+			before: submittedBefore,
+		},
 		updateFilter,
 		setSelected,
-		setSolveStatus: updateSolveStatus,
-		setTags: updateTags,
-		setRandomProblem,
+		setSolveStatus,
+		setTags,
+		setRandomProblem: updateRandomProblem,
 		sortList,
 		addProblemToList,
 		deleteProblemFromList,

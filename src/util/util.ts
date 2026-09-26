@@ -24,8 +24,8 @@ export function getUserInfoURL(handle: string) {
 }
 
 /** Splits a trimmed string by the provided separator. */
-export function stringToArray(s: string, separator: string): string[] {
-  return s.trim().split(separator);
+export function splitStringBySeparator(value: string, separator: string): string[] {
+  return value.trim().split(separator);
 }
 
 /** Returns the character shifted by the given character-code offset. */
@@ -107,4 +107,24 @@ export function isFunction(value: any): value is Function {
 /** Returns a shallow object copy with override values applied. */
 export function overrideObject<T extends object>(object: T, override: Partial<T>): T {
   return { ...object, ...override };
+}
+
+export function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object"
+    && value !== null
+    && !Array.isArray(value)
+    && !(value instanceof Set)
+    && !(value instanceof Map);
+}
+
+export function mergeValue<T>(baseValue: T, value: unknown): T {
+  return isPlainObject(baseValue) && isPlainObject(value)
+    ? { ...baseValue, ...value } as T
+    : value as T;
+}
+
+export function serializeValue(value: unknown): string | undefined {
+  if (value === undefined) return undefined;
+  if (value instanceof Set || value instanceof Map) return JSON.stringify([...value]);
+  return JSON.stringify(value);
 }

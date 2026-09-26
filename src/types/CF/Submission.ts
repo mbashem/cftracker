@@ -1,30 +1,10 @@
-import Comparator, { Compared } from "../../util/Comparator";
-import Party from "./Party";
-import Problem, { ProblemData } from "./Problem";
+import type Comparator from "../../util/Comparator";
+import { Compared } from "../../util/Comparator";
+import type Party from "./Party";
+import Problem, { type ProblemData } from "./Problem";
+import { Verdict } from "./Verdict";
 
-export enum Verdict {
-  FAILED = "FAILED",
-  OK = "OK",
-  PARTIAL = "PARTIAL",
-  COMPILATION_ERROR = "COMPILATION_ERROR",
-  RUNTIME_ERROR = "RUNTIME_ERROR",
-  WRONG_ANSWER = "WRONG_ANSWER",
-  PRESENTATION_ERROR = "PRESENTATION_ERROR",
-  TIME_LIMIT_EXCEEDED = "TIME_LIMIT_EXCEEDED",
-  MEMORY_LIMIT_EXCEEDED = "MEMORY_LIMIT_EXCEEDED",
-  IDLENESS_LIMIT_EXCEEDED = "IDLENESS_LIMIT_EXCEEDED",
-  SECURITY_VIOLATED = "SECURITY_VIOLATED",
-  CRASHED = "CRASHED",
-  INPUT_PREPARATION_CRASHED = "INPUT_PREPARATION_CRASHED",
-  CHALLENGED = "CHALLENGED",
-  SKIPPED = "SKIPPED",
-  TESTING = "TESTING",
-  REJECTED = "REJECTED",
-  // Custom Verdict
-  SOLVED = "SOLVED",
-  ATTEMPTED = "ATTEMPTED",
-  UNSOLVED = "UNSOLVED",
-}
+export { Verdict } from "./Verdict";
 
 export enum SimpleVerdict {
   SOLVED = "SOLVED",
@@ -64,25 +44,16 @@ export function getSimpleVerdict(verdict?: Verdict) {
   }
 }
 
-export function compareSubmissionData(a: SubmissionLiteData, b: SubmissionLiteData): number {
-  if (a.contestId === b.contestId) {
-    if (a.index === b.index) {
-      if (a.verdict === b.verdict) return Compared.EQUAL;
-      if (a.verdict === Verdict.OK) return Compared.LESS;
-      if (b.verdict === Verdict.OK) return Compared.GREATER;
-      if (a.verdict < b.verdict) return Compared.LESS;
-      return Compared.GREATER;
-    }
-
-    if (a.index > b.index) return Compared.GREATER;
-    return Compared.LESS;
-  }
-
-  if (a.contestId < b.contestId) return Compared.LESS;
-  return Compared.GREATER;
+export function compareSubmissionTime(
+  first: Pick<SubmissionData, "creationTimeSeconds">,
+  second: Pick<SubmissionData, "creationTimeSeconds">,
+): number {
+  if (first.creationTimeSeconds < second.creationTimeSeconds) return Compared.LESS;
+  if (first.creationTimeSeconds > second.creationTimeSeconds) return Compared.GREATER;
+  return Compared.EQUAL;
 }
 
-export class SubmissionLite implements Comparator<SubmissionLite> {
+export class SubmissionLite {
   contestId: number;
   index: string;
   verdict: Verdict;
@@ -96,11 +67,9 @@ export class SubmissionLite implements Comparator<SubmissionLite> {
     this.index = index;
     this.verdict = verdict;
   }
-
-  compareTo = (a: SubmissionLite): number => compareSubmissionData(this, a);
 }
 
-export default class Submission extends SubmissionLite {
+export default class Submission extends SubmissionLite implements Comparator<Submission> {
   id: number;
   creationTimeSeconds: number;
   relativeTimeSeconds: number;
@@ -118,6 +87,8 @@ export default class Submission extends SubmissionLite {
     let secondToMillisecond = 1000;
     return new Date(this.creationTimeSeconds * secondToMillisecond);
   }
+
+  compareTo = (submission: Submission): number => compareSubmissionTime(this, submission);
 
   constructor(sub: SubmissionData) {
     super(sub.contestId, sub.problem.index, sub.verdict);

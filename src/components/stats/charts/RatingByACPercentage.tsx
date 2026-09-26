@@ -16,10 +16,12 @@ function RatingByACPercentage({}: RatingByACPercentageProps) {
     const acSubmissions = new Map<number, number>();
 
     for (let submission of submissions) {
-      totalSubmissions.set(submission.problem.rating, (totalSubmissions.get(submission.problem.rating) ?? 0) + 1);
+      const { rating } = submission.problem;
+      if (rating === undefined) continue;
+      totalSubmissions.set(rating, (totalSubmissions.get(rating) ?? 0) + 1);
 
       if (submission.verdict === Verdict.OK)
-        acSubmissions.set(submission.problem.rating, (acSubmissions.get(submission.problem.rating) ?? 0) + 1);
+        acSubmissions.set(rating, (acSubmissions.get(rating) ?? 0) + 1);
     }
 
     let acPercentages: number[] = [];

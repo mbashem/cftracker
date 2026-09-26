@@ -3,7 +3,7 @@ import logger from "redux-logger";
 import { TypedUseSelectorHook, useDispatch, useSelector } from "react-redux";
 
 import userSubmissions from './reducers/userSubmissionsSlice';
-import appSlice from './reducers/appSlice';
+import appSlice, { type AppState, initialAppState } from './reducers/appSlice';
 import userSlice from './reducers/userSlice';
 import { userApi } from './queries/userQuery';
 import { StorageService } from '../util/StorageService';
@@ -11,6 +11,8 @@ import { listApi } from './queries/listQuery';
 import { codeforcesApi } from './queries/codeforcesQuery';
 import { userSubmissionsListener } from './listeners/userSubmissionsListener';
 import { IS_DEBUG_MODE } from '../util/env';
+import { validateValue, type ValidatorRecord, validators } from '../util/validators';
+import { ThemesType } from '../util/Theme';
 
 const IS_REDUX_LOGGING_ENABLED = IS_DEBUG_MODE || sessionStorage.getItem("redux-debug") === "true";
 
@@ -22,6 +24,17 @@ const rootReducer = combineReducers({
   [listApi.reducerPath]: listApi.reducer,
   [codeforcesApi.reducerPath]: codeforcesApi.reducer
 });
+
+const appStateValidators = {
+  minRating: validators.nonNegativeInteger,
+  maxRating: validators.nonNegativeInteger,
+  minContestId: validators.positiveInteger,
+  maxContestId: validators.positiveInteger,
+  errorLog: validators.stringArray,
+  successLog: validators.stringArray,
+  themeMod: validators.enumValue([ThemesType.DARK, ThemesType.LIGHT]),
+  loaded: validators.boolean,
+} satisfies ValidatorRecord<AppState>;
 
 function saveToLocalStorage(state: RootState) {
   try {
@@ -37,10 +50,13 @@ function saveToLocalStorage(state: RootState) {
 
 function loadFromLocalStorage(): any {
   try {
-    const persedData = StorageService.getObject(StorageService.Keys.StateV2, {});
+    const persedData = StorageService.getObject<Record<string, unknown>>(StorageService.Keys.StateV2, {});
 
     console.log(persedData);
-    return persedData;
+    return {
+      ...persedData,
+      appState: validateValue(persedData.appState, initialAppState, appStateValidators),
+    };
   } catch (e) {
     console.log(e);
     return {};

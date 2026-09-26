@@ -1,0 +1,113 @@
+.common-card {
+  background: var(--theme-surface);
+  border: 1px solid var(--theme-border);
+  border-radius: 0.5rem;
+  box-shadow: 0 0.25rem 1rem var(--theme-shadow);
+  color: inherit;
+  height: 100%;
+  width: 100%;
+}
+
+.common-card__inner {
+  height: 100%;
+  width: 100%;
+}
+
+.common-card--stacked > .common-card__inner {
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem;
+}
+
+.common-card--inline > .common-card__inner {
+  align-items: flex-start;
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.common-card__body,
+.common-card__content,
+.common-card__description,
+.common-card__title {
+  display: block;
+}
+
+.common-card__body {
+  min-width: 0;
+}
+
+.common-card__title {
+  color: var(--theme-muted);
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin: 0 0 1rem;
+}
+
+.common-card--inline .common-card__title {
+  color: inherit;
+  font-size: 1rem;
+  line-height: 1.25;
+  margin-bottom: 0.25rem;
+}
+
+.common-card__content {
+  font-size: clamp(1.9rem, 4vw, 2.4rem);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: 0.5rem;
+  min-height: 2.4rem;
+}
+
+.common-card__description {
+  color: var(--theme-muted);
+  font-size: 0.875rem;
+}
+
+.common-card__icon {
+  align-items: center;
+  background: var(--theme-accent-soft);
+  border-radius: 0.5rem;
+  color: var(--theme-accent);
+  display: inline-flex;
+  flex: 0 0 2.5rem;
+  height: 2.5rem;
+  justify-content: center;
+  width: 2.5rem;
+}
+
+.common-card--interactive {
+  appearance: none;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.common-card--interactive:hover {
+  background: var(--theme-surface-hover);
+  border-color: var(--theme-accent);
+  box-shadow: 0 0.35rem 1.1rem var(--theme-shadow-hover);
+  transform: translateY(-2px);
+}
+
+.common-card--interactive:active {
+  transform: scale(0.98);
+}
+
+.common-card--interactive:focus-visible {
+  outline: 3px solid var(--theme-accent);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .common-card--interactive {
+    transition: none;
+  }
+
+  .common-card--interactive:hover,
+  .common-card--interactive:active {
+    transform: none;
+  }
+}

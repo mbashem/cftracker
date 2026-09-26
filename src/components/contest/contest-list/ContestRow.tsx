@@ -4,7 +4,7 @@ import Contest from "../../../types/CF/Contest";
 import { Verdict } from "../../../types/CF/Submission";
 import Theme from "../../../util/Theme";
 import ProblemListCell from "./ProblemsListCell";
-import { formateDate } from "../../../util/time";
+import { formatTimestampDateTime } from "../../../util/time";
 import { EMPTY_ARRAY } from "../../../util/constants";
 
 interface ContestRowProps {
@@ -103,7 +103,7 @@ function ContestRow({
         </div>
         {showDate && (
           <span className={`position-absolute ms-0 bottom-0 start-0 badge ${theme.text}`}>
-            {formateDate(contest.startTimeSeconds ?? 0)}
+            {formatTimestampDateTime(contest.startTimeSeconds ?? 0)}
           </span>
         )}
       </td>
