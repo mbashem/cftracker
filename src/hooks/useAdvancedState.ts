@@ -17,11 +17,11 @@ export type { SearchKey, SearchRecord } from "./useSearchParamState";
  */
 function useAdvancedState<T>(
   defaultValue: T,
-  storageKey?: string,
-  searchKey?: SearchKey<T>,
-  validator?: Validators<T>,
+  storageKey: string | undefined,
+  searchKey: SearchKey<T> | undefined,
+  validator: Validators<T>,
 ): [T, Dispatch<SetStateAction<T>>] {
-  const [searchValue, setSearchValue] = useSearchParamState<T>(searchKey);
+  const [searchValue, setSearchValue] = useSearchParamState<T>(searchKey, validator);
   const [value, setValue] = useState(defaultValue);
   const lastStorageKey = useRef<string | undefined>(undefined);
   const lastSearchKey = useRef<string | undefined>(undefined);

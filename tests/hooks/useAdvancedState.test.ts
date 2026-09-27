@@ -10,7 +10,7 @@ import { act, cleanup, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, expect, test } from "vitest";
 import useAdvancedState, { type SearchKey } from "../../src/hooks/useAdvancedState";
 import { SearchKeys } from "../../src/util/constants";
-import { type Validators, validators } from "../../src/util/validators";
+import { type Validator, type Validators, validators } from "../../src/util/validators";
 
 beforeEach(() => localStorage.clear());
 afterEach(cleanup);
@@ -19,7 +19,7 @@ interface HookOptions<T> {
   defaultValue: T;
   storageKey?: string;
   searchKey?: SearchKey<T>;
-  validator?: Validators<T>;
+  validator: Validators<T>;
   initialEntry?: string;
 }
 
@@ -217,7 +217,7 @@ test("merges partial URL records over stored object values", async () => {
       minContestDate: validators.date,
       maxContestDate: validators.date,
     },
-    initialEntry: `/?${SearchKeys.Search}=url&${SearchKeys.Page}=invalid`,
+    initialEntry: `/?${SearchKeys.Search}=url&${SearchKeys.Page}=invalid&${SearchKeys.MinContestDate}=invalid`,
   });
   try {
     expect(hook.current.value).toEqual({
@@ -238,7 +238,7 @@ test("merges partial URL records over stored object values", async () => {
 });
 
 test("applies validator arrays from left to right", async () => {
-  const atMostTen = (value: unknown, defaultValue: number) => {
+  const atMostTen: Validator<number> = (value, defaultValue) => {
     return typeof value === "number" && value <= 10 ? value : defaultValue;
   };
 
@@ -267,7 +267,10 @@ test("does not use persistence when its corresponding key is absent", async () =
   });
 });
 
-test("applies changed storage and search keys in order with search taking priority", () => {
+test.each([
+  { urlValue: "9", expected: 9 },
+  { urlValue: "invalid", expected: 3 },
+])("resolves changed storage and search keys with URL value $urlValue", ({ urlValue, expected }) => {
   localStorage.setItem("first-state", "2");
   localStorage.setItem("second-state", "3");
   const renderedHook = renderHook(({ storageKey, searchKey }) => {
@@ -279,7 +282,7 @@ test("applies changed storage and search keys in order with search taking priori
       searchKey: SearchKeys.Page,
     },
     reactStrictMode: true,
-    wrapper: createRouterWrapper(`/?${SearchKeys.Page}=7&${SearchKeys.MaxRating}=9`),
+    wrapper: createRouterWrapper(`/?${SearchKeys.Page}=7&${SearchKeys.MaxRating}=${urlValue}`),
   });
 
   expect(renderedHook.result.current.value).toBe(7);
@@ -288,8 +291,8 @@ test("applies changed storage and search keys in order with search taking priori
     searchKey: SearchKeys.MaxRating,
   });
 
-  expect(renderedHook.result.current.value).toBe(9);
-  expect(localStorage.getItem("second-state")).toBe("9");
+  expect(renderedHook.result.current.value).toBe(expected);
+  expect(localStorage.getItem("second-state")).toBe(String(expected));
 });
 
 test("reads the latest stored value when only the storage key changes", () => {
