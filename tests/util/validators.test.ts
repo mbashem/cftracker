@@ -2,12 +2,9 @@
 import { expect, test } from "vitest";
 import { validateValue, validators } from "../../src/util/validators";
 
-test("trusts the value when no validator is provided", () => {
-  const defaultValue = { page: 1 };
-  const value = { page: 2 };
-
-  expect(validateValue<string | number>("2", 1)).toBe("2");
-  expect(validateValue(value, defaultValue)).toBe(value);
+test("validates values with the supplied validator", () => {
+  expect(validateValue<number>("2", 1, validators.number)).toBe(2);
+  expect(validateValue<number>("invalid", 1, validators.number)).toBe(1);
 });
 
 test("trusts unvalidated object properties without restoring missing properties", () => {
@@ -39,7 +36,11 @@ test("lets validators decide how to handle missing object properties", () => {
       maxContestDate: validators.date,
       status: validators.string,
     },
-  )).toEqual({ status: "ATTEMPTED" });
+  )).toStrictEqual({
+    status: "ATTEMPTED",
+    minContestDate: undefined,
+    maxContestDate: undefined,
+  });
 });
 
 test("validates a single enum value", () => {
@@ -47,4 +48,39 @@ test("validates a single enum value", () => {
 
   expect(validateTheme(2, 1)).toBe(2);
   expect(validateTheme(3, 1)).toBe(1);
+});
+
+test("parses scalar values without a fallback", () => {
+  expect(validateValue<number>("7", undefined, validators.nonNegativeInteger)).toBe(7);
+  expect(validateValue<number>("invalid", undefined, validators.nonNegativeInteger)).toBeUndefined();
+  expect(validateValue<boolean>("true", undefined, validators.boolean)).toBe(true);
+  expect(validateValue<boolean>("invalid", undefined, validators.boolean)).toBeUndefined();
+});
+
+test("parses enum arrays without a fallback", () => {
+  const validator = validators.enumArray(["SOLVED", "ATTEMPTED"]);
+  expect(validateValue<string[]>("SOLVED,ATTEMPTED", undefined, validator)).toEqual(["SOLVED", "ATTEMPTED"]);
+  expect(validateValue<string[]>(123, undefined, validator)).toBeUndefined();
+  expect(validateValue<string[]>("invalid", undefined, validator)).toBeUndefined();
+});
+
+test("retains undefined results from property validators", () => {
+  interface Filter {
+    page: number;
+    search: string;
+    minContestDate: string | undefined;
+  }
+  expect(validateValue<Filter>(
+    { page: "invalid", minContestDate: "invalid", search: "url" },
+    undefined,
+    { page: validators.nonNegativeInteger, search: validators.string, minContestDate: validators.date },
+  )).toStrictEqual({ page: undefined, minContestDate: undefined, search: "url" });
+});
+
+test("assigns validator results for missing properties without a fallback", () => {
+  expect(validateValue<{ page: number }>(
+    {},
+    undefined,
+    { page: validators.number },
+  )).toStrictEqual({ page: undefined });
 });

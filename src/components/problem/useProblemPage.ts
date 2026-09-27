@@ -63,8 +63,10 @@ function getRatingRange(minRating: number, maxRating: number): ProblemRatingRang
 function useProblemPage() {
 	const { navigateTo } = useAppNavigation();
 	const { getSearchParam } = useAppSearchParams();
-	const [randomSearchValue, setRandomSearchValue] = useSearchParamState<boolean>(SearchKeys.Random);
-	const isRandomRequested = validators.boolean(randomSearchValue, false);
+	const [isRandomRequested, setRandomSearchValue] = useSearchParamState<boolean>(
+		SearchKeys.Random,
+		validators.boolean,
+	);
 	const {
 		listId,
 		submittedAfter,

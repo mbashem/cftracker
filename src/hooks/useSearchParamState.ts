@@ -1,6 +1,7 @@
 import { useCallback, useMemo } from "react";
 import { SearchKeys } from "../util/constants";
 import useAppSearchParams from "./useSearchParam";
+import { validateValue, type Validators } from "../util/validators";
 
 export type SearchRecord<T> = Partial<Record<keyof T, SearchKeys>>;
 export type SearchKey<T> = T extends object ? SearchKeys | SearchRecord<T> : SearchKeys;
@@ -32,13 +33,17 @@ function formatSearchValue(value: unknown): string | undefined {
   return String(value);
 }
 
-function useSearchParamState<T>(searchKey?: SearchKey<T>): [unknown | undefined, SetSearchParamState<T>] {
+/** Parses present URL values; missing keys remain undefined. The setter writes typed values. */
+function useSearchParamState<T>(
+  searchKey: SearchKey<T> | undefined,
+  validator: Validators<T>,
+): [T | undefined, SetSearchParamState<T>] {
   const { getSearchParam, getSearchParams, updateSearchParams } = useAppSearchParams();
   const searchValue = useMemo(() => {
     if (searchKey === undefined) return undefined;
     if (typeof searchKey === "string") {
       const value = getSearchParam(searchKey);
-      return value === undefined ? undefined : parseSearchValue(value);
+      return value === undefined ? undefined : validateValue(parseSearchValue(value), undefined, validator);
     }
 
     const entries = (Object.entries(searchKey) as Array<[keyof T, SearchKeys | undefined]>)
@@ -51,8 +56,8 @@ function useSearchParamState<T>(searchKey?: SearchKey<T>): [unknown | undefined,
       const propertyValue = values.get(key);
       if (propertyValue !== undefined) value[property] = propertyValue;
     }
-    return value;
-  }, [getSearchParam, getSearchParams, searchKey]);
+    return validateValue(value, undefined, validator);
+  }, [getSearchParam, getSearchParams, searchKey, validator]);
 
   const setSearchValue = useCallback<SetSearchParamState<T>>((value) => {
     if (searchKey === undefined) return;

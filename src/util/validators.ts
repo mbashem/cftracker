@@ -1,17 +1,20 @@
 import { parseDateInputValue } from "./time";
 
-export type Validator<T> = (value: unknown, defaultValue: T) => T;
+export type Validator<T> = <DefaultValue extends T | undefined>(
+  value: unknown,
+  defaultValue: DefaultValue,
+) => T | DefaultValue;
 export type ValidatorList<T> = readonly Validator<T>[];
 type ValidatorValue<T> = Validator<T> | ValidatorList<T>;
 export type ValidatorRecord<T> = Partial<{
   [Key in keyof T]: ValidatorValue<T[Key]>;
 }>;
-export type Validators<T> = T extends object
+export type Validators<T> = [T] extends [object]
   ? ValidatorValue<T> | ValidatorRecord<T>
   : ValidatorValue<T>;
 
 export const validators = {
-  string(value: unknown, defaultValue: string) {
+  string<T extends string | undefined>(value: unknown, defaultValue: T): string | T {
     return typeof value === "string" ? value : defaultValue;
   },
   optionalString(value: unknown, defaultValue: string | undefined) {
@@ -42,12 +45,12 @@ export const validators = {
     const parsedValue = validators.integer(value, defaultValue);
     return typeof parsedValue === "number" && parsedValue >= 0 ? parsedValue : defaultValue;
   },
-  boolean(value: unknown, defaultValue: boolean) {
+  boolean<T extends boolean | undefined>(value: unknown, defaultValue: T): boolean | T {
     if (value === true || value === "true") return true;
     if (value === false || value === "false") return false;
     return defaultValue;
   },
-  stringArray(value: unknown, defaultValue: string[]) {
+  stringArray<T extends string[] | undefined>(value: unknown, defaultValue: T): string[] | T {
     const values = typeof value === "string" ? value.split(",") : value;
     if (!Array.isArray(values) || !values.every((item) => typeof item === "string")) return defaultValue;
     return [...new Set(values.map((item) => item.trim()).filter(Boolean))];
@@ -56,6 +59,7 @@ export const validators = {
     const acceptedValueSet = new Set(acceptedValues);
     return (value, defaultValue) => {
       const parsedValue = validators.stringArray(value, defaultValue);
+      if (parsedValue === undefined) return defaultValue;
       if (!parsedValue.every((item) => acceptedValueSet.has(item as T))) {
         return defaultValue;
       }
@@ -80,22 +84,31 @@ function isValidator<T>(value: ValidatorValue<T>): value is Validator<T> {
   return typeof value === "function";
 }
 
-function applyValidators<T>(value: unknown, defaultValue: T, validator: ValidatorValue<T>): T {
+function applyValidators<T, DefaultValue extends T | undefined>(
+  value: unknown,
+  defaultValue: DefaultValue,
+  validator: ValidatorValue<T>,
+): T | DefaultValue {
   if (isValidator(validator)) return validator(value, defaultValue);
 
   let validatedValue = value;
   for (const currentValidator of validator) {
     validatedValue = currentValidator(validatedValue, defaultValue);
   }
-  return validatedValue as T;
+  return validatedValue as T | DefaultValue;
 }
 
-export function validateValue<T>(value: unknown, defaultValue: T, validator?: Validators<T>): T {
-  if (validator === undefined) return value as T;
+export function validateValue<T>(value: unknown, defaultValue: T, validator: Validators<T>): T;
+export function validateValue<T>(value: unknown, defaultValue: undefined, validator: Validators<T>): T | undefined;
+export function validateValue<T>(
+  value: unknown,
+  defaultValue: T | undefined,
+  validator: Validators<T>,
+): T | undefined {
   if (Array.isArray(validator) || isValidator(validator as ValidatorValue<T>)) {
     return applyValidators(value, defaultValue, validator as ValidatorValue<T>);
   }
-  if (!isPlainObject(defaultValue) || !isPlainObject(value)) {
+  if ((defaultValue !== undefined && !isPlainObject(defaultValue)) || !isPlainObject(value)) {
     return defaultValue;
   }
 
@@ -105,15 +118,12 @@ export function validateValue<T>(value: unknown, defaultValue: T, validator?: Va
   for (const property of Object.keys(validatorRecord) as Array<keyof T>) {
     const propertyValidator = validatorRecord[property];
     if (propertyValidator === undefined) continue;
-
     const propertyValue = applyValidators(
       inputValue[property as string],
-      defaultValue[property],
+      defaultValue?.[property],
       propertyValidator,
     );
-    if (propertyValue !== undefined || Object.prototype.hasOwnProperty.call(inputValue, property)) {
-      validatedValue[property] = propertyValue;
-    }
+    validatedValue[property] = propertyValue;
   }
   return validatedValue as T;
 }

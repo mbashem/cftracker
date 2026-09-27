@@ -38,8 +38,10 @@ function useContestPage() {
 	const { navigateTo } = useAppNavigation();
 	const { getSearchParam, updateSearchParam, deleteSearchParam } = useAppSearchParams();
 	const searchTextFromUrl = getSearchParam(SearchKeys.Search);
-	const [randomSearchValue, setRandomSearchValue] = useSearchParamState<boolean>(SearchKeys.Random);
-	const isRandomRequested = validators.boolean(randomSearchValue, false);
+	const [isRandomRequested, setRandomSearchValue] = useSearchParamState<boolean>(
+		SearchKeys.Random,
+		validators.boolean,
+	);
 	const { submissions: userSubmissions } = useSubmissionsStore();
 	const { contests, loading: isContestListLoading, error: contestListError } = useContestStore();
 	const state = useMemo(
