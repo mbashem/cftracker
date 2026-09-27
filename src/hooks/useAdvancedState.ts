@@ -1,7 +1,7 @@
 import { type Dispatch, type SetStateAction, useCallback, useEffect, useRef, useState } from "react";
 import useSearchParamState, { type SearchKey } from "./useSearchParamState";
 import { StorageService } from "../util/StorageService";
-import { mergeValue, serializeValue } from "../util/util";
+import { isPlainObject, mergeValue, removeUndefinedFields, serializeValue } from "../util/util";
 import { validateValue, type Validators } from "../util/validators";
 
 export type { SearchKey, SearchRecord } from "./useSearchParamState";
@@ -51,7 +51,11 @@ function useAdvancedState<T>(
       lastSearchKey.current = searchKeySerialised;
       if (searchKeySerialised !== undefined && searchValue !== undefined) {
         updateValue = true;
-        resolvedValue = validateValue(mergeValue(resolvedValue, searchValue), resolvedValue, validator);
+        // Undefined parsed URL fields provide no override; explicit state updates can still clear fields.
+        const searchOverrides = isPlainObject(searchValue)
+          ? removeUndefinedFields(searchValue)
+          : searchValue;
+        resolvedValue = validateValue(mergeValue(resolvedValue, searchOverrides), resolvedValue, validator);
       }
     }
 
