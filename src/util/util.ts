@@ -109,6 +109,11 @@ export function overrideObject<T extends object>(object: T, override: Partial<T>
   return { ...object, ...override };
 }
 
+/** Returns a shallow copy without fields whose value is undefined. */
+export function removeUndefinedFields<T extends object>(object: T): Partial<T> {
+  return Object.fromEntries(Object.entries(object).filter(([, value]) => value !== undefined)) as Partial<T>;
+}
+
 export function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object"
     && value !== null

@@ -183,7 +183,36 @@ test("reads a search key once until the key changes", async () => {
   });
 });
 
-test("merges partial URL records over stored object values", async () => {
+test.each([
+  {
+    scenario: "missing fields",
+    searchParams: `${SearchKeys.Search}=url`,
+    page: 2,
+    search: "url",
+    minContestDate: "2026-01-01",
+  },
+  {
+    scenario: "invalid fields",
+    searchParams: `${SearchKeys.Search}=url&${SearchKeys.Page}=invalid&${SearchKeys.MinContestDate}=invalid`,
+    page: 2,
+    search: "url",
+    minContestDate: "2026-01-01",
+  },
+  {
+    scenario: "a valid date override",
+    searchParams: `${SearchKeys.Search}=url&${SearchKeys.MinContestDate}=2026-03-01`,
+    page: 2,
+    search: "url",
+    minContestDate: "2026-03-01",
+  },
+  {
+    scenario: "valid zero and empty string overrides",
+    searchParams: `${SearchKeys.Search}=&${SearchKeys.Page}=0`,
+    page: 0,
+    search: "",
+    minContestDate: "2026-01-01",
+  },
+])("merges partial URL records over stored object values: $scenario", async ({ searchParams, page, search, minContestDate }) => {
   interface FilterState {
     page: number;
     search: string;
@@ -217,24 +246,39 @@ test("merges partial URL records over stored object values", async () => {
       minContestDate: validators.date,
       maxContestDate: validators.date,
     },
-    initialEntry: `/?${SearchKeys.Search}=url&${SearchKeys.Page}=invalid&${SearchKeys.MinContestDate}=invalid`,
+    initialEntry: `/?${searchParams}`,
   });
   try {
-    expect(hook.current.value).toEqual({
-      page: 2,
-      search: "url",
-      minContestDate: "2026-01-01",
+    const expectedValue = {
+      page,
+      search,
+      minContestDate,
       maxContestDate: "2026-06-30",
-    });
-    expect(JSON.parse(localStorage.getItem("advanced-state") ?? "")).toEqual({
-      page: 2,
-      search: "url",
-      minContestDate: "2026-01-01",
-      maxContestDate: "2026-06-30",
-    });
+    };
+    expect(hook.current.value).toStrictEqual(expectedValue);
+    expect(JSON.parse(localStorage.getItem("advanced-state") ?? "")).toEqual(expectedValue);
+    const params = new URLSearchParams(hook.current.search);
+    expect(params.get(SearchKeys.MinContestDate)).toBe(minContestDate);
+    expect(params.get(SearchKeys.MaxContestDate)).toBe("2026-06-30");
   } finally {
     await hook.unmount();
   }
+});
+
+test("allows explicit state updates to clear optional dates", async () => {
+  await usingAdvancedState<{ minContestDate: string | undefined; maxContestDate: string | undefined }>({
+    defaultValue: { minContestDate: "2026-01-01", maxContestDate: "2026-06-30" },
+    storageKey: "advanced-state",
+    searchKey: { minContestDate: SearchKeys.MinContestDate, maxContestDate: SearchKeys.MaxContestDate },
+    validator: { minContestDate: validators.date, maxContestDate: validators.date },
+  }, async (hook) => {
+    await hook.setValue((previousValue) => ({ ...previousValue, minContestDate: undefined }));
+    expect(hook.current.value).toStrictEqual({ minContestDate: undefined, maxContestDate: "2026-06-30" });
+    expect(JSON.parse(localStorage.getItem("advanced-state") ?? "")).toEqual({ maxContestDate: "2026-06-30" });
+    const params = new URLSearchParams(hook.current.search);
+    expect(params.has(SearchKeys.MinContestDate)).toBe(false);
+    expect(params.get(SearchKeys.MaxContestDate)).toBe("2026-06-30");
+  });
 });
 
 test("applies validator arrays from left to right", async () => {
