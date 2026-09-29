@@ -1,7 +1,7 @@
 import { type Dispatch, type SetStateAction, useCallback, useEffect, useRef, useState } from "react";
 import useSearchParamState, { type SearchKey } from "./useSearchParamState";
 import { StorageService } from "../util/StorageService";
-import { isPlainObject, mergeValue, removeUndefinedFields, serializeValue } from "../util/util";
+import { isDefined, isEqual, isNotEqual, isPlainObject, mergeValue, removeUndefinedFields, } from "../util/util";
 import { validateValue, type Validators } from "../util/validators";
 
 export type { SearchKey, SearchRecord } from "./useSearchParamState";
@@ -17,50 +17,57 @@ export type { SearchKey, SearchRecord } from "./useSearchParamState";
  */
 function useAdvancedState<T>(
   defaultValue: T,
-  storageKey: string | undefined,
-  searchKey: SearchKey<T> | undefined,
   validator: Validators<T>,
+  storageKey?: string,
+  searchKey?: SearchKey<T>,
 ): [T, Dispatch<SetStateAction<T>>] {
-  const [searchValue, setSearchValue] = useSearchParamState<T>(searchKey, validator);
   const [value, setValue] = useState(defaultValue);
   const lastStorageKey = useRef<string | undefined>(undefined);
-  const lastSearchKey = useRef<string | undefined>(undefined);
+  const lastSearchKey = useRef<SearchKey<T> | undefined>(undefined);
+  const [searchValue, setSearchValue] = useSearchParamState(searchKey, validator);
 
   const setSafeValue = useCallback((nextValue: unknown) => {
     setValue((previousValue) => {
       const candidateValue = typeof nextValue === "function"
         ? (nextValue as (previousValue: T) => T)(previousValue)
         : nextValue;
-      return validateValue(candidateValue, previousValue, validator);
+      let validatedValue = validateValue(candidateValue, previousValue, validator);
+      if (isEqual(validatedValue, previousValue)) return previousValue;
+      return validatedValue;
     });
   }, [validator]);
 
   useEffect(() => {
-    let updateValue = false;
+    let updatedValue = false;
     let resolvedValue: T = value;
-    if (lastStorageKey.current !== storageKey) {
+    if (isNotEqual(lastStorageKey.current, storageKey)) {
       lastStorageKey.current = storageKey;
-      if (storageKey !== undefined) {
-        updateValue = true;
-        resolvedValue = validateValue(StorageService.getValue(storageKey, value), value, validator);
+      if (isDefined(storageKey)) {
+        updatedValue = true;
+        resolvedValue = validateValue(StorageService.getValue(storageKey, value), resolvedValue, validator);
       }
     }
 
-    const searchKeySerialised = serializeValue(searchKey);
-    if (lastSearchKey.current !== searchKeySerialised) {
-      lastSearchKey.current = searchKeySerialised;
-      if (searchKeySerialised !== undefined && searchValue !== undefined) {
-        updateValue = true;
-        // Undefined parsed URL fields provide no override; explicit state updates can still clear fields.
-        const searchOverrides = isPlainObject(searchValue)
-          ? removeUndefinedFields(searchValue)
-          : searchValue;
-        resolvedValue = validateValue(mergeValue(resolvedValue, searchOverrides), resolvedValue, validator);
+    if (isNotEqual(lastSearchKey.current, searchKey)) {
+      lastSearchKey.current = searchKey;
+      if (isDefined(searchKey) && isDefined(searchValue)) {
+        updatedValue = true;
+        let validatedSearchValue = validateValue(searchValue, resolvedValue, validator);
+        const searchOverrides = isPlainObject(validatedSearchValue)
+          ? removeUndefinedFields(validatedSearchValue)
+          : validatedSearchValue;
+        resolvedValue = mergeValue(resolvedValue, searchOverrides);
       }
     }
 
-    if (updateValue) setValue(resolvedValue);
+    if (updatedValue) setSafeValue(resolvedValue);
   }, [storageKey, searchKey]);
+
+  useEffect(() => {
+    if (!isDefined(searchValue)) {
+      setSearchValue(value);
+    }
+  }, [searchValue]);
 
   useEffect(() => {
     setSearchValue(value);

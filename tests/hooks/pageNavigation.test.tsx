@@ -161,8 +161,9 @@ test("a defined storage key applies its latest value and disabling storage prese
   expect(new URLSearchParams(location.search).get(SearchKeys.MinRating)).toBe("1800");
   expect(StorageService.getObject(StorageService.Keys.Problem.State, {})).toMatchObject(latestFilter);
 
-  search.set(SearchKeys.UseFilterStorage, "false");
-  await act(async () => navigate({ search: search.toString() }));
+  const updatedSearch = new URLSearchParams(location.search);
+  updatedSearch.set(SearchKeys.UseFilterStorage, "false");
+  await act(async () => navigate({ search: updatedSearch.toString() }));
   expect(page.filter).toMatchObject(latestFilter);
   expect(StorageService.getObject(StorageService.Keys.Problem.State, {})).toMatchObject(latestFilter);
 });

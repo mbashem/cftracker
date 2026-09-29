@@ -93,9 +93,9 @@ function useProblemState(
   ));
   const [state, setState] = useAdvancedState(
     defaultState,
+    problemValidators,
     useStorage ? StorageService.Keys.Problem.State : undefined,
     problemSearchKeys,
-    problemValidators,
   );
   const filter: ProblemFilter = state;
   const tags = useMemo(() => new Set(state.tags), [state.tags]);
