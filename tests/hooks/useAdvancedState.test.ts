@@ -47,9 +47,9 @@ async function renderAdvancedState<T>(options: HookOptions<T>): Promise<Rendered
   const renderedHook = renderHook(() => {
     const [value, setValue] = useAdvancedState(
       options.defaultValue,
+      options.validator,
       options.storageKey,
       options.searchKey,
-      options.validator,
     );
     const navigate = useNavigate();
     const { search } = useLocation();
@@ -168,7 +168,7 @@ test("validates functional updates before synchronizing storage and the URL", as
   });
 });
 
-test("reads a search key once until the key changes", async () => {
+test("observes URL changes and back navigation for the same search key", async () => {
   await usingAdvancedState({
     defaultValue: 1,
     storageKey: "advanced-state",
@@ -177,9 +177,33 @@ test("reads a search key once until the key changes", async () => {
     initialEntry: `/?${SearchKeys.Page}=2`,
   }, async (hook) => {
     await hook.navigate(`?${SearchKeys.Page}=8`);
+    expect(hook.current.value).toBe(8);
+    expect(localStorage.getItem("advanced-state")).toBe("8");
+    expect(new URLSearchParams(hook.current.search).get(SearchKeys.Page)).toBe("8");
+
+    await act(async () => hook.current.navigate(-1));
     expect(hook.current.value).toBe(2);
     expect(localStorage.getItem("advanced-state")).toBe("2");
-    expect(new URLSearchParams(hook.current.search).get(SearchKeys.Page)).toBe("8");
+  });
+});
+
+test("ignores equal parsed URL records but observes changed values", async () => {
+  await usingAdvancedState({
+    defaultValue: { page: 1, search: "default" },
+    storageKey: "advanced-state",
+    searchKey: { page: SearchKeys.Page, search: SearchKeys.Search },
+    validator: { page: validators.nonNegativeInteger, search: validators.string },
+    initialEntry: `/?${SearchKeys.Page}=7&${SearchKeys.Search}=same`,
+  }, async (hook) => {
+    const previousValue = hook.current.value;
+    await hook.navigate(`?${SearchKeys.Search}=same&${SearchKeys.Page}=7&${SearchKeys.Random}=true`);
+    expect(hook.current.value).toBe(previousValue);
+    expect(new URLSearchParams(hook.current.search).get(SearchKeys.Random)).toBe("true");
+
+    await hook.navigate(`?${SearchKeys.Search}=changed&${SearchKeys.Page}=7&${SearchKeys.Random}=true`);
+    expect(hook.current.value).toEqual({ page: 7, search: "changed" });
+    expect(JSON.parse(localStorage.getItem("advanced-state") ?? "")).toEqual({ page: 7, search: "changed" });
+    expect(new URLSearchParams(hook.current.search).get(SearchKeys.Random)).toBe("true");
   });
 });
 
@@ -260,9 +284,71 @@ test.each([
     const params = new URLSearchParams(hook.current.search);
     expect(params.get(SearchKeys.MinContestDate)).toBe(minContestDate);
     expect(params.get(SearchKeys.MaxContestDate)).toBe("2026-06-30");
+
+    await hook.navigate(`?${SearchKeys.Search}=updated&${SearchKeys.Page}=invalid&${SearchKeys.MinContestDate}=invalid&${SearchKeys.Random}=true`);
+    expect(hook.current.value).toStrictEqual({ ...expectedValue, search: "updated" });
+    expect(JSON.parse(localStorage.getItem("advanced-state") ?? "")).toEqual({ ...expectedValue, search: "updated" });
+    expect(new URLSearchParams(hook.current.search).get(SearchKeys.Random)).toBe("true");
   } finally {
     await hook.unmount();
   }
+});
+
+test("preserves state identity for deeply equal updates with reordered object keys", async () => {
+  await usingAdvancedState({
+    defaultValue: { page: 1, search: "same" },
+    storageKey: "advanced-state",
+    searchKey: { page: SearchKeys.Page, search: SearchKeys.Search },
+    validator: { page: validators.nonNegativeInteger, search: validators.string },
+  }, async (hook) => {
+    const previousValue = hook.current.value;
+    const previousSearch = hook.current.search;
+    await hook.setValue({ search: "same", page: 1 });
+    expect(hook.current.value).toBe(previousValue);
+    expect(hook.current.search).toBe(previousSearch);
+  });
+});
+
+test("does not feed unchanged URL values back into inline object state updates", async () => {
+  const hook = renderHook(() => {
+    const [value, setValue] = useAdvancedState(
+      { page: 1 },
+      { page: validators.nonNegativeInteger },
+      "advanced-state",
+      { page: SearchKeys.Page },
+    );
+    return { value, setValue, search: useLocation().search };
+  }, { reactStrictMode: true, wrapper: createRouterWrapper(`/?${SearchKeys.Page}=7`) });
+
+  expect(hook.result.current.value).toEqual({ page: 7 });
+  await act(async () => hook.result.current.setValue({ page: 8 }));
+  expect(hook.result.current.value).toEqual({ page: 8 });
+  expect(new URLSearchParams(hook.result.current.search).get(SearchKeys.Page)).toBe("8");
+  expect(JSON.parse(localStorage.getItem("advanced-state") ?? "")).toEqual({ page: 8 });
+});
+
+test("does not reload sources when search-key properties are reordered", () => {
+  const hook = renderHook(({ reversed }) => {
+    const searchKey = reversed
+      ? { search: SearchKeys.Search, page: SearchKeys.Page }
+      : { page: SearchKeys.Page, search: SearchKeys.Search };
+    const [value] = useAdvancedState(
+      { page: 1, search: "same" },
+      { page: validators.nonNegativeInteger, search: validators.string },
+      "advanced-state",
+      searchKey,
+    );
+    return value;
+  }, {
+    initialProps: { reversed: false },
+    reactStrictMode: true,
+    wrapper: createRouterWrapper(`/?${SearchKeys.Page}=7&${SearchKeys.Search}=same`),
+  });
+  const previousValue = hook.result.current;
+  localStorage.setItem("advanced-state", JSON.stringify({ page: 9, search: "stored later" }));
+  hook.rerender({ reversed: true });
+  expect(hook.result.current).toBe(previousValue);
+  expect(hook.result.current).toEqual({ page: 7, search: "same" });
 });
 
 test("allows explicit state updates to clear optional dates", async () => {
@@ -318,7 +404,7 @@ test.each([
   localStorage.setItem("first-state", "2");
   localStorage.setItem("second-state", "3");
   const renderedHook = renderHook(({ storageKey, searchKey }) => {
-    const [value] = useAdvancedState(1, storageKey, searchKey, validators.nonNegativeInteger);
+    const [value] = useAdvancedState(1, validators.nonNegativeInteger, storageKey, searchKey);
     return { value, search: useLocation().search };
   }, {
     initialProps: {
@@ -343,7 +429,7 @@ test("reads the latest stored value when only the storage key changes", () => {
   localStorage.setItem("first-state", "2");
   localStorage.setItem("second-state", "3");
   const renderedHook = renderHook(({ storageKey }) => {
-    const [value] = useAdvancedState(1, storageKey, undefined, validators.nonNegativeInteger);
+    const [value] = useAdvancedState(1, validators.nonNegativeInteger, storageKey, undefined);
     return value;
   }, {
     initialProps: { storageKey: "first-state" },
@@ -360,7 +446,7 @@ test("reads the latest stored value when only the storage key changes", () => {
 
 test("reads the latest URL value when only the search key changes", () => {
   const renderedHook = renderHook(({ searchKey }) => {
-    const [value] = useAdvancedState(1, undefined, searchKey, validators.nonNegativeInteger);
+    const [value] = useAdvancedState(1, validators.nonNegativeInteger, undefined, searchKey);
     return value;
   }, {
     initialProps: { searchKey: SearchKeys.Page },
@@ -375,7 +461,7 @@ test("reads the latest URL value when only the search key changes", () => {
 
 test("synchronizes the current value when an optional key is enabled", () => {
   const renderedHook = renderHook(({ storageKey, searchKey }) => {
-    const [value] = useAdvancedState(3, storageKey, searchKey, validators.nonNegativeInteger);
+    const [value] = useAdvancedState(3, validators.nonNegativeInteger, storageKey, searchKey);
     return { value, search: useLocation().search };
   }, {
     initialProps: {

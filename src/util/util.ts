@@ -1,3 +1,5 @@
+import { isEqual as lodashIsEqual } from "lodash";
+
 /** Returns the Codeforces contest page URL for a contest id. */
 export function getContestUrl(contestId: number) {
   return "https://codeforces.com/contest/" + contestId;
@@ -114,6 +116,15 @@ export function removeUndefinedFields<T extends object>(object: T): Partial<T> {
   return Object.fromEntries(Object.entries(object).filter(([, value]) => value !== undefined)) as Partial<T>;
 }
 
+/** Compares nested values deeply without depending on object-key order. */
+export function isEqual<T, U>(value: T, other: U): boolean {
+  return lodashIsEqual(value, other);
+}
+
+export function isNotEqual<T, U>(value: T, other: U): boolean {
+  return !isEqual(value, other)
+}
+
 export function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object"
     && value !== null
@@ -126,10 +137,4 @@ export function mergeValue<T>(baseValue: T, value: unknown): T {
   return isPlainObject(baseValue) && isPlainObject(value)
     ? { ...baseValue, ...value } as T
     : value as T;
-}
-
-export function serializeValue(value: unknown): string | undefined {
-  if (value === undefined) return undefined;
-  if (value instanceof Set || value instanceof Map) return JSON.stringify([...value]);
-  return JSON.stringify(value);
 }
