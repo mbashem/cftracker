@@ -1,4 +1,4 @@
-import { type Dispatch, type SetStateAction, useCallback, useEffect, useRef, useState } from "react";
+import { type Dispatch, type SetStateAction, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import useSearchParamState, { type SearchKey } from "./useSearchParamState";
 import { StorageService } from "../util/StorageService";
 import { isDefined, isEqual, isNotEqual, isPlainObject, mergeValue, removeUndefinedFields, } from "../util/util";
@@ -13,7 +13,9 @@ export type { SearchKey, SearchRecord } from "./useSearchParamState";
  * invalid URL entries retain valid stored values. Each source is read once
  * initially and again when its key changes.
  * After resolution, every validated state change is synchronized to the currently
- * configured storage and search keys. Omitting a key disables that source.
+ * configured search keys. Storage writes wait 300ms and only persist a candidate
+ * that still matches the latest committed storage key and value.
+ * Omitting a key disables that source.
  */
 function useAdvancedState<T>(
   defaultValue: T,
@@ -21,10 +23,38 @@ function useAdvancedState<T>(
   storageKey?: string,
   searchKey?: SearchKey<T>,
 ): [T, Dispatch<SetStateAction<T>>] {
-  const [value, setValue] = useState(defaultValue);
+  function getResolvedValue(resolvedValue: T) {
+    if (isNotEqual(lastStorageKey.current, storageKey)) {
+      lastStorageKey.current = storageKey;
+      if (isDefined(storageKey)) {
+        resolvedValue = validateValue(StorageService.getValue(storageKey, resolvedValue), resolvedValue, validator);
+      }
+    }
+
+    if (isNotEqual(lastSearchKey.current, searchKey)) {
+      lastSearchKey.current = searchKey;
+      if (isDefined(searchKey) && isDefined(searchValue)) {
+        let validatedSearchValue = validateValue(searchValue, resolvedValue, validator);
+        const searchOverrides = isPlainObject(validatedSearchValue)
+          ? removeUndefinedFields(validatedSearchValue)
+          : validatedSearchValue;
+        resolvedValue = mergeValue(resolvedValue, searchOverrides);
+      }
+    }
+
+    return resolvedValue;
+  }
   const lastStorageKey = useRef<string | undefined>(undefined);
   const lastSearchKey = useRef<SearchKey<T> | undefined>(undefined);
   const [searchValue, setSearchValue] = useSearchParamState(searchKey, validator);
+  const [value, setValue] = useState(() => {
+    return getResolvedValue(defaultValue);
+  });
+  const latestStorageValue = useRef({ storageKey, value });
+
+  useLayoutEffect(() => {
+    latestStorageValue.current = { storageKey, value };
+  }, [storageKey, value]);
 
   const setSafeValue = useCallback((nextValue: unknown) => {
     setValue((previousValue) => {
@@ -37,30 +67,9 @@ function useAdvancedState<T>(
     });
   }, [validator]);
 
+
   useEffect(() => {
-    let updatedValue = false;
-    let resolvedValue: T = value;
-    if (isNotEqual(lastStorageKey.current, storageKey)) {
-      lastStorageKey.current = storageKey;
-      if (isDefined(storageKey)) {
-        updatedValue = true;
-        resolvedValue = validateValue(StorageService.getValue(storageKey, value), resolvedValue, validator);
-      }
-    }
-
-    if (isNotEqual(lastSearchKey.current, searchKey)) {
-      lastSearchKey.current = searchKey;
-      if (isDefined(searchKey) && isDefined(searchValue)) {
-        updatedValue = true;
-        let validatedSearchValue = validateValue(searchValue, resolvedValue, validator);
-        const searchOverrides = isPlainObject(validatedSearchValue)
-          ? removeUndefinedFields(validatedSearchValue)
-          : validatedSearchValue;
-        resolvedValue = mergeValue(resolvedValue, searchOverrides);
-      }
-    }
-
-    if (updatedValue) setSafeValue(resolvedValue);
+    setSafeValue(getResolvedValue(value));
   }, [storageKey, searchKey]);
 
   useEffect(() => {
@@ -71,10 +80,20 @@ function useAdvancedState<T>(
 
   useEffect(() => {
     setSearchValue(value);
-    if (storageKey !== undefined) {
-      StorageService.saveValue(storageKey, value);
-    }
   }, [value]);
+
+  useEffect(() => {
+    if (storageKey === undefined) return;
+
+    const timeout = setTimeout(() => {
+      const latest = latestStorageValue.current;
+      if (latest.storageKey === storageKey && isEqual(latest.value, value)) {
+        StorageService.saveValue(storageKey, value);
+      }
+    }, 300);
+
+    return () => clearTimeout(timeout);
+  }, [storageKey, value]);
 
   return [value, setSafeValue];
 }

@@ -70,6 +70,7 @@ const savedFilter = {
 };
 
 beforeEach(() => {
+  vi.useFakeTimers();
   localStorage.clear();
   StorageService.saveObject(StorageService.Keys.Problem.State, savedFilter);
   data.loading = false;
@@ -84,7 +85,10 @@ beforeEach(() => {
     new Problem(2, "A", "temporary", "PROGRAMMING", 800, []),
   ];
 });
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+});
 
 
 function randomPage(kind: "problem" | "contest") {
@@ -147,6 +151,7 @@ test("returning from temporary snapshot filters reloads saved preferences on the
   await act(async () => navigate(Path.PROBLEMS));
   expect(page.filter).toMatchObject(savedFilter);
   await act(async () => page.updateFilter({ search: "updated" }));
+  await act(async () => vi.advanceTimersByTimeAsync(300));
   expect(StorageService.getObject(StorageService.Keys.Problem.State, {})).toMatchObject({ ...savedFilter, search: "updated" });
 });
 

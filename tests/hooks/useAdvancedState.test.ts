@@ -4,16 +4,29 @@ import {
   createElement,
   type PropsWithChildren,
   type SetStateAction,
+  useLayoutEffect,
 } from "react";
 import { MemoryRouter, useLocation, useNavigate, type NavigateFunction } from "react-router";
 import { act, cleanup, renderHook } from "@testing-library/react";
-import { afterEach, beforeEach, expect, test } from "vitest";
+import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import useAdvancedState, { type SearchKey } from "../../src/hooks/useAdvancedState";
 import { SearchKeys } from "../../src/util/constants";
 import { type Validator, type Validators, validators } from "../../src/util/validators";
+import { StorageService } from "../../src/util/StorageService";
 
-beforeEach(() => localStorage.clear());
-afterEach(cleanup);
+beforeEach(() => {
+  vi.useFakeTimers();
+  localStorage.clear();
+});
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+  vi.useRealTimers();
+});
+
+async function advanceStorageTimer() {
+  await act(async () => vi.advanceTimersByTimeAsync(300));
+}
 
 interface HookOptions<T> {
   defaultValue: T;
@@ -59,15 +72,18 @@ async function renderAdvancedState<T>(options: HookOptions<T>): Promise<Rendered
     wrapper: createRouterWrapper(options.initialEntry ?? "/"),
   });
 
+  await advanceStorageTimer();
   return {
     get current() {
       return renderedHook.result.current;
     },
     async setValue(value) {
       await act(async () => renderedHook.result.current.setValue(value));
+      await advanceStorageTimer();
     },
     async navigate(search) {
       await act(async () => renderedHook.result.current.navigate({ search }));
+      await advanceStorageTimer();
     },
     async unmount() {
       renderedHook.unmount();
@@ -324,6 +340,7 @@ test("does not feed unchanged URL values back into inline object state updates",
   await act(async () => hook.result.current.setValue({ page: 8 }));
   expect(hook.result.current.value).toEqual({ page: 8 });
   expect(new URLSearchParams(hook.result.current.search).get(SearchKeys.Page)).toBe("8");
+  await advanceStorageTimer();
   expect(JSON.parse(localStorage.getItem("advanced-state") ?? "")).toEqual({ page: 8 });
 });
 
@@ -400,7 +417,7 @@ test("does not use persistence when its corresponding key is absent", async () =
 test.each([
   { urlValue: "9", expected: 9 },
   { urlValue: "invalid", expected: 3 },
-])("resolves changed storage and search keys with URL value $urlValue", ({ urlValue, expected }) => {
+])("resolves changed storage and search keys with URL value $urlValue", async ({ urlValue, expected }) => {
   localStorage.setItem("first-state", "2");
   localStorage.setItem("second-state", "3");
   const renderedHook = renderHook(({ storageKey, searchKey }) => {
@@ -422,6 +439,7 @@ test.each([
   });
 
   expect(renderedHook.result.current.value).toBe(expected);
+  await advanceStorageTimer();
   expect(localStorage.getItem("second-state")).toBe(String(expected));
 });
 
@@ -485,4 +503,191 @@ test("synchronizes the current value when an optional key is enabled", () => {
   });
   expect(renderedHook.result.current.value).toBe(6);
   expect(new URLSearchParams(renderedHook.result.current.search).get(SearchKeys.Page)).toBe("6");
+});
+
+function renderStorageState(storageKey: string | undefined) {
+  return renderHook(({ storageKey }) => {
+    const [value, setValue] = useAdvancedState(1, validators.nonNegativeInteger, storageKey, SearchKeys.Page);
+    return { value, setValue, search: useLocation().search };
+  }, {
+    initialProps: { storageKey },
+    reactStrictMode: true,
+    wrapper: createRouterWrapper("/"),
+  });
+}
+
+test("delays storage writes for 300ms while updating state and URL immediately", async () => {
+  const save = vi.spyOn(StorageService, "saveValue");
+  const hook = renderStorageState("advanced-state");
+  await act(async () => hook.result.current.setValue(4));
+
+  expect(hook.result.current.value).toBe(4);
+  expect(new URLSearchParams(hook.result.current.search).get(SearchKeys.Page)).toBe("4");
+  await act(async () => vi.advanceTimersByTimeAsync(299));
+  expect(save).not.toHaveBeenCalled();
+  expect(localStorage.getItem("advanced-state")).toBeNull();
+  await act(async () => vi.advanceTimersByTimeAsync(1));
+  expect(save).toHaveBeenCalledExactlyOnceWith("advanced-state", 4);
+});
+
+test("only saves the latest value after rapid updates", async () => {
+  const save = vi.spyOn(StorageService, "saveValue");
+  const hook = renderStorageState("advanced-state");
+  await act(async () => hook.result.current.setValue(2));
+  await act(async () => vi.advanceTimersByTimeAsync(200));
+  await act(async () => hook.result.current.setValue(3));
+  await act(async () => vi.advanceTimersByTimeAsync(299));
+  expect(save).not.toHaveBeenCalled();
+  await act(async () => vi.advanceTimersByTimeAsync(1));
+  expect(save).toHaveBeenCalledExactlyOnceWith("advanced-state", 3);
+});
+
+test("cancels a pending write when storage is disabled", async () => {
+  localStorage.setItem("advanced-state", "7");
+  const save = vi.spyOn(StorageService, "saveValue");
+  const hook = renderStorageState("advanced-state");
+  await act(async () => hook.result.current.setValue(8));
+  await act(async () => vi.advanceTimersByTimeAsync(200));
+  hook.rerender({ storageKey: undefined });
+  await advanceStorageTimer();
+
+  expect(hook.result.current.value).toBe(8);
+  expect(save).not.toHaveBeenCalled();
+  expect(localStorage.getItem("advanced-state")).toBe("7");
+});
+
+test("cancels the old key's write and only saves the new key's resolved value", async () => {
+  localStorage.setItem("first-state", "2");
+  localStorage.setItem("second-state", "5");
+  const save = vi.spyOn(StorageService, "saveValue");
+  const hook = renderStorageState("first-state");
+  await act(async () => hook.result.current.setValue(9));
+  await act(async () => vi.advanceTimersByTimeAsync(200));
+  hook.rerender({ storageKey: "second-state" });
+  expect(hook.result.current.value).toBe(5);
+  await advanceStorageTimer();
+
+  expect(save).toHaveBeenCalledExactlyOnceWith("second-state", 5);
+  expect(localStorage.getItem("first-state")).toBe("2");
+});
+
+test("cancels pending storage writes on unmount", async () => {
+  const save = vi.spyOn(StorageService, "saveValue");
+  const hook = renderStorageState("advanced-state");
+  await act(async () => hook.result.current.setValue(4));
+  hook.unmount();
+  await advanceStorageTimer();
+  expect(save).not.toHaveBeenCalled();
+});
+
+test("initial storage resolution never writes the default over a saved value", async () => {
+  localStorage.setItem("advanced-state", "7");
+  const save = vi.spyOn(StorageService, "saveValue");
+  const hook = renderStorageState("advanced-state");
+  expect(hook.result.current.value).toBe(7);
+  expect(save).not.toHaveBeenCalled();
+  await advanceStorageTimer();
+  expect(save).toHaveBeenCalledExactlyOnceWith("advanced-state", 7);
+});
+
+test("enabling storage schedules a write even when state does not change", async () => {
+  const save = vi.spyOn(StorageService, "saveValue");
+  const hook = renderStorageState(undefined);
+  hook.rerender({ storageKey: "enabled-state" });
+  expect(save).not.toHaveBeenCalled();
+  await advanceStorageTimer();
+  expect(save).toHaveBeenCalledExactlyOnceWith("enabled-state", 1);
+});
+
+test("rejecting an invalid update does not restart a valid pending write", async () => {
+  const save = vi.spyOn(StorageService, "saveValue");
+  const hook = renderStorageState("advanced-state");
+  await act(async () => hook.result.current.setValue(4));
+  await act(async () => vi.advanceTimersByTimeAsync(200));
+  await act(async () => hook.result.current.setValue(-1));
+  expect(hook.result.current.value).toBe(4);
+  await act(async () => vi.advanceTimersByTimeAsync(100));
+  expect(save).toHaveBeenCalledExactlyOnceWith("advanced-state", 4);
+});
+
+test("deeply equal reordered object updates do not restart the pending write", async () => {
+  const save = vi.spyOn(StorageService, "saveValue");
+  const hook = renderHook(() => {
+    const [value, setValue] = useAdvancedState(
+      { page: 1, search: "same" },
+      { page: validators.nonNegativeInteger, search: validators.string },
+      "advanced-state",
+    );
+    return { value, setValue };
+  }, { reactStrictMode: true, wrapper: createRouterWrapper("/") });
+  const original = hook.result.current.value;
+  await act(async () => vi.advanceTimersByTimeAsync(200));
+  await act(async () => hook.result.current.setValue({ search: "same", page: 1 }));
+  expect(hook.result.current.value).toBe(original);
+  await act(async () => vi.advanceTimersByTimeAsync(100));
+  expect(save).toHaveBeenCalledExactlyOnceWith("advanced-state", original);
+});
+
+test("changing away from a value and back starts a fresh delay", async () => {
+  const save = vi.spyOn(StorageService, "saveValue");
+  const hook = renderStorageState("advanced-state");
+  await act(async () => vi.advanceTimersByTimeAsync(100));
+  await act(async () => hook.result.current.setValue(2));
+  await act(async () => vi.advanceTimersByTimeAsync(100));
+  await act(async () => hook.result.current.setValue(1));
+  await act(async () => vi.advanceTimersByTimeAsync(299));
+  expect(save).not.toHaveBeenCalled();
+  await act(async () => vi.advanceTimersByTimeAsync(1));
+  expect(save).toHaveBeenCalledExactlyOnceWith("advanced-state", 1);
+});
+
+test("disabling and reenabling storage cannot revive a temporary pending value", async () => {
+  localStorage.setItem("advanced-state", "7");
+  const save = vi.spyOn(StorageService, "saveValue");
+  const hook = renderStorageState("advanced-state");
+  await act(async () => hook.result.current.setValue(8));
+  await act(async () => vi.advanceTimersByTimeAsync(200));
+  hook.rerender({ storageKey: undefined });
+  hook.rerender({ storageKey: "advanced-state" });
+  expect(hook.result.current.value).toBe(7);
+  await act(async () => vi.advanceTimersByTimeAsync(100));
+  expect(save).not.toHaveBeenCalled();
+  expect(localStorage.getItem("advanced-state")).toBe("7");
+  await act(async () => vi.advanceTimersByTimeAsync(200));
+  expect(save).toHaveBeenCalledExactlyOnceWith("advanced-state", 7);
+});
+
+test("the latest key blocks an expired callback before passive cleanup", async () => {
+  const save = vi.spyOn(StorageService, "saveValue");
+  const hook = renderHook(({ storageKey }) => {
+    useAdvancedState(1, validators.nonNegativeInteger, storageKey);
+    useLayoutEffect(() => {
+      // Deliberately fire the old timer after commit but before effect cleanup.
+      if (storageKey === undefined) vi.advanceTimersByTime(300);
+    }, [storageKey]);
+  }, {
+    initialProps: { storageKey: "advanced-state" as string | undefined },
+    reactStrictMode: true,
+    wrapper: createRouterWrapper("/"),
+  });
+  hook.rerender({ storageKey: undefined });
+  expect(save).not.toHaveBeenCalled();
+  await advanceStorageTimer();
+  expect(save).not.toHaveBeenCalled();
+});
+
+test("the latest value blocks an expired callback before passive cleanup", async () => {
+  const save = vi.spyOn(StorageService, "saveValue");
+  const hook = renderHook(() => {
+    const [value, setValue] = useAdvancedState(1, validators.nonNegativeInteger, "advanced-state");
+    useLayoutEffect(() => {
+      // Exercise the final value check independently of timer cancellation.
+      if (value === 2) vi.advanceTimersByTime(300);
+    }, [value]);
+    return { value, setValue };
+  }, { reactStrictMode: true, wrapper: createRouterWrapper("/") });
+  await act(async () => hook.result.current.setValue(2));
+  expect(save).not.toHaveBeenCalled();
+  await advanceStorageTimer();
+  expect(save).toHaveBeenCalledExactlyOnceWith("advanced-state", 2);
 });
