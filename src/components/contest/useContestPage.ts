@@ -36,7 +36,7 @@ function useContestPage() {
 
 	const { theme } = useTheme();
 	const { navigateTo } = useAppNavigation();
-	const { getSearchParam, updateSearchParam, deleteSearchParam } = useAppSearchParams();
+	const { getSearchParam, updateSearchParams } = useAppSearchParams();
 	const searchTextFromUrl = getSearchParam(SearchKeys.Search);
 	const [isRandomRequested, setRandomSearchValue] = useSearchParamState<boolean>(
 		SearchKeys.Random,
@@ -153,11 +153,12 @@ function useContestPage() {
 
 	useEffect(() => {
 		StorageService.saveObject(StorageService.Keys.Contest.Filter, filter);
-		if (filter.search.trim().length) updateSearchParam(SearchKeys.Search, filter.search.trim());
-		else deleteSearchParam(SearchKeys.Search);
+		updateSearchParams(new Map([
+			[SearchKeys.Search, filter.search.trim() || undefined],
+		]));
 
 		setContestList({ contests: filteredContests, error: "" });
-	}, [deleteSearchParam, filter, filteredContests, problemList.problems, updateSearchParam]);
+	}, [filter, filteredContests, problemList.problems, updateSearchParams]);
 
 	useEffect(() => {
 		setRandomContest(
