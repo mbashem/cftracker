@@ -67,17 +67,19 @@ function useProblemPage() {
 		SearchKeys.Random,
 		validators.boolean,
 	);
+	const [useFilterStorage = true] = useSearchParamState<boolean>(
+		SearchKeys.UseFilterStorage,
+		validators.boolean,
+	);
 	const {
 		listId,
 		submittedAfter,
 		submittedBefore,
-		useFilterStorage,
 	} = useMemo(() => {
 		return {
 			submittedAfter: validators.nonNegativeInteger(getSearchParam(SearchKeys.SubmittedAfter), undefined),
 			submittedBefore: validators.nonNegativeInteger(getSearchParam(SearchKeys.SubmittedBefore), undefined),
 			listId: validators.positiveInteger(getSearchParam(SearchKeys.ListId), undefined),
-			useFilterStorage: validators.boolean(getSearchParam(SearchKeys.UseFilterStorage), true),
 		};
 	}, [getSearchParam]);
 	const [list, setList] = useState<ListWithItem | undefined>(undefined);

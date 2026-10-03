@@ -199,6 +199,7 @@ test("observes URL changes and back navigation for the same search key", async (
 
     await act(async () => hook.current.navigate(-1));
     expect(hook.current.value).toBe(2);
+    await advanceStorageTimer();
     expect(localStorage.getItem("advanced-state")).toBe("2");
   });
 });
