@@ -94,7 +94,7 @@ function useProblemState(
   const [state, setState] = useAdvancedState(
     defaultState,
     problemValidators,
-    useStorage ? StorageService.Keys.Problem.State : undefined,
+    useStorage ? StorageService.Keys.Problem.FilterV2 : undefined,
     problemSearchKeys,
   );
   const filter: ProblemFilter = state;

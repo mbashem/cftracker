@@ -72,7 +72,7 @@ const savedFilter = {
 beforeEach(() => {
   vi.useFakeTimers();
   localStorage.clear();
-  StorageService.saveObject(StorageService.Keys.Problem.State, savedFilter);
+  StorageService.saveObject(StorageService.Keys.Problem.FilterV2, savedFilter);
   data.loading = false;
   data.contests = [100, 101].map((id) => {
     const contest = new Contest(id, `Codeforces Round ${id} (${id === 100 ? "one" : "two"}, Div. 2)`, "CF", "FINISHED", 7200, 1000);
@@ -104,6 +104,32 @@ function randomPage(kind: "problem" | "contest") {
     updateSearch: (search: string) => contestPage.updateFilter({ search }),
   };
 }
+
+function seedLegacyProblemFilters() {
+  const { tags, solveStatus, selected, ...filter } = savedFilter;
+  localStorage.removeItem(StorageService.Keys.Problem.FilterV2);
+  StorageService.saveObject(StorageService.Keys.Problem.Filter, filter);
+  StorageService.saveObject(StorageService.Keys.Problem.Tags, tags);
+  StorageService.saveObject(StorageService.Keys.Problem.SolveStatus, solveStatus);
+  StorageService.saveObject(StorageService.Keys.Problem.Page, selected);
+}
+
+test("problem filters migrate before URL overrides are applied", () => {
+  seedLegacyProblemFilters();
+  render(<TestApp initialEntry={`/problems?${SearchKeys.Search}=url`} />, { reactStrictMode: true });
+  expect(page.filter).toMatchObject({ ...savedFilter, search: "url" });
+  expect(JSON.parse(localStorage.getItem(StorageService.Keys.Problem.FilterV2)!)).toEqual(savedFilter);
+});
+
+test("URL-only filters defer migration until storage is enabled", async () => {
+  seedLegacyProblemFilters();
+  render(<TestApp initialEntry="/problems?useFilterStorage=false" />, { reactStrictMode: true });
+  await act(async () => vi.advanceTimersByTimeAsync(300));
+  expect(localStorage.getItem(StorageService.Keys.Problem.FilterV2)).toBeNull();
+  await act(async () => navigate(Path.PROBLEMS));
+  expect(page.filter).toMatchObject(savedFilter);
+  expect(JSON.parse(localStorage.getItem(StorageService.Keys.Problem.FilterV2)!)).toEqual(savedFilter);
+});
 
 test.each(["problem", "contest"] as const)("%s keeps the random flag through filter changes and cancels to its main page", async (kind) => {
   const mainPath = kind === "problem" ? Path.PROBLEMS : Path.CONTESTS;
@@ -147,30 +173,30 @@ test.each(["problem", "contest"] as const)("%s toolbar random selection is repre
 test("returning from temporary snapshot filters reloads saved preferences on the same route", async () => {
   render(<TestApp initialEntry="/problems?useFilterStorage=false&minContestId=2&maxContestId=2" />, { reactStrictMode: true });
   await act(async () => page.updateFilter({ search: "temporary" }));
-  expect(StorageService.getObject(StorageService.Keys.Problem.State, {})).toEqual(savedFilter);
+  expect(StorageService.getObject(StorageService.Keys.Problem.FilterV2, {})).toEqual(savedFilter);
   await act(async () => navigate(Path.PROBLEMS));
   expect(page.filter).toMatchObject(savedFilter);
   await act(async () => page.updateFilter({ search: "updated" }));
   await act(async () => vi.advanceTimersByTimeAsync(300));
-  expect(StorageService.getObject(StorageService.Keys.Problem.State, {})).toMatchObject({ ...savedFilter, search: "updated" });
+  expect(StorageService.getObject(StorageService.Keys.Problem.FilterV2, {})).toMatchObject({ ...savedFilter, search: "updated" });
 });
 
 test("a defined storage key applies its latest value and disabling storage preserves state", async () => {
   render(<TestApp initialEntry="/problems?useFilterStorage=false&minContestId=2&maxContestId=2" />, { reactStrictMode: true });
   const latestFilter = { ...savedFilter, minRating: 1800, maxRating: 2000, search: "latest" };
-  StorageService.saveObject(StorageService.Keys.Problem.State, latestFilter);
+  StorageService.saveObject(StorageService.Keys.Problem.FilterV2, latestFilter);
   const search = new URLSearchParams(location.search);
   search.set(SearchKeys.UseFilterStorage, "true");
   await act(async () => navigate({ search: search.toString() }));
   expect(page.filter).toMatchObject(latestFilter);
   expect(new URLSearchParams(location.search).get(SearchKeys.MinRating)).toBe("1800");
-  expect(StorageService.getObject(StorageService.Keys.Problem.State, {})).toMatchObject(latestFilter);
+  expect(StorageService.getObject(StorageService.Keys.Problem.FilterV2, {})).toMatchObject(latestFilter);
 
   const updatedSearch = new URLSearchParams(location.search);
   updatedSearch.set(SearchKeys.UseFilterStorage, "false");
   await act(async () => navigate({ search: updatedSearch.toString() }));
   expect(page.filter).toMatchObject(latestFilter);
-  expect(StorageService.getObject(StorageService.Keys.Problem.State, {})).toMatchObject(latestFilter);
+  expect(StorageService.getObject(StorageService.Keys.Problem.FilterV2, {})).toMatchObject(latestFilter);
 });
 
 test.each(["problem", "contest"] as const)("%s waits for data while keeping random mode in the URL", async (kind) => {
