@@ -2,7 +2,11 @@ const Keys = {
   JwtToken: "jwtToken",
   StateV2: "statev2",
   Problem: {
-    State: "PROBLEM_STATE",
+    Filter: "PROBLEM_FILTER",
+    Page: "PROBLEM_PAGE",
+    Tags: "PROBLEM_TAGS",
+    SolveStatus: "PROBLEM_SOLVE_STATUS",
+    FilterV2: "PROBLEM_FILTER_V2",
   },
   Contest: {
     Filter: "CONTEST_FILTER",
@@ -27,15 +31,32 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 }
 
 function getJWTToken() {
-  return localStorage.getItem(Keys.JwtToken);
+  try {
+    return localStorage.getItem(Keys.JwtToken);
+  } catch (error) {
+    console.log(error);
+    return null;
+  }
 }
 
 function setJWTToken(jwtToken: string) {
-  localStorage.setItem(Keys.JwtToken, jwtToken);
+  try {
+    localStorage.setItem(Keys.JwtToken, jwtToken);
+    return true;
+  } catch (error) {
+    console.log(error);
+    return false;
+  }
 }
 
 function removeJWTToken() {
-  localStorage.removeItem(Keys.JwtToken);
+  try {
+    localStorage.removeItem(Keys.JwtToken);
+    return true;
+  } catch (error) {
+    console.log(error);
+    return false;
+  }
 }
 
 function saveSet<T>(storageKey: string, valueSet: Set<T>): boolean {
@@ -102,7 +123,11 @@ function saveObject<T>(storageKey: string, value: T): boolean {
 function getObject<T>(storageKey: string, defaultValue: T): T {
   try {
     const storedValue = localStorage.getItem(storageKey);
-    if (storedValue === null) return defaultValue;
+    if (storedValue === null) {
+      const migratedValue = migrateIfNeeded(storageKey, defaultValue);
+      if (migratedValue === null) return defaultValue;
+      return migratedValue;
+    }
 
     const parsedValue: unknown = JSON.parse(storedValue);
     if (isPlainObject(defaultValue) && isPlainObject(parsedValue)) return { ...defaultValue, ...parsedValue } as T;
@@ -111,6 +136,38 @@ function getObject<T>(storageKey: string, defaultValue: T): T {
     console.log(error);
   }
   return defaultValue;
+}
+
+function migrateIfNeeded<T>(storageKey: string, defaultValue: T): T | null {
+  if (storageKey === Keys.Problem.FilterV2) {
+    const migrated = migrateProblemFilter();
+    if (migrated !== undefined) return { ...defaultValue, ...migrated } as T;
+  }
+  return null;
+}
+
+function migrateProblemFilter(): Record<string, unknown> | undefined {
+  const filter = getObject<unknown>(Keys.Problem.Filter, undefined);
+  const migrated = isPlainObject(filter) ? { ...filter } : {};
+  const selected = getObject<unknown>(Keys.Problem.Page, undefined);
+  const tags = getObject<unknown>(Keys.Problem.Tags, undefined);
+  const solveStatus = getObject<unknown>(Keys.Problem.SolveStatus, undefined);
+  if (selected !== undefined) migrated.selected = selected;
+  if (tags !== undefined) migrated.tags = tags;
+  if (solveStatus !== undefined) migrated.solveStatus = solveStatus;
+  if (Object.keys(migrated).length === 0) return undefined;
+
+  if (saveObject(Keys.Problem.FilterV2, migrated)) {
+    try {
+      localStorage.removeItem(Keys.Problem.Filter);
+      localStorage.removeItem(Keys.Problem.Page);
+      localStorage.removeItem(Keys.Problem.Tags);
+      localStorage.removeItem(Keys.Problem.SolveStatus);
+    } catch (error) {
+      console.log(error);
+    }
+  }
+  return migrated;
 }
 
 function getValue<T>(storageKey: string, defaultValue: T): T {
