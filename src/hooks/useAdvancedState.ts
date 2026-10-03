@@ -31,21 +31,19 @@ function useAdvancedState<T>(
       }
     }
 
-    if (isNotEqual(lastSearchKey.current, searchKey)) {
-      lastSearchKey.current = searchKey;
-      if (isDefined(searchKey) && isDefined(searchValue)) {
-        let validatedSearchValue = validateValue(searchValue, resolvedValue, validator);
-        const searchOverrides = isPlainObject(validatedSearchValue)
-          ? removeUndefinedFields(validatedSearchValue)
-          : validatedSearchValue;
-        resolvedValue = mergeValue(resolvedValue, searchOverrides);
-      }
+    if (isDefined(searchKey) && isDefined(searchValue) && isNotEqual(lastSearchValue.current, searchValue)) {
+      lastSearchValue.current = searchValue;
+      let validatedSearchValue = validateValue(searchValue, resolvedValue, validator);
+      const searchOverrides = isPlainObject(validatedSearchValue)
+        ? removeUndefinedFields(validatedSearchValue)
+        : validatedSearchValue;
+      resolvedValue = mergeValue(resolvedValue, searchOverrides);
     }
 
     return resolvedValue;
   }
   const lastStorageKey = useRef<string | undefined>(undefined);
-  const lastSearchKey = useRef<SearchKey<T> | undefined>(undefined);
+  const lastSearchValue = useRef<T | undefined>(undefined);
   const [searchValue, setSearchValue] = useSearchParamState(searchKey, validator);
   const [value, setValue] = useState(() => {
     return getResolvedValue(defaultValue);
@@ -70,7 +68,7 @@ function useAdvancedState<T>(
 
   useEffect(() => {
     setSafeValue(getResolvedValue(value));
-  }, [storageKey, searchKey]);
+  }, [storageKey, searchKey, searchValue]);
 
   useEffect(() => {
     if (!isDefined(searchValue)) {
