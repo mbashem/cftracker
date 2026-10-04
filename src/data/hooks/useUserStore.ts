@@ -8,7 +8,7 @@ function useUserStore() {
 	const userList = useAppSelector(state => state.userList);
 
 	function updateUsers(handle: string) {
-		const currentId = Date.now();
+		const currentId = Math.max(Date.now(), userList.id + 1);
 		const handles = [...new Set(
 			splitStringBySeparator(handle, ",").map(handle => handle.trim()).filter((handle) => handle.length)
 		)];

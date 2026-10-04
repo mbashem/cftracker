@@ -9,6 +9,7 @@ export default defineConfig([
   globalIgnores([
     "backend/**",
     "dist/**",
+    "coverage/**",
     "manage-contests/**",
     "scripts/**",
     "src/data/saved_api/**",

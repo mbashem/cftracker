@@ -1,3 +1,4 @@
+import useToast from "../../../hooks/useToast";
 import useListApi from "../../../data/hooks/useListApi";
 import useProblemsStore from "../../../data/hooks/useProblemsStore";
 import useTheme from "../../../data/hooks/useTheme";
@@ -9,6 +10,7 @@ interface Props {
 function useIndividualListPage({ listId }: Props) {
 	const { theme } = useTheme();
 	const api = useListApi();
+	const { showErrorToast } = useToast();
 	const { data: lists, isLoading, error } = api.useGetListQuery(listId);
 	const { problemsById } = useProblemsStore();
 
@@ -17,9 +19,8 @@ function useIndividualListPage({ listId }: Props) {
 			const res = await api.deleteProblemFromList(listId, problemId);
 			console.log(res);
 			return
-		} catch (err) {
-			console.log(err);
-			throw err;
+		} catch (err: any) {
+			showErrorToast(err?.message ?? "Failed to delete from list!");
 		}
 	}
 

@@ -18,7 +18,7 @@ const addSharedToSubmissions = (
   for (let submission of userSubmissions) {
     if (submission.contestId === undefined) continue;
 
-    let id: string = submission.id.toString() + submission.contestId.toString();
+    let id: string = `${submission.id}:${submission.contestId}:${submission.index}`;
     userSubmissionsIdsWithContestIds.add(id);
   }
 
@@ -43,14 +43,14 @@ const addSharedToSubmissions = (
     for (let problem of sharedProblems[lb].shared ?? EMPTY_ARRAY) {
       if (problem.contestId === undefined) continue;
       let id: string =
-        submission.id.toString() + problem.contestId.toString();
+        `${submission.id}:${problem.contestId}:${problem.index}`;
 
       if (userSubmissionsIdsWithContestIds.has(id)) continue;
       userSubmissionsIdsWithContestIds.add(id);
       let newS = new Submission(submission);
       newS.contestId = problem.contestId;
       newS.problem = new Problem(
-        submission.contestId,
+        problem.contestId,
         problem.index,
         submission.problem.name,
         submission.problem.type,

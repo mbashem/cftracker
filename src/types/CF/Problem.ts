@@ -110,8 +110,11 @@ export default class Problem extends ProblemLite {
       this.name,
       this.type,
       this.rating,
-      this.tags
+      this.tags,
+      this.solvedCount
     );
+    clonedProblem.points = this.points;
+    clonedProblem.problemsetName = this.problemsetName;
     return clonedProblem;
   };
 }

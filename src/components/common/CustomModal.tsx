@@ -14,6 +14,7 @@ interface PropsType {
   children: React.ReactNode | ((props: childrenProps) => React.ReactNode);
   theme: Theme;
   button?: React.ReactNode;
+  buttonLabel?: string;
   size?: "sm" | "lg" | "xl";
 }
 
@@ -30,7 +31,7 @@ function CustomModal(props: PropsType) {
 
   return (
     <>
-      <button type="button" className={"btn " + props.theme.btn} onClick={handleShow}>
+      <button type="button" aria-label={props.buttonLabel} className={"btn " + props.theme.btn} onClick={handleShow}>
         {props.button === undefined ? <FontAwesomeIcon icon={faFilter} /> : props.button}
       </button>
       <Modal className="modal" size={props.size} show={show} onHide={handleClose}>

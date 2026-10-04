@@ -1,13 +1,15 @@
+import "./spinnerMocks";
 import { vi, type Mock } from "vitest";
 import Theme, { ThemesType } from "../../src/util/Theme";
 import type Problem from "../../src/types/CF/Problem";
 import type Contest from "../../src/types/CF/Contest";
 import type Submission from "../../src/types/CF/Submission";
-import type { ListWithItem } from "../../src/types/list";
+import type { List, ListItem, ListWithItem } from "../../src/types/list";
 
 interface FrontendMocks {
   problems: Problem[];
   submissions: Submission[];
+  rawSubmissions: Submission[] | undefined;
   contests: Contest[];
   loading: boolean;
   contestLoading: boolean | undefined;
@@ -20,6 +22,17 @@ interface FrontendMocks {
   authenticated: boolean;
   backendAvailable: boolean;
   lists: ListWithItem[];
+  listsLoading: boolean;
+  listsError: unknown;
+  individualList: ListWithItem | undefined;
+  individualListLoading: boolean;
+  individualListError: unknown;
+  handleGithubCallback: Mock<(code: string, state: string) => Promise<void>>;
+  createList: Mock<(name: string) => Promise<List>>;
+  updateListName: Mock<(id: number, name: string) => Promise<void>>;
+  deleteList: Mock<(id: number) => Promise<void>>;
+  addProblemToList: Mock<(id: number, problemId: string, position: number) => Promise<ListItem>>;
+  deleteProblemFromList: Mock<(id: number, problemId: string) => Promise<void>>;
   changeThemeMod: Mock<(theme: ThemesType) => void>;
   updateUsers: Mock<(handles: string) => void>;
   syncUserSubmissions: Mock<(wait?: boolean) => void>;
@@ -33,6 +46,7 @@ interface FrontendMocks {
 const frontend: FrontendMocks = vi.hoisted(() => ({
   problems: [] as Problem[],
   submissions: [] as Submission[],
+  rawSubmissions: undefined as Submission[] | undefined,
   contests: [] as Contest[],
   loading: false,
   contestLoading: undefined as boolean | undefined,
@@ -45,6 +59,14 @@ const frontend: FrontendMocks = vi.hoisted(() => ({
   authenticated: false,
   backendAvailable: false,
   lists: [] as ListWithItem[],
+  listsLoading: false,
+  listsError: undefined as unknown,
+  individualList: undefined as ListWithItem | undefined,
+  individualListLoading: false,
+  individualListError: undefined as unknown,
+  handleGithubCallback: vi.fn(),
+  createList: vi.fn(), updateListName: vi.fn(), deleteList: vi.fn(),
+  addProblemToList: vi.fn(), deleteProblemFromList: vi.fn(),
   changeThemeMod: vi.fn(),
   updateUsers: vi.fn(),
   syncUserSubmissions: vi.fn(),
@@ -56,7 +78,7 @@ const frontend: FrontendMocks = vi.hoisted(() => ({
 
 vi.mock("../../src/data/hooks/useSubmissionsStore", () => ({
   default: () => ({
-    submissions: frontend.submissions, rawSubmissions: frontend.submissions,
+    submissions: frontend.submissions, rawSubmissions: frontend.rawSubmissions ?? frontend.submissions,
     loading: 0, error: frontend.submissionError,
   }),
 }));
@@ -87,7 +109,10 @@ vi.mock("../../src/data/hooks/useAppStateStore", () => ({
 }));
 vi.mock("../../src/data/hooks/useListApi", () => ({
   default: () => ({
-    useGetAllListsQuery: () => ({ data: frontend.lists }),
+    useGetAllListsQuery: () => ({ data: frontend.lists, isLoading: frontend.listsLoading, error: frontend.listsError }),
+    useGetListQuery: () => ({ data: frontend.individualList, isLoading: frontend.individualListLoading, error: frontend.individualListError }),
+    createList: frontend.createList, updateListName: frontend.updateListName, deleteList: frontend.deleteList,
+    addProblemToList: frontend.addProblemToList, deleteProblemFromList: frontend.deleteProblemFromList,
     getListWithItems: frontend.getListWithItems,
   }),
 }));
@@ -101,7 +126,7 @@ vi.mock("../../src/data/hooks/useUserStore", () => ({
   }),
 }));
 vi.mock("../../src/hooks/useUser", () => ({
-  default: () => ({ isAuthenticated: frontend.authenticated, logout: frontend.logout }),
+  default: () => ({ isAuthenticated: frontend.authenticated, logout: frontend.logout, handleGithubCallback: frontend.handleGithubCallback }),
 }));
 vi.mock("../../src/util/env", () => ({
   get IS_BACKEND_AVAILABLE() { return frontend.backendAvailable; },
@@ -112,6 +137,7 @@ vi.mock("../../src/util/env", () => ({
 export function resetFrontendMocks() {
   frontend.problems = [];
   frontend.submissions = [];
+  frontend.rawSubmissions = undefined;
   frontend.contests = [];
   frontend.loading = false;
   frontend.contestLoading = undefined;
@@ -124,6 +150,17 @@ export function resetFrontendMocks() {
   frontend.authenticated = false;
   frontend.backendAvailable = false;
   frontend.lists = [];
+  frontend.listsLoading = false;
+  frontend.listsError = undefined;
+  frontend.individualList = undefined;
+  frontend.individualListLoading = false;
+  frontend.individualListError = undefined;
+  frontend.handleGithubCallback.mockReset().mockResolvedValue(undefined);
+  frontend.createList.mockReset().mockImplementation(async name => ({ id: 5, userId: 1, name, createdAt: "2026-01-01" }));
+  frontend.updateListName.mockReset().mockResolvedValue(undefined);
+  frontend.deleteList.mockReset().mockResolvedValue(undefined);
+  frontend.addProblemToList.mockReset().mockImplementation(async (listId, problemId, position) => ({ listId, problemId, position, createdAt: "2026-01-01" }));
+  frontend.deleteProblemFromList.mockReset().mockResolvedValue(undefined);
   frontend.changeThemeMod.mockReset();
   frontend.updateUsers.mockReset();
   frontend.syncUserSubmissions.mockReset();
@@ -136,13 +173,3 @@ export function resetFrontendMocks() {
 }
 
 export { frontend };
-
-// The spinner package's styled-components CJS/ESM boundary cannot load in jsdom.
-// Keep its accessibility/visibility contract; spinner animation is a browser check.
-vi.mock("react-loader-spinner", async () => {
-  const { createElement } = await import("react");
-  return {
-    ThreeDots: ({ ariaLabel, visible }: { ariaLabel: string; visible: boolean }) =>
-      visible ? createElement("div", { "aria-label": ariaLabel }) : null,
-  };
-});

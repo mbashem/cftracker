@@ -1,7 +1,5 @@
-import { useState } from "react";
 import useTheme from "../../data/hooks/useTheme";
 import useToast from "../../hooks/useToast";
-import { List } from "../../types/list";
 import { SearchKeys } from "../../util/constants";
 import useAppSearchParams from "../../hooks/useSearchParam";
 import { Path } from "../../util/route/path";
@@ -12,16 +10,16 @@ import useAppNavigation from "../../hooks/useAppNavigation";
 
 function useListPage() {
 	const { theme } = useTheme();
-	const [activeList, setActiveList] = useState<List | undefined>();
 	const { showGeneralToast, showErrorToast } = useToast();
 	const api = useListApi();
 	const { data: lists, error, isLoading } = api.useGetAllListsQuery();
-	const { updateSearchParam, deleteSearchParam } = useAppSearchParams();
+	const { getSearchParam, updateSearchParam, deleteSearchParam } = useAppSearchParams();
 	const { navigateTo } = useAppNavigation();
+	const listId = getSearchParam(SearchKeys.ListId);
+	const activeList = lists?.find(list => list.id.toString() === listId);
 
 	function listClicked(listName: string) {
 		let list = lists?.find(list => list.name === listName);
-		setActiveList(list);
 		if (isDefined(list))
 			updateSearchParam(SearchKeys.ListId, list.id.toString());
 		else
@@ -35,9 +33,11 @@ function useListPage() {
 		try {
 			let res = await api.createList(listName);
 			console.log(res);
+			return true;
 		}
 		catch (err: any) {
 			showErrorToast(err?.message ?? "Failed to create the list!");
+			return false;
 		}
 	}
 
@@ -48,10 +48,11 @@ function useListPage() {
 		try {
 			let res = await api.updateListName(activeList.id, newName);
 			console.log(res);
-			return;
+			return true;
 		}
 		catch (err: any) {
 			showErrorToast(err?.message ?? "Failed to update list name!");
+			return false;
 		}
 	}
 
@@ -64,14 +65,16 @@ function useListPage() {
 	}
 
 	async function deleteListButtonClicked() {
-		if (activeList === undefined) return;
+		if (activeList === undefined) return false;
 		try {
 			let res = await api.deleteList(activeList.id);
 			console.log(res);
 			showGeneralToast("List deleted");
 			deleteSearchParam(SearchKeys.ListId);
+			return true;
 		} catch (err: any) {
 			showErrorToast(err?.message ?? "Failed to delete the list");
+			return false;
 		}
 	}
 

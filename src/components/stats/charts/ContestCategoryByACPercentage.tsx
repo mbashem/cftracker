@@ -16,6 +16,7 @@ function ContestCategoryByACPercentage({ category, simpleVerdictCounts }: Contes
     let labels: string[] = [];
 
     for (let simpleVerdict of Object.values(SimpleVerdict)) {
+      labels.push(simpleVerdict);
       pieChartData.push({
         data: simpleVerdictCounts.get(simpleVerdict) ?? 0,
         backgroundColor: getColorForVerdict(simpleVerdict),

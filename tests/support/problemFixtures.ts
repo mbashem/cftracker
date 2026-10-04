@@ -1,7 +1,8 @@
 import Contest from "../../src/types/CF/Contest";
 import Problem from "../../src/types/CF/Problem";
-import Submission, { Verdict } from "../../src/types/CF/Submission";
-import { ParticipantType } from "../../src/types/CF/Party";
+import { Verdict } from "../../src/types/CF/Submission";
+import { createSubmission } from "./submissionFixtures";
+export { createSubmission } from "./submissionFixtures";
 import { frontend } from "./frontendMocks";
 
 export function seedProblemFixtures() {
@@ -23,13 +24,4 @@ export function seedProblemFixtures() {
     createSubmission(2, frontend.problems[0], Verdict.OK, 200),
     createSubmission(3, frontend.problems[1], Verdict.WRONG_ANSWER, 300),
   ];
-}
-
-export function createSubmission(id: number, problem: Problem, verdict: Verdict, creationTimeSeconds: number) {
-  return new Submission({
-    id, contestId: problem.contestId, index: problem.index, verdict, creationTimeSeconds,
-    relativeTimeSeconds: 0, problem,
-    author: { members: [{ handle: "tourist" }], participantType: ParticipantType.PRACTICE, ghost: false },
-    programmingLanguage: "GNU C++", passedTestCount: 0, timeConsumedMillis: 0, memoryConsumedBytes: 0,
-  });
 }
