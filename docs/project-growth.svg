@@ -1,1 +1,77 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 620" role="img" aria-labelledby="title desc"><title id="title">Project growth from six-month main snapshots</title><desc id="desc">Code lines and file count measured with cloc, excluding JSON and generated directories.</desc><text x="82" y="37" font-size="18" font-family="sans-serif" fill="#111827">Non-JSON code lines</text><line x1="82" y1="245.0" x2="864" y2="245.0" stroke="#d1d5db"/><text x="72" y="249.0" text-anchor="end" font-size="11" font-family="sans-serif" fill="#6b7280">0</text><line x1="82" y1="197.5" x2="864" y2="197.5" stroke="#d1d5db"/><text x="72" y="201.5" text-anchor="end" font-size="11" font-family="sans-serif" fill="#6b7280">5,276</text><line x1="82" y1="150.0" x2="864" y2="150.0" stroke="#d1d5db"/><text x="72" y="154.0" text-anchor="end" font-size="11" font-family="sans-serif" fill="#6b7280">10,553</text><line x1="82" y1="102.5" x2="864" y2="102.5" stroke="#d1d5db"/><text x="72" y="106.5" text-anchor="end" font-size="11" font-family="sans-serif" fill="#6b7280">15,830</text><line x1="82" y1="55.0" x2="864" y2="55.0" stroke="#d1d5db"/><text x="72" y="59.0" text-anchor="end" font-size="11" font-family="sans-serif" fill="#6b7280">21,106</text><line x1="82" y1="245" x2="864" y2="245" stroke="#374151"/><polyline points="82.0,243.5 142.2,215.8 202.3,212.2 262.5,212.1 322.6,211.6 382.8,211.8 442.9,199.1 503.1,187.9 563.2,169.6 623.4,169.6 683.5,146.5 743.7,133.8 803.8,78.9 864.0,55.0" fill="none" stroke="#2563eb" stroke-width="3"/><circle cx="82.0" cy="243.5" r="4" fill="#2563eb"/><title>162</title><circle cx="142.2" cy="215.8" r="4" fill="#2563eb"/><title>3,247</title><circle cx="202.3" cy="212.2" r="4" fill="#2563eb"/><title>3,642</title><circle cx="262.5" cy="212.1" r="4" fill="#2563eb"/><title>3,651</title><circle cx="322.6" cy="211.6" r="4" fill="#2563eb"/><title>3,706</title><circle cx="382.8" cy="211.8" r="4" fill="#2563eb"/><title>3,683</title><circle cx="442.9" cy="199.1" r="4" fill="#2563eb"/><title>5,100</title><circle cx="503.1" cy="187.9" r="4" fill="#2563eb"/><title>6,338</title><circle cx="563.2" cy="169.6" r="4" fill="#2563eb"/><title>8,371</title><circle cx="623.4" cy="169.6" r="4" fill="#2563eb"/><title>8,371</title><circle cx="683.5" cy="146.5" r="4" fill="#2563eb"/><title>10,945</title><circle cx="743.7" cy="133.8" r="4" fill="#2563eb"/><title>12,355</title><circle cx="803.8" cy="78.9" r="4" fill="#2563eb"/><title>18,446</title><circle cx="864.0" cy="55.0" r="4" fill="#2563eb"/><title>21,106</title><text x="82.0" y="267" text-anchor="middle" font-size="10" font-family="sans-serif" fill="#6b7280">21-02</text><text x="142.2" y="267" text-anchor="middle" font-size="10" font-family="sans-serif" fill="#6b7280">21-08</text><text x="202.3" y="267" text-anchor="middle" font-size="10" font-family="sans-serif" fill="#6b7280">22-02</text><text x="262.5" y="267" text-anchor="middle" font-size="10" font-family="sans-serif" fill="#6b7280">22-08</text><text x="322.6" y="267" text-anchor="middle" font-size="10" font-family="sans-serif" fill="#6b7280">23-02</text><text x="382.8" y="267" text-anchor="middle" font-size="10" font-family="sans-serif" fill="#6b7280">23-08</text><text x="442.9" y="267" text-anchor="middle" font-size="10" font-family="sans-serif" fill="#6b7280">24-02</text><text x="503.1" y="267" text-anchor="middle" font-size="10" font-family="sans-serif" fill="#6b7280">24-08</text><text x="563.2" y="267" text-anchor="middle" font-size="10" font-family="sans-serif" fill="#6b7280">25-02</text><text x="623.4" y="267" text-anchor="middle" font-size="10" font-family="sans-serif" fill="#6b7280">25-08</text><text x="683.5" y="267" text-anchor="middle" font-size="10" font-family="sans-serif" fill="#6b7280">26-02</text><text x="743.7" y="267" text-anchor="middle" font-size="10" font-family="sans-serif" fill="#6b7280">26-08</text><text x="803.8" y="267" text-anchor="middle" font-size="10" font-family="sans-serif" fill="#6b7280">26-09</text><text x="864.0" y="267" text-anchor="middle" font-size="10" font-family="sans-serif" fill="#6b7280">Latest (dev)</text><text x="82" y="332" font-size="18" font-family="sans-serif" fill="#111827">Non-JSON files</text><line x1="82" y1="540.0" x2="864" y2="540.0" stroke="#d1d5db"/><text x="72" y="544.0" text-anchor="end" font-size="11" font-family="sans-serif" fill="#6b7280">0</text><line x1="82" y1="492.5" x2="864" y2="492.5" stroke="#d1d5db"/><text x="72" y="496.5" text-anchor="end" font-size="11" font-family="sans-serif" fill="#6b7280">65</text><line x1="82" y1="445.0" x2="864" y2="445.0" stroke="#d1d5db"/><text x="72" y="449.0" text-anchor="end" font-size="11" font-family="sans-serif" fill="#6b7280">130</text><line x1="82" y1="397.5" x2="864" y2="397.5" stroke="#d1d5db"/><text x="72" y="401.5" text-anchor="end" font-size="11" font-family="sans-serif" fill="#6b7280">196</text><line x1="82" y1="350.0" x2="864" y2="350.0" stroke="#d1d5db"/><text x="72" y="354.0" text-anchor="end" font-size="11" font-family="sans-serif" fill="#6b7280">261</text><line x1="82" y1="540" x2="864" y2="540" stroke="#374151"/><polyline points="82.0,532.0 142.2,505.8 202.3,497.8 262.5,497.8 322.6,497.8 382.8,497.8 442.9,467.2 503.1,444.6 563.2,407.5 623.4,407.5 683.5,398.8 743.7,398.0 803.8,361.6 864.0,350.0" fill="none" stroke="#16a34a" stroke-width="3"/><circle cx="82.0" cy="532.0" r="4" fill="#16a34a"/><title>11</title><circle cx="142.2" cy="505.8" r="4" fill="#16a34a"/><title>47</title><circle cx="202.3" cy="497.8" r="4" fill="#16a34a"/><title>58</title><circle cx="262.5" cy="497.8" r="4" fill="#16a34a"/><title>58</title><circle cx="322.6" cy="497.8" r="4" fill="#16a34a"/><title>58</title><circle cx="382.8" cy="497.8" r="4" fill="#16a34a"/><title>58</title><circle cx="442.9" cy="467.2" r="4" fill="#16a34a"/><title>100</title><circle cx="503.1" cy="444.6" r="4" fill="#16a34a"/><title>131</title><circle cx="563.2" cy="407.5" r="4" fill="#16a34a"/><title>182</title><circle cx="623.4" cy="407.5" r="4" fill="#16a34a"/><title>182</title><circle cx="683.5" cy="398.8" r="4" fill="#16a34a"/><title>194</title><circle cx="743.7" cy="398.0" r="4" fill="#16a34a"/><title>195</title><circle cx="803.8" cy="361.6" r="4" fill="#16a34a"/><title>245</title><circle cx="864.0" cy="350.0" r="4" fill="#16a34a"/><title>261</title><text x="82.0" y="562" text-anchor="middle" font-size="10" font-family="sans-serif" fill="#6b7280">21-02</text><text x="142.2" y="562" text-anchor="middle" font-size="10" font-family="sans-serif" fill="#6b7280">21-08</text><text x="202.3" y="562" text-anchor="middle" font-size="10" font-family="sans-serif" fill="#6b7280">22-02</text><text x="262.5" y="562" text-anchor="middle" font-size="10" font-family="sans-serif" fill="#6b7280">22-08</text><text x="322.6" y="562" text-anchor="middle" font-size="10" font-family="sans-serif" fill="#6b7280">23-02</text><text x="382.8" y="562" text-anchor="middle" font-size="10" font-family="sans-serif" fill="#6b7280">23-08</text><text x="442.9" y="562" text-anchor="middle" font-size="10" font-family="sans-serif" fill="#6b7280">24-02</text><text x="503.1" y="562" text-anchor="middle" font-size="10" font-family="sans-serif" fill="#6b7280">24-08</text><text x="563.2" y="562" text-anchor="middle" font-size="10" font-family="sans-serif" fill="#6b7280">25-02</text><text x="623.4" y="562" text-anchor="middle" font-size="10" font-family="sans-serif" fill="#6b7280">25-08</text><text x="683.5" y="562" text-anchor="middle" font-size="10" font-family="sans-serif" fill="#6b7280">26-02</text><text x="743.7" y="562" text-anchor="middle" font-size="10" font-family="sans-serif" fill="#6b7280">26-08</text><text x="803.8" y="562" text-anchor="middle" font-size="10" font-family="sans-serif" fill="#6b7280">26-09</text><text x="864.0" y="562" text-anchor="middle" font-size="10" font-family="sans-serif" fill="#6b7280">Latest (dev)</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760" role="img" aria-labelledby="title desc">
+<title id="title">CFTracker project growth</title>
+<desc id="desc">Code lines and file count from preserved cloc measurements and six-month origin/main snapshots, with a final current-branch HEAD snapshot. JSON and .git, node_modules, dist, build are excluded.</desc>
+<rect width="1200" height="760" fill="#f8fafc"/>
+<g font-family="sans-serif">
+<text x="100" y="42" font-size="26" font-weight="700" fill="#0f172a">CFTracker · project growth</text>
+<text x="100" y="68" font-size="13" fill="#475569">Six-month main history + preserved snapshots + current branch HEAD</text>
+<text x="100" y="110" font-size="17" font-weight="600" fill="#0f172a">Non-JSON code lines</text>
+<line x1="100" y1="330.0" x2="1060" y2="330.0" stroke="#e2e8f0"/>
+<text x="88" y="334.0" text-anchor="end" font-size="12" fill="#64748b">0</text>
+<line x1="100" y1="280.0" x2="1060" y2="280.0" stroke="#e2e8f0"/>
+<text x="88" y="284.0" text-anchor="end" font-size="12" fill="#64748b">7,375</text>
+<line x1="100" y1="230.0" x2="1060" y2="230.0" stroke="#e2e8f0"/>
+<text x="88" y="234.0" text-anchor="end" font-size="12" fill="#64748b">14,749</text>
+<line x1="100" y1="180.0" x2="1060" y2="180.0" stroke="#e2e8f0"/>
+<text x="88" y="184.0" text-anchor="end" font-size="12" fill="#64748b">22,124</text>
+<line x1="100" y1="130.0" x2="1060" y2="130.0" stroke="#e2e8f0"/>
+<text x="88" y="134.0" text-anchor="end" font-size="12" fill="#64748b">29,499</text>
+<polyline points="100.0,328.9 183.9,308.0 269.2,305.3 353.1,305.2 438.4,304.9 522.3,305.0 607.6,295.4 691.9,287.0 777.2,273.2 861.1,273.2 946.4,255.8 1030.3,246.2 1045.2,204.9 1045.6,186.9 1060.0,156.1" fill="none" stroke="#2563eb" stroke-width="3"/>
+<circle cx="100.0" cy="328.9" r="4" fill="#2563eb"><title>2021-02-01 · main · a450d15: 162</title></circle>
+<circle cx="183.9" cy="308.0" r="4" fill="#2563eb"><title>2021-08-01 · main · a3c2907: 3,247</title></circle>
+<circle cx="269.2" cy="305.3" r="4" fill="#2563eb"><title>2022-02-01 · main · 0ceeb36: 3,642</title></circle>
+<circle cx="353.1" cy="305.2" r="4" fill="#2563eb"><title>2022-08-01 · main · 731ee5b: 3,651</title></circle>
+<circle cx="438.4" cy="304.9" r="4" fill="#2563eb"><title>2023-02-01 · main · ed716c3: 3,706</title></circle>
+<circle cx="522.3" cy="305.0" r="4" fill="#2563eb"><title>2023-08-01 · main · 3872091: 3,683</title></circle>
+<circle cx="607.6" cy="295.4" r="4" fill="#2563eb"><title>2024-02-01 · main · 44efdba: 5,100</title></circle>
+<circle cx="691.9" cy="287.0" r="4" fill="#2563eb"><title>2024-08-01 · main · 2bf42bb: 6,338</title></circle>
+<circle cx="777.2" cy="273.2" r="4" fill="#2563eb"><title>2025-02-01 · main · 0ce7e5b: 8,371</title></circle>
+<circle cx="861.1" cy="273.2" r="4" fill="#2563eb"><title>2025-08-01 · main · f33f074: 8,371</title></circle>
+<circle cx="946.4" cy="255.8" r="4" fill="#2563eb"><title>2026-02-01 · main · 3853b64: 10,945</title></circle>
+<circle cx="1030.3" cy="246.2" r="4" fill="#2563eb"><title>2026-08-01 · main · 9829286: 12,355</title></circle>
+<circle cx="1045.2" cy="204.9" r="4" fill="#2563eb"><title>2026-09-02 · main · 98b5f23: 18,446</title></circle>
+<circle cx="1045.6" cy="186.9" r="4" fill="#2563eb"><title>2026-09-03 · dev · f1b9c62: 21,106</title></circle>
+<circle cx="1060.0" cy="156.1" r="4" fill="#2563eb"><title>2026-10-04 · dev · 61c684e: 25,651</title></circle>
+<text x="1060" y="142.1" text-anchor="end" font-size="14" font-weight="700" fill="#2563eb">25,651 · dev</text>
+<text x="100.0" y="354" text-anchor="middle" font-size="12" fill="#64748b">2021</text>
+<text x="254.8" y="354" text-anchor="middle" font-size="12" fill="#64748b">2022</text>
+<text x="424.0" y="354" text-anchor="middle" font-size="12" fill="#64748b">2023</text>
+<text x="593.2" y="354" text-anchor="middle" font-size="12" fill="#64748b">2024</text>
+<text x="762.9" y="354" text-anchor="middle" font-size="12" fill="#64748b">2025</text>
+<text x="932.1" y="354" text-anchor="middle" font-size="12" fill="#64748b">2026</text>
+<text x="100" y="410" font-size="17" font-weight="600" fill="#0f172a">Non-JSON files</text>
+<line x1="100" y1="630.0" x2="1060" y2="630.0" stroke="#e2e8f0"/>
+<text x="88" y="634.0" text-anchor="end" font-size="12" fill="#64748b">0</text>
+<line x1="100" y1="580.0" x2="1060" y2="580.0" stroke="#e2e8f0"/>
+<text x="88" y="584.0" text-anchor="end" font-size="12" fill="#64748b">88</text>
+<line x1="100" y1="530.0" x2="1060" y2="530.0" stroke="#e2e8f0"/>
+<text x="88" y="534.0" text-anchor="end" font-size="12" fill="#64748b">176</text>
+<line x1="100" y1="480.0" x2="1060" y2="480.0" stroke="#e2e8f0"/>
+<text x="88" y="484.0" text-anchor="end" font-size="12" fill="#64748b">264</text>
+<line x1="100" y1="430.0" x2="1060" y2="430.0" stroke="#e2e8f0"/>
+<text x="88" y="434.0" text-anchor="end" font-size="12" fill="#64748b">352</text>
+<polyline points="100.0,623.7 183.9,603.3 269.2,597.0 353.1,597.0 438.4,597.0 522.3,597.0 607.6,573.2 691.9,555.5 777.2,526.6 861.1,526.6 946.4,519.7 1030.3,519.2 1045.2,490.8 1045.6,481.7 1060.0,456.1" fill="none" stroke="#0d9488" stroke-width="3"/>
+<circle cx="100.0" cy="623.7" r="4" fill="#0d9488"><title>2021-02-01 · main · a450d15: 11</title></circle>
+<circle cx="183.9" cy="603.3" r="4" fill="#0d9488"><title>2021-08-01 · main · a3c2907: 47</title></circle>
+<circle cx="269.2" cy="597.0" r="4" fill="#0d9488"><title>2022-02-01 · main · 0ceeb36: 58</title></circle>
+<circle cx="353.1" cy="597.0" r="4" fill="#0d9488"><title>2022-08-01 · main · 731ee5b: 58</title></circle>
+<circle cx="438.4" cy="597.0" r="4" fill="#0d9488"><title>2023-02-01 · main · ed716c3: 58</title></circle>
+<circle cx="522.3" cy="597.0" r="4" fill="#0d9488"><title>2023-08-01 · main · 3872091: 58</title></circle>
+<circle cx="607.6" cy="573.2" r="4" fill="#0d9488"><title>2024-02-01 · main · 44efdba: 100</title></circle>
+<circle cx="691.9" cy="555.5" r="4" fill="#0d9488"><title>2024-08-01 · main · 2bf42bb: 131</title></circle>
+<circle cx="777.2" cy="526.6" r="4" fill="#0d9488"><title>2025-02-01 · main · 0ce7e5b: 182</title></circle>
+<circle cx="861.1" cy="526.6" r="4" fill="#0d9488"><title>2025-08-01 · main · f33f074: 182</title></circle>
+<circle cx="946.4" cy="519.7" r="4" fill="#0d9488"><title>2026-02-01 · main · 3853b64: 194</title></circle>
+<circle cx="1030.3" cy="519.2" r="4" fill="#0d9488"><title>2026-08-01 · main · 9829286: 195</title></circle>
+<circle cx="1045.2" cy="490.8" r="4" fill="#0d9488"><title>2026-09-02 · main · 98b5f23: 245</title></circle>
+<circle cx="1045.6" cy="481.7" r="4" fill="#0d9488"><title>2026-09-03 · dev · f1b9c62: 261</title></circle>
+<circle cx="1060.0" cy="456.1" r="4" fill="#0d9488"><title>2026-10-04 · dev · 61c684e: 306</title></circle>
+<text x="1060" y="442.1" text-anchor="end" font-size="14" font-weight="700" fill="#0d9488">306 · dev</text>
+<text x="100.0" y="654" text-anchor="middle" font-size="12" fill="#64748b">2021</text>
+<text x="254.8" y="654" text-anchor="middle" font-size="12" fill="#64748b">2022</text>
+<text x="424.0" y="654" text-anchor="middle" font-size="12" fill="#64748b">2023</text>
+<text x="593.2" y="654" text-anchor="middle" font-size="12" fill="#64748b">2024</text>
+<text x="762.9" y="654" text-anchor="middle" font-size="12" fill="#64748b">2025</text>
+<text x="932.1" y="654" text-anchor="middle" font-size="12" fill="#64748b">2026</text>
+<text x="100" y="702" font-size="13" fill="#475569">Latest: 2026-10-04 · dev · 61c684e (committed files only)</text>
+<text x="100" y="726" font-size="12" fill="#64748b">Measured with cloc · excludes JSON, .git, node_modules, dist, build · time-proportional x-axis</text></g></svg>

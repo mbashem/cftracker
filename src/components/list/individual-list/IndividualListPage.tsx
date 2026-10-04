@@ -13,6 +13,7 @@ function IndividualListPage({ listId }: Props) {
   return (
     <>
       {isLoading && <Loading />}
+      {!isLoading && error !== undefined && <p role="alert">Failed to load this list.</p>}
       {!isLoading && error === undefined && (
         <table className={"table table-bordered m-0 " + theme.table}>
           <thead className={theme.thead}>
@@ -30,6 +31,7 @@ function IndividualListPage({ listId }: Props) {
                 <td>
                   <button
                     type="button"
+                    aria-label={`Remove ${item.problemId} from list`}
                     className={"btn " + theme.btn}
                     onClick={() => deleteButtonClicked(item.problemId)}
                   >

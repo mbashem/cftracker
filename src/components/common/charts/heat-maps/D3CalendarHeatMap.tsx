@@ -11,7 +11,8 @@ function D3CalendarHeatMap({ data, width = 800, height = 200 }: D3CalendarHeatMa
   const svgRef = useRef<SVGSVGElement | null>(null);
 
   useEffect(() => {
-    if (!svgRef.current) return;
+    const svgElement = svgRef.current;
+    if (!svgElement) return;
     console.log(data);
 
     const margin = { top: 20, right: 20, bottom: 20, left: 20 };
@@ -24,7 +25,7 @@ function D3CalendarHeatMap({ data, width = 800, height = 200 }: D3CalendarHeatMa
     const colorScale = d3.scaleSequential(d3.interpolateBlues).domain([0, maxValue]);
 
     const svg = d3
-      .select(svgRef.current)
+      .select(svgElement)
       .attr("width", width)
       .attr("height", height)
       .append("g")
@@ -71,7 +72,7 @@ function D3CalendarHeatMap({ data, width = 800, height = 200 }: D3CalendarHeatMa
       .attr("text-anchor", "start");
 
     return () => {
-      d3.select(svgRef.current).selectAll("*").remove(); // Cleanup
+      d3.select(svgElement).selectAll("*").remove(); // Cleanup
     };
   }, [data, width, height]);
 

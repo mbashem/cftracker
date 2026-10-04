@@ -1,4 +1,5 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import Loading from "../common/Loading";
 import CustomModal from "../common/CustomModal";
 import CheckList from "../common/forms/CheckList";
 import useListPage from "./useListPage";
@@ -14,6 +15,8 @@ function ListPage() {
     theme,
     activeList,
     lists,
+    isLoading,
+    error,
     listClicked,
     createNewList,
     addButtonClicked,
@@ -26,6 +29,8 @@ function ListPage() {
 
   return (
     <div className="container pt-3">
+      {isLoading && <Loading />}
+      {error !== undefined && <p role="alert">Failed to load lists.</p>}
       <div className="d-flex align-items-center justify-content-between w-100">
         <div className="flex-fill">
           <CheckList
@@ -40,12 +45,13 @@ function ListPage() {
         </div>
 
         <div className="flex-fill">
-          <CustomModal title="Create New List" theme={theme} button={<FontAwesomeIcon icon={faPlus} />}>
+          <CustomModal buttonLabel="Create new list" title="Create New List" theme={theme} button={<FontAwesomeIcon icon={faPlus} />}>
             {({ closeModal }) => (
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
-                  createNewList(newListName).then(() => {
+                  createNewList(newListName).then((success) => {
+                    if (!success) return;
                     setNewListName("");
                     closeModal();
                   });
@@ -75,12 +81,13 @@ function ListPage() {
             <button type="button" className={"btn " + theme.btn} onClick={addButtonClicked}>
               <FontAwesomeIcon icon={faPlus} /> Add Problem
             </button>
-            <CustomModal title={`Update ${activeList?.name}:`} theme={theme} button={<FontAwesomeIcon icon={faEdit} />}>
+            <CustomModal buttonLabel="Edit list" title={`Update ${activeList?.name}:`} theme={theme} button={<FontAwesomeIcon icon={faEdit} />}>
               {({ closeModal }) => (
                 <form
                   onSubmit={(e) => {
                     e.preventDefault();
-                    updateListName(updateListNameValue).then(() => {
+                    updateListName(updateListNameValue).then((success) => {
+                      if (!success) return;
                       closeModal();
                     });
                   }}
@@ -89,6 +96,7 @@ function ListPage() {
                     <div className="d-flex align-items-center justify-content-between">
                       <label htmlFor={updateListNameId}>Enter New Name</label>
                       <CustomModal
+                        buttonLabel="Delete list"
                         title={`Do you want to delete ${activeList.name}?`}
                         theme={theme}
                         button={<FontAwesomeIcon className={theme.textDanger} icon={faTrash} />}
@@ -99,7 +107,8 @@ function ListPage() {
                               type="button"
                               className={theme.btnDanger + " me-2 "}
                               onClick={() => {
-                                deleteListButtonClicked().then(() => {
+                                deleteListButtonClicked().then((success) => {
+                                  if (!success) return;
                                   closeDeleteAlertModal();
                                   closeModal();
                                 });

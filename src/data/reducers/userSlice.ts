@@ -6,11 +6,13 @@ export interface UserState {
   error: string;
   id: number;
   user?: User;
+  authenticationVersion: number;
 }
 
 const userInitialState: UserState = {
   handles: [],
   error: '',
+  authenticationVersion: 0,
   id: 0,
 };
 
@@ -39,7 +41,11 @@ const userSlice = createSlice({
       state.user = action.payload;
       state.error = "";
     },
+    beginAuthentication(state) {
+      state.authenticationVersion = (state.authenticationVersion ?? 0) + 1;
+    },
     removeUser(state) {
+      state.authenticationVersion = (state.authenticationVersion ?? 0) + 1;
       state.user = undefined;
     },
     errorAuthenticatingUser(state, action: PayloadAction<{ errorMessage: string; }>) {
@@ -48,6 +54,6 @@ const userSlice = createSlice({
   },
 });
 
-export const { addHandle, removeHandle, removeAllHandle, setUser, removeUser, errorAuthenticatingUser } = userSlice.actions;
+export const { beginAuthentication, addHandle, removeHandle, removeAllHandle, setUser, removeUser, errorAuthenticatingUser } = userSlice.actions;
 
 export default userSlice.reducer;

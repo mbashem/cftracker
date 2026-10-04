@@ -36,7 +36,8 @@ export const sortByContestId = (
   if (a.contestId > b.contestId) return 1;
 
   if (a.index < b.index) return -1;
-  return 1;
+  if (a.index > b.index) return 1;
+  return 0;
 };
 
 export const sortById = (
@@ -46,7 +47,7 @@ export const sortById = (
   if (a.id < b.id) return -1;
   if (a.id > b.id) return 1;
 
-  return 1;
+  return 0;
 };
 
 export const sortByCompare = <T extends Comparator<T>>(a: T, b: T): number => {
@@ -58,7 +59,8 @@ export const sortSubmissions = (a: Submission, b: Submission): number => {
     if (a.problem.index === b.problem.index) {
       if (a.verdict === Verdict.OK && b.verdict === Verdict.OK) return 0;
       else if (a.verdict === Verdict.OK) return -1;
-      else return 1;
+      else if (b.verdict === Verdict.OK) return 1;
+      else return 0;
     } else if (a.problem.index > b.problem.index) return 1;
     else return -1;
   }

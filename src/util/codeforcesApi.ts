@@ -36,6 +36,7 @@ function saveDebugCachedResponse(url: string, response: unknown) {
 
 async function fetchJson<Response>(url: string): Promise<Response> {
   const response = await fetch(url);
+  if (!response.ok) throw new Error(`Codeforces request failed: HTTP ${response.status}`);
   return response.json() as Promise<Response>;
 }
 

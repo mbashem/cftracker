@@ -19,7 +19,7 @@ interface ReactCalendarHeatMapProps {
 }
 
 function ReactCalendarHeatMap({ data, minimumValueForMaxColor, onDayCellMouseLeave, onDayCellMouseOver }: ReactCalendarHeatMapProps) {
-  const year = new Date(data[0]?.date).getFullYear();
+  const year = data[0]?.date.getFullYear();
   const { theme } = useTheme();
   // Prepare the data
   const parsedData = data.reduce((map, d) => {
@@ -28,7 +28,7 @@ function ReactCalendarHeatMap({ data, minimumValueForMaxColor, onDayCellMouseLea
   }, {} as Record<string, number>);
 
   // Get all days in the year
-  const daysInYear = Array.from({ length: getDaysInYear(year) }, (_, i) => {
+  const daysInYear = year === undefined ? [] : Array.from({ length: getDaysInYear(year) }, (_, i) => {
     const date = new Date(year, 0, i + 1);
     return {
       date: date,
@@ -48,7 +48,7 @@ function ReactCalendarHeatMap({ data, minimumValueForMaxColor, onDayCellMouseLea
 
   const dayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const numberOfMonths = 12;
-  const monthLabels = [...Array(numberOfMonths)].map((_, i) =>
+  const monthLabels = year === undefined ? [] : [...Array(numberOfMonths)].map((_, i) =>
     new Date(year, i, 1).toLocaleString("default", { month: "short" })
   );
   const cellSize = useMemo(() => {

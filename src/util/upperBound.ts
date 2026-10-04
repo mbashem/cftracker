@@ -15,6 +15,8 @@ const upperBound = <T extends Comparator<T>>(list: T[], val: T): number => {
     } else if (res === Compared.GREATER) {
       ans = mid;
       r = mid - 1;
+    } else {
+      throw new RangeError("Comparator must return a Compared enum value");
     }
   }
 

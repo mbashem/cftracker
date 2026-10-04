@@ -1,5 +1,5 @@
 import { useLazyAuthenticateQuery } from "../data/queries/userQuery";
-import { errorAuthenticatingUser, removeUser, setUser } from "../data/reducers/userSlice";
+import { beginAuthentication, errorAuthenticatingUser, removeUser, setUser } from "../data/reducers/userSlice";
 import useUserStore from "../data/hooks/useUserStore";
 import { useAppDispatch } from "../data/store";
 import { StorageService } from "../util/StorageService";
@@ -12,12 +12,17 @@ function useUser() {
 	const [authenticate] = useLazyAuthenticateQuery();
 
 	async function handleGithubCallback(code: string, state: string) {
+		dispatch(beginAuthentication());
+		const version = dispatch((_dispatch, getState) => getState().userList.authenticationVersion);
+		const isCurrentRequest = () => dispatch((_dispatch, getState) => getState().userList.authenticationVersion) === version;
 		try {
 			const user = await authenticate({ code, state }).unwrap();
+			if (!isCurrentRequest()) return;
 			dispatch(setUser(user));
 			StorageService.setJWTToken(user.jwtToken);
 			return;
 		} catch (err: any) {
+			if (!isCurrentRequest()) return;
 			console.log(err);
 			let errorMessage = err?.data?.error ?? "Authentication failed!";
 			dispatch(errorAuthenticatingUser({ errorMessage }));

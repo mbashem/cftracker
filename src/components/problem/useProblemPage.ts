@@ -84,6 +84,8 @@ function useProblemPage() {
 	}, [getSearchParam]);
 	const [list, setList] = useState<ListWithItem | undefined>(undefined);
 	const nextListPosition = useRef(0);
+	const pendingListAdditions = useRef(new Set<string>());
+	const listGeneration = useRef(0);
 	const { submissions } = useSubmissionsStore();
 	const { theme } = useTheme();
 	const api = useList();
@@ -243,10 +245,16 @@ function useProblemPage() {
 	}, [filter.perPage, problemList.problems, randomProblem, selected]);
 
 	useEffect(() => {
-		if (listId === undefined) return;
+		let cancelled = false;
+		listGeneration.current += 1;
+		setList(undefined);
+		setProblemsAddedToList(new Set());
+		pendingListAdditions.current = new Set();
 		nextListPosition.current = 0;
+		if (listId === undefined) return;
 
 		api.getListWithItems(listId).then(listWithItems => {
+			if (cancelled) return;
 			setList(listWithItems);
 			nextListPosition.current = listWithItems.items.reduce(
 				(max, item) => Math.max(max, item.position),
@@ -254,9 +262,9 @@ function useProblemPage() {
 			) + 1;
 			setProblemsAddedToList(new Set(listWithItems.items.map(listItem => listItem.problemId)));
 		}).catch(err => {
-			showErrorToast(err?.message ?? "Failed to find allready added problems");
+			if (!cancelled) showErrorToast(err?.message ?? "Failed to find allready added problems");
 		});
-
+		return () => { cancelled = true; };
 	}, [listId]);
 
 	useEffect(() => {
@@ -296,31 +304,41 @@ function useProblemPage() {
 
 	async function addProblemToList(problemId: string) {
 		if (listId === undefined) throw new Error("ListId is undefined");
+		const pending = pendingListAdditions.current;
+		if (problemsAddedToList.has(problemId) || pending.has(problemId)) return;
+		pending.add(problemId);
+		const generation = listGeneration.current;
 		try {
 			const position = nextListPosition.current;
 			nextListPosition.current += 1;
 			const item = await api.addProblemToList(listId, problemId, position);
+			if (generation !== listGeneration.current) return;
 			setList((currentList) => currentList === undefined
 				? currentList
 				: { ...currentList, items: [...currentList.items, item] }
 			);
-			let newProblemsAddedToList = new Set(problemsAddedToList);
-			newProblemsAddedToList.add(problemId);
-			setProblemsAddedToList(newProblemsAddedToList);
+			setProblemsAddedToList(current => new Set(current).add(problemId));
 			return;
-		} catch (err) {
-			throw err;
+		} finally {
+			pending.delete(problemId);
 		}
 	}
 
 	async function deleteProblemFromList(problemId: string) {
 		if (listId === undefined) throw new Error("ListId is undefined");
+		const generation = listGeneration.current;
 		try {
 			let res = await api.deleteProblemFromList(listId, problemId);
 			console.log(res);
-			let newProblemsAddedToList = new Set(problemsAddedToList);
-			newProblemsAddedToList.delete(problemId);
-			setProblemsAddedToList(newProblemsAddedToList);
+			if (generation !== listGeneration.current) return;
+			setList(current => current === undefined ? current : {
+				...current, items: current.items.filter(item => item.problemId !== problemId),
+			});
+			setProblemsAddedToList(current => {
+				const updated = new Set(current);
+				updated.delete(problemId);
+				return updated;
+			});
 			return;
 		} catch (err) {
 			throw err;

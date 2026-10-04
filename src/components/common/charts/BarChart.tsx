@@ -63,7 +63,7 @@ function BarChart<XAxis>({ labels, title, dataSets, yMax, yMin }: BarChartProps<
       labels,
       datasets: chartDataDataSet,
     }),
-    [labels, dataSets]
+    [labels, chartDataDataSet]
   );
 
   const options: ChartOptions<"bar"> = useMemo(

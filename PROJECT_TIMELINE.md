@@ -20,13 +20,14 @@ The latest major milestone, delivered across commits `20bc9e4` through `1a656e4`
 
 ## Whole-project growth at six-month intervals
 
-Each historical point uses the latest commit on `origin/main` available on or before the timestamp. The final “latest” point uses the current branch (`dev`) and `HEAD`. `cloc` was run against archived snapshots, excluding `.git`, `node_modules`, `dist`, `build`, and all `.json` files. “Code lines” means `cloc`’s `SUM.code` value. The source measurements are saved in [`docs/cloc-main-six-monthly.csv`](docs/cloc-main-six-monthly.csv).
+Historical interval points use the latest commit available on the local `origin/main` reference on or before each timestamp. Previously recorded measurements are preserved. The final point measures committed `HEAD` on `dev`; uncommitted files are excluded. `cloc` excludes JSON and `.git`, `node_modules`, `dist`, and `build`.
 
 ![Project growth](docs/project-growth.svg)
 
-Non-JSON files grew from 11 to 261 across the same snapshots. The charts show non-JSON code lines and file count; the complete measurements are below.
+Code lines grew from 162 to 25,651; counted files grew from 11 to 306. Source: [CSV measurements](docs/cloc-main-six-monthly.csv). The horizontal axis is proportional to elapsed time.
+
 | Timestamp | Branch | Snapshot | Files | Code lines |
-|---|---|---:|---:|---:|
+| --- | --- | --- | ---: | ---: |
 | 2021-02-01 | main | `a450d15` | 11 | 162 |
 | 2021-08-01 | main | `a3c2907` | 47 | 3,247 |
 | 2022-02-01 | main | `0ceeb36` | 58 | 3,642 |
@@ -40,4 +41,5 @@ Non-JSON files grew from 11 to 261 across the same snapshots. The charts show no
 | 2026-02-01 | main | `3853b64` | 194 | 10,945 |
 | 2026-08-01 | main | `9829286` | 195 | 12,355 |
 | 2026-09-02 | main | `98b5f23` | 245 | 18,446 |
-| 2026-09-03 (latest) | dev | `f1b9c62` | 261 | 21,106 |
+| 2026-09-03 | dev | `f1b9c62` | 261 | 21,106 |
+| 2026-10-04 | dev | `61c684e` | 306 | 25,651 |

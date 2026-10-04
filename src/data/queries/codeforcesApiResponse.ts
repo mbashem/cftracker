@@ -72,7 +72,8 @@ export function normalizeProblemResult(result: ProblemSetResult): ProblemData[] 
 	if (result.status !== "OK") throw new Error("Failed to fetch Problems list from CF API");
 
 	const problems = result.result.problems.filter(hasContestId);
-	const problemStatistics = result.result.problemStatistics.filter(hasContestId);
+	const problemStatistics = new Map(result.result.problemStatistics.filter(hasContestId)
+		.map(statistic => [`${statistic.contestId}${statistic.index}`, statistic.solvedCount]));
 	const finalProblemArray: ProblemData[] = [];
 
 	for (let index = 0; index < problems.length; index++) {
@@ -84,7 +85,7 @@ export function normalizeProblemResult(result: ProblemSetResult): ProblemData[] 
 			type: problem.type,
 			rating: problem.rating,
 			tags: [...problem.tags],
-			solvedCount: problemStatistics[index]?.solvedCount ?? 0,
+			solvedCount: problemStatistics.get(`${problem.contestId}${problem.index}`) ?? 0,
 		});
 	}
 

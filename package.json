@@ -46,10 +46,11 @@
     "lint:secrets": "secretlint --no-color \"**/*\"",
     "lint:secrets:ci": "secretlint --format github \"**/*\"",
     "verify:policy": "npm run test:policy && npm run lint:secrets",
-    "verify:frontend": "npm run test:frontend && npm run typecheck && npm run lint && npm run build",
+    "verify:frontend": "npm run test:frontend:coverage && npm run typecheck && npm run lint && npm run build",
     "verify:ci": "npm run verify:policy && npm run verify:frontend",
     "verify:backend": "make -C backend test",
-    "verify": "npm run verify:ci && npm run verify:backend"
+    "verify": "npm run verify:ci && npm run verify:backend",
+    "test:frontend:coverage": "vitest run --coverage && node --experimental-strip-types scripts/update-coverage-html.mts"
   },
   "browserslist": {
     "production": [
@@ -74,6 +75,7 @@
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.3",
+    "@vitest/coverage-v8": "5.0.1",
     "eslint": "^10.7.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.3",
