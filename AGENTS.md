@@ -13,3 +13,31 @@ settings can be selected explicitly.
 The subagent owns the authorized commit, push, and PR work and returns the commit hash,
 push result, PR URL, or blockers. If the requested model is unavailable, report the blocker
 rather than silently assigning this work to another model.
+
+# Independent PR reviews
+
+Whenever the user requests a PR review:
+
+- Spawn a new reviewer subagent with `fork_turns="none"`.
+- Use `gpt-6-astra` with `medium` reasoning effort unless the user specifies
+  another model. If the requested model is unavailable, report the blocker
+  rather than silently substituting another model.
+- Never reuse an implementation, commit, or previous review agent.
+- Pass only the repository location, PR number or URL, base/head commit SHAs,
+  and any explicit review constraints from the user.
+- Do not pass conversation history, implementation explanations, previous
+  findings, or the parent agent's conclusions.
+- Review the committed PR diff in an isolated checkout at the head SHA,
+  excluding uncommitted workspace changes.
+- Read applicable repository instructions and inspect surrounding code and
+  tests independently.
+- Form initial findings before reading the PR description or existing review
+  comments, to reduce anchoring.
+- Report actionable defects with severity, file/line references, a concrete
+  failure scenario, and supporting evidence.
+- Do not invent findings to satisfy a quota. Explicitly report when no
+  actionable defects are found.
+- Keep the review read-only. Return findings to the parent; do not post to
+  GitHub unless the user explicitly requests publication.
+- Present the review scope, reviewed head SHA, findings, and verification
+  limits to the user.
