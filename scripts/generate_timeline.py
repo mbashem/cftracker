@@ -135,6 +135,11 @@ def render(rows):
     SVG_PATH.write_text('\n'.join(svg) + '\n')
 
 
+def snapshot_identity(row):
+    """Match the date, branch, and seven-character commit recorded in the CSV."""
+    return row['timestamp'], row['branch'], row['commit'][:7]
+
+
 def main():
     today = datetime.now(ZoneInfo('Asia/Dhaka')).date()
     if CSV_PATH.exists():
@@ -142,19 +147,24 @@ def main():
             rows = list(csv.DictReader(file))
     else:
         rows = []
-    known = {row['timestamp'] for row in rows}
+    known_intervals = {(row['timestamp'], row['branch']) for row in rows}
+    known_snapshots = {snapshot_identity(row) for row in rows}
     additions = []
     for year in range(2021, today.year + 1):
         for month in (2, 8):
             snapshot = date(year, month, 1)
-            if snapshot > today or snapshot.isoformat() in known:
+            if snapshot > today or (snapshot.isoformat(), 'main') in known_intervals:
                 continue
             commit = git('rev-list', '-1', f'--before={snapshot.isoformat()}T23:59:59+06:00', 'origin/main')
             if commit:
-                additions.append(measure(snapshot.isoformat(), 'main', commit))
-    if today.isoformat() not in known:
-        branch = git('branch', '--show-current') or 'detached HEAD'
-        additions.append(measure(today.isoformat(), branch, git('rev-parse', 'HEAD')))
+                entry = measure(snapshot.isoformat(), 'main', commit)
+                additions.append(entry)
+                known_snapshots.add(snapshot_identity(entry))
+    branch = git('branch', '--show-current') or 'detached HEAD'
+    commit = git('rev-parse', 'HEAD')
+    current_snapshot = (today.isoformat(), branch, commit[:7])
+    if current_snapshot not in known_snapshots:
+        additions.append(measure(today.isoformat(), branch, commit))
     CSV_PATH.parent.mkdir(exist_ok=True)
     if additions or not CSV_PATH.exists():
         existed = CSV_PATH.exists()
@@ -163,7 +173,11 @@ def main():
             if not existed:
                 writer.writeheader()
             writer.writerows(additions)
-    rows = breakdown(sorted(rows + additions, key=lambda row: row['timestamp']))
+    # Keep the current snapshot last among same-day points, including a return
+    # to an already measured branch/commit, without reordering the stored CSV.
+    rows = breakdown(sorted(rows + additions, key=lambda row: (
+        row['timestamp'], snapshot_identity(row) == current_snapshot,
+    )))
     render(rows)
     timeline = ROOT / 'PROJECT_TIMELINE.md'
     existing = timeline.read_text() if timeline.exists() else '# Project Timeline: CFTracker\n\n'
@@ -172,7 +186,7 @@ def main():
     last = rows[-1]
     summary = f'''{marker}
 
-Historical interval points use the latest commit available on the local `origin/main` reference on or before each timestamp. Previously recorded measurements are preserved. The final recorded point measures committed snapshot `{last['commit']}` on `{last['branch']}`; existing dates retain their original snapshot even when HEAD changes. Uncommitted files are excluded. `cloc` excludes JSON and `.git`, `node_modules`, `dist`, and `build`.
+Historical interval points use the latest commit available on the local `origin/main` reference on or before each timestamp. Previously recorded measurements are preserved. The final recorded point measures committed snapshot `{last['commit']}` on `{last['branch']}`; same-day branch or commit changes append new snapshots while preserving earlier measurements. Rerunning the same date, branch, and commit adds no duplicate. Uncommitted files are excluded. `cloc` excludes JSON and `.git`, `node_modules`, `dist`, and `build`.
 
 The chart shows **normal code**, **test code**, and **overall code** on one scale. Overall is normal plus tests. Test code includes files under `test/`, `tests/`, `__tests__/`, and `testdata/`, plus named `*.test.*`, `*.spec.*`, and `*_test.go` files; shared mocks and fixtures within those directories are included. Normal code is every other counted file, including documentation, configuration, and generated sources that `cloc` recognizes. These are code-line counts, not executable coverage locations.
 

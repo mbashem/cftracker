@@ -20,13 +20,13 @@ The latest major milestone, delivered across commits `20bc9e4` through `1a656e4`
 
 ## Whole-project growth at six-month intervals
 
-Historical interval points use the latest commit available on the local `origin/main` reference on or before each timestamp. Previously recorded measurements are preserved. The final recorded point measures committed snapshot `61c684e` on `dev`; existing dates retain their original snapshot even when HEAD changes. Uncommitted files are excluded. `cloc` excludes JSON and `.git`, `node_modules`, `dist`, and `build`.
+Historical interval points use the latest commit available on the local `origin/main` reference on or before each timestamp. Previously recorded measurements are preserved. The final recorded point measures committed snapshot `9fc7221` on `dev`; same-day branch or commit changes append new snapshots while preserving earlier measurements. Rerunning the same date, branch, and commit adds no duplicate. Uncommitted files are excluded. `cloc` excludes JSON and `.git`, `node_modules`, `dist`, and `build`.
 
 The chart shows **normal code**, **test code**, and **overall code** on one scale. Overall is normal plus tests. Test code includes files under `test/`, `tests/`, `__tests__/`, and `testdata/`, plus named `*.test.*`, `*.spec.*`, and `*_test.go` files; shared mocks and fixtures within those directories are included. Normal code is every other counted file, including documentation, configuration, and generated sources that `cloc` recognizes. These are code-line counts, not executable coverage locations.
 
 ![Project growth](docs/project-growth.svg)
 
-Code lines grew from 162 to 25,651; counted files grew from 11 to 306. Source: [preserved CSV totals](docs/cloc-main-six-monthly.csv) and [normal/test breakdown](docs/cloc-main-six-monthly-breakdown.csv). The horizontal axis is proportional to elapsed time.
+Code lines grew from 162 to 28,376; counted files grew from 11 to 349. Source: [preserved CSV totals](docs/cloc-main-six-monthly.csv) and [normal/test breakdown](docs/cloc-main-six-monthly-breakdown.csv). The horizontal axis is proportional to elapsed time.
 
 | Timestamp | Branch | Snapshot | Files | Normal code | Test code | Overall code |
 | --- | --- | --- | ---: | ---: | ---: | ---: |
@@ -45,3 +45,4 @@ Code lines grew from 162 to 25,651; counted files grew from 11 to 306. Source: [
 | 2026-09-02 | main | `98b5f23` | 245 | 14,619 | 3,827 | 18,446 |
 | 2026-09-03 | dev | `f1b9c62` | 261 | 16,154 | 4,952 | 21,106 |
 | 2026-10-04 | dev | `61c684e` | 306 | 18,375 | 7,276 | 25,651 |
+| 2026-10-04 | dev | `9fc7221` | 349 | 18,586 | 9,790 | 28,376 |
