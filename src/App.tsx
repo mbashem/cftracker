@@ -6,16 +6,14 @@ import "react-toastify/dist/ReactToastify.css";
 
 import Menu from "./components/Menu";
 import { Path } from "./util/route/path";
-import HomePage from "./components/home/HomePage";
-import ProblemPage from "./components/problem/ProblemPage";
 import ContestPage from "./components/contest/ContestPage";
 import useTheme from "./data/hooks/useTheme";
 import AuthGuard from "./util/route/AuthGuard";
 import useAppBootstrap from "./hooks/useAppBootstrap";
 
-// const HomePage = lazy(() => import("./components/home/HomePage"));
-// const ProblemPage = lazy(() => import("./components/problem/ProblemPage"));
 // const ContestPage = lazy(() => import("./components/contest/ContestPage"));
+const ProblemPage = lazy(() => import("./components/problem/ProblemPage"));
+const HomePage = lazy(() => import("./components/home/HomePage"));
 const StatPage = lazy(() => import("./components/stats/StatPage"));
 const IssuePage = lazy(() => import("./components/comment/CommentPage"));
 const ListPage = lazy(() => import("./components/list/ListPage"));
@@ -47,7 +45,6 @@ function App() {
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path={Path.PROBLEMS} element={<ProblemPage key="problems" />} />
-            <Route path={Path.RANDOM_PROBLEM} element={<ProblemPage key="random-problem" />} />
             <Route path={Path.CONTESTS} element={<ContestPage />} />
             <Route path={Path.Stats} element={<StatPage />} />
             <Route path={Path.Issues} element={<IssuePage />} />

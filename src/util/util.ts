@@ -1,4 +1,4 @@
-import { isEqual as lodashIsEqual } from "lodash";
+import lodashIsEqual from "lodash/isEqual";
 
 /** Returns the Codeforces contest page URL for a contest id. */
 export function getContestUrl(contestId: number) {
