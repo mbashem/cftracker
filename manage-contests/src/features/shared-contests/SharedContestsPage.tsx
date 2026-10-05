@@ -30,7 +30,7 @@ export default async function SharedContestsPage() {
           <Button type="submit">Group Contests</Button>
         </form>
         <form action={saveSharedContestsToFileAction}>
-          <Button type="submit">Save All Shared Contests To path: /src/data/saved_api/related.ts</Button>
+          <Button type="submit">Save All Shared Contests To path: /src/data/saved_api/related.json</Button>
         </form>
       </Stack>
       <SharedContestList

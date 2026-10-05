@@ -28,10 +28,10 @@ const update_contest_list = async (): Promise<void> => {
         delete contest.relativeTimeSeconds;
       });
 
-      const writable = `export const contests_data=${JSON.stringify(body)}`;
+      const writable = `${JSON.stringify(body)}\n`;
 
       fs.writeFile(
-        "../src/data/saved_api/contests_data.ts",
+        "../src/data/saved_api/contests_data.json",
         writable,
         (error) => {
           if (error) {

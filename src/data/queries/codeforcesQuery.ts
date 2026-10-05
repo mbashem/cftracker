@@ -1,6 +1,9 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import type { FetchArgs, FetchBaseQueryError, FetchBaseQueryMeta, QueryReturnValue } from '@reduxjs/toolkit/query';
 import { IS_DEBUG_MODE } from '../../util/env';
+import savedProblemsUrl from '../saved_api/problems_data.json?url';
+import savedContestsUrl from '../saved_api/contests_data.json?url';
+import savedRelatedUrl from '../saved_api/related.json?url';
 import { ProblemData, ProblemSharedData } from '../../types/CF/Problem';
 import {
 	ContestData,
@@ -20,10 +23,10 @@ export const codeforcesApi = createApi({
 			queryFn: (_arg, _queryApi, _extraOptions, baseQuery) => getProblems(baseQuery),
 		}),
 		getContest: builder.query<ContestData[], void>({
-			queryFn: () => getContest(),
+			queryFn: (_arg, _queryApi, _extraOptions, baseQuery) => getContest(baseQuery),
 		}),
 		getSharedProblems: builder.query<ProblemSharedData[], void>({
-			queryFn: () => getSharedProblems(),
+			queryFn: (_arg, _queryApi, _extraOptions, baseQuery) => getSharedProblems(baseQuery),
 		}),
 	}),
 });
@@ -35,9 +38,11 @@ type CodeforcesQueryResult<T> = { data: T; } | { error: FetchBaseQueryError; };
 const problemSetPath = "problemset.problems?lang=en";
 async function getProblems(baseQuery: CodeforcesBaseQuery): Promise<CodeforcesQueryResult<ProblemData[]>> {
 	try {
-		if (IS_DEBUG_MODE) return { data: await getSavedProblems() };
-
-		const response = await baseQuery({ url: problemSetPath, method: 'GET' });
+		if (IS_DEBUG_MODE) console.log("CFTracker is running in debug mode. Using local saved problems data.");
+		const url = IS_DEBUG_MODE
+			? new URL(savedProblemsUrl, window.location.href).href
+			: problemSetPath;
+		const response = await baseQuery({ url, method: 'GET' });
 		if (response.error) return { error: response.error };
 
 		return { data: normalizeProblemResult(response.data as ProblemSetResult) };
@@ -47,38 +52,26 @@ async function getProblems(baseQuery: CodeforcesBaseQuery): Promise<CodeforcesQu
 	}
 }
 
-async function getContest(): Promise<CodeforcesQueryResult<ContestData[]>> {
+async function getContest(baseQuery: CodeforcesBaseQuery): Promise<CodeforcesQueryResult<ContestData[]>> {
 	try {
-		return { data: await getSavedContest() };
+		const response = await baseQuery({ url: new URL(savedContestsUrl, window.location.href).href, method: 'GET' });
+		if (response.error) return { error: response.error };
+		return { data: normalizeContestResult(response.data as ContestListResult) };
 	} catch (error) {
 		console.log(error);
 		return codeforcesError("Failed to load saved contestList.");
 	}
 }
 
-async function getSharedProblems(): Promise<CodeforcesQueryResult<ProblemSharedData[]>> {
+async function getSharedProblems(baseQuery: CodeforcesBaseQuery): Promise<CodeforcesQueryResult<ProblemSharedData[]>> {
 	try {
-		return { data: await getSavedSharedProblems() };
+		const response = await baseQuery({ url: new URL(savedRelatedUrl, window.location.href).href, method: 'GET' });
+		if (response.error) return { error: response.error };
+		return { data: normalizeSharedProblemResult(response.data as SharedProblemListResult) };
 	} catch (error) {
 		console.log(error);
 		return codeforcesError("Error processing shared problems");
 	}
-}
-
-async function getSavedProblems(): Promise<ProblemData[]> {
-	console.log("CFTracker is running in debug mode. Using local saved problems data.");
-	const data = await import("../saved_api/problems_data");
-	return normalizeProblemResult(data.problem_data as ProblemSetResult);
-}
-
-async function getSavedContest(): Promise<ContestData[]> {
-	const data = await import("../saved_api/contests_data");
-	return normalizeContestResult(data.contests_data as ContestListResult);
-}
-
-async function getSavedSharedProblems(): Promise<ProblemSharedData[]> {
-	const data = await import("../saved_api/related");
-	return normalizeSharedProblemResult(data.jsonData as SharedProblemListResult);
 }
 
 function codeforcesError(error: string): CodeforcesQueryResult<never> {

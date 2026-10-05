@@ -91,7 +91,7 @@ The endpoint currently exposes these tools:
 | `list_ungrouped_contests` | Return contests that do not have a shared-contest mapping. | None |
 | `list_problems` | Return all saved problems. | None |
 | `list_shared_contest_groups` | Return shared groups with contest and problem details. | None |
-| `write_related_ts` | Generate and write `related.ts` to the default or supplied path. | Optional `outputPath` |
+| `write_related_ts` | Generate and write plain JSON to `related.json` by default or the supplied path. The tool identifier is retained for compatibility. | Optional `outputPath` |
 
 `sync_shared_contest_group` accepts exactly one operator-confirmed group. It sorts the IDs and creates every mapping serially, then waits two seconds immediately before each supplied contest's serial problem synchronization. Omit `parentContestId` to create a group using the smallest supplied ID as parent. To merge one or more new children into an existing group, supply its self-mapped `parentContestId`; it may be numerically higher or lower than its children. For example: `{ "contestIds": [2131], "parentContestId": 2129 }`. A one-ID array without `parentContestId` remains valid and creates a self-mapping.
 
@@ -143,7 +143,7 @@ The suite verifies:
 - the two-second delay before every serial group problem synchronization;
 - deterministic contest, problem, group, and group-member ordering;
 - rejection of unexpected arguments by no-input tools;
-- default and supplied `related.ts` paths;
+- default and supplied `related.json` paths;
 - real serialization to a temporary file, including overwrite and filesystem-error behavior;
 - typed Codeforces, database, and filesystem errors;
 - Inspector exit code `5` for tool failures; and

@@ -6,6 +6,8 @@ export default defineConfig({
   plugins: [react()],
   test: {
     environment: 'jsdom',
+    // Reuse jsdom within each worker; every file still gets a fresh VM/window.
+    pool: 'vmThreads',
     include: ['tests/**/*.test.{ts,tsx}'],
     coverage: {
       provider: 'v8',

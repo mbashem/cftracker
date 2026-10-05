@@ -5,7 +5,7 @@ import { isError } from "@/utils/result";
 import { revalidatePath } from "next/cache";
 import { createOrUpdateSharedContest, deleteSharedContest } from "../services/SharedContestsDBService";
 import groupContestAsShared from "../services/GroupContestService";
-import { writeRelatedTs } from "../services/RelatedFileService";
+import { writeRelatedJson } from "../services/RelatedFileService";
 
 export async function deleteSharedContestAction(contestId: number) {
 	console.log("Deleting: shared contest, contestID:" + contestId);
@@ -36,7 +36,7 @@ export async function groupContestsAction() {
 
 export async function saveSharedContestsToFileAction() {
 	console.log("Server: Saving shared contests to file");
-	const result = await writeRelatedTs();
+	const result = await writeRelatedJson();
 	if (isError(result)) {
 		console.error("Unable to save the related contests file", result.error);
 		return;

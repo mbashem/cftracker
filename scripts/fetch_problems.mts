@@ -17,10 +17,10 @@ const update_problems_list = async (): Promise<void> => {
     const body = (await response.json()) as ProblemsetResponse;
 
     if (response.status === 200 && body.status === "OK") {
-      const writable = `export const problem_data=${JSON.stringify(body)}`;
+      const writable = `${JSON.stringify(body)}\n`;
 
       fs.writeFile(
-        "../src/data/saved_api/problems_data.ts",
+        "../src/data/saved_api/problems_data.json",
         writable,
         (error) => {
           if (error) {
