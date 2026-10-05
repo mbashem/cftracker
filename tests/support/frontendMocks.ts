@@ -1,4 +1,3 @@
-import "./spinnerMocks";
 import { vi, type Mock } from "vitest";
 import Theme, { ThemesType } from "../../src/util/Theme";
 import type Problem from "../../src/types/CF/Problem";

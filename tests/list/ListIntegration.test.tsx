@@ -1,4 +1,3 @@
-import "../support/spinnerMocks";
 import { setupBackendMock, backendList } from "../support/backendMocks";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, afterEach, expect, test } from "vitest";

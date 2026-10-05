@@ -128,11 +128,11 @@ test("empty results disable pagination and random selection without rendering un
 test("loading indicator is replaced by rows when problem data is ready", () => {
   frontend.loading = true;
   const view = setup();
-  expect(screen.getByLabelText("three-dots-loading")).toBeDefined();
+  expect(screen.getByRole("status", { name: "three-dots-loading" })).toBeDefined();
   expect(screen.queryByRole("table")).toBeNull();
   frontend.loading = false;
   view.rerender(<><ProblemPage /><LocationProbe /></>);
-  expect(screen.queryByLabelText("three-dots-loading")).toBeNull();
+  expect(screen.queryByRole("status", { name: "three-dots-loading" })).toBeNull();
   expect(rowIds()).toHaveLength(5);
 });
 

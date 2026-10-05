@@ -23,7 +23,7 @@ const actions: readonly QuickAction[] = [
   {
     title: "Random problem",
     description: "Pick a random problem using your saved filters.",
-    path: Path.RANDOM_PROBLEM,
+    path: Path.PROBLEMS,
     searchParams: { [SearchKeys.Random]: true },
     icon: faDice,
   },
