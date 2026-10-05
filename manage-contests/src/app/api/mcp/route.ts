@@ -7,7 +7,7 @@ import {
 import { getAllProblems } from "@/features/problems/services/ProblemDBService";
 import { fetchAndSaveProblemsByContestId } from "@/features/problems/services/ProblemService";
 import { syncSharedContestGroup } from "@/features/shared-contests/services/GroupContestService";
-import { writeRelatedTs } from "@/features/shared-contests/services/RelatedFileService";
+import { writeRelatedJson } from "@/features/shared-contests/services/RelatedFileService";
 import { getAllSharedContestGroupsWithDetails } from "@/features/shared-contests/services/SharedContestsDBService";
 
 export const runtime = "nodejs";
@@ -20,7 +20,7 @@ const handler = createMcpHandler((server) => {
 		listUngroupedContests: getAllUngroupedContests,
 		listProblems: getAllProblems,
 		listSharedContestGroups: getAllSharedContestGroupsWithDetails,
-		writeRelatedTs
+		writeRelatedJson
 	});
 }, {
 	serverInfo: {

@@ -15,27 +15,16 @@ function ContestCategoryByACPercentage({ category, simpleVerdictCounts }: Contes
     let pieChartData: PieChartData[] = [];
     let labels: string[] = [];
 
-    for (let simpleVerdict of Object.values(SimpleVerdict)) {
+    for (const simpleVerdict of [SimpleVerdict.SOLVED, SimpleVerdict.ATTEMPTED]) {
       labels.push(simpleVerdict);
       pieChartData.push({
         data: simpleVerdictCounts.get(simpleVerdict) ?? 0,
-        backgroundColor: getColorForVerdict(simpleVerdict),
+        backgroundColor: simpleVerdict === SimpleVerdict.SOLVED ? Color.Green : Color.Red,
       });
     }
 
     return { labels, pieChartData };
   }, [simpleVerdictCounts]);
-
-  function getColorForVerdict(verdict: SimpleVerdict): Color {
-    switch (verdict) {
-      case SimpleVerdict.SOLVED:
-        return Color.Green;
-      case SimpleVerdict.ATTEMPTED:
-        return Color.Red;
-      case SimpleVerdict.UNSOLVED:
-        return Color.Coral;
-    }
-  }
 
   const pieChartDataSet: PieChartDataSet = useMemo(
     () => ({

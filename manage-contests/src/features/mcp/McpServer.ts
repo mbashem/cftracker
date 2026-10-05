@@ -47,7 +47,7 @@ export type ManageContestsMcpDependencies = {
 	listUngroupedContests: () => Promise<Result<Contest[]>>;
 	listProblems: () => Promise<Result<Problem[]>>;
 	listSharedContestGroups: () => Promise<Result<SharedContestGroup[]>>;
-	writeRelatedTs: (outputPath?: string) => Promise<Result<{
+	writeRelatedJson: (outputPath?: string) => Promise<Result<{
 		outputPath: string;
 		relatedProblemCount: number;
 	}>>;
@@ -388,11 +388,12 @@ export function registerManageContestsTools(
 		}
 	);
 
+	// Keep the tool identifier compatible with existing MCP clients.
 	server.registerTool(
 		"write_related_ts",
 		{
-			title: "Write related.ts",
-			description: "Generate related-problem data and write it to the default related.ts path or the path provided by the caller.",
+			title: "Write related.json",
+			description: "Generate related-problem data and write it to the default related.json path or the path provided by the caller.",
 			inputSchema: z.object({
 				outputPath: z.string().min(1).optional().describe("Optional output path; relative paths are resolved from the server's current directory")
 			}).strict(),
@@ -410,12 +411,12 @@ export function registerManageContestsTools(
 		async ({ outputPath }) => {
 			return runTool(
 				"write_related_ts",
-				() => dependencies.writeRelatedTs(outputPath),
+				() => dependencies.writeRelatedJson(outputPath),
 				(output) => {
 				return {
 					content: [{
 						type: "text" as const,
-						text: `related.ts written to ${output.outputPath} with ${output.relatedProblemCount} related problem records.`
+						text: `related.json written to ${output.outputPath} with ${output.relatedProblemCount} related problem records.`
 					}],
 					structuredContent: output
 				};

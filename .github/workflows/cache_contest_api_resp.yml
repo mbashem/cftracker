@@ -36,7 +36,7 @@ jobs:
       - name: Check for modified files
         id: git-check
         run: |
-          if git diff --quiet -- src/data/saved_api/contests_data.ts src/data/saved_api/problems_data.ts; then
+          if git diff --quiet -- src/data/saved_api/contests_data.json src/data/saved_api/problems_data.json; then
             echo "modified=false" >> "$GITHUB_OUTPUT"
           else
             echo "modified=true" >> "$GITHUB_OUTPUT"
@@ -51,7 +51,7 @@ jobs:
         run: |
           git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git add src/data/saved_api/contests_data.ts src/data/saved_api/problems_data.ts
+          git add src/data/saved_api/contests_data.json src/data/saved_api/problems_data.json
           git commit -m "chore(data): update Codeforces snapshots"
 
       - name: Push verified snapshots

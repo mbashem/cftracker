@@ -22,7 +22,7 @@ export const backendUser = {
 export const backendList = { id: 5, user_id: 7, name: "Practice", created_at: "2026-01-01" };
 export const backendItem = { list_id: 5, problem_id: "100A", position: 2, created_at: "2026-01-02" };
 
-export function setupBackendMock() {
+export function setupBackendMock(catalogApi = codeforcesApi) {
   const requests: Request[] = [];
   const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
     const request = new Request(input);
@@ -31,8 +31,8 @@ export function setupBackendMock() {
   });
   vi.stubGlobal("fetch", fetchMock);
   const store = configureStore({
-    reducer: { appState, userSubmissions, [codeforcesApi.reducerPath]: codeforcesApi.reducer, userList: userReducer, [userApi.reducerPath]: userApi.reducer, [listApi.reducerPath]: listApi.reducer },
-    middleware: (defaults) => defaults().prepend(userSubmissionsListener.middleware).concat(userApi.middleware, listApi.middleware, codeforcesApi.middleware),
+    reducer: { appState, userSubmissions, [catalogApi.reducerPath]: catalogApi.reducer, userList: userReducer, [userApi.reducerPath]: userApi.reducer, [listApi.reducerPath]: listApi.reducer },
+    middleware: (defaults) => defaults().prepend(userSubmissionsListener.middleware).concat(userApi.middleware, listApi.middleware, catalogApi.middleware),
   });
   const wrapper = ({ children }: PropsWithChildren) => <Provider store={store}>{children}</Provider>;
   function respond(body: unknown, status = 200) {
@@ -42,7 +42,7 @@ export function setupBackendMock() {
     });
   }
   function dispose() {
-    store.dispatch(codeforcesApi.util.resetApiState());
+    store.dispatch(catalogApi.util.resetApiState());
     store.dispatch(userApi.util.resetApiState());
     store.dispatch(listApi.util.resetApiState());
     vi.unstubAllGlobals();

@@ -35,9 +35,9 @@ The app is a React 19/Vite 8 SPA. Routes are registered in `src/App.tsx`, and ro
 
 App bootstrap performs the initial data loads:
 
-- Codeforces problemset data from `src/data/saved_api/problems_data.ts` when `VITE_DEBUG_MODE=true`, or from the public API outside debug mode.
-- Contest snapshot data from `src/data/saved_api/contests_data.ts`.
-- Shared-problem data from `src/data/saved_api/related.ts`.
+- Codeforces problemset data from `src/data/saved_api/problems_data.json` when `VITE_DEBUG_MODE=true`, or from the public API outside debug mode.
+- Contest snapshot data from `src/data/saved_api/contests_data.json`.
+- Shared-problem data from `src/data/saved_api/related.json`.
 
 Redux Toolkit state is configured in `src/data/store.ts`. Feature state is split across reducers in `src/data/reducers/`.
 
@@ -107,13 +107,13 @@ Location: `manage-contests/`
 
 ## Data Flow
 
-Codeforces problemset data is loaded from `src/data/saved_api/problems_data.ts` when `VITE_DEBUG_MODE=true`. Outside debug mode, it is fetched live from:
+Codeforces problemset data is fetched from the saved `src/data/saved_api/problems_data.json` asset when `VITE_DEBUG_MODE=true`. Outside debug mode, it is fetched live from:
 
 ```text
 https://codeforces.com/api/problemset.problems?lang=en
 ```
 
-Contest data is loaded from a checked-in generated snapshot. Refresh scripts live in `scripts/`.
+Vite emits all saved catalogs as separate hashed JSON assets; RTK Query fetches them on demand and uses the existing normalization. Contest data is loaded from a checked-in generated snapshot. Refresh scripts live in `scripts/`.
 
 Debug mode is controlled by `VITE_DEBUG_MODE=true`. It is independent of Vite's built-in `import.meta.env.DEV`, so `npm run dev` can use live problem data when the flag is unset.
 
