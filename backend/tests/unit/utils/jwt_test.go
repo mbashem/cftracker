@@ -1,4 +1,4 @@
-package utils
+package utils_test
 
 import (
 	"strings"
@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/mbashem/cftracker/backend/internal/utils"
 )
 
 const (
@@ -14,18 +15,18 @@ const (
 )
 
 func TestGenerateAndVerifyToken(t *testing.T) {
-	Init(testJWTSecret)
+	utils.Init(testJWTSecret)
 
 	const (
 		email  = "user@example.com"
 		userID = int64(42)
 	)
-	token, err := GenerateToken(email, userID)
+	token, err := utils.GenerateToken(email, userID)
 	if err != nil {
 		t.Fatalf("GenerateToken() error = %v", err)
 	}
 
-	gotUserID, err := VerifyToken(token)
+	gotUserID, err := utils.VerifyToken(token)
 	if err != nil {
 		t.Fatalf("VerifyToken() error = %v", err)
 	}
@@ -68,38 +69,38 @@ func TestVerifyTokenRejectsInvalidSignature(t *testing.T) {
 		"exp":    time.Now().Add(time.Hour).Unix(),
 	})
 
-	Init(otherTestJWTSecret)
-	if _, err := VerifyToken(token); err == nil {
+	utils.Init(otherTestJWTSecret)
+	if _, err := utils.VerifyToken(token); err == nil {
 		t.Fatal("VerifyToken() error = nil, want invalid signature error")
 	}
 }
 
 func TestVerifyTokenRejectsExpiredToken(t *testing.T) {
-	Init(testJWTSecret)
+	utils.Init(testJWTSecret)
 	token := signTestToken(t, testJWTSecret, jwt.SigningMethodHS256, jwt.MapClaims{
 		"userId": int64(42),
 		"exp":    time.Now().Add(-time.Hour).Unix(),
 	})
 
-	if _, err := VerifyToken(token); err == nil {
+	if _, err := utils.VerifyToken(token); err == nil {
 		t.Fatal("VerifyToken() error = nil, want expired token error")
 	}
 }
 
 func TestVerifyTokenRejectsUnsupportedSigningMethod(t *testing.T) {
-	Init(testJWTSecret)
+	utils.Init(testJWTSecret)
 	token := signTestToken(t, testJWTSecret, jwt.SigningMethodHS512, jwt.MapClaims{
 		"userId": int64(42),
 		"exp":    time.Now().Add(time.Hour).Unix(),
 	})
 
-	if _, err := VerifyToken(token); err == nil {
+	if _, err := utils.VerifyToken(token); err == nil {
 		t.Fatal("VerifyToken() error = nil, want unsupported signing method error")
 	}
 }
 
 func TestVerifyTokenRejectsInvalidUserIDClaims(t *testing.T) {
-	Init(testJWTSecret)
+	utils.Init(testJWTSecret)
 
 	testCases := []struct {
 		name   string
@@ -145,7 +146,7 @@ func TestVerifyTokenRejectsInvalidUserIDClaims(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			token := signTestToken(t, testJWTSecret, jwt.SigningMethodHS256, testCase.claims)
 
-			_, err := VerifyToken(token)
+			_, err := utils.VerifyToken(token)
 			if err == nil {
 				t.Fatal("VerifyToken() error = nil, want invalid userId claim error")
 			}

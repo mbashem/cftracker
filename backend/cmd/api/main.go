@@ -39,10 +39,10 @@ func main() {
 	)
 	codeforcesProvider := users.NewCodeforcesClient(providerHTTPClient, config.ExternalAPITimeout)
 
-	userRepository := users.NewRepository(database)
+	userRepository := users.NewRepository(database, config.DatabaseTimeout)
 	userAPI := users.NewAPI(userRepository, users.NewVerificationTokenStore(), codeforcesProvider)
 	authHandler := auth.NewAuthHandler(githubProvider, userRepository)
-	listAPI := lists.NewAPI(lists.NewRepository(database), items.NewRepository(database))
+	listAPI := lists.NewAPI(lists.NewRepository(database, config.DatabaseTimeout), items.NewRepository(database, config.DatabaseTimeout))
 
 	router := gin.Default()
 

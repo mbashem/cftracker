@@ -1,3 +1,11 @@
+# Show diffs after edits
+
+After every task that edits files, provide an explicit way to review the diff.
+Use `apply_patch` for text edits when possible so the app can surface changes.
+Prefer the app's native diff view when available; otherwise provide a patch link
+or a concise inline diff. Include newly created files and keep the displayed diff
+scoped to the task's edits. Never claim a diff button is available without evidence.
+
 # Task delegation
 
 Whenever the commit-and-pr skill applies, delegate the commit, push, and pull-request

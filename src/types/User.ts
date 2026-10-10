@@ -5,7 +5,8 @@ export default interface User {
   email: string;
   avatarUrl: string;
   cfHandle: string;
-  cfVerified: boolean;
+  // Older saved sessions may not include the verified handle.
+  cfVerifiedHandle?: string;
   admin: boolean;
 	jwtToken: string;
 }

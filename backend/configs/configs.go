@@ -20,6 +20,7 @@ const (
 	GITHUB_CLIENT_SECRET EnvKey = "GITHUB_CLIENT_SECRET"
 	GITHUB_REDIRECT_URL  EnvKey = "GITHUB_REDIRECT_URL"
 	DATABASE_URL         EnvKey = "DATABASE_URL"
+	DATABASE_TIMEOUT     EnvKey = "DATABASE_TIMEOUT"
 	JWT_SECRET           EnvKey = "JWT_SECRET"
 	CORS_ALLOWED_ORIGINS EnvKey = "CORS_ALLOWED_ORIGINS"
 	PORT                 EnvKey = "PORT"
@@ -28,6 +29,7 @@ const (
 
 const (
 	DefaultExternalAPITimeout = 10 * time.Second
+	DefaultDatabaseTimeout    = 5 * time.Second
 	DefaultPort               = 8080
 	MinimumJWTSecretLength    = 32
 )
@@ -41,6 +43,7 @@ type Config struct {
 	CORSAllowedOrigins []string
 	Port               int
 	ExternalAPITimeout time.Duration
+	DatabaseTimeout    time.Duration
 }
 
 func Load() (Config, error) {
@@ -86,6 +89,10 @@ func Load() (Config, error) {
 	}
 
 	config.ExternalAPITimeout, err = parseExternalAPITimeout(getEnv(EXTERNAL_API_TIMEOUT))
+	if err != nil {
+		validationErrors = append(validationErrors, err)
+	}
+	config.DatabaseTimeout, err = parseTimeout(DATABASE_TIMEOUT, getEnv(DATABASE_TIMEOUT), DefaultDatabaseTimeout)
 	if err != nil {
 		validationErrors = append(validationErrors, err)
 	}
@@ -181,16 +188,20 @@ func parsePort(value string) (int, error) {
 }
 
 func parseExternalAPITimeout(value string) (time.Duration, error) {
+	return parseTimeout(EXTERNAL_API_TIMEOUT, value, DefaultExternalAPITimeout)
+}
+
+func parseTimeout(key EnvKey, value string, defaultTimeout time.Duration) (time.Duration, error) {
 	if value == "" {
-		return DefaultExternalAPITimeout, nil
+		return defaultTimeout, nil
 	}
 
 	timeout, err := time.ParseDuration(value)
 	if err != nil {
-		return DefaultExternalAPITimeout, fmt.Errorf("%s must be a valid duration: %w", EXTERNAL_API_TIMEOUT, err)
+		return defaultTimeout, fmt.Errorf("%s must be a valid duration: %w", key, err)
 	}
 	if timeout <= 0 {
-		return DefaultExternalAPITimeout, fmt.Errorf("%s must be greater than zero", EXTERNAL_API_TIMEOUT)
+		return defaultTimeout, fmt.Errorf("%s must be greater than zero", key)
 	}
 
 	return timeout, nil

@@ -1,35 +1,41 @@
 package items
 
 import (
+	"context"
 	"database/sql"
 	"errors"
+	"time"
 )
 
 var ErrListNotFound = errors.New("list not found")
 
 type ListItemRepository interface {
-	Create(userId int64, item *ListItem) error
-	Delete(userId int64, item *ListItem) error
-	GetItems(userId int64, listId int64) ([]ListItem, error)
+	Create(ctx context.Context, userId int64, item *ListItem) error
+	Delete(ctx context.Context, userId int64, item *ListItem) error
+	GetItems(ctx context.Context, userId int64, listId int64) ([]ListItem, error)
 }
 
 type Repository struct {
-	db *sql.DB
+	db      *sql.DB
+	timeout time.Duration
 }
 
-func NewRepository(db *sql.DB) *Repository {
+func NewRepository(db *sql.DB, timeout time.Duration) *Repository {
 	return &Repository{
-		db: db,
+		db:      db,
+		timeout: timeout,
 	}
 }
 
 // Get list items
-func (repository *Repository) GetItems(userId int64, listId int64) ([]ListItem, error) {
-	return repository.GetListItems(userId, listId)
+func (repository *Repository) GetItems(ctx context.Context, userId int64, listId int64) ([]ListItem, error) {
+	return repository.GetListItems(ctx, userId, listId)
 }
 
 // Add a problem to a list
-func (repository *Repository) Create(userId int64, item *ListItem) error {
+func (repository *Repository) Create(ctx context.Context, userId int64, item *ListItem) error {
+	ctx, cancel := context.WithTimeout(ctx, repository.timeout)
+	defer cancel()
 	query := `
 		INSERT INTO list_items (list_id, problem_id, position)
 		SELECT id, $2, $3
@@ -37,7 +43,7 @@ func (repository *Repository) Create(userId int64, item *ListItem) error {
 		WHERE id = $1 AND user_id = $4
 		RETURNING list_id, created_at
 	`
-	return listQueryError(repository.db.QueryRow(
+	return listQueryError(repository.db.QueryRowContext(ctx,
 		query,
 		item.ListId,
 		item.ProblemId,
@@ -47,7 +53,9 @@ func (repository *Repository) Create(userId int64, item *ListItem) error {
 }
 
 // Delete a problem from a list
-func (repository *Repository) Delete(userId int64, item *ListItem) error {
+func (repository *Repository) Delete(ctx context.Context, userId int64, item *ListItem) error {
+	ctx, cancel := context.WithTimeout(ctx, repository.timeout)
+	defer cancel()
 	query := `
 		DELETE FROM list_items
 		USING lists
@@ -57,7 +65,7 @@ func (repository *Repository) Delete(userId int64, item *ListItem) error {
 			AND list_items.problem_id = $3
 	`
 
-	result, err := repository.db.Exec(query, item.ListId, userId, item.ProblemId)
+	result, err := repository.db.ExecContext(ctx, query, item.ListId, userId, item.ProblemId)
 	if err != nil {
 		return err
 	}
@@ -71,7 +79,7 @@ func (repository *Repository) Delete(userId int64, item *ListItem) error {
 
 	var listId int64
 	query = `SELECT id FROM lists WHERE id = $1 AND user_id = $2`
-	if err := repository.db.QueryRow(query, item.ListId, userId).Scan(&listId); err != nil {
+	if err := repository.db.QueryRowContext(ctx, query, item.ListId, userId).Scan(&listId); err != nil {
 		return listQueryError(err)
 	}
 	if listId != item.ListId {
@@ -81,8 +89,10 @@ func (repository *Repository) Delete(userId int64, item *ListItem) error {
 }
 
 // Reorder problems in a list
-func (repository *Repository) ReorderListItems(userId int64, listId int64, newOrder []string) error {
-	transaction, err := repository.db.Begin()
+func (repository *Repository) ReorderListItems(ctx context.Context, userId int64, listId int64, newOrder []string) error {
+	ctx, cancel := context.WithTimeout(ctx, repository.timeout)
+	defer cancel()
+	transaction, err := repository.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
@@ -90,13 +100,13 @@ func (repository *Repository) ReorderListItems(userId int64, listId int64, newOr
 
 	var ownedListId int64
 	ownershipQuery := `SELECT id FROM lists WHERE id = $1 AND user_id = $2 FOR UPDATE`
-	if err := transaction.QueryRow(ownershipQuery, listId, userId).Scan(&ownedListId); err != nil {
+	if err := transaction.QueryRowContext(ctx, ownershipQuery, listId, userId).Scan(&ownedListId); err != nil {
 		return listQueryError(err)
 	}
 
 	for pos, itemId := range newOrder {
 		query := `UPDATE list_items SET position = $1 WHERE problem_id = $2 AND list_id = $3`
-		_, err := transaction.Exec(query, pos, itemId, ownedListId)
+		_, err := transaction.ExecContext(ctx, query, pos, itemId, ownedListId)
 		if err != nil {
 			return err
 		}
@@ -105,7 +115,9 @@ func (repository *Repository) ReorderListItems(userId int64, listId int64, newOr
 }
 
 // Get all problems in a list
-func (repository *Repository) GetListItems(userId int64, listId int64) ([]ListItem, error) {
+func (repository *Repository) GetListItems(ctx context.Context, userId int64, listId int64) ([]ListItem, error) {
+	ctx, cancel := context.WithTimeout(ctx, repository.timeout)
+	defer cancel()
 	items := []ListItem{}
 	query := `
 		SELECT lists.id, list_items.problem_id, list_items.position, list_items.created_at
@@ -113,7 +125,7 @@ func (repository *Repository) GetListItems(userId int64, listId int64) ([]ListIt
 		LEFT JOIN list_items ON list_items.list_id = lists.id
 		WHERE lists.id = $1 AND lists.user_id = $2
 	`
-	rows, err := repository.db.Query(query, listId, userId)
+	rows, err := repository.db.QueryContext(ctx, query, listId, userId)
 	if err != nil {
 		return nil, err
 	}

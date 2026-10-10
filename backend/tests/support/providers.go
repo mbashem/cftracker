@@ -49,9 +49,14 @@ func (provider *GitHubProviderMock[User]) Authenticate(ctx context.Context, code
 }
 
 type CodeforcesProviderMock struct {
-	VerificationValue   string
-	VerificationError   error
-	VerificationHandles []string
+	VerificationValue    string
+	VerificationError    error
+	VerificationHandles  []string
+	CurrentHandle        string
+	CurrentHandleError   error
+	HistoricHandles      []string
+	BeforeVerification   func()
+	BeforeHistoricLookup func()
 }
 
 func NewCodeforcesProviderMock(verificationValue string) *CodeforcesProviderMock {
@@ -60,8 +65,22 @@ func NewCodeforcesProviderMock(verificationValue string) *CodeforcesProviderMock
 
 func (provider *CodeforcesProviderMock) GetVerificationValue(ctx context.Context, cfHandle string) (string, error) {
 	provider.VerificationHandles = append(provider.VerificationHandles, cfHandle)
+	if provider.BeforeVerification != nil {
+		provider.BeforeVerification()
+	}
 	if err := ctx.Err(); err != nil {
 		return "", err
 	}
 	return provider.VerificationValue, provider.VerificationError
+}
+
+func (provider *CodeforcesProviderMock) GetCurrentHandle(ctx context.Context, handle string) (string, error) {
+	provider.HistoricHandles = append(provider.HistoricHandles, handle)
+	if provider.BeforeHistoricLookup != nil {
+		provider.BeforeHistoricLookup()
+	}
+	if err := ctx.Err(); err != nil {
+		return "", err
+	}
+	return provider.CurrentHandle, provider.CurrentHandleError
 }

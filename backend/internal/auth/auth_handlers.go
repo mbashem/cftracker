@@ -40,13 +40,29 @@ type AuthHandler struct {
 	generateToken  func(email string, userID int64) (string, error)
 }
 
-func NewAuthHandler(githubProvider GitHubProvider, userRepository users.AuthUserRepository) *AuthHandler {
-	return &AuthHandler{
+type HandlerOption func(*AuthHandler)
+
+// WithOAuthStateGenerator supplies the source of login challenge values.
+func WithOAuthStateGenerator(generate func() (string, error)) HandlerOption {
+	return func(handler *AuthHandler) { handler.generateState = generate }
+}
+
+// WithSessionTokenGenerator supplies the session token signer.
+func WithSessionTokenGenerator(generate func(string, int64) (string, error)) HandlerOption {
+	return func(handler *AuthHandler) { handler.generateToken = generate }
+}
+
+func NewAuthHandler(githubProvider GitHubProvider, userRepository users.AuthUserRepository, options ...HandlerOption) *AuthHandler {
+	handler := &AuthHandler{
 		githubProvider: githubProvider,
 		userRepository: userRepository,
 		generateState:  generateGitHubOAuthState,
 		generateToken:  utils.GenerateToken,
 	}
+	for _, option := range options {
+		option(handler)
+	}
+	return handler
 }
 
 func (handler *AuthHandler) GitHubLogin(context *gin.Context) {
@@ -73,7 +89,7 @@ func (handler *AuthHandler) GitHubCallback(context *gin.Context) {
 		return
 	}
 
-	user, err := handler.userRepository.FindByGitHubID(githubUser.ID)
+	user, err := handler.userRepository.FindByGitHubID(context.Request.Context(), githubUser.ID)
 	switch {
 	case errors.Is(err, users.ErrUserNotFound):
 		user = &users.User{
@@ -82,7 +98,7 @@ func (handler *AuthHandler) GitHubCallback(context *gin.Context) {
 			Email:          githubUser.Email,
 			AvatarURL:      githubUser.AvatarURL,
 		}
-		if err := handler.userRepository.Save(user); err != nil {
+		if err := handler.userRepository.Save(context.Request.Context(), user); err != nil {
 			context.JSON(http.StatusInternalServerError, gin.H{"error": failedToSaveUser})
 			return
 		}
@@ -93,7 +109,7 @@ func (handler *AuthHandler) GitHubCallback(context *gin.Context) {
 		user.GithubUserName = githubUser.Login
 		user.Email = githubUser.Email
 		user.AvatarURL = githubUser.AvatarURL
-		if err := handler.userRepository.Update(user); err != nil {
+		if err := handler.userRepository.Update(context.Request.Context(), user); err != nil {
 			context.JSON(http.StatusInternalServerError, gin.H{"error": failedToUpdateUser})
 			return
 		}

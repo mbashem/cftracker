@@ -1,5 +1,7 @@
 # Backend
 
+See [ARCHITECTURE.md](ARCHITECTURE.md) for the complete route reference, source path map, request and data flows, UML diagrams, and deployment state boundaries.
+
 ## Configuration
 
 For local development, create `.env` from the committed example and replace its placeholder values:
@@ -27,12 +29,17 @@ Optional variables:
 ```env
 PORT=8080
 EXTERNAL_API_TIMEOUT=10s
+DATABASE_TIMEOUT=5s
 CORS_ALLOWED_ORIGINS=http://localhost:5173
 ```
 
 `PORT` defaults to `8080`. `EXTERNAL_API_TIMEOUT` accepts Go duration values such as `5s` or `1m` and defaults to `10s`. `CORS_ALLOWED_ORIGINS` accepts comma-separated HTTP or HTTPS origins without paths. Missing or invalid entries are logged and skipped; when none are valid, requests without a browser `Origin` header can still be used for API testing. Do not use `*` because the API allows credentialed CORS requests.
 
 GitHub sign-in must start at `/api/auth/github/login`. The handler stores the short-lived OAuth state in an HTTP-only cookie, and the frontend forwards GitHub's returned `state` with the authorization code. A new login replaces any pending login in the same browser profile. HTTPS deployments behind a reverse proxy must set `X-Forwarded-Proto: https` so the state cookie is marked `Secure`.
+
+`DATABASE_TIMEOUT` is a positive Go duration, defaulting to `5s`. Every application repository operation derives a timeout from the HTTP request context. Its budget includes waiting for a pooled connection, executing SQL, reading rows, and all queries in a multi-step operation or transaction. A client cancellation or earlier parent deadline takes effect first. Provider calls keep their separate `EXTERNAL_API_TIMEOUT` budget; `DATABASE_TIMEOUT` is not an overall HTTP request timeout or a migration-command timeout. Database failures, including timeouts, retain the existing operation-specific HTTP `500` responses.
+
+Five seconds is a conservative starting value for this API's small CRUD operations, not a universal standard or a normal latency target. Healthy queries should finish well below it. Measure database latency and pool waits in production; shorten the budget when those measurements support it, and investigate slow queries or locks before increasing it. The request-context/derived-timeout pattern follows [Go's database cancellation guidance](https://go.dev/doc/database/cancel-operations), whose example also uses five seconds. Keep proxy request budgets large enough for endpoints that perform sequential provider and database operations.
 
 ## Testing
 
@@ -48,8 +55,8 @@ make test-race
 The configuration, authentication middleware, JWT, and Codeforces verification-token tests can be run directly while working on those packages:
 
 ```sh
-go test ./configs ./internal/auth ./internal/middlewares ./internal/utils ./internal/users
-go test -race ./internal/auth ./internal/middlewares ./internal/users ./internal/utils
+go test ./tests/unit/...
+go test -race ./tests/unit/...
 ```
 
 Configuration tests cover defaults, invalid values, process-environment precedence over `.env`, and database URL loading from `.env`. Authentication middleware tests cover rejected credentials, endpoint abortion, and propagation of a verified `int64 userId`. JWT tests cover generation, verification, expiration, signatures, signing methods, and invalid `userId` claims. Verification-token tests cover storage, replacement, deletion, expiration, and concurrent access.
@@ -216,23 +223,21 @@ curl -i http://localhost:8080/
 
 A `404` response is expected because `/` has no registered route. It confirms that the API connected to PostgreSQL and started without the frontend.
 
-# API
+## API
 
-- `GET /api/auth/github/login` - initialize GitHub login and OAuth state
-- `GET /api/auth/github/callback?code={code}&state={state}` - return user info and a JWT
+The canonical API prefix is `/api`. GitHub login and callback are public; `/api/user` and `/api/lists` require `Authorization: Bearer <token>`. Only the GitHub routes also have aliases without `/api`.
 
-The equivalent routes without the `/api` prefix remain available for direct backend clients.
+See the [complete HTTP route and payload reference](ARCHITECTURE.md#http-routes-and-contracts), [GitHub login sequence](ARCHITECTURE.md#github-authentication-flow), and [Codeforces ownership sequence](ARCHITECTURE.md#codeforces-ownership-flow).
 
-Authorization header with token 'Bearer {token}' required for following
-GET - /user/profile - returns users info ,
-PUT - /user/cfhandle - body = { "cf_handle": "{handle}" }
-GET - /user/cfverification-token - returns verification token - {"token": "{token}"}
-GET - /user/verify-cftoken - verifies verification token
+## Codeforces ownership and handle changes
 
-set cf firstName as the token recieved from verification token. It is valid for 1 hour
+The database and API expose `cf_handle` (the selected account) and `cf_verified_handle` (the account whose ownership was proved). There is no separate verification boolean. The backend treats the selected account as verified only when both nonempty handles match, ignoring case. Frontend authentication state preserves the verified handle as `cfVerifiedHandle`. Migration `000002_create_users` creates the verified-handle column directly. Existing disposable backend databases using the previous schema must be recreated before applying this revised migration history.
 
-- Go to settings -> social -> firstName
+When a previously verified user changes their selected handle, the backend calls Codeforces `user.info` with `checkHistoricHandles=true` using the stored verified handle. If the returned current handle matches the requested handle, both handles are updated and verification is retained. Selecting a different account preserves the old verified handle but makes the selected account unverified; it must pass the token challenge. A failed historical lookup leaves both stored handles unchanged so the request can be retried.
 
+Token ownership checks use `checkHistoricHandles=false` and tokens are bound to the user and selected handle. Database writes compare both previously read handles atomically. A concurrent handle change returns HTTP `409` with `Codeforces handle changed; please retry`, without saving stale verification. No handle version is used.
+
+Pending tokens remain in process memory and expire after one hour. Run a single backend instance until token storage is shared across instances.
 
 ## Docker
 

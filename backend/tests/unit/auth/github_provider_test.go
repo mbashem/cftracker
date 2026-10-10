@@ -1,4 +1,4 @@
-package auth
+package auth_test
 
 import (
 	"context"
@@ -11,7 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mbashem/cftracker/backend/internal/testutil"
+	"github.com/mbashem/cftracker/backend/internal/auth"
+	testutil "github.com/mbashem/cftracker/backend/tests/support"
 	"golang.org/x/oauth2"
 )
 
@@ -31,14 +32,14 @@ type githubProviderResponseTestCase struct {
 	status         int
 	body           string
 	responseError  error
-	expectedUser   *GitHubUser
+	expectedUser   *auth.GitHubUser
 	expectedErrors []error
 }
 
 // Authorization URL.
 
 func TestGitHubClientAuthorizationURLEscapesState(t *testing.T) {
-	client := NewGitHubClient(newGitHubProviderOAuthConfig(), &http.Client{}, time.Second)
+	client := auth.NewGitHubClient(newGitHubProviderOAuthConfig(), &http.Client{}, time.Second)
 
 	authorizationURL, err := url.Parse(client.AuthorizationURL(testGitHubProviderEscapedState))
 	if err != nil {
@@ -74,15 +75,15 @@ func TestGitHubClientAuthenticate(t *testing.T) {
 		},
 		{
 			name: "rejected response returns its sentinel", status: http.StatusForbidden, body: `{}`,
-			expectedErrors: []error{ErrGitHubRejectedResponse},
+			expectedErrors: []error{auth.ErrGitHubRejectedResponse},
 		},
 		{
 			name: "malformed response returns its sentinel", status: http.StatusOK, body: `{`,
-			expectedErrors: []error{ErrGitHubInvalidResponse},
+			expectedErrors: []error{auth.ErrGitHubInvalidResponse},
 		},
 		{
 			name: "transport failure preserves both errors", responseError: testGitHubProviderTransportFailure,
-			expectedErrors: []error{ErrGitHubUserRequest, testGitHubProviderTransportFailure},
+			expectedErrors: []error{auth.ErrGitHubUserRequest, testGitHubProviderTransportFailure},
 		},
 	}
 
@@ -94,7 +95,7 @@ func TestGitHubClientAuthenticate(t *testing.T) {
 				}
 				return testutil.NewJSONResponse(request, testCase.status, testCase.body), nil
 			})
-			client := NewGitHubClient(
+			client := auth.NewGitHubClient(
 				newGitHubProviderOAuthConfig(),
 				newGitHubProviderHTTPClient(t, nil, userRoundTrip),
 				time.Second,
@@ -110,7 +111,7 @@ func TestGitHubClientAuthenticateHandlesTokenExchangeFailure(t *testing.T) {
 	tokenRoundTrip := testutil.RoundTripFunc(func(_ *http.Request) (*http.Response, error) {
 		return nil, testGitHubProviderTransportFailure
 	})
-	client := NewGitHubClient(
+	client := auth.NewGitHubClient(
 		newGitHubProviderOAuthConfig(),
 		newGitHubProviderHTTPClient(t, tokenRoundTrip, nil),
 		time.Second,
@@ -118,13 +119,13 @@ func TestGitHubClientAuthenticateHandlesTokenExchangeFailure(t *testing.T) {
 
 	user, err := client.Authenticate(context.Background(), testGitHubOAuthCode)
 
-	assertGitHubProviderResult(t, user, err, nil, []error{ErrGitHubTokenExchange, testGitHubProviderTransportFailure})
+	assertGitHubProviderResult(t, user, err, nil, []error{auth.ErrGitHubTokenExchange, testGitHubProviderTransportFailure})
 }
 
 // Context propagation.
 
 func TestGitHubClientAuthenticateTimesOut(t *testing.T) {
-	client := NewGitHubClient(
+	client := auth.NewGitHubClient(
 		newGitHubProviderOAuthConfig(),
 		newGitHubProviderHTTPClient(t, testutil.RoundTripContextError, nil),
 		0,
@@ -132,7 +133,7 @@ func TestGitHubClientAuthenticateTimesOut(t *testing.T) {
 
 	user, err := client.Authenticate(context.Background(), testGitHubOAuthCode)
 
-	assertGitHubProviderResult(t, user, err, nil, []error{ErrGitHubTokenExchange, context.DeadlineExceeded})
+	assertGitHubProviderResult(t, user, err, nil, []error{auth.ErrGitHubTokenExchange, context.DeadlineExceeded})
 }
 
 func TestGitHubClientAuthenticatePropagatesCancellation(t *testing.T) {
@@ -142,7 +143,7 @@ func TestGitHubClientAuthenticatePropagatesCancellation(t *testing.T) {
 		cancel()
 		return testutil.RoundTripContextError(request)
 	})
-	client := NewGitHubClient(
+	client := auth.NewGitHubClient(
 		newGitHubProviderOAuthConfig(),
 		newGitHubProviderHTTPClient(t, nil, userRoundTrip),
 		time.Second,
@@ -150,7 +151,7 @@ func TestGitHubClientAuthenticatePropagatesCancellation(t *testing.T) {
 
 	user, err := client.Authenticate(ctx, testGitHubOAuthCode)
 
-	assertGitHubProviderResult(t, user, err, nil, []error{ErrGitHubUserRequest, context.Canceled})
+	assertGitHubProviderResult(t, user, err, nil, []error{auth.ErrGitHubUserRequest, context.Canceled})
 }
 
 // Test setup and assertions.
@@ -188,7 +189,7 @@ func newGitHubProviderHTTPClient(
 			}
 			body := fmt.Sprintf(`{"access_token":%q,"token_type":"bearer"}`, testGitHubProviderAccessToken)
 			return testutil.NewJSONResponse(request, http.StatusOK, body), nil
-		case githubUserURL:
+		case "https://api.github.com/user":
 			if request.Method != http.MethodGet {
 				t.Errorf("user request method = %s, want %s", request.Method, http.MethodGet)
 			}
@@ -207,9 +208,9 @@ func newGitHubProviderHTTPClient(
 
 func assertGitHubProviderResult(
 	t *testing.T,
-	actualUser *GitHubUser,
+	actualUser *auth.GitHubUser,
 	actualError error,
-	expectedUser *GitHubUser,
+	expectedUser *auth.GitHubUser,
 	expectedErrors []error,
 ) {
 	t.Helper()
