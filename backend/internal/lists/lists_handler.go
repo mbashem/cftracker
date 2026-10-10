@@ -76,7 +76,7 @@ func (api *API) CreateListHandler(context *gin.Context) {
 
 	// TODO: LIMIT number of list a user can create
 	list := List{Name: request.Name}
-	if err := api.listRepository.Create(userId, &list); err != nil {
+	if err := api.listRepository.Create(context.Request.Context(), userId, &list); err != nil {
 		writeListRepositoryError(context, err, failedToCreateList)
 		return
 	}
@@ -103,7 +103,7 @@ func (api *API) UpdateListNameHandler(context *gin.Context) {
 	}
 
 	list := &List{Id: listId, Name: request.Name}
-	if err := api.listRepository.UpdateName(userId, list); err != nil {
+	if err := api.listRepository.UpdateName(context.Request.Context(), userId, list); err != nil {
 		writeListRepositoryError(context, err, failedToUpdateList)
 		return
 	}
@@ -119,7 +119,7 @@ func (api *API) DeleteListHandler(context *gin.Context) {
 		return
 	}
 
-	if err := api.listRepository.Delete(userId, listId); err != nil {
+	if err := api.listRepository.Delete(context.Request.Context(), userId, listId); err != nil {
 		writeListRepositoryError(context, err, failedToDeleteList)
 		return
 	}
@@ -130,7 +130,7 @@ func (api *API) DeleteListHandler(context *gin.Context) {
 // Get all lists
 func (api *API) GetAllLists(context *gin.Context) {
 	userId := context.GetInt64(middlewares.UserIdKey)
-	lists, err := api.listRepository.GetAllListByUserId(userId)
+	lists, err := api.listRepository.GetAllListByUserId(context.Request.Context(), userId)
 	if err != nil {
 		writeListRepositoryError(context, err, failedToFindList)
 		return
@@ -163,7 +163,7 @@ func (api *API) AddToListHandler(context *gin.Context) {
 		ProblemId: request.ProblemId,
 		Position:  *request.Position,
 	}
-	if err := api.listItemsRepository.Create(userId, &item); err != nil {
+	if err := api.listItemsRepository.Create(context.Request.Context(), userId, &item); err != nil {
 		writeListRepositoryError(context, err, failedToAddItemToList)
 		return
 	}
@@ -186,7 +186,7 @@ func (api *API) DeleteFromListHandler(context *gin.Context) {
 	item.ListId = listId
 	item.ProblemId = itemId
 
-	if err := api.listItemsRepository.Delete(userId, &item); err != nil {
+	if err := api.listItemsRepository.Delete(context.Request.Context(), userId, &item); err != nil {
 		writeListRepositoryError(context, err, failedToDeleteItem)
 		return
 	}
@@ -202,13 +202,13 @@ func (api *API) GetListHandler(context *gin.Context) {
 		return
 	}
 
-	list, err := api.listRepository.GetById(userId, listId)
+	list, err := api.listRepository.GetById(context.Request.Context(), userId, listId)
 	if err != nil {
 		writeListRepositoryError(context, err, failedToFindList)
 		return
 	}
 
-	items, err := api.listItemsRepository.GetItems(userId, listId)
+	items, err := api.listItemsRepository.GetItems(context.Request.Context(), userId, listId)
 	if err != nil {
 		writeListRepositoryError(context, err, failedToGetListItems)
 		return

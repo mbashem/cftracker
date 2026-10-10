@@ -39,23 +39,23 @@ test:
 
 test-unit:
 	@echo "Running unit tests..."
-	@go test ./...
+	@go test ./tests/unit/...
 
 test-integration: check-test-database-url
 	@echo "Running integration tests..."
-	@go test -p 1 -count=1 -tags=integration ./...
+	@go test -p 1 -count=1 -tags=integration ./tests/integration/...
 
 test-migrations:
-	@./scripts/test-migrations.sh
+	@sh ./tests/integration/migrations/test-migrations.sh
 
 test-race:
 	@echo "Running race detector..."
-	@go test -race ./...
+	@go test -race ./tests/unit/...
 
 test-cover:
 	@echo "Running coverage..."
 	@mkdir -p "$(dir $(COVERAGE_FILE))"
-	@go test -coverprofile="$(COVERAGE_FILE)" ./...
+	@go test -coverpkg=./configs/...,./internal/... -coverprofile="$(COVERAGE_FILE)" ./tests/unit/...
 	@go tool cover -func="$(COVERAGE_FILE)"
 
 test-all:

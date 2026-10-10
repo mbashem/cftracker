@@ -1,4 +1,4 @@
-package configs
+package configs_test
 
 import (
 	"bytes"
@@ -11,6 +11,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/mbashem/cftracker/backend/configs"
 )
 
 const (
@@ -42,6 +44,7 @@ type configMockData struct {
 	corsAllowedOrigins string
 	port               string
 	externalAPITimeout string
+	databaseTimeout    string
 }
 
 var (
@@ -54,6 +57,7 @@ var (
 		corsAllowedOrigins: "https://dotenv.example.com",
 		port:               "9000",
 		externalAPITimeout: "5s",
+		databaseTimeout:    "3s",
 	}
 
 	processEnvConfigOverrides = configMockData{
@@ -61,10 +65,11 @@ var (
 		corsAllowedOrigins: "https://process.example.com",
 		port:               "9090",
 		externalAPITimeout: "15s",
+		databaseTimeout:    "2s",
 	}
 )
 
-func TestParsePort(t *testing.T) {
+func TestLoadPort(t *testing.T) {
 	testCases := []struct {
 		name              string
 		value             string
@@ -73,7 +78,7 @@ func TestParsePort(t *testing.T) {
 	}{
 		{
 			name:         "empty value uses default port",
-			expectedPort: DefaultPort,
+			expectedPort: configs.DefaultPort,
 		},
 		{
 			name:         "integer value uses configured port",
@@ -83,7 +88,7 @@ func TestParsePort(t *testing.T) {
 		{
 			name:              "non-integer value returns default port and validation error",
 			value:             testNonIntegerPort,
-			expectedPort:      DefaultPort,
+			expectedPort:      configs.DefaultPort,
 			expectedErrorText: testPortIntegerErrorText,
 		},
 		{
@@ -95,7 +100,12 @@ func TestParsePort(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			gotPort, err := parsePort(testCase.value)
+			t.Chdir(t.TempDir())
+			mockData := newConfigMockData()
+			mockData.port = testCase.value
+			setConfigEnv(t, mockData)
+			config, err := configs.Load()
+			gotPort := config.Port
 			if gotPort != testCase.expectedPort {
 				t.Fatalf("parsePort() port = %d, want %d", gotPort, testCase.expectedPort)
 			}
@@ -104,7 +114,7 @@ func TestParsePort(t *testing.T) {
 	}
 }
 
-func TestParseExternalAPITimeout(t *testing.T) {
+func TestLoadExternalAPITimeout(t *testing.T) {
 	testCases := []struct {
 		name              string
 		value             string
@@ -113,7 +123,7 @@ func TestParseExternalAPITimeout(t *testing.T) {
 	}{
 		{
 			name:            "empty value uses default timeout",
-			expectedTimeout: DefaultExternalAPITimeout,
+			expectedTimeout: configs.DefaultExternalAPITimeout,
 		},
 		{
 			name:            "seconds duration is parsed",
@@ -128,26 +138,31 @@ func TestParseExternalAPITimeout(t *testing.T) {
 		{
 			name:              "malformed duration returns default timeout and validation error",
 			value:             testMalformedAPITimeout,
-			expectedTimeout:   DefaultExternalAPITimeout,
+			expectedTimeout:   configs.DefaultExternalAPITimeout,
 			expectedErrorText: testAPITimeoutDurationErrorText,
 		},
 		{
 			name:              "zero duration returns default timeout and validation error",
 			value:             "0s",
-			expectedTimeout:   DefaultExternalAPITimeout,
+			expectedTimeout:   configs.DefaultExternalAPITimeout,
 			expectedErrorText: testAPITimeoutPositiveErrorText,
 		},
 		{
 			name:              "negative duration returns default timeout and validation error",
 			value:             "-1s",
-			expectedTimeout:   DefaultExternalAPITimeout,
+			expectedTimeout:   configs.DefaultExternalAPITimeout,
 			expectedErrorText: testAPITimeoutPositiveErrorText,
 		},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			gotTimeout, err := parseExternalAPITimeout(testCase.value)
+			t.Chdir(t.TempDir())
+			mockData := newConfigMockData()
+			mockData.externalAPITimeout = testCase.value
+			setConfigEnv(t, mockData)
+			config, err := configs.Load()
+			gotTimeout := config.ExternalAPITimeout
 			if gotTimeout != testCase.expectedTimeout {
 				t.Fatalf("parseExternalAPITimeout() timeout = %s, want %s", gotTimeout, testCase.expectedTimeout)
 			}
@@ -156,12 +171,14 @@ func TestParseExternalAPITimeout(t *testing.T) {
 	}
 }
 
-func TestParseAllowedOrigins(t *testing.T) {
+func TestLoadAllowedOrigins(t *testing.T) {
 	var logBuffer bytes.Buffer
 	restoreLogOutput := captureLogs(&logBuffer)
 	defer restoreLogOutput()
 
-	parsedOrigins := parseAllowedOrigins(strings.Join([]string{
+	t.Chdir(t.TempDir())
+	mockData := newConfigMockData()
+	mockData.corsAllowedOrigins = strings.Join([]string{
 		"",
 		"http://localhost:3000",
 		"http://localhost:3000/",
@@ -169,7 +186,13 @@ func TestParseAllowedOrigins(t *testing.T) {
 		"ftp://example.com",
 		"https://user@example.com",
 		"https://app.example.com",
-	}, ","))
+	}, ",")
+	setConfigEnv(t, mockData)
+	config, err := configs.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	parsedOrigins := config.CORSAllowedOrigins
 
 	expectedOrigins := []string{
 		"http://localhost:3000",
@@ -192,12 +215,18 @@ func TestParseAllowedOrigins(t *testing.T) {
 	}
 }
 
-func TestParseAllowedOriginsEmptyValue(t *testing.T) {
+func TestLoadAllowedOriginsEmptyValue(t *testing.T) {
 	var logBuffer bytes.Buffer
 	restoreLogOutput := captureLogs(&logBuffer)
 	defer restoreLogOutput()
 
-	parsedOrigins := parseAllowedOrigins("")
+	t.Chdir(t.TempDir())
+	setConfigEnv(t, newConfigMockData())
+	config, err := configs.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	parsedOrigins := config.CORSAllowedOrigins
 	if len(parsedOrigins) != 0 {
 		t.Fatalf("parseAllowedOrigins() = %v, want empty slice", parsedOrigins)
 	}
@@ -212,15 +241,18 @@ func TestLoadUsesDefaults(t *testing.T) {
 	t.Chdir(t.TempDir())
 	setConfigEnv(t, mockData)
 
-	config, err := Load()
+	config, err := configs.Load()
 	if err != nil {
 		t.Fatalf("Load() error = %v", err)
 	}
-	if config.Port != DefaultPort {
-		t.Fatalf("Port = %d, want %d", config.Port, DefaultPort)
+	if config.Port != configs.DefaultPort {
+		t.Fatalf("Port = %d, want %d", config.Port, configs.DefaultPort)
 	}
-	if config.ExternalAPITimeout != DefaultExternalAPITimeout {
-		t.Fatalf("ExternalAPITimeout = %s, want %s", config.ExternalAPITimeout, DefaultExternalAPITimeout)
+	if config.ExternalAPITimeout != configs.DefaultExternalAPITimeout {
+		t.Fatalf("ExternalAPITimeout = %s, want %s", config.ExternalAPITimeout, configs.DefaultExternalAPITimeout)
+	}
+	if config.DatabaseTimeout != configs.DefaultDatabaseTimeout {
+		t.Fatalf("DatabaseTimeout = %s, want %s", config.DatabaseTimeout, configs.DefaultDatabaseTimeout)
 	}
 	if len(config.CORSAllowedOrigins) != 0 {
 		t.Fatalf("CORSAllowedOrigins = %v, want empty slice", config.CORSAllowedOrigins)
@@ -280,7 +312,7 @@ func TestLoadRejectsInvalidValues(t *testing.T) {
 			configureMockData: func(mockData *configMockData) {
 				mockData.jwtSecret = "short"
 			},
-			expectedErrorText: fmt.Sprintf("JWT_SECRET must be at least %d bytes", MinimumJWTSecretLength),
+			expectedErrorText: fmt.Sprintf("JWT_SECRET must be at least %d bytes", configs.MinimumJWTSecretLength),
 		},
 		{
 			name: "non-integer port is rejected",
@@ -306,7 +338,7 @@ func TestLoadRejectsInvalidValues(t *testing.T) {
 			t.Chdir(t.TempDir())
 			setConfigEnv(t, mockData)
 
-			_, err := Load()
+			_, err := configs.Load()
 			assertErrorText(t, err, testCase.expectedErrorText)
 		})
 	}
@@ -320,14 +352,14 @@ func TestConfigurationLoadersReturnDotEnvError(t *testing.T) {
 		{
 			name: "Load returns unreadable .env error",
 			loadConfiguration: func() error {
-				_, err := Load()
+				_, err := configs.Load()
 				return err
 			},
 		},
 		{
 			name: "LoadDatabaseURL returns unreadable .env error",
 			loadConfiguration: func() error {
-				_, err := LoadDatabaseURL()
+				_, err := configs.LoadDatabaseURL()
 				return err
 			},
 		},
@@ -346,13 +378,13 @@ func TestConfigurationLoadersReturnDotEnvError(t *testing.T) {
 	}
 }
 
-func TestLoadLocalEnvReturnsInspectionError(t *testing.T) {
+func TestLoadReturnsEnvInspectionError(t *testing.T) {
 	t.Chdir(t.TempDir())
 	if err := os.Symlink(".env", ".env"); err != nil {
 		t.Fatalf("create self-referencing .env symlink: %v", err)
 	}
 
-	err := loadLocalEnv()
+	_, err := configs.Load()
 	assertErrorText(t, err, "inspect .env")
 }
 
@@ -366,7 +398,7 @@ func TestLoadUsesProcessEnvironmentBeforeDotEnv(t *testing.T) {
 	writeDotEnv(t, dotEnvData.envValues())
 	setConfigEnv(t, processEnvData)
 
-	config, err := Load()
+	config, err := configs.Load()
 	if err != nil {
 		t.Fatalf("Load() error = %v", err)
 	}
@@ -395,19 +427,22 @@ func TestLoadUsesProcessEnvironmentBeforeDotEnv(t *testing.T) {
 	if config.ExternalAPITimeout != expectedExternalAPITimeout {
 		t.Fatalf("ExternalAPITimeout = %s, want %s", config.ExternalAPITimeout, processEnvData.externalAPITimeout)
 	}
+	if expected := mustParseDuration(t, processEnvData.databaseTimeout); config.DatabaseTimeout != expected {
+		t.Fatalf("DatabaseTimeout = %s, want %s", config.DatabaseTimeout, expected)
+	}
 }
 
 func TestLoadDatabaseURLFromDotEnv(t *testing.T) {
 	mockData := newConfigMockData()
 
 	t.Chdir(t.TempDir())
-	restoreEnv := unsetEnv(t, string(DATABASE_URL))
+	restoreEnv := unsetEnv(t, string(configs.DATABASE_URL))
 	defer restoreEnv()
 	writeDotEnv(t, map[string]string{
-		string(DATABASE_URL): mockData.databaseURL,
+		string(configs.DATABASE_URL): mockData.databaseURL,
 	})
 
-	databaseURL, err := LoadDatabaseURL()
+	databaseURL, err := configs.LoadDatabaseURL()
 	if err != nil {
 		t.Fatalf("LoadDatabaseURL() error = %v", err)
 	}
@@ -423,10 +458,10 @@ func TestLoadTrimsEnvironmentValues(t *testing.T) {
 
 	t.Chdir(t.TempDir())
 	setConfigEnv(t, mockData)
-	t.Setenv(string(GITHUB_CLIENT_ID), gitHubClientIDWithSpaces)
-	t.Setenv(string(CORS_ALLOWED_ORIGINS), corsAllowedOriginsWithSpaces)
+	t.Setenv(string(configs.GITHUB_CLIENT_ID), gitHubClientIDWithSpaces)
+	t.Setenv(string(configs.CORS_ALLOWED_ORIGINS), corsAllowedOriginsWithSpaces)
 
-	config, err := Load()
+	config, err := configs.Load()
 	if err != nil {
 		t.Fatalf("Load() error = %v", err)
 	}
@@ -479,18 +514,22 @@ func (mockData *configMockData) applyOverride(override configMockData) {
 	if override.externalAPITimeout != "" {
 		mockData.externalAPITimeout = override.externalAPITimeout
 	}
+	if override.databaseTimeout != "" {
+		mockData.databaseTimeout = override.databaseTimeout
+	}
 }
 
 func (mockData configMockData) envValues() map[string]string {
 	return map[string]string{
-		string(GITHUB_CLIENT_ID):     mockData.gitHubClientID,
-		string(GITHUB_CLIENT_SECRET): mockData.gitHubClientSecret,
-		string(GITHUB_REDIRECT_URL):  mockData.gitHubRedirectURL,
-		string(DATABASE_URL):         mockData.databaseURL,
-		string(JWT_SECRET):           mockData.jwtSecret,
-		string(CORS_ALLOWED_ORIGINS): mockData.corsAllowedOrigins,
-		string(PORT):                 mockData.port,
-		string(EXTERNAL_API_TIMEOUT): mockData.externalAPITimeout,
+		string(configs.GITHUB_CLIENT_ID):     mockData.gitHubClientID,
+		string(configs.GITHUB_CLIENT_SECRET): mockData.gitHubClientSecret,
+		string(configs.GITHUB_REDIRECT_URL):  mockData.gitHubRedirectURL,
+		string(configs.DATABASE_URL):         mockData.databaseURL,
+		string(configs.JWT_SECRET):           mockData.jwtSecret,
+		string(configs.CORS_ALLOWED_ORIGINS): mockData.corsAllowedOrigins,
+		string(configs.PORT):                 mockData.port,
+		string(configs.EXTERNAL_API_TIMEOUT): mockData.externalAPITimeout,
+		string(configs.DATABASE_TIMEOUT):     mockData.databaseTimeout,
 	}
 }
 

@@ -1,6 +1,7 @@
 package lists_test
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -17,6 +18,7 @@ import (
 	"github.com/mbashem/cftracker/backend/internal/lists"
 	listitems "github.com/mbashem/cftracker/backend/internal/lists/items"
 	"github.com/mbashem/cftracker/backend/internal/middlewares"
+	testutil "github.com/mbashem/cftracker/backend/tests/support"
 )
 
 const (
@@ -70,7 +72,7 @@ func TestListHandlers(t *testing.T) {
 		{
 			name: "create trims a valid name", method: http.MethodPost, path: testListsPath,
 			body: fmt.Sprintf(`{"name":"  %s  "}`, testListName), expectedStatus: http.StatusCreated,
-			expectedBody:  successBody(testListCreatedMessage, "list", createdList),
+			expectedBody:  testutil.APIResponse{Message: testListCreatedMessage, List: createdList},
 			expectedCalls: []repositoryCall{{operation: createListOperation, userID: testAuthenticatedUserID, listName: testListName}},
 		},
 		validationCase("create rejects malformed JSON", http.MethodPost, testListsPath, `{"name":`, testInvalidFormatMessage),
@@ -111,13 +113,13 @@ func TestListHandlers(t *testing.T) {
 
 		{
 			name: "get all returns owned lists", method: http.MethodGet, path: testListsPath,
-			expectedStatus: http.StatusOK, expectedBody: successBody(testListsFoundMessage, "lists", []lists.List{validList}),
+			expectedStatus: http.StatusOK, expectedBody: testutil.APIResponse{Message: testListsFoundMessage, Lists: []lists.List{validList}},
 			expectedCalls: []repositoryCall{{operation: getAllListsOperation, userID: testAuthenticatedUserID}},
 		},
 		{
 			name: "get all returns an empty array", method: http.MethodGet, path: testListsPath,
 			setup: clearLists, expectedStatus: http.StatusOK,
-			expectedBody:  successBody(testListsFoundMessage, "lists", []lists.List{}),
+			expectedBody:  testutil.APIResponse{Message: testListsFoundMessage, Lists: []lists.List{}},
 			expectedCalls: []repositoryCall{{operation: getAllListsOperation, userID: testAuthenticatedUserID}},
 		},
 		repositoryErrorCase("get all handles repository failure", http.MethodGet, testListsPath, "",
@@ -128,7 +130,7 @@ func TestListHandlers(t *testing.T) {
 			name: "get returns an owned list with items", method: http.MethodGet, path: listPath(testListID),
 			setup:          func(repository *mockRepository) { repository.storeItem(validItem) },
 			expectedStatus: http.StatusOK,
-			expectedBody:   map[string]any{"message": testListFoundMessage, "list": validList, "items": []listitems.ListItem{validItem}},
+			expectedBody:   testutil.APIResponse{Message: testListFoundMessage, List: validList, Items: []listitems.ListItem{validItem}},
 			expectedCalls: []repositoryCall{
 				{operation: getListOperation, userID: testAuthenticatedUserID, listID: testListID},
 				{operation: getListItemsOperation, userID: testAuthenticatedUserID, listID: testListID},
@@ -137,7 +139,7 @@ func TestListHandlers(t *testing.T) {
 		{
 			name: "get returns an empty item array", method: http.MethodGet, path: listPath(testListID),
 			expectedStatus: http.StatusOK,
-			expectedBody:   map[string]any{"message": testListFoundMessage, "list": validList, "items": []listitems.ListItem{}},
+			expectedBody:   testutil.APIResponse{Message: testListFoundMessage, List: validList, Items: []listitems.ListItem{}},
 			expectedCalls: []repositoryCall{
 				{operation: getListOperation, userID: testAuthenticatedUserID, listID: testListID},
 				{operation: getListItemsOperation, userID: testAuthenticatedUserID, listID: testListID},
@@ -173,7 +175,7 @@ func TestListHandlers(t *testing.T) {
 		{
 			name: "add accepts position zero and trims the problem ID", method: http.MethodPut, path: itemCollectionPath(testListID),
 			body:           fmt.Sprintf(`{"problem_id":"  %s  ","position":0}`, testProblemID),
-			expectedStatus: http.StatusCreated, expectedBody: successBody(testItemAddedMessage, "item", createdItem),
+			expectedStatus: http.StatusCreated, expectedBody: testutil.APIResponse{Message: testItemAddedMessage, Item: createdItem},
 			expectedCalls: []repositoryCall{{
 				operation: createListItemOperation, userID: testAuthenticatedUserID, listID: testListID,
 				problemID: testProblemID, position: 0,
@@ -245,10 +247,14 @@ func TestListHandlers(t *testing.T) {
 			}
 			router := newListHandlerTestRouter(repository)
 
-			response := performListRequest(router, testCase.method, testCase.path, testCase.body)
+			repository.expectedContext = t.Context()
+			response := performListRequest(t.Context(), router, testCase.method, testCase.path, testCase.body)
 
 			assertResponseStatus(t, response, testCase.expectedStatus)
 			assertJSONBody(t, response, testCase.expectedBody)
+			if repository.contextMismatch {
+				t.Fatal("repository did not receive the HTTP request context")
+			}
 			if !slices.Equal(repository.calls, testCase.expectedCalls) {
 				t.Fatalf("repository calls = %+v, want %+v", repository.calls, testCase.expectedCalls)
 			}
@@ -319,8 +325,8 @@ func newListHandlerTestRouter(repository *mockRepository) *gin.Engine {
 	return router
 }
 
-func performListRequest(router *gin.Engine, method string, path string, body string) *httptest.ResponseRecorder {
-	request := httptest.NewRequest(method, path, strings.NewReader(body))
+func performListRequest(ctx context.Context, router *gin.Engine, method string, path string, body string) *httptest.ResponseRecorder {
+	request := httptest.NewRequestWithContext(ctx, method, path, strings.NewReader(body))
 	request.Header.Set("Content-Type", "application/json")
 	response := httptest.NewRecorder()
 	router.ServeHTTP(response, request)
@@ -356,16 +362,12 @@ func decodeJSON(t *testing.T, data []byte) any {
 	return value
 }
 
-func messageBody(message string) map[string]any {
-	return map[string]any{"message": message}
+func messageBody(message string) testutil.APIResponse {
+	return testutil.APIResponse{Message: message}
 }
 
-func errorBody(message string) map[string]any {
-	return map[string]any{"error": message}
-}
-
-func successBody(message string, key string, value any) map[string]any {
-	return map[string]any{"message": message, key: value}
+func errorBody(message string) testutil.APIResponse {
+	return testutil.APIResponse{Error: message}
 }
 
 func listPath(listID any) string {
@@ -427,6 +429,8 @@ type mockRepository struct {
 	items           map[int64]map[string]listitems.ListItem
 	operationErrors map[repositoryOperation]error
 	calls           []repositoryCall
+	expectedContext context.Context
+	contextMismatch bool
 }
 
 func newMockRepository() *mockRepository {
@@ -439,7 +443,8 @@ func newMockRepository() *mockRepository {
 	return repository
 }
 
-func (repository *mockRepository) Create(userID int64, list *lists.List) error {
+func (repository *mockRepository) Create(ctx context.Context, userID int64, list *lists.List) error {
+	repository.contextMismatch = repository.contextMismatch || ctx != repository.expectedContext
 	repository.record(repositoryCall{operation: createListOperation, userID: userID, listName: list.Name})
 	if err := repository.operationErrors[createListOperation]; err != nil {
 		return err
@@ -456,7 +461,8 @@ func (repository *mockRepository) Create(userID int64, list *lists.List) error {
 	return nil
 }
 
-func (repository *mockRepository) UpdateName(userID int64, list *lists.List) error {
+func (repository *mockRepository) UpdateName(ctx context.Context, userID int64, list *lists.List) error {
+	repository.contextMismatch = repository.contextMismatch || ctx != repository.expectedContext
 	repository.record(repositoryCall{
 		operation: updateListOperation,
 		userID:    userID,
@@ -476,7 +482,8 @@ func (repository *mockRepository) UpdateName(userID int64, list *lists.List) err
 	return nil
 }
 
-func (repository *mockRepository) Delete(userID int64, listID int64) error {
+func (repository *mockRepository) Delete(ctx context.Context, userID int64, listID int64) error {
+	repository.contextMismatch = repository.contextMismatch || ctx != repository.expectedContext
 	repository.record(repositoryCall{operation: deleteListOperation, userID: userID, listID: listID})
 	if err := repository.operationErrors[deleteListOperation]; err != nil {
 		return err
@@ -489,7 +496,8 @@ func (repository *mockRepository) Delete(userID int64, listID int64) error {
 	return nil
 }
 
-func (repository *mockRepository) GetById(userID int64, listID int64) (*lists.List, error) {
+func (repository *mockRepository) GetById(ctx context.Context, userID int64, listID int64) (*lists.List, error) {
+	repository.contextMismatch = repository.contextMismatch || ctx != repository.expectedContext
 	repository.record(repositoryCall{operation: getListOperation, userID: userID, listID: listID})
 	if err := repository.operationErrors[getListOperation]; err != nil {
 		return nil, err
@@ -501,7 +509,8 @@ func (repository *mockRepository) GetById(userID int64, listID int64) (*lists.Li
 	return &storedList, nil
 }
 
-func (repository *mockRepository) GetAllListByUserId(userID int64) ([]lists.List, error) {
+func (repository *mockRepository) GetAllListByUserId(ctx context.Context, userID int64) ([]lists.List, error) {
+	repository.contextMismatch = repository.contextMismatch || ctx != repository.expectedContext
 	repository.record(repositoryCall{operation: getAllListsOperation, userID: userID})
 	if err := repository.operationErrors[getAllListsOperation]; err != nil {
 		return nil, err
@@ -519,7 +528,8 @@ func (repository *mockRepository) GetAllListByUserId(userID int64) ([]lists.List
 	return userLists, nil
 }
 
-func (repository *mockRepository) createItem(userID int64, item *listitems.ListItem) error {
+func (repository *mockRepository) createItem(ctx context.Context, userID int64, item *listitems.ListItem) error {
+	repository.contextMismatch = repository.contextMismatch || ctx != repository.expectedContext
 	repository.record(repositoryCall{
 		operation: createListItemOperation,
 		userID:    userID,
@@ -541,7 +551,8 @@ func (repository *mockRepository) createItem(userID int64, item *listitems.ListI
 	return nil
 }
 
-func (repository *mockRepository) deleteItem(userID int64, item *listitems.ListItem) error {
+func (repository *mockRepository) deleteItem(ctx context.Context, userID int64, item *listitems.ListItem) error {
+	repository.contextMismatch = repository.contextMismatch || ctx != repository.expectedContext
 	repository.record(repositoryCall{
 		operation: deleteListItemOperation,
 		userID:    userID,
@@ -558,7 +569,8 @@ func (repository *mockRepository) deleteItem(userID int64, item *listitems.ListI
 	return nil
 }
 
-func (repository *mockRepository) GetItems(userID int64, listID int64) ([]listitems.ListItem, error) {
+func (repository *mockRepository) GetItems(ctx context.Context, userID int64, listID int64) ([]listitems.ListItem, error) {
+	repository.contextMismatch = repository.contextMismatch || ctx != repository.expectedContext
 	repository.record(repositoryCall{operation: getListItemsOperation, userID: userID, listID: listID})
 	if err := repository.operationErrors[getListItemsOperation]; err != nil {
 		return nil, err
@@ -580,12 +592,12 @@ func (repository *mockRepository) GetItems(userID int64, listID int64) ([]listit
 // Go cannot overload Create and Delete, so the item interface uses a view over the shared state.
 type mockListItemRepository struct{ *mockRepository }
 
-func (repository mockListItemRepository) Create(userID int64, item *listitems.ListItem) error {
-	return repository.createItem(userID, item)
+func (repository mockListItemRepository) Create(ctx context.Context, userID int64, item *listitems.ListItem) error {
+	return repository.createItem(ctx, userID, item)
 }
 
-func (repository mockListItemRepository) Delete(userID int64, item *listitems.ListItem) error {
-	return repository.deleteItem(userID, item)
+func (repository mockListItemRepository) Delete(ctx context.Context, userID int64, item *listitems.ListItem) error {
+	return repository.deleteItem(ctx, userID, item)
 }
 
 func (repository *mockRepository) record(call repositoryCall) {

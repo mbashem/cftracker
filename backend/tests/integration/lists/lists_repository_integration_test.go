@@ -9,9 +9,10 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/mbashem/cftracker/backend/configs"
 	"github.com/mbashem/cftracker/backend/internal/lists"
-	"github.com/mbashem/cftracker/backend/internal/testutil"
 	"github.com/mbashem/cftracker/backend/internal/users"
+	testutil "github.com/mbashem/cftracker/backend/tests/support"
 )
 
 const (
@@ -24,50 +25,50 @@ const (
 
 func TestListRepositoryIntegration(t *testing.T) {
 	database := testutil.OpenTestDB(t)
-	repository := lists.NewRepository(database)
+	repository := lists.NewRepository(database, configs.DefaultDatabaseTimeout)
 
 	t.Run("create read update and delete preserve the owner", func(t *testing.T) {
 		ownerID, _ := resetListIntegrationState(t, database)
 		list := createIntegrationList(t, repository, ownerID, "Contest preparation")
 
-		storedList, err := repository.GetById(ownerID, list.Id)
+		storedList, err := repository.GetById(t.Context(), ownerID, list.Id)
 		assertIntegrationList(t, storedList, err, list)
 
 		list.Name = "Updated preparation"
-		if err := repository.UpdateName(ownerID, &list); err != nil {
+		if err := repository.UpdateName(t.Context(), ownerID, &list); err != nil {
 			t.Fatalf("UpdateName(): %v", err)
 		}
-		storedList, err = repository.GetById(ownerID, list.Id)
+		storedList, err = repository.GetById(t.Context(), ownerID, list.Id)
 		assertIntegrationList(t, storedList, err, list)
 
-		if err := repository.Delete(ownerID, list.Id); err != nil {
+		if err := repository.Delete(t.Context(), ownerID, list.Id); err != nil {
 			t.Fatalf("Delete(): %v", err)
 		}
-		if _, err := repository.GetById(ownerID, list.Id); !errors.Is(err, lists.ErrListNotFound) {
+		if _, err := repository.GetById(t.Context(), ownerID, list.Id); !errors.Is(err, lists.ErrListNotFound) {
 			t.Fatalf("GetById() after Delete() error = %v, want %v", err, lists.ErrListNotFound)
 		}
 	})
 
 	t.Run("get all returns only the requested user's lists without relying on row order", func(t *testing.T) {
 		ownerID, otherUserID := resetListIntegrationState(t, database)
-		emptyUserID := createIntegrationListUser(t, users.NewRepository(database), integrationListEmptyGitHubID)
+		emptyUserID := createIntegrationListUser(t, users.NewRepository(database, configs.DefaultDatabaseTimeout), integrationListEmptyGitHubID)
 		firstList := createIntegrationList(t, repository, ownerID, "First")
 		secondList := createIntegrationList(t, repository, ownerID, "Second")
 		otherList := createIntegrationList(t, repository, otherUserID, "Other")
 
-		ownerLists, err := repository.GetAllListByUserId(ownerID)
+		ownerLists, err := repository.GetAllListByUserId(t.Context(), ownerID)
 		if err != nil {
 			t.Fatalf("GetAllListByUserId(owner): %v", err)
 		}
 		assertIntegrationLists(t, ownerLists, []lists.List{firstList, secondList})
 
-		otherLists, err := repository.GetAllListByUserId(otherUserID)
+		otherLists, err := repository.GetAllListByUserId(t.Context(), otherUserID)
 		if err != nil {
 			t.Fatalf("GetAllListByUserId(other user): %v", err)
 		}
 		assertIntegrationLists(t, otherLists, []lists.List{otherList})
 
-		emptyLists, err := repository.GetAllListByUserId(emptyUserID)
+		emptyLists, err := repository.GetAllListByUserId(t.Context(), emptyUserID)
 		if err != nil {
 			t.Fatalf("GetAllListByUserId(empty user): %v", err)
 		}
@@ -81,7 +82,7 @@ func TestListRepositoryIntegration(t *testing.T) {
 		firstList := createIntegrationList(t, repository, ownerID, "Shared name")
 		duplicateList := lists.List{Name: firstList.Name}
 
-		testutil.AssertPostgresErrorCode(t, repository.Create(ownerID, &duplicateList), integrationUniqueViolation)
+		testutil.AssertPostgresErrorCode(t, repository.Create(t.Context(), ownerID, &duplicateList), integrationUniqueViolation)
 		createIntegrationList(t, repository, otherUserID, firstList.Name)
 	})
 
@@ -89,40 +90,40 @@ func TestListRepositoryIntegration(t *testing.T) {
 		ownerID, otherUserID := resetListIntegrationState(t, database)
 
 		forgedOwner := lists.List{UserId: otherUserID, Name: "Explicit owner wins"}
-		if err := repository.Create(ownerID, &forgedOwner); err != nil {
+		if err := repository.Create(t.Context(), ownerID, &forgedOwner); err != nil {
 			t.Fatalf("Create(): %v", err)
 		}
 		if forgedOwner.UserId != ownerID {
 			t.Fatalf("Create() user ID = %d, want %d", forgedOwner.UserId, ownerID)
 		}
-		if _, err := repository.GetById(otherUserID, forgedOwner.Id); !errors.Is(err, lists.ErrListNotFound) {
+		if _, err := repository.GetById(t.Context(), otherUserID, forgedOwner.Id); !errors.Is(err, lists.ErrListNotFound) {
 			t.Fatalf("other user's GetById(created list) error = %v, want %v", err, lists.ErrListNotFound)
 		}
 
 		otherList := createIntegrationList(t, repository, otherUserID, "Private list")
-		if _, err := repository.GetById(ownerID, otherList.Id); !errors.Is(err, lists.ErrListNotFound) {
+		if _, err := repository.GetById(t.Context(), ownerID, otherList.Id); !errors.Is(err, lists.ErrListNotFound) {
 			t.Fatalf("GetById(foreign list) error = %v, want %v", err, lists.ErrListNotFound)
 		}
 
 		foreignUpdate := lists.List{Id: otherList.Id, Name: "Hijacked"}
-		if err := repository.UpdateName(ownerID, &foreignUpdate); !errors.Is(err, lists.ErrListNotFound) {
+		if err := repository.UpdateName(t.Context(), ownerID, &foreignUpdate); !errors.Is(err, lists.ErrListNotFound) {
 			t.Fatalf("UpdateName(foreign list) error = %v, want %v", err, lists.ErrListNotFound)
 		}
-		storedOtherList, err := repository.GetById(otherUserID, otherList.Id)
+		storedOtherList, err := repository.GetById(t.Context(), otherUserID, otherList.Id)
 		assertIntegrationList(t, storedOtherList, err, otherList)
 
-		if err := repository.Delete(ownerID, otherList.Id); !errors.Is(err, lists.ErrListNotFound) {
+		if err := repository.Delete(t.Context(), ownerID, otherList.Id); !errors.Is(err, lists.ErrListNotFound) {
 			t.Fatalf("Delete(foreign list) error = %v, want %v", err, lists.ErrListNotFound)
 		}
-		storedOtherList, err = repository.GetById(otherUserID, otherList.Id)
+		storedOtherList, err = repository.GetById(t.Context(), otherUserID, otherList.Id)
 		assertIntegrationList(t, storedOtherList, err, otherList)
 
-		ownerLists, err := repository.GetAllListByUserId(ownerID)
+		ownerLists, err := repository.GetAllListByUserId(t.Context(), ownerID)
 		if err != nil {
 			t.Fatalf("GetAllListByUserId(owner): %v", err)
 		}
 		assertIntegrationLists(t, ownerLists, []lists.List{forgedOwner})
-		otherLists, err := repository.GetAllListByUserId(otherUserID)
+		otherLists, err := repository.GetAllListByUserId(t.Context(), otherUserID)
 		if err != nil {
 			t.Fatalf("GetAllListByUserId(other user): %v", err)
 		}
@@ -135,12 +136,12 @@ func TestListRepositoryIntegration(t *testing.T) {
 			name string
 			run  func() error
 		}{
-			{name: "read", run: func() error { _, err := repository.GetById(ownerID, integrationMissingListID); return err }},
+			{name: "read", run: func() error { _, err := repository.GetById(t.Context(), ownerID, integrationMissingListID); return err }},
 			{name: "update", run: func() error {
 				list := lists.List{Id: integrationMissingListID, Name: "Missing"}
-				return repository.UpdateName(ownerID, &list)
+				return repository.UpdateName(t.Context(), ownerID, &list)
 			}},
-			{name: "delete", run: func() error { return repository.Delete(ownerID, integrationMissingListID) }},
+			{name: "delete", run: func() error { return repository.Delete(t.Context(), ownerID, integrationMissingListID) }},
 		}
 		for _, operation := range operations {
 			t.Run(operation.name, func(t *testing.T) {
@@ -155,7 +156,7 @@ func TestListRepositoryIntegration(t *testing.T) {
 func resetListIntegrationState(t *testing.T, database *sql.DB) (int64, int64) {
 	t.Helper()
 	testutil.ResetTestDB(t, database)
-	repository := users.NewRepository(database)
+	repository := users.NewRepository(database, configs.DefaultDatabaseTimeout)
 	ownerID := createIntegrationListUser(t, repository, integrationListOwnerGitHubID)
 	otherUserID := createIntegrationListUser(t, repository, integrationListOtherGitHubID)
 	return ownerID, otherUserID
@@ -164,7 +165,7 @@ func resetListIntegrationState(t *testing.T, database *sql.DB) (int64, int64) {
 func createIntegrationListUser(t *testing.T, repository *users.Repository, githubID int64) int64 {
 	t.Helper()
 	user := users.User{GithubID: githubID, GithubUserName: "integration-user"}
-	if err := repository.Save(&user); err != nil {
+	if err := repository.Save(t.Context(), &user); err != nil {
 		t.Fatalf("UserRepository.Save(%d): %v", githubID, err)
 	}
 	return user.ID
@@ -173,7 +174,7 @@ func createIntegrationListUser(t *testing.T, repository *users.Repository, githu
 func createIntegrationList(t *testing.T, repository *lists.Repository, userID int64, name string) lists.List {
 	t.Helper()
 	list := lists.List{Name: name}
-	if err := repository.Create(userID, &list); err != nil {
+	if err := repository.Create(t.Context(), userID, &list); err != nil {
 		t.Fatalf("Create(%q): %v", name, err)
 	}
 	if list.Id == 0 || list.UserId != userID || list.CreatedAt.IsZero() {

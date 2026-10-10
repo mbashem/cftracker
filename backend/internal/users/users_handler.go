@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -14,6 +15,7 @@ import (
 type API_MESSAGE string
 
 const (
+	staleCFVerification             API_MESSAGE = "Codeforces handle changed; please retry"
 	invalidRequest                  API_MESSAGE = "Invalid request"
 	failedToUpdateCFHandle          API_MESSAGE = "Failed to update CF Handle"
 	cfHandleUpdated                 API_MESSAGE = "CF Handle updated"
@@ -38,16 +40,24 @@ type API struct {
 	generateToken      func(int) (string, error)
 }
 
+type APIOption func(*API)
+
+// WithVerificationTokenGenerator supplies the source of ownership challenge values.
+func WithVerificationTokenGenerator(generate func(int) (string, error)) APIOption {
+	return func(api *API) { api.generateToken = generate }
+}
+
 func NewAPI(
 	userRepository UserRepository,
 	tokens *VerificationTokenStore,
 	codeforcesProvider CodeforcesProvider,
+	options ...APIOption,
 ) *API {
 	if tokens == nil {
 		tokens = NewVerificationTokenStore()
 	}
 
-	return &API{
+	api := &API{
 		userRepository:     userRepository,
 		tokens:             tokens,
 		codeforcesProvider: codeforcesProvider,
@@ -55,10 +65,14 @@ func NewAPI(
 			return gonanoid.New(length)
 		},
 	}
+	for _, option := range options {
+		option(api)
+	}
+	return api
 }
 
 func (api *API) GetProfile(context *gin.Context) {
-	user, err := api.userRepository.FindByID(context.GetInt64(middlewares.UserIdKey))
+	user, err := api.userRepository.FindByID(context.Request.Context(), context.GetInt64(middlewares.UserIdKey))
 	if err != nil {
 		writeUserReadError(context, err)
 		return
@@ -69,20 +83,41 @@ func (api *API) GetProfile(context *gin.Context) {
 
 func (api *API) UpdateCFHandle(context *gin.Context) {
 	var request struct {
-		CFHandle string `json:"cf_handle"`
+		CFHandle string `json:"cf_handle" binding:"required,max=255"`
 	}
 	if err := context.ShouldBindJSON(&request); err != nil {
 		context.JSON(http.StatusBadRequest, gin.H{"error": invalidRequest})
 		return
 	}
 
-	user, err := api.userRepository.FindByID(context.GetInt64(middlewares.UserIdKey))
+	user, err := api.userRepository.FindByID(context.Request.Context(), context.GetInt64(middlewares.UserIdKey))
 	if err != nil {
 		writeUserReadError(context, err)
 		return
 	}
 
-	if err := api.userRepository.UpdateCFHandle(user, request.CFHandle); err != nil {
+	request.CFHandle = strings.TrimSpace(request.CFHandle)
+	if request.CFHandle == "" || strings.Contains(request.CFHandle, ";") {
+		context.JSON(http.StatusBadRequest, gin.H{"error": invalidRequest})
+		return
+	}
+	verifiedHandle := user.CFVerifiedHandle
+	if verifiedHandle != "" && !strings.EqualFold(verifiedHandle, request.CFHandle) {
+		currentHandle, err := api.codeforcesProvider.GetCurrentHandle(context.Request.Context(), verifiedHandle)
+		if err != nil {
+			writeCodeforcesProviderError(context, err)
+			return
+		}
+		if strings.EqualFold(currentHandle, request.CFHandle) {
+			request.CFHandle = currentHandle
+			verifiedHandle = currentHandle
+		}
+	}
+	if err := api.userRepository.UpdateCFHandle(context.Request.Context(), user, request.CFHandle, verifiedHandle); err != nil {
+		if errors.Is(err, ErrCFHandleChanged) {
+			context.JSON(http.StatusConflict, gin.H{"error": staleCFVerification})
+			return
+		}
 		context.JSON(http.StatusInternalServerError, gin.H{"error": failedToUpdateCFHandle})
 		return
 	}
@@ -92,25 +127,25 @@ func (api *API) UpdateCFHandle(context *gin.Context) {
 
 func (api *API) GetCFVerificationToken(context *gin.Context) {
 	id := context.GetInt64(middlewares.UserIdKey)
-	user, err := api.userRepository.FindByID(id)
+	user, err := api.userRepository.FindByID(context.Request.Context(), id)
 	if err != nil {
 		writeUserReadError(context, err)
 		return
 	}
 
-	if user.CFVerified {
+	if user.IsCFVerified() {
 		context.JSON(http.StatusBadRequest, gin.H{"error": userAlreadyVerified})
 		return
 	}
 
-	token, found := api.tokens.GetToken(id)
+	token, found := api.tokens.GetToken(id, user.CFHandle)
 	if !found {
 		token, err = api.generateToken(9)
 		if err != nil {
 			context.JSON(http.StatusInternalServerError, gin.H{"error": failedToGenerateToken})
 			return
 		}
-		api.tokens.SetToken(id, token, time.Hour)
+		api.tokens.SetToken(id, user.CFHandle, token, time.Hour)
 	}
 
 	context.JSON(http.StatusOK, gin.H{"token": token})
@@ -118,13 +153,13 @@ func (api *API) GetCFVerificationToken(context *gin.Context) {
 
 func (api *API) VerifyCFVerificationToken(context *gin.Context) {
 	id := context.GetInt64(middlewares.UserIdKey)
-	user, err := api.userRepository.FindByID(id)
+	user, err := api.userRepository.FindByID(context.Request.Context(), id)
 	if err != nil {
 		writeUserReadError(context, err)
 		return
 	}
 
-	if user.CFVerified {
+	if user.IsCFVerified() {
 		context.JSON(http.StatusBadRequest, gin.H{"error": userAlreadyVerified})
 		return
 	}
@@ -138,18 +173,22 @@ func (api *API) VerifyCFVerificationToken(context *gin.Context) {
 		return
 	}
 
-	storedToken, found := api.tokens.GetToken(id)
+	storedToken, found := api.tokens.GetToken(id, user.CFHandle)
 	if !found || storedToken != verificationValue {
 		context.JSON(http.StatusBadRequest, gin.H{"error": invalidVerificationToken})
 		return
 	}
 
-	if err := api.userRepository.UpdateCFVerified(user, true); err != nil {
+	if err := api.userRepository.UpdateCFVerifiedHandle(context.Request.Context(), user, user.CFHandle); err != nil {
+		if errors.Is(err, ErrCFHandleChanged) {
+			context.JSON(http.StatusConflict, gin.H{"error": staleCFVerification})
+			return
+		}
 		context.JSON(http.StatusInternalServerError, gin.H{"error": failedToVerifyUser})
 		return
 	}
 
-	api.tokens.DeleteToken(id)
+	api.tokens.DeleteToken(id, user.CFHandle)
 	context.JSON(http.StatusOK, gin.H{"message": userVerified})
 }
 

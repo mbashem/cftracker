@@ -1,34 +1,40 @@
 package lists
 
 import (
+	"context"
 	"database/sql"
 	"errors"
+	"time"
 )
 
 var ErrListNotFound = errors.New("list not found")
 
 type ListRepository interface {
-	Create(userId int64, list *List) error
-	UpdateName(userId int64, list *List) error
-	Delete(userId int64, listId int64) error
-	GetById(userId int64, listId int64) (*List, error)
-	GetAllListByUserId(userId int64) ([]List, error)
+	Create(ctx context.Context, userId int64, list *List) error
+	UpdateName(ctx context.Context, userId int64, list *List) error
+	Delete(ctx context.Context, userId int64, listId int64) error
+	GetById(ctx context.Context, userId int64, listId int64) (*List, error)
+	GetAllListByUserId(ctx context.Context, userId int64) ([]List, error)
 }
 
 type Repository struct {
-	db *sql.DB
+	db      *sql.DB
+	timeout time.Duration
 }
 
-func NewRepository(db *sql.DB) *Repository {
+func NewRepository(db *sql.DB, timeout time.Duration) *Repository {
 	return &Repository{
-		db: db,
+		db:      db,
+		timeout: timeout,
 	}
 }
 
 // Create a new list
-func (repository *Repository) Create(userId int64, list *List) error {
+func (repository *Repository) Create(ctx context.Context, userId int64, list *List) error {
+	ctx, cancel := context.WithTimeout(ctx, repository.timeout)
+	defer cancel()
 	query := `INSERT INTO lists (user_id, name) VALUES ($1, $2) RETURNING id, created_at`
-	if err := repository.db.QueryRow(query, userId, list.Name).Scan(&list.Id, &list.CreatedAt); err != nil {
+	if err := repository.db.QueryRowContext(ctx, query, userId, list.Name).Scan(&list.Id, &list.CreatedAt); err != nil {
 		return err
 	}
 	list.UserId = userId
@@ -36,22 +42,28 @@ func (repository *Repository) Create(userId int64, list *List) error {
 }
 
 // Update list name
-func (repository *Repository) UpdateName(userId int64, list *List) error {
+func (repository *Repository) UpdateName(ctx context.Context, userId int64, list *List) error {
+	ctx, cancel := context.WithTimeout(ctx, repository.timeout)
+	defer cancel()
 	query := `UPDATE lists SET name = $1 WHERE id = $2 AND user_id = $3 RETURNING id`
-	return listQueryError(repository.db.QueryRow(query, list.Name, list.Id, userId).Scan(&list.Id))
+	return listQueryError(repository.db.QueryRowContext(ctx, query, list.Name, list.Id, userId).Scan(&list.Id))
 }
 
 // Delete a list by Id
-func (repository *Repository) Delete(userId int64, listId int64) error {
+func (repository *Repository) Delete(ctx context.Context, userId int64, listId int64) error {
+	ctx, cancel := context.WithTimeout(ctx, repository.timeout)
+	defer cancel()
 	query := `DELETE FROM lists WHERE id = $1 AND user_id = $2 RETURNING id`
-	return listQueryError(repository.db.QueryRow(query, listId, userId).Scan(&listId))
+	return listQueryError(repository.db.QueryRowContext(ctx, query, listId, userId).Scan(&listId))
 }
 
 // Get a list by Id
-func (repository *Repository) GetById(userId int64, listId int64) (*List, error) {
+func (repository *Repository) GetById(ctx context.Context, userId int64, listId int64) (*List, error) {
+	ctx, cancel := context.WithTimeout(ctx, repository.timeout)
+	defer cancel()
 	list := &List{}
 	query := `SELECT id, user_id, name, created_at FROM lists WHERE id = $1 AND user_id = $2`
-	err := repository.db.QueryRow(query, listId, userId).Scan(&list.Id, &list.UserId, &list.Name, &list.CreatedAt)
+	err := repository.db.QueryRowContext(ctx, query, listId, userId).Scan(&list.Id, &list.UserId, &list.Name, &list.CreatedAt)
 	if err != nil {
 		return nil, listQueryError(err)
 	}
@@ -59,10 +71,12 @@ func (repository *Repository) GetById(userId int64, listId int64) (*List, error)
 }
 
 // Get all lists of a user
-func (repository *Repository) GetAllListByUserId(userId int64) ([]List, error) {
+func (repository *Repository) GetAllListByUserId(ctx context.Context, userId int64) ([]List, error) {
+	ctx, cancel := context.WithTimeout(ctx, repository.timeout)
+	defer cancel()
 	lists := []List{}
 	query := `SELECT id, user_id, name, created_at FROM lists WHERE user_id = $1`
-	rows, err := repository.db.Query(query, userId)
+	rows, err := repository.db.QueryContext(ctx, query, userId)
 	if err != nil {
 		return nil, err
 	}

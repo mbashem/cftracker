@@ -1,6 +1,7 @@
-package users
+package users_test
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -16,20 +17,37 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/mbashem/cftracker/backend/internal/middlewares"
-	"github.com/mbashem/cftracker/backend/internal/testutil"
+	"github.com/mbashem/cftracker/backend/internal/users"
+	testutil "github.com/mbashem/cftracker/backend/tests/support"
 )
 
 const (
-	testUserHandlerID              = int64(42)
-	testUserHandlerPath            = "/api/user"
-	testProfilePath                = testUserHandlerPath + "/profile"
-	testCFHandlePath               = testUserHandlerPath + "/cfhandle"
-	testVerificationTokenPath      = testUserHandlerPath + "/cfverification-token"
-	testVerifyTokenPath            = testUserHandlerPath + "/verify-cftoken"
-	testOriginalCFHandle           = "tourist"
-	testUpdatedCFHandle            = "Petr"
-	testGeneratedVerificationToken = "generated"
-	testStoredVerificationToken    = "stored-token"
+	staleCFVerification             = "Codeforces handle changed; please retry"
+	invalidRequest                  = "Invalid request"
+	failedToUpdateCFHandle          = "Failed to update CF Handle"
+	cfHandleUpdated                 = "CF Handle updated"
+	userAlreadyVerified             = "User is already verified"
+	failedToGenerateToken           = "Failed to generate token"
+	failedToCreateCodeforcesRequest = "Failed to make request object"
+	failedToCallCodeforces          = "Failed to make request to CF"
+	codeforcesRequestFailed         = "Codeforces request failed"
+	failedToParseCodeforcesResponse = "Error parsing CF response"
+	codeforcesUserNotFound          = "Codeforces user not found"
+	invalidVerificationToken        = "Invalid token"
+	failedToVerifyUser              = "Failed to verify user. Please try again later!"
+	userVerified                    = "User verified"
+	userNotFound                    = "User not found"
+	failedToLoadUser                = "Failed to load user"
+	testUserHandlerID               = int64(42)
+	testUserHandlerPath             = "/api/user"
+	testProfilePath                 = testUserHandlerPath + "/profile"
+	testCFHandlePath                = testUserHandlerPath + "/cfhandle"
+	testVerificationTokenPath       = testUserHandlerPath + "/cfverification-token"
+	testVerifyTokenPath             = testUserHandlerPath + "/verify-cftoken"
+	testOriginalCFHandle            = "tourist"
+	testUpdatedCFHandle             = "Petr"
+	testGeneratedVerificationToken  = "generated"
+	testStoredVerificationToken     = "stored-token"
 )
 
 var testUserDependencyFailure = errors.New("dependency unavailable")
@@ -39,28 +57,35 @@ type userHandlerTestCase struct {
 	method                      string
 	path                        string
 	body                        string
-	setup                       func(state *mockUserState, tokens *VerificationTokenStore)
+	setup                       func(state *mockUserState, tokens *users.VerificationTokenStore)
 	expectedStatus              int
 	expectedBody                any
 	expectedCalls               []userDependencyCall
 	expectedVerificationHandles []string
-	assertState                 func(t *testing.T, state *mockUserState, tokens *VerificationTokenStore)
+	expectedHistoricHandles     []string
+	setupProvider               func(*testutil.CodeforcesProviderMock, *mockUserState)
+	assertState                 func(t *testing.T, state *mockUserState, tokens *users.VerificationTokenStore)
 }
 
 func TestNewAPIInitializesDefaults(t *testing.T) {
+	gin.SetMode(gin.TestMode)
 	state := newMockUserState()
-	api := NewAPI(mockUserRepository{state}, nil, testutil.NewCodeforcesProviderMock(state.verificationValue))
+	api := users.NewAPI(mockUserRepository{state}, nil, testutil.NewCodeforcesProviderMock(state.verificationValue))
 
-	if api.tokens == nil {
-		t.Fatal("NewAPI() token store = nil")
+	state.expectedContext = t.Context()
+	router := newUserHandlerTestRouter(api)
+	first := performUserRequest(t.Context(), router, http.MethodGet, testVerificationTokenPath, "")
+	assertResponseStatus(t, first, http.StatusOK)
+	var payload testutil.APIResponse
+	if err := json.Unmarshal(first.Body.Bytes(), &payload); err != nil {
+		t.Fatal(err)
 	}
-	token, err := api.generateToken(9)
-	if err != nil {
-		t.Fatalf("generateToken(9): %v", err)
+	if len(payload.Token) != 9 {
+		t.Fatalf("token length = %d, want 9", len(payload.Token))
 	}
-	if len(token) != 9 {
-		t.Fatalf("generateToken(9) length = %d, want 9", len(token))
-	}
+	second := performUserRequest(t.Context(), router, http.MethodGet, testVerificationTokenPath, "")
+	assertResponseStatus(t, second, http.StatusOK)
+	assertJSONBody(t, second, payload)
 }
 
 func TestUserHandlers(t *testing.T) {
@@ -70,21 +95,25 @@ func TestUserHandlers(t *testing.T) {
 
 	user := newUserHandlerFixture()
 	verifiedUser := user
-	verifiedUser.CFVerified = true
+	verifiedUser.CFVerifiedHandle = verifiedUser.CFHandle
 	updatedUser := verifiedUser
 	updatedUser.CFHandle = testUpdatedCFHandle
-	updatedUser.CFVerified = false
 	newlyVerifiedUser := user
-	newlyVerifiedUser.CFVerified = true
+	newlyVerifiedUser.CFVerifiedHandle = newlyVerifiedUser.CFHandle
+	renamedUser := verifiedUser
+	renamedUser.CFHandle = testUpdatedCFHandle
+	renamedUser.CFVerifiedHandle = testUpdatedCFHandle
+	changedProofUser := verifiedUser
+	changedProofUser.CFVerifiedHandle = "other-proof"
 	findUserCall := userDependencyCall{operation: findUserOperation, userID: testUserHandlerID}
-	verifyUserCall := userDependencyCall{operation: updateCFVerifiedOperation, userID: testUserHandlerID, cfVerified: true}
+	verifyUserCall := userDependencyCall{operation: updateCFVerifiedHandleOperation, userID: testUserHandlerID, cfVerifiedHandle: testOriginalCFHandle}
 	expectedVerificationHandles := []string{testOriginalCFHandle}
 
 	testCases := []userHandlerTestCase{
 		// Profile
 		{
 			name: "profile returns the authenticated user", method: http.MethodGet, path: testProfilePath,
-			expectedStatus: http.StatusOK, expectedBody: map[string]any{"user": user},
+			expectedStatus: http.StatusOK, expectedBody: testutil.APIResponse{User: user},
 			expectedCalls: []userDependencyCall{findUserCall},
 		},
 		userNotFoundCase("profile returns not found", http.MethodGet, testProfilePath, "", findUserCall),
@@ -98,9 +127,10 @@ func TestUserHandlers(t *testing.T) {
 			expectedBody: messageBody(cfHandleUpdated),
 			expectedCalls: []userDependencyCall{
 				findUserCall,
-				{operation: updateCFHandleOperation, userID: testUserHandlerID, cfHandle: testUpdatedCFHandle},
+				{operation: updateCFHandleOperation, userID: testUserHandlerID, cfHandle: testUpdatedCFHandle, cfVerifiedHandle: testOriginalCFHandle},
 			},
-			assertState: expectUserAndToken(updatedUser, "", false),
+			expectedHistoricHandles: []string{testOriginalCFHandle},
+			assertState:             expectUserAndToken(updatedUser, "", false),
 		},
 		validationCase("handle update rejects malformed JSON", http.MethodPut, testCFHandlePath, `{"cf_handle":`, invalidRequest),
 		userNotFoundCase("handle update returns not found", http.MethodPut, testCFHandlePath,
@@ -119,11 +149,107 @@ func TestUserHandlers(t *testing.T) {
 			assertState: expectUserAndToken(user, "", false),
 		},
 
+		{
+			name: "handle rename preserves verified ownership", method: http.MethodPut, path: testCFHandlePath,
+			body: fmt.Sprintf(`{"cf_handle":"%s"}`, testUpdatedCFHandle), setup: storeUserSetup(verifiedUser),
+			setupProvider: func(provider *testutil.CodeforcesProviderMock, _ *mockUserState) {
+				provider.CurrentHandle = testUpdatedCFHandle
+			},
+			expectedStatus: http.StatusOK, expectedBody: messageBody(cfHandleUpdated),
+			expectedCalls:           []userDependencyCall{findUserCall, {operation: updateCFHandleOperation, userID: testUserHandlerID, cfHandle: testUpdatedCFHandle, cfVerifiedHandle: testUpdatedCFHandle}},
+			expectedHistoricHandles: []string{testOriginalCFHandle},
+			assertState:             expectUserAndToken(renamedUser, "", false),
+		},
+		{
+			name: "rename lookup failure preserves both stored handles", method: http.MethodPut, path: testCFHandlePath,
+			body: fmt.Sprintf(`{"cf_handle":"%s"}`, testUpdatedCFHandle), setup: storeUserSetup(verifiedUser),
+			setupProvider: func(provider *testutil.CodeforcesProviderMock, _ *mockUserState) {
+				provider.CurrentHandleError = users.ErrCodeforcesRequest
+			},
+			expectedStatus: http.StatusInternalServerError, expectedBody: errorBody(failedToCallCodeforces),
+			expectedCalls: []userDependencyCall{findUserCall}, expectedHistoricHandles: []string{testOriginalCFHandle},
+			assertState: expectUserAndToken(verifiedUser, "", false),
+		},
+		{
+			name: "unchanged verified handle avoids historical lookup", method: http.MethodPut, path: testCFHandlePath,
+			body: fmt.Sprintf(`{"cf_handle":"%s"}`, testOriginalCFHandle), setup: storeUserSetup(verifiedUser),
+			expectedStatus: http.StatusOK, expectedBody: messageBody(cfHandleUpdated),
+			expectedCalls: []userDependencyCall{findUserCall, {operation: updateCFHandleOperation, userID: testUserHandlerID, cfHandle: testOriginalCFHandle, cfVerifiedHandle: testOriginalCFHandle}},
+			assertState:   expectUserAndToken(verifiedUser, "", false),
+		},
+		{
+			name: "handle update rejects changes during historical lookup", method: http.MethodPut, path: testCFHandlePath,
+			body: fmt.Sprintf(`{"cf_handle":"%s"}`, testUpdatedCFHandle), setup: storeUserSetup(verifiedUser),
+			setupProvider: func(provider *testutil.CodeforcesProviderMock, state *mockUserState) {
+				provider.CurrentHandle = testUpdatedCFHandle
+				provider.BeforeHistoricLookup = func() {
+					changed := state.users[testUserHandlerID]
+					changed.CFVerifiedHandle = "other-proof"
+					state.storeUser(changed)
+				}
+			},
+			expectedStatus: http.StatusConflict, expectedBody: errorBody(staleCFVerification),
+			expectedCalls:           []userDependencyCall{findUserCall, {operation: updateCFHandleOperation, userID: testUserHandlerID, cfHandle: testUpdatedCFHandle, cfVerifiedHandle: testUpdatedCFHandle}},
+			expectedHistoricHandles: []string{testOriginalCFHandle},
+			assertState:             expectUserAndToken(changedProofUser, "", false),
+		},
+		validationCase("handle update rejects missing handle", http.MethodPut, testCFHandlePath, `{}`, invalidRequest),
+		{
+			name: "handle update rejects whitespace", method: http.MethodPut, path: testCFHandlePath, body: `{"cf_handle":" "}`,
+			expectedStatus: http.StatusBadRequest, expectedBody: errorBody(invalidRequest), expectedCalls: []userDependencyCall{findUserCall},
+		},
+		{
+			name: "handle update rejects multiple accounts", method: http.MethodPut, path: testCFHandlePath, body: `{"cf_handle":"tourist;Petr"}`,
+			expectedStatus: http.StatusBadRequest, expectedBody: errorBody(invalidRequest), expectedCalls: []userDependencyCall{findUserCall},
+		},
+		{
+			name: "verification rejects a concurrent selected handle change", method: http.MethodGet, path: testVerifyTokenPath,
+			setup: seedTokenSetup(testStoredVerificationToken),
+			setupProvider: func(provider *testutil.CodeforcesProviderMock, state *mockUserState) {
+				provider.BeforeVerification = func() {
+					changed := state.users[testUserHandlerID]
+					changed.CFHandle = testUpdatedCFHandle
+					state.storeUser(changed)
+				}
+			},
+			expectedStatus: http.StatusConflict, expectedBody: errorBody(staleCFVerification),
+			expectedCalls: []userDependencyCall{findUserCall, verifyUserCall}, expectedVerificationHandles: expectedVerificationHandles,
+			assertState: func(t *testing.T, state *mockUserState, tokens *users.VerificationTokenStore) {
+				changed := state.users[testUserHandlerID]
+				if changed.CFVerifiedHandle != "" || changed.IsCFVerified() || changed.CFHandle != testUpdatedCFHandle {
+					t.Fatalf("stale verification changed user: %+v", changed)
+				}
+				if token, found := tokens.GetToken(testUserHandlerID, testOriginalCFHandle); !found || token != testStoredVerificationToken {
+					t.Fatal("stale verification removed token")
+				}
+			},
+		},
+		{
+			name: "verification cannot use another handle token", method: http.MethodGet, path: testVerifyTokenPath,
+			setup: func(_ *mockUserState, tokens *users.VerificationTokenStore) {
+				tokens.SetToken(testUserHandlerID, testUpdatedCFHandle, testStoredVerificationToken, time.Hour)
+			},
+			expectedStatus: http.StatusBadRequest, expectedBody: errorBody(invalidVerificationToken),
+			expectedCalls: []userDependencyCall{findUserCall}, expectedVerificationHandles: expectedVerificationHandles,
+		},
+		{
+			name: "verification rejects a concurrent verified handle change", method: http.MethodGet, path: testVerifyTokenPath,
+			setup: seedTokenSetup(testStoredVerificationToken),
+			setupProvider: func(provider *testutil.CodeforcesProviderMock, state *mockUserState) {
+				provider.BeforeVerification = func() {
+					changed := state.users[testUserHandlerID]
+					changed.CFVerifiedHandle = testUpdatedCFHandle
+					state.storeUser(changed)
+				}
+			},
+			expectedStatus: http.StatusConflict, expectedBody: errorBody(staleCFVerification),
+			expectedCalls: []userDependencyCall{findUserCall, verifyUserCall}, expectedVerificationHandles: expectedVerificationHandles,
+		},
 		// Verification token
 		{
 			name: "token endpoint creates and stores a token", method: http.MethodGet, path: testVerificationTokenPath,
 			expectedStatus: http.StatusOK,
-			expectedBody:   map[string]any{"token": testGeneratedVerificationToken},
+			expectedBody:   testutil.APIResponse{Token: testGeneratedVerificationToken},
 			expectedCalls: []userDependencyCall{
 				findUserCall,
 				{operation: generateTokenOperation, tokenLength: 9},
@@ -133,7 +259,7 @@ func TestUserHandlers(t *testing.T) {
 		{
 			name: "token endpoint reuses a stored token", method: http.MethodGet, path: testVerificationTokenPath,
 			setup: seedTokenSetup(testStoredVerificationToken), expectedStatus: http.StatusOK,
-			expectedBody:  map[string]any{"token": testStoredVerificationToken},
+			expectedBody:  testutil.APIResponse{Token: testStoredVerificationToken},
 			expectedCalls: []userDependencyCall{findUserCall},
 			assertState:   expectUserAndToken(user, testStoredVerificationToken, true),
 		},
@@ -190,15 +316,15 @@ func TestUserHandlers(t *testing.T) {
 		},
 		userNotFoundCase("verification returns not found", http.MethodGet, testVerifyTokenPath, "", findUserCall),
 		userReadFailureCase("verification handles lookup failure", http.MethodGet, testVerifyTokenPath, "", findUserCall),
-		providerErrorCase("verification handles request creation failure", ErrCodeforcesRequestCreation,
+		providerErrorCase("verification handles request creation failure", users.ErrCodeforcesRequestCreation,
 			http.StatusInternalServerError, failedToCreateCodeforcesRequest, findUserCall),
-		providerErrorCase("verification handles request failure", ErrCodeforcesRequest,
+		providerErrorCase("verification handles request failure", users.ErrCodeforcesRequest,
 			http.StatusInternalServerError, failedToCallCodeforces, findUserCall),
-		providerErrorCase("verification handles rejected response", ErrCodeforcesRejectedResponse,
+		providerErrorCase("verification handles rejected response", users.ErrCodeforcesRejectedResponse,
 			http.StatusBadGateway, codeforcesRequestFailed, findUserCall),
-		providerErrorCase("verification handles invalid response", ErrCodeforcesInvalidResponse,
+		providerErrorCase("verification handles invalid response", users.ErrCodeforcesInvalidResponse,
 			http.StatusBadGateway, failedToParseCodeforcesResponse, findUserCall),
-		providerErrorCase("verification handles a missing Codeforces user", ErrCodeforcesUserNotFound,
+		providerErrorCase("verification handles a missing Codeforces user", users.ErrCodeforcesUserNotFound,
 			http.StatusBadRequest, codeforcesUserNotFound, findUserCall),
 		providerErrorCase("verification handles an unknown provider failure", testUserDependencyFailure,
 			http.StatusInternalServerError, failedToCallCodeforces, findUserCall),
@@ -206,7 +332,7 @@ func TestUserHandlers(t *testing.T) {
 			name: "verification retains the token when persistence fails", method: http.MethodGet, path: testVerifyTokenPath,
 			setup: combineSetups(
 				seedTokenSetup(testStoredVerificationToken),
-				operationFailureSetup(updateCFVerifiedOperation, testUserDependencyFailure),
+				operationFailureSetup(updateCFVerifiedHandleOperation, testUserDependencyFailure),
 			),
 			expectedStatus: http.StatusInternalServerError, expectedBody: errorBody(failedToVerifyUser),
 			expectedCalls:               []userDependencyCall{findUserCall, verifyUserCall},
@@ -219,17 +345,24 @@ func TestUserHandlers(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			gin.SetMode(gin.TestMode)
 			state := newMockUserState()
-			tokens := NewVerificationTokenStore()
+			tokens := users.NewVerificationTokenStore()
 			if testCase.setup != nil {
 				testCase.setup(state, tokens)
 			}
 			api, codeforcesProvider := newUserHandlerTestAPI(state, tokens)
+			if testCase.setupProvider != nil {
+				testCase.setupProvider(codeforcesProvider, state)
+			}
 			router := newUserHandlerTestRouter(api)
 
-			response := performUserRequest(router, testCase.method, testCase.path, testCase.body)
+			state.expectedContext = t.Context()
+			response := performUserRequest(t.Context(), router, testCase.method, testCase.path, testCase.body)
 
 			assertResponseStatus(t, response, testCase.expectedStatus)
 			assertJSONBody(t, response, testCase.expectedBody)
+			if state.contextMismatch {
+				t.Fatal("repository did not receive the HTTP request context")
+			}
 			if !slices.Equal(state.calls, testCase.expectedCalls) {
 				t.Fatalf("dependency calls = %+v, want %+v", state.calls, testCase.expectedCalls)
 			}
@@ -240,6 +373,9 @@ func TestUserHandlers(t *testing.T) {
 					testCase.expectedVerificationHandles,
 				)
 			}
+			if !slices.Equal(codeforcesProvider.HistoricHandles, testCase.expectedHistoricHandles) {
+				t.Fatalf("historic handles = %v, want %v", codeforcesProvider.HistoricHandles, testCase.expectedHistoricHandles)
+			}
 			if testCase.assertState != nil {
 				testCase.assertState(t, state, tokens)
 			}
@@ -248,7 +384,7 @@ func TestUserHandlers(t *testing.T) {
 }
 
 // Test case builders
-func validationCase(name string, method string, path string, body string, message API_MESSAGE) userHandlerTestCase {
+func validationCase(name string, method string, path string, body string, message users.API_MESSAGE) userHandlerTestCase {
 	return userHandlerTestCase{
 		name: name, method: method, path: path, body: body,
 		expectedStatus: http.StatusBadRequest, expectedBody: errorBody(message),
@@ -276,7 +412,7 @@ func providerErrorCase(
 	name string,
 	providerError error,
 	expectedStatus int,
-	expectedMessage API_MESSAGE,
+	expectedMessage users.API_MESSAGE,
 	expectedCall userDependencyCall,
 ) userHandlerTestCase {
 	return userHandlerTestCase{
@@ -291,22 +427,21 @@ func providerErrorCase(
 // HTTP test setup
 func newUserHandlerTestAPI(
 	state *mockUserState,
-	tokens *VerificationTokenStore,
-) (*API, *testutil.CodeforcesProviderMock) {
+	tokens *users.VerificationTokenStore,
+) (*users.API, *testutil.CodeforcesProviderMock) {
 	codeforcesProvider := testutil.NewCodeforcesProviderMock(state.verificationValue)
 	codeforcesProvider.VerificationError = state.operationErrors[getVerificationValueOperation]
-	api := NewAPI(mockUserRepository{state}, tokens, codeforcesProvider)
-	api.generateToken = func(length int) (string, error) {
+	api := users.NewAPI(mockUserRepository{state}, tokens, codeforcesProvider, users.WithVerificationTokenGenerator(func(length int) (string, error) {
 		state.record(userDependencyCall{operation: generateTokenOperation, tokenLength: length})
 		if err := state.operationErrors[generateTokenOperation]; err != nil {
 			return "", err
 		}
 		return testGeneratedVerificationToken, nil
-	}
+	}))
 	return api, codeforcesProvider
 }
 
-func newUserHandlerTestRouter(api *API) *gin.Engine {
+func newUserHandlerTestRouter(api *users.API) *gin.Engine {
 	router := gin.New()
 	userRoutes := router.Group(testUserHandlerPath)
 	userRoutes.Use(func(context *gin.Context) {
@@ -320,8 +455,8 @@ func newUserHandlerTestRouter(api *API) *gin.Engine {
 	return router
 }
 
-func performUserRequest(router *gin.Engine, method string, path string, body string) *httptest.ResponseRecorder {
-	request := httptest.NewRequest(method, path, strings.NewReader(body))
+func performUserRequest(ctx context.Context, router *gin.Engine, method string, path string, body string) *httptest.ResponseRecorder {
+	request := httptest.NewRequestWithContext(ctx, method, path, strings.NewReader(body))
 	request.Header.Set("Content-Type", "application/json")
 	response := httptest.NewRecorder()
 	router.ServeHTTP(response, request)
@@ -358,53 +493,53 @@ func decodeJSON(t *testing.T, data []byte) any {
 	return value
 }
 
-func messageBody(message API_MESSAGE) map[string]any {
-	return map[string]any{"message": message}
+func messageBody(message users.API_MESSAGE) testutil.APIResponse {
+	return testutil.APIResponse{Message: string(message)}
 }
 
-func errorBody(message API_MESSAGE) map[string]any {
-	return map[string]any{"error": message}
+func errorBody(message users.API_MESSAGE) testutil.APIResponse {
+	return testutil.APIResponse{Error: string(message)}
 }
 
 // Scenario setup and state assertions
-func combineSetups(setups ...func(*mockUserState, *VerificationTokenStore)) func(*mockUserState, *VerificationTokenStore) {
-	return func(state *mockUserState, tokens *VerificationTokenStore) {
+func combineSetups(setups ...func(*mockUserState, *users.VerificationTokenStore)) func(*mockUserState, *users.VerificationTokenStore) {
+	return func(state *mockUserState, tokens *users.VerificationTokenStore) {
 		for _, setup := range setups {
 			setup(state, tokens)
 		}
 	}
 }
 
-func storeUserSetup(user User) func(*mockUserState, *VerificationTokenStore) {
-	return func(state *mockUserState, _ *VerificationTokenStore) { state.storeUser(user) }
+func storeUserSetup(user users.User) func(*mockUserState, *users.VerificationTokenStore) {
+	return func(state *mockUserState, _ *users.VerificationTokenStore) { state.storeUser(user) }
 }
 
-func seedTokenSetup(token string) func(*mockUserState, *VerificationTokenStore) {
-	return func(_ *mockUserState, tokens *VerificationTokenStore) {
-		tokens.SetToken(testUserHandlerID, token, time.Hour)
+func seedTokenSetup(token string) func(*mockUserState, *users.VerificationTokenStore) {
+	return func(_ *mockUserState, tokens *users.VerificationTokenStore) {
+		tokens.SetToken(testUserHandlerID, testOriginalCFHandle, token, time.Hour)
 	}
 }
 
-func verificationValueSetup(value string) func(*mockUserState, *VerificationTokenStore) {
-	return func(state *mockUserState, _ *VerificationTokenStore) { state.verificationValue = value }
+func verificationValueSetup(value string) func(*mockUserState, *users.VerificationTokenStore) {
+	return func(state *mockUserState, _ *users.VerificationTokenStore) { state.verificationValue = value }
 }
 
-func operationFailureSetup(operation userDependencyOperation, err error) func(*mockUserState, *VerificationTokenStore) {
-	return func(state *mockUserState, _ *VerificationTokenStore) { state.operationErrors[operation] = err }
+func operationFailureSetup(operation userDependencyOperation, err error) func(*mockUserState, *users.VerificationTokenStore) {
+	return func(state *mockUserState, _ *users.VerificationTokenStore) { state.operationErrors[operation] = err }
 }
 
-func clearUsersSetup(state *mockUserState, _ *VerificationTokenStore) {
-	state.users = map[int64]User{}
+func clearUsersSetup(state *mockUserState, _ *users.VerificationTokenStore) {
+	state.users = map[int64]users.User{}
 }
 
-func expectUserAndToken(expectedUser User, expectedToken string, expectedTokenFound bool) func(*testing.T, *mockUserState, *VerificationTokenStore) {
-	return func(t *testing.T, state *mockUserState, tokens *VerificationTokenStore) {
+func expectUserAndToken(expectedUser users.User, expectedToken string, expectedTokenFound bool) func(*testing.T, *mockUserState, *users.VerificationTokenStore) {
+	return func(t *testing.T, state *mockUserState, tokens *users.VerificationTokenStore) {
 		t.Helper()
 		actualUser, found := state.users[expectedUser.ID]
 		if !found || actualUser != expectedUser {
 			t.Fatalf("stored user = %+v, %v; want %+v, true", actualUser, found, expectedUser)
 		}
-		actualToken, tokenFound := tokens.GetToken(expectedUser.ID)
+		actualToken, tokenFound := tokens.GetToken(expectedUser.ID, expectedUser.CFHandle)
 		if actualToken != expectedToken || tokenFound != expectedTokenFound {
 			t.Fatalf("stored token = %q, %v; want %q, %v", actualToken, tokenFound, expectedToken, expectedTokenFound)
 		}
@@ -412,8 +547,8 @@ func expectUserAndToken(expectedUser User, expectedToken string, expectedTokenFo
 }
 
 // Fixtures
-func newUserHandlerFixture() User {
-	return User{
+func newUserHandlerFixture() users.User {
+	return users.User{
 		ID:             testUserHandlerID,
 		GithubID:       101,
 		GithubUserName: "test-user",
@@ -427,31 +562,33 @@ func newUserHandlerFixture() User {
 type userDependencyOperation string
 
 const (
-	findUserOperation             userDependencyOperation = "find user"
-	updateCFHandleOperation       userDependencyOperation = "update CF handle"
-	updateCFVerifiedOperation     userDependencyOperation = "update CF verification"
-	getVerificationValueOperation userDependencyOperation = "get verification value"
-	generateTokenOperation        userDependencyOperation = "generate token"
+	findUserOperation               userDependencyOperation = "find user"
+	updateCFHandleOperation         userDependencyOperation = "update CF handle"
+	updateCFVerifiedHandleOperation userDependencyOperation = "update CF verification"
+	getVerificationValueOperation   userDependencyOperation = "get verification value"
+	generateTokenOperation          userDependencyOperation = "generate token"
 )
 
 type userDependencyCall struct {
-	operation   userDependencyOperation
-	userID      int64
-	cfHandle    string
-	cfVerified  bool
-	tokenLength int
+	operation        userDependencyOperation
+	userID           int64
+	cfHandle         string
+	cfVerifiedHandle string
+	tokenLength      int
 }
 
 type mockUserState struct {
-	users             map[int64]User
+	users             map[int64]users.User
 	verificationValue string
 	operationErrors   map[userDependencyOperation]error
 	calls             []userDependencyCall
+	expectedContext   context.Context
+	contextMismatch   bool
 }
 
 func newMockUserState() *mockUserState {
 	state := &mockUserState{
-		users:             map[int64]User{},
+		users:             map[int64]users.User{},
 		verificationValue: testStoredVerificationToken,
 		operationErrors:   map[userDependencyOperation]error{},
 	}
@@ -461,44 +598,47 @@ func newMockUserState() *mockUserState {
 
 type mockUserRepository struct{ *mockUserState }
 
-func (repository mockUserRepository) FindByID(userID int64) (*User, error) {
+func (repository mockUserRepository) FindByID(ctx context.Context, userID int64) (*users.User, error) {
+	repository.contextMismatch = repository.contextMismatch || ctx != repository.expectedContext
 	repository.record(userDependencyCall{operation: findUserOperation, userID: userID})
 	if err := repository.operationErrors[findUserOperation]; err != nil {
 		return nil, err
 	}
 	user, found := repository.users[userID]
 	if !found {
-		return nil, ErrUserNotFound
+		return nil, users.ErrUserNotFound
 	}
 	return &user, nil
 }
 
-func (repository mockUserRepository) UpdateCFHandle(user *User, cfHandle string) error {
-	repository.record(userDependencyCall{operation: updateCFHandleOperation, userID: user.ID, cfHandle: cfHandle})
+func (repository mockUserRepository) UpdateCFHandle(ctx context.Context, user *users.User, cfHandle string, verifiedHandle string) error {
+	repository.contextMismatch = repository.contextMismatch || ctx != repository.expectedContext
+	repository.record(userDependencyCall{operation: updateCFHandleOperation, userID: user.ID, cfHandle: cfHandle, cfVerifiedHandle: verifiedHandle})
 	if err := repository.operationErrors[updateCFHandleOperation]; err != nil {
 		return err
 	}
 	storedUser, found := repository.users[user.ID]
-	if !found {
-		return ErrUserNotFound
+	if !found || storedUser.CFHandle != user.CFHandle || storedUser.CFVerifiedHandle != user.CFVerifiedHandle {
+		return users.ErrCFHandleChanged
 	}
 	storedUser.CFHandle = cfHandle
-	storedUser.CFVerified = false
+	storedUser.CFVerifiedHandle = verifiedHandle
 	repository.storeUser(storedUser)
 	*user = storedUser
 	return nil
 }
 
-func (repository mockUserRepository) UpdateCFVerified(user *User, cfVerified bool) error {
-	repository.record(userDependencyCall{operation: updateCFVerifiedOperation, userID: user.ID, cfVerified: cfVerified})
-	if err := repository.operationErrors[updateCFVerifiedOperation]; err != nil {
+func (repository mockUserRepository) UpdateCFVerifiedHandle(ctx context.Context, user *users.User, verifiedHandle string) error {
+	repository.contextMismatch = repository.contextMismatch || ctx != repository.expectedContext
+	repository.record(userDependencyCall{operation: updateCFVerifiedHandleOperation, userID: user.ID, cfVerifiedHandle: verifiedHandle})
+	if err := repository.operationErrors[updateCFVerifiedHandleOperation]; err != nil {
 		return err
 	}
 	storedUser, found := repository.users[user.ID]
-	if !found {
-		return ErrUserNotFound
+	if !found || storedUser.CFHandle != user.CFHandle || storedUser.CFVerifiedHandle != user.CFVerifiedHandle {
+		return users.ErrCFHandleChanged
 	}
-	storedUser.CFVerified = cfVerified
+	storedUser.CFVerifiedHandle = verifiedHandle
 	repository.storeUser(storedUser)
 	*user = storedUser
 	return nil
@@ -508,6 +648,6 @@ func (state *mockUserState) record(call userDependencyCall) {
 	state.calls = append(state.calls, call)
 }
 
-func (state *mockUserState) storeUser(user User) {
+func (state *mockUserState) storeUser(user users.User) {
 	state.users[user.ID] = user
 }

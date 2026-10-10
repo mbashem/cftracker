@@ -136,7 +136,7 @@ if [ "$(server_identifier "$TEST_DATABASE_URL")" != "$admin_server" ] || \
 fi
 
 script_directory="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
-cd "$script_directory/.."
+cd "$script_directory/../../.."
 export MIGRATION_DATABASE_URL="$TEST_DATABASE_URL"
 
 # Verify fresh application, full rollback, and restoration.

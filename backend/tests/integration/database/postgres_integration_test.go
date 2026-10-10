@@ -1,11 +1,15 @@
 //go:build integration
 
-package testutil
+package testutil_test
 
-import "testing"
+import (
+	"testing"
+
+	testutil "github.com/mbashem/cftracker/backend/tests/support"
+)
 
 func TestIntegrationDatabaseIsSafeAndMigrated(t *testing.T) {
-	database := OpenTestDB(t)
+	database := testutil.OpenTestDB(t)
 
-	ResetTestDB(t, database)
+	testutil.ResetTestDB(t, database)
 }

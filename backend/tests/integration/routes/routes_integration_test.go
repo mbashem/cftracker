@@ -16,13 +16,14 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/mbashem/cftracker/backend/configs"
 	"github.com/mbashem/cftracker/backend/internal/auth"
 	"github.com/mbashem/cftracker/backend/internal/lists"
 	listitems "github.com/mbashem/cftracker/backend/internal/lists/items"
 	"github.com/mbashem/cftracker/backend/internal/routes"
-	"github.com/mbashem/cftracker/backend/internal/testutil"
 	"github.com/mbashem/cftracker/backend/internal/users"
 	"github.com/mbashem/cftracker/backend/internal/utils"
+	testutil "github.com/mbashem/cftracker/backend/tests/support"
 )
 
 const (
@@ -74,9 +75,9 @@ func TestCompleteAPIWorkflow(t *testing.T) {
 		},
 	)
 	codeforcesProvider := testutil.NewCodeforcesProviderMock("")
-	userRepository := users.NewRepository(database)
-	listRepository := lists.NewRepository(database)
-	itemRepository := listitems.NewRepository(database)
+	userRepository := users.NewRepository(database, configs.DefaultDatabaseTimeout)
+	listRepository := lists.NewRepository(database, configs.DefaultDatabaseTimeout)
+	itemRepository := listitems.NewRepository(database, configs.DefaultDatabaseTimeout)
 
 	router := gin.New()
 	routes.RegisterRoutes(router, routes.Dependencies{

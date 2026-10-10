@@ -1,14 +1,16 @@
-package users
+package users_test
 
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
 	"testing"
 	"time"
 
-	"github.com/mbashem/cftracker/backend/internal/testutil"
+	"github.com/mbashem/cftracker/backend/internal/users"
+	testutil "github.com/mbashem/cftracker/backend/tests/support"
 )
 
 const (
@@ -33,24 +35,28 @@ func TestCodeforcesClientGetVerificationValue(t *testing.T) {
 	testCases := []codeforcesProviderResponseTestCase{
 		{
 			name: "escaped handle response is decoded", status: http.StatusOK,
-			body:          `{"status":"OK","result":[{"firstName":"verification-token"}]}`,
+			body:          fmt.Sprintf(`{"status":"OK","result":[{"handle":%q,"firstName":"verification-token"}]}`, testCodeforcesProviderHandle),
 			expectedValue: testCodeforcesProviderVerificationValue,
 		},
 		{
 			name: "rejected response returns its sentinel", status: http.StatusTooManyRequests, body: `{}`,
-			expectedErrors: []error{ErrCodeforcesRejectedResponse},
+			expectedErrors: []error{users.ErrCodeforcesRejectedResponse},
 		},
 		{
 			name: "malformed response returns its sentinel", status: http.StatusOK, body: `{`,
-			expectedErrors: []error{ErrCodeforcesInvalidResponse},
+			expectedErrors: []error{users.ErrCodeforcesInvalidResponse},
 		},
 		{
 			name: "empty result returns user not found", status: http.StatusOK, body: `{"status":"OK","result":[]}`,
-			expectedErrors: []error{ErrCodeforcesUserNotFound},
+			expectedErrors: []error{users.ErrCodeforcesUserNotFound},
 		},
+		{name: "historic alias cannot verify a different current handle", status: http.StatusOK, body: `{"status":"OK","result":[{"handle":"another","firstName":"verification-token"}]}`, expectedErrors: []error{users.ErrCodeforcesInvalidResponse}},
+		{name: "missing handle is rejected", status: http.StatusOK, body: `{"status":"OK","result":[{"firstName":"verification-token"}]}`, expectedErrors: []error{users.ErrCodeforcesInvalidResponse}},
+		{name: "multiple accounts are rejected", status: http.StatusOK, body: `{"status":"OK","result":[{"handle":"tourist"},{"handle":"Petr"}]}`, expectedErrors: []error{users.ErrCodeforcesInvalidResponse}},
+		{name: "failed API status is rejected", status: http.StatusOK, body: `{"status":"FAILED","result":[]}`, expectedErrors: []error{users.ErrCodeforcesInvalidResponse}},
 		{
 			name: "transport failure preserves both errors", responseError: testCodeforcesProviderTransportFailure,
-			expectedErrors: []error{ErrCodeforcesRequest, testCodeforcesProviderTransportFailure},
+			expectedErrors: []error{users.ErrCodeforcesRequest, testCodeforcesProviderTransportFailure},
 		},
 	}
 
@@ -63,7 +69,7 @@ func TestCodeforcesClientGetVerificationValue(t *testing.T) {
 				}
 				return testutil.NewJSONResponse(request, testCase.status, testCase.body), nil
 			})
-			client := NewCodeforcesClient(
+			client := users.NewCodeforcesClient(
 				newCodeforcesProviderHTTPClient(t, testCodeforcesProviderHandle, &requestObserved, providerRoundTrip),
 				time.Second,
 			)
@@ -98,7 +104,7 @@ func TestCodeforcesClientGetVerificationValueContextFailures(t *testing.T) {
 				cancel()
 			}
 			requestObserved := false
-			client := NewCodeforcesClient(
+			client := users.NewCodeforcesClient(
 				newCodeforcesProviderHTTPClient(
 					t, testCodeforcesProviderHandle, &requestObserved, testutil.RoundTripContextError,
 				),
@@ -108,7 +114,7 @@ func TestCodeforcesClientGetVerificationValueContextFailures(t *testing.T) {
 			value, err := client.GetVerificationValue(ctx, testCodeforcesProviderHandle)
 
 			assertCodeforcesProviderResult(
-				t, value, err, "", []error{ErrCodeforcesRequest, testCase.expectedError},
+				t, value, err, "", []error{users.ErrCodeforcesRequest, testCase.expectedError},
 			)
 		})
 	}
@@ -125,12 +131,12 @@ func newCodeforcesProviderHTTPClient(
 	t.Helper()
 	return &http.Client{Transport: testutil.RoundTripFunc(func(request *http.Request) (*http.Response, error) {
 		*requestObserved = true
-		expectedRawQuery := "handles=" + url.QueryEscape(expectedHandle)
+		expectedRawQuery := "handles=" + url.QueryEscape(expectedHandle) + "&checkHistoricHandles=false"
 		if request.Method != http.MethodGet || request.URL.Scheme != "https" || request.URL.Host != "codeforces.com" ||
 			request.URL.Path != "/api/user.info" || request.URL.RawQuery != expectedRawQuery {
 			t.Errorf("Codeforces request = %s %q", request.Method, request.URL.String())
 		}
-		if request.URL.Query().Get("handles") != expectedHandle || len(request.URL.Query()) != 1 {
+		if request.URL.Query().Get("handles") != expectedHandle || len(request.URL.Query()) != 2 {
 			t.Errorf("Codeforces request query = %v", request.URL.Query())
 		}
 		if contentType := request.Header.Get("Content-Type"); contentType != "application/json" {
@@ -164,5 +170,28 @@ func assertCodeforcesProviderResult(
 		if !errors.Is(actualError, expectedError) {
 			t.Fatalf("GetVerificationValue() error = %v, want errors.Is(..., %v)", actualError, expectedError)
 		}
+	}
+}
+
+func TestCodeforcesClientResolvesHistoricalHandle(t *testing.T) {
+	for _, testCase := range []struct {
+		name, body, expectedHandle string
+		expectedError              error
+	}{
+		{name: "old handle resolves to renamed account", body: `{"status":"OK","result":[{"handle":"NewHandle"}]}`, expectedHandle: "NewHandle"},
+		{name: "invalid response preserves error", body: `{`, expectedError: users.ErrCodeforcesInvalidResponse},
+	} {
+		t.Run(testCase.name, func(t *testing.T) {
+			client := users.NewCodeforcesClient(&http.Client{Transport: testutil.RoundTripFunc(func(request *http.Request) (*http.Response, error) {
+				if request.URL.Query().Get("handles") != "OldHandle" || request.URL.Query().Get("checkHistoricHandles") != "true" {
+					t.Fatalf("historical lookup query = %v", request.URL.Query())
+				}
+				return testutil.NewJSONResponse(request, http.StatusOK, testCase.body), nil
+			})}, time.Second)
+			handle, err := client.GetCurrentHandle(context.Background(), "OldHandle")
+			if handle != testCase.expectedHandle || !errors.Is(err, testCase.expectedError) {
+				t.Fatalf("GetCurrentHandle = %q, %v", handle, err)
+			}
+		})
 	}
 }

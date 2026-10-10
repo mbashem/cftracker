@@ -9,10 +9,11 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/mbashem/cftracker/backend/configs"
 	"github.com/mbashem/cftracker/backend/internal/lists"
 	listitems "github.com/mbashem/cftracker/backend/internal/lists/items"
-	"github.com/mbashem/cftracker/backend/internal/testutil"
 	"github.com/mbashem/cftracker/backend/internal/users"
+	testutil "github.com/mbashem/cftracker/backend/tests/support"
 )
 
 const (
@@ -40,16 +41,16 @@ func TestListItemRepositoryIntegration(t *testing.T) {
 		firstItem := createIntegrationListItem(t, state.repository, state.ownerID, state.ownerListID, "1845A", 4)
 		secondItem := createIntegrationListItem(t, state.repository, state.ownerID, state.ownerListID, "1845B", 0)
 
-		storedItems, err := state.repository.GetItems(state.ownerID, state.ownerListID)
+		storedItems, err := state.repository.GetItems(t.Context(), state.ownerID, state.ownerListID)
 		if err != nil {
 			t.Fatalf("GetItems(): %v", err)
 		}
 		assertIntegrationListItems(t, storedItems, []listitems.ListItem{firstItem, secondItem})
 
-		if err := state.repository.Delete(state.ownerID, &firstItem); err != nil {
+		if err := state.repository.Delete(t.Context(), state.ownerID, &firstItem); err != nil {
 			t.Fatalf("Delete(): %v", err)
 		}
-		storedItems, err = state.repository.GetItems(state.ownerID, state.ownerListID)
+		storedItems, err = state.repository.GetItems(t.Context(), state.ownerID, state.ownerListID)
 		if err != nil {
 			t.Fatalf("GetItems() after Delete(): %v", err)
 		}
@@ -61,14 +62,14 @@ func TestListItemRepositoryIntegration(t *testing.T) {
 		firstItem := createIntegrationListItem(t, state.repository, state.ownerID, state.ownerListID, "1845A", 0)
 		duplicateItem := listitems.ListItem{ListId: state.ownerListID, ProblemId: firstItem.ProblemId, Position: 1}
 
-		testutil.AssertPostgresErrorCode(t, state.repository.Create(state.ownerID, &duplicateItem), integrationItemUniqueViolation)
+		testutil.AssertPostgresErrorCode(t, state.repository.Create(t.Context(), state.ownerID, &duplicateItem), integrationItemUniqueViolation)
 		createIntegrationListItem(t, state.repository, state.otherUserID, state.otherListID, firstItem.ProblemId, 0)
 	})
 
 	t.Run("owned empty lists return a non-nil empty slice", func(t *testing.T) {
 		state := newListItemIntegrationState(t, database)
 
-		storedItems, err := state.repository.GetItems(state.ownerID, state.ownerListID)
+		storedItems, err := state.repository.GetItems(t.Context(), state.ownerID, state.ownerListID)
 		if err != nil {
 			t.Fatalf("GetItems(): %v", err)
 		}
@@ -82,11 +83,11 @@ func TestListItemRepositoryIntegration(t *testing.T) {
 		item := createIntegrationListItem(t, state.repository, state.ownerID, state.ownerListID, "1845A", 0)
 
 		for deletion := 1; deletion <= 2; deletion++ {
-			if err := state.repository.Delete(state.ownerID, &item); err != nil {
+			if err := state.repository.Delete(t.Context(), state.ownerID, &item); err != nil {
 				t.Fatalf("Delete() call %d: %v", deletion, err)
 			}
 		}
-		storedItems, err := state.repository.GetItems(state.ownerID, state.ownerListID)
+		storedItems, err := state.repository.GetItems(t.Context(), state.ownerID, state.ownerListID)
 		if err != nil {
 			t.Fatalf("GetItems(): %v", err)
 		}
@@ -100,16 +101,17 @@ func TestListItemRepositoryIntegration(t *testing.T) {
 		expectedItems := []listitems.ListItem{firstItem, secondItem}
 
 		foreignItem := listitems.ListItem{ListId: state.ownerListID, ProblemId: "1845C", Position: 9}
-		if err := state.repository.Create(state.otherUserID, &foreignItem); !errors.Is(err, listitems.ErrListNotFound) {
+		if err := state.repository.Create(t.Context(), state.otherUserID, &foreignItem); !errors.Is(err, listitems.ErrListNotFound) {
 			t.Fatalf("Create(foreign list) error = %v, want %v", err, listitems.ErrListNotFound)
 		}
-		if _, err := state.repository.GetItems(state.otherUserID, state.ownerListID); !errors.Is(err, listitems.ErrListNotFound) {
+		if _, err := state.repository.GetItems(t.Context(), state.otherUserID, state.ownerListID); !errors.Is(err, listitems.ErrListNotFound) {
 			t.Fatalf("GetItems(foreign list) error = %v, want %v", err, listitems.ErrListNotFound)
 		}
-		if err := state.repository.Delete(state.otherUserID, &firstItem); !errors.Is(err, listitems.ErrListNotFound) {
+		if err := state.repository.Delete(t.Context(), state.otherUserID, &firstItem); !errors.Is(err, listitems.ErrListNotFound) {
 			t.Fatalf("Delete(foreign list) error = %v, want %v", err, listitems.ErrListNotFound)
 		}
 		if err := state.repository.ReorderListItems(
+			t.Context(),
 			state.otherUserID,
 			state.ownerListID,
 			[]string{secondItem.ProblemId, firstItem.ProblemId},
@@ -117,7 +119,7 @@ func TestListItemRepositoryIntegration(t *testing.T) {
 			t.Fatalf("ReorderListItems(foreign list) error = %v, want %v", err, listitems.ErrListNotFound)
 		}
 
-		storedItems, err := state.repository.GetItems(state.ownerID, state.ownerListID)
+		storedItems, err := state.repository.GetItems(t.Context(), state.ownerID, state.ownerListID)
 		if err != nil {
 			t.Fatalf("owner GetItems(): %v", err)
 		}
@@ -132,18 +134,18 @@ func TestListItemRepositoryIntegration(t *testing.T) {
 		}{
 			{name: "create", run: func() error {
 				item := listitems.ListItem{ListId: integrationMissingItemListID, ProblemId: "1845A"}
-				return state.repository.Create(state.ownerID, &item)
+				return state.repository.Create(t.Context(), state.ownerID, &item)
 			}},
 			{name: "read", run: func() error {
-				_, err := state.repository.GetItems(state.ownerID, integrationMissingItemListID)
+				_, err := state.repository.GetItems(t.Context(), state.ownerID, integrationMissingItemListID)
 				return err
 			}},
 			{name: "delete", run: func() error {
 				item := listitems.ListItem{ListId: integrationMissingItemListID, ProblemId: "1845A"}
-				return state.repository.Delete(state.ownerID, &item)
+				return state.repository.Delete(t.Context(), state.ownerID, &item)
 			}},
 			{name: "reorder", run: func() error {
-				return state.repository.ReorderListItems(state.ownerID, integrationMissingItemListID, []string{"1845A"})
+				return state.repository.ReorderListItems(t.Context(), state.ownerID, integrationMissingItemListID, []string{"1845A"})
 			}},
 		}
 		for _, operation := range operations {
@@ -161,18 +163,19 @@ func TestListItemRepositoryIntegration(t *testing.T) {
 		secondItem := createIntegrationListItem(t, state.repository, state.ownerID, state.ownerListID, "1845B", 9)
 		thirdItem := createIntegrationListItem(t, state.repository, state.ownerID, state.ownerListID, "1845C", 10)
 
-		if err := state.repository.ReorderListItems(state.ownerID, state.ownerListID, []string{
-			thirdItem.ProblemId,
-			firstItem.ProblemId,
-			secondItem.ProblemId,
-		}); err != nil {
+		if err := state.repository.ReorderListItems(
+			t.Context(),
+			state.ownerID,
+			state.ownerListID,
+			[]string{thirdItem.ProblemId, firstItem.ProblemId, secondItem.ProblemId},
+		); err != nil {
 			t.Fatalf("ReorderListItems(): %v", err)
 		}
 		firstItem.Position = 1
 		secondItem.Position = 2
 		thirdItem.Position = 0
 
-		storedItems, err := state.repository.GetItems(state.ownerID, state.ownerListID)
+		storedItems, err := state.repository.GetItems(t.Context(), state.ownerID, state.ownerListID)
 		if err != nil {
 			t.Fatalf("GetItems(): %v", err)
 		}
@@ -183,7 +186,7 @@ func TestListItemRepositoryIntegration(t *testing.T) {
 		state := newListItemIntegrationState(t, database)
 		createIntegrationListItem(t, state.repository, state.ownerID, state.ownerListID, "1845A", 0)
 
-		if err := state.listRepository.Delete(state.ownerID, state.ownerListID); err != nil {
+		if err := state.listRepository.Delete(t.Context(), state.ownerID, state.ownerListID); err != nil {
 			t.Fatalf("ListRepository.Delete(): %v", err)
 		}
 		var itemCount int
@@ -196,7 +199,7 @@ func TestListItemRepositoryIntegration(t *testing.T) {
 		if itemCount != 0 {
 			t.Fatalf("items after list deletion = %d, want 0", itemCount)
 		}
-		if _, err := state.repository.GetItems(state.ownerID, state.ownerListID); !errors.Is(err, listitems.ErrListNotFound) {
+		if _, err := state.repository.GetItems(t.Context(), state.ownerID, state.ownerListID); !errors.Is(err, listitems.ErrListNotFound) {
 			t.Fatalf("GetItems() after list deletion error = %v, want %v", err, listitems.ErrListNotFound)
 		}
 	})
@@ -205,13 +208,13 @@ func TestListItemRepositoryIntegration(t *testing.T) {
 func newListItemIntegrationState(t *testing.T, database *sql.DB) listItemIntegrationState {
 	t.Helper()
 	testutil.ResetTestDB(t, database)
-	userRepository := users.NewRepository(database)
-	listRepository := lists.NewRepository(database)
+	userRepository := users.NewRepository(database, configs.DefaultDatabaseTimeout)
+	listRepository := lists.NewRepository(database, configs.DefaultDatabaseTimeout)
 	ownerID := createIntegrationItemUser(t, userRepository, integrationItemOwnerGitHubID)
 	otherUserID := createIntegrationItemUser(t, userRepository, integrationItemOtherGitHubID)
 	return listItemIntegrationState{
 		database:       database,
-		repository:     listitems.NewRepository(database),
+		repository:     listitems.NewRepository(database, configs.DefaultDatabaseTimeout),
 		listRepository: listRepository,
 		ownerID:        ownerID,
 		otherUserID:    otherUserID,
@@ -223,7 +226,7 @@ func newListItemIntegrationState(t *testing.T, database *sql.DB) listItemIntegra
 func createIntegrationItemUser(t *testing.T, repository *users.Repository, githubID int64) int64 {
 	t.Helper()
 	user := users.User{GithubID: githubID, GithubUserName: "integration-user"}
-	if err := repository.Save(&user); err != nil {
+	if err := repository.Save(t.Context(), &user); err != nil {
 		t.Fatalf("UserRepository.Save(%d): %v", githubID, err)
 	}
 	return user.ID
@@ -232,7 +235,7 @@ func createIntegrationItemUser(t *testing.T, repository *users.Repository, githu
 func createIntegrationItemList(t *testing.T, repository *lists.Repository, userID int64, name string) int64 {
 	t.Helper()
 	list := lists.List{Name: name}
-	if err := repository.Create(userID, &list); err != nil {
+	if err := repository.Create(t.Context(), userID, &list); err != nil {
 		t.Fatalf("ListRepository.Create(%q): %v", name, err)
 	}
 	return list.Id
@@ -248,7 +251,7 @@ func createIntegrationListItem(
 ) listitems.ListItem {
 	t.Helper()
 	item := listitems.ListItem{ListId: listID, ProblemId: problemID, Position: position}
-	if err := repository.Create(userID, &item); err != nil {
+	if err := repository.Create(t.Context(), userID, &item); err != nil {
 		t.Fatalf("Create(%q): %v", problemID, err)
 	}
 	if item.ListId != listID || item.CreatedAt.IsZero() {

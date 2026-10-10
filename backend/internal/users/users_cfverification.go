@@ -1,6 +1,7 @@
 package users
 
 import (
+	"strings"
 	"sync"
 	"time"
 )
@@ -10,51 +11,62 @@ import (
 // pending token on restart is an accepted tradeoff. Use shared storage before
 // running multiple backend instances.
 type VerificationTokenStore struct {
-	mu       sync.Mutex
-	tokens   map[int64]string
-	expiries map[int64]time.Time
+	mu     sync.Mutex
+	tokens map[verificationTokenKey]verificationToken
+}
+
+type verificationTokenKey struct {
+	userID int64
+	handle string
+}
+
+type verificationToken struct {
+	value     string
+	expiresAt time.Time
 }
 
 func NewVerificationTokenStore() *VerificationTokenStore {
 	return &VerificationTokenStore{
-		tokens:   make(map[int64]string),
-		expiries: make(map[int64]time.Time),
+		tokens: make(map[verificationTokenKey]verificationToken),
 	}
 }
 
-// SetToken stores a token for a user with an expiration time
-func (store *VerificationTokenStore) SetToken(userID int64, token string, duration time.Duration) {
+// SetToken stores a proof for one user and handle with an expiration time.
+func (store *VerificationTokenStore) SetToken(userID int64, handle string, token string, duration time.Duration) {
 	store.mu.Lock()
 	defer store.mu.Unlock()
+	key := verificationTokenKey{userID, strings.ToLower(handle)}
 
-	store.tokens[userID] = token
-	store.expiries[userID] = time.Now().Add(duration)
+	store.tokens[key] = verificationToken{
+		value:     token,
+		expiresAt: time.Now().Add(duration),
+	}
 }
 
-// GetToken retrieves the token for a user
-func (store *VerificationTokenStore) GetToken(userID int64) (string, bool) {
+// GetToken retrieves the proof for the selected user and handle.
+func (store *VerificationTokenStore) GetToken(userID int64, handle string) (string, bool) {
 	store.mu.Lock()
 	defer store.mu.Unlock()
+	key := verificationTokenKey{userID, strings.ToLower(handle)}
 
-	token, exists := store.tokens[userID]
+	token, exists := store.tokens[key]
 	if !exists {
 		return "", false
 	}
 
-	if time.Now().After(store.expiries[userID]) {
-		delete(store.tokens, userID)
-		delete(store.expiries, userID)
+	if time.Now().After(token.expiresAt) {
+		delete(store.tokens, key)
 		return "", false
 	}
 
-	return token, true
+	return token.value, true
 }
 
-// DeleteToken removes the token for a user
-func (store *VerificationTokenStore) DeleteToken(userID int64) {
+// DeleteToken removes only the proof for the selected user and handle.
+func (store *VerificationTokenStore) DeleteToken(userID int64, handle string) {
 	store.mu.Lock()
 	defer store.mu.Unlock()
+	key := verificationTokenKey{userID, strings.ToLower(handle)}
 
-	delete(store.tokens, userID)
-	delete(store.expiries, userID)
+	delete(store.tokens, key)
 }
