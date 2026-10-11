@@ -4,12 +4,14 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	gonanoid "github.com/matoous/go-nanoid/v2"
 	"github.com/mbashem/cftracker/backend/internal/middlewares"
+	"github.com/mbashem/cftracker/backend/internal/ratelimit"
 )
 
 type API_MESSAGE string
@@ -38,9 +40,14 @@ type API struct {
 	tokens             *VerificationTokenStore
 	codeforcesProvider CodeforcesProvider
 	generateToken      func(int) (string, error)
+	rateLimits         *ratelimit.Service
 }
 
 type APIOption func(*API)
+
+func WithRateLimits(service *ratelimit.Service) APIOption {
+	return func(api *API) { api.rateLimits = service }
+}
 
 // WithVerificationTokenGenerator supplies the source of ownership challenge values.
 func WithVerificationTokenGenerator(generate func(int) (string, error)) APIOption {
@@ -103,6 +110,9 @@ func (api *API) UpdateCFHandle(context *gin.Context) {
 	}
 	verifiedHandle := user.CFVerifiedHandle
 	if verifiedHandle != "" && !strings.EqualFold(verifiedHandle, request.CFHandle) {
+		if !api.allowCodeforces(context) {
+			return
+		}
 		currentHandle, err := api.codeforcesProvider.GetCurrentHandle(context.Request.Context(), verifiedHandle)
 		if err != nil {
 			writeCodeforcesProviderError(context, err)
@@ -164,6 +174,9 @@ func (api *API) VerifyCFVerificationToken(context *gin.Context) {
 		return
 	}
 
+	if !api.allowCodeforces(context) {
+		return
+	}
 	verificationValue, err := api.codeforcesProvider.GetVerificationValue(
 		context.Request.Context(),
 		user.CFHandle,
@@ -190,6 +203,18 @@ func (api *API) VerifyCFVerificationToken(context *gin.Context) {
 
 	api.tokens.DeleteToken(id, user.CFHandle)
 	context.JSON(http.StatusOK, gin.H{"message": userVerified})
+}
+
+func (api *API) allowCodeforces(context *gin.Context) bool {
+	if api.rateLimits == nil {
+		return true
+	}
+	identity := strconv.FormatInt(context.GetInt64(middlewares.UserIdKey), 10)
+	allowed, retry := api.rateLimits.Allow(ratelimit.Codeforces, identity)
+	if !allowed {
+		ratelimit.Reject(context, retry)
+	}
+	return allowed
 }
 
 func writeUserReadError(context *gin.Context, err error) {

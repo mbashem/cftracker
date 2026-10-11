@@ -1,13 +1,10 @@
 package lists
 
-import (
-	"github.com/gin-gonic/gin"
-	"github.com/mbashem/cftracker/backend/internal/middlewares"
-)
+import "github.com/gin-gonic/gin"
 
-func RegisterRoutes(server *gin.Engine, api *API) {
-	listServer := server.Group("/api/lists")
-	listServer.Use(middlewares.Authenticate)
+// RegisterRoutes receives the authenticated /api group from the central registrar.
+func RegisterRoutes(server gin.IRouter, api *API) {
+	listServer := server.Group("/lists")
 
 	listServer.GET("", api.GetAllLists)                                   // get all lists
 	listServer.POST("", api.CreateListHandler)                            // create list

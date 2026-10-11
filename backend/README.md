@@ -31,6 +31,12 @@ PORT=8080
 EXTERNAL_API_TIMEOUT=10s
 DATABASE_TIMEOUT=5s
 CORS_ALLOWED_ORIGINS=http://localhost:5173
+API_RATE_PER_MINUTE=60
+WRITE_RATE_PER_MINUTE=30
+AUTH_RATE_PER_MINUTE=10
+CODEFORCES_COOLDOWN=1m
+# Set to your hosting proxy's IP addresses/CIDRs when deployed behind one:
+# TRUSTED_PROXIES=127.0.0.1,10.0.0.0/8
 ```
 
 `PORT` defaults to `8080`. `EXTERNAL_API_TIMEOUT` accepts Go duration values such as `5s` or `1m` and defaults to `10s`. `CORS_ALLOWED_ORIGINS` accepts comma-separated HTTP or HTTPS origins without paths. Missing or invalid entries are logged and skipped; when none are valid, requests without a browser `Origin` header can still be used for API testing. Do not use `*` because the API allows credentialed CORS requests.
@@ -40,6 +46,12 @@ GitHub sign-in must start at `/api/auth/github/login`. The handler stores the sh
 `DATABASE_TIMEOUT` is a positive Go duration, defaulting to `5s`. Every application repository operation derives a timeout from the HTTP request context. Its budget includes waiting for a pooled connection, executing SQL, reading rows, and all queries in a multi-step operation or transaction. A client cancellation or earlier parent deadline takes effect first. Provider calls keep their separate `EXTERNAL_API_TIMEOUT` budget; `DATABASE_TIMEOUT` is not an overall HTTP request timeout or a migration-command timeout. Database failures, including timeouts, retain the existing operation-specific HTTP `500` responses.
 
 Five seconds is a conservative starting value for this API's small CRUD operations, not a universal standard or a normal latency target. Healthy queries should finish well below it. Measure database latency and pool waits in production; shorten the budget when those measurements support it, and investigate slow queries or locks before increasing it. The request-context/derived-timeout pattern follows [Go's database cancellation guidance](https://go.dev/doc/database/cancel-operations), whose example also uses five seconds. Keep proxy request budgets large enough for endpoints that perform sequential provider and database operations.
+
+## Rate limits
+
+See [RATE_LIMITING.md](RATE_LIMITING.md) for the complete policy table, request-flow and sequence diagrams, token-bucket examples, endpoint coverage, configuration, client-IP handling, cleanup, and deployment limitations.
+
+Defaults are 60 requests/minute per user for general traffic, 30/minute for writes, ten/minute per IP separately for login and callback, and one Codeforces attempt per user every 60 seconds. Ordinary traffic allows a burst of ten. Rejections return `429` with `Retry-After`; health probes are exempt. Configure `TRUSTED_PROXIES` for your actual hosting proxy. Allowances are process-local and reset on restart.
 
 ## Testing
 

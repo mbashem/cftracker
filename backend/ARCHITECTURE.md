@@ -4,6 +4,8 @@ This guide describes the backend as implemented in this checkout: its source pat
 
 For configuration and running the service, see [README.md](README.md). For schema deployment and rollback, see [MIGRATION_FLOW.md](MIGRATION_FLOW.md). For verification commands and test database safety, see [TESTING.md](TESTING.md).
 
+For the complete rate-limit design, endpoint policies, timing examples, configuration, and deployment boundaries, see [RATE_LIMITING.md](RATE_LIMITING.md).
+
 ## Contents
 
 - [Source paths and responsibilities](#source-paths-and-responsibilities)
@@ -27,10 +29,12 @@ Paths in this table are relative to `backend/` unless they start with `../`.
 | [`cmd/api/main.go`](cmd/api/main.go) | Application entry point; constructs dependencies, middleware, routes, and HTTP listener. |
 | [`configs/configs.go`](configs/configs.go) | Loads environment and optional `.env`, validates required settings, parses CORS origins and provider timeout. |
 | [`internal/db/db.go`](internal/db/db.go) | Opens PostgreSQL, configures the connection pool, and checks connectivity. |
-| [`internal/routes/routes.go`](internal/routes/routes.go) | Registers public health routes and the auth, user, and list route groups. |
+| [`internal/routes/routes.go`](internal/routes/routes.go) | Registers health and feature route groups; installs authentication and rate limits once on shared groups. |
 | [`internal/health/health_handlers.go`](internal/health/health_handlers.go) | HTTP liveness and a database readiness check with a one-second deadline. |
 | [`internal/health/health_routes.go`](internal/health/health_routes.go) | Declares the public `/health/live` and `/health/ready` routes. |
 | [`internal/middlewares/auth.go`](internal/middlewares/auth.go) | Checks the bearer JWT and stores the verified `int64 userId` in the Gin context. |
+| [`internal/middlewares/rate_limit.go`](internal/middlewares/rate_limit.go) | Applies shared per-user general/write budgets and per-IP authentication budgets; chooses the callback budget from the registered route name. |
+| [`internal/ratelimit/limiter.go`](internal/ratelimit/limiter.go) | Synchronized token buckets, Codeforces cooldown, bounded storage, idle cleanup, and `429` responses. |
 | [`internal/utils/jwt.go`](internal/utils/jwt.go) | Signs and verifies HS256 JWTs. |
 | [`internal/auth/auth_routes.go`](internal/auth/auth_routes.go) | Public GitHub login and callback routes, including compatibility aliases. |
 | [`internal/auth/auth_handlers.go`](internal/auth/auth_handlers.go) | OAuth state cookie, GitHub login, user creation/profile refresh, JWT response. |
@@ -65,8 +69,8 @@ The application performs these steps in `main()`:
 2. Initialize the JWT signing secret.
 3. Open PostgreSQL and ping it with a five-second deadline. The pool allows up to ten open and five idle connections. Failure stops startup.
 4. Construct the shared provider HTTP client and GitHub/Codeforces providers using `EXTERNAL_API_TIMEOUT` (default ten seconds).
-5. Construct repositories from the database connection, then handlers from their repository/provider interfaces. Create one Codeforces token store for this process.
-6. Create Gin with request logging and panic recovery, install CORS, and register all routes.
+5. Construct repositories from the database connection, then handlers from their repository/provider interfaces. Create one Codeforces token store and one shared rate-limit service for this process. Inject the limiter into the user API and route dependencies.
+6. Create Gin with request logging and panic recovery, configure trusted proxies (none by default), install CORS, and register all routes. Protected routes authenticate before applying per-user limits; public authentication routes apply per-IP limits. Health routes are exempt.
 7. Listen on `:<PORT>` (default `8080`). The API listener is HTTP; a hosting reverse proxy can terminate TLS.
 
 Startup does **not** apply migrations or verify that the schema is current. Run the migration deployment step before starting the API.
@@ -82,6 +86,8 @@ classDiagram
     }
     class GinRouter
     class AuthenticateMiddleware
+    class RateLimitMiddleware
+    class RateLimitService
     class JWTUtilities
     class AuthHandler
     class UserAPI
@@ -133,7 +139,10 @@ classDiagram
     Main --> GinRouter : constructs
     Main --> SQLDB : opens pool
     Main --> VerificationTokenStore : creates
+    Main --> RateLimitService : creates shared service
     GinRouter --> AuthenticateMiddleware : protected routes
+    GinRouter --> RateLimitMiddleware : user budgets and auth IP budgets
+    RateLimitMiddleware --> RateLimitService
     AuthenticateMiddleware --> JWTUtilities : verifies JWT
     GinRouter --> AuthHandler : public routes
     GinRouter --> UserAPI : user routes
@@ -147,6 +156,7 @@ classDiagram
     UserAPI --> UserRepository
     UserAPI --> CodeforcesProvider
     UserAPI --> VerificationTokenStore
+    UserAPI --> RateLimitService : before Codeforces calls
     ListAPI --> ListRepository
     ListAPI --> ListItemRepository
     AuthUserRepository <|.. UsersSQLRepository
@@ -167,6 +177,8 @@ classDiagram
 The canonical application prefix is `/api`. Only the two GitHub routes also have aliases without that prefix. `/user/...` and `/lists/...` without `/api` are not registered. `/` returns `404`. Public health probes live under `/health`.
 
 Protected requests require `Authorization: Bearer <JWT>`. Send `Content-Type: application/json` with JSON bodies. Errors from application handlers use `{"error":"message"}`; success messages use `{"message":"message"}`. Gin's default unregistered-route response and middleware responses such as CORS rejection do not necessarily use this JSON envelope.
+
+Application rate-limit rejection returns `429` with `Retry-After` and the JSON error envelope. Authenticated routes share general and write allowances by user ID; login/callback aliases share their respective IP allowances. Verification and historical handle lookups share a per-user Codeforces cooldown checked immediately before the provider call. Health probes are exempt. See [rate limits](README.md#rate-limits) for defaults, configuration, and single-process limitations.
 
 ### Public health routes
 
@@ -545,6 +557,7 @@ The intended hosting request path is browser/frontend â†’ HTTPS reverse proxy â†
 | --- | --- | --- |
 | Users, ownership proof, lists, items | PostgreSQL | Survives API restart; requires the migrated schema and persistent database storage. |
 | Pending CF challenges | API process memory, one-hour validity | Restart loses pending challenges; request a new token afterward. Use shared storage before running multiple API instances. |
+| Rate-limit allowances | API process memory, at most 10,000 identity/policy entries | Restart resets allowances. Idle cleanup runs on traffic. Multiple API instances require shared enforcement; see [rate-limit configuration](README.md#rate-limits). |
 | OAuth state | Browser HttpOnly cookie, ten minutes | Callback requires the same browser cookie. Cross-origin requests include credentials; browser cookie policies still apply. |
 | App JWT | Returned to client, two-hour expiry | Restart with the same secret preserves JWT validity. Expired tokens require login again. |
 | JWT and GitHub secrets | Injected process environment or local `.env` | Required at startup; keep production configuration outside the image/repository. |
@@ -553,7 +566,7 @@ The intended hosting request path is browser/frontend â†’ HTTPS reverse proxy â†
 
 For deployment, apply migrations separately, inject the README's required environment variables, set the frontend API base URL to the reachable API `/api` prefix, configure the exact frontend CORS origin, and register the frontend callback URL in GitHub OAuth settings. Forward `X-Forwarded-Proto: https` from the HTTPS proxy for secure OAuth cookies. The proxy should control that forwarded header. The container exposes port 8080 by default; changing `PORT` also requires matching hosting port configuration.
 
-The service currently has no refresh/revocation API, application rate limiter, background worker, or explicit graceful-shutdown sequence. `gin.Default()` supplies logging/recovery, while `router.Run()` uses the standard server defaults without application-configured read/write/idle timeouts. These are current implementation boundaries, not features supplied by the diagrams. Consult the hosting provider's proxy/process settings when deploying; this guide does not provision infrastructure.
+The service currently has no refresh/revocation API, background worker, or explicit graceful-shutdown sequence. `gin.Default()` supplies logging/recovery, while `router.Run()` uses the standard server defaults without application-configured read/write/idle timeouts. These are current implementation boundaries, not features supplied by the diagrams. Consult the hosting provider's proxy/process settings when deploying; this guide does not provision infrastructure.
 
 ## Code navigation and maintenance
 

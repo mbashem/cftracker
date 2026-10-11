@@ -16,15 +16,20 @@ import (
 type EnvKey string
 
 const (
-	GITHUB_CLIENT_ID     EnvKey = "GITHUB_CLIENT_ID"
-	GITHUB_CLIENT_SECRET EnvKey = "GITHUB_CLIENT_SECRET"
-	GITHUB_REDIRECT_URL  EnvKey = "GITHUB_REDIRECT_URL"
-	DATABASE_URL         EnvKey = "DATABASE_URL"
-	DATABASE_TIMEOUT     EnvKey = "DATABASE_TIMEOUT"
-	JWT_SECRET           EnvKey = "JWT_SECRET"
-	CORS_ALLOWED_ORIGINS EnvKey = "CORS_ALLOWED_ORIGINS"
-	PORT                 EnvKey = "PORT"
-	EXTERNAL_API_TIMEOUT EnvKey = "EXTERNAL_API_TIMEOUT"
+	GITHUB_CLIENT_ID      EnvKey = "GITHUB_CLIENT_ID"
+	GITHUB_CLIENT_SECRET  EnvKey = "GITHUB_CLIENT_SECRET"
+	GITHUB_REDIRECT_URL   EnvKey = "GITHUB_REDIRECT_URL"
+	DATABASE_URL          EnvKey = "DATABASE_URL"
+	DATABASE_TIMEOUT      EnvKey = "DATABASE_TIMEOUT"
+	JWT_SECRET            EnvKey = "JWT_SECRET"
+	CORS_ALLOWED_ORIGINS  EnvKey = "CORS_ALLOWED_ORIGINS"
+	PORT                  EnvKey = "PORT"
+	EXTERNAL_API_TIMEOUT  EnvKey = "EXTERNAL_API_TIMEOUT"
+	API_RATE_PER_MINUTE   EnvKey = "API_RATE_PER_MINUTE"
+	WRITE_RATE_PER_MINUTE EnvKey = "WRITE_RATE_PER_MINUTE"
+	AUTH_RATE_PER_MINUTE  EnvKey = "AUTH_RATE_PER_MINUTE"
+	CODEFORCES_COOLDOWN   EnvKey = "CODEFORCES_COOLDOWN"
+	TRUSTED_PROXIES       EnvKey = "TRUSTED_PROXIES"
 )
 
 const (
@@ -44,6 +49,11 @@ type Config struct {
 	Port               int
 	ExternalAPITimeout time.Duration
 	DatabaseTimeout    time.Duration
+	APIRatePerMinute   int
+	WriteRatePerMinute int
+	AuthRatePerMinute  int
+	CodeforcesCooldown time.Duration
+	TrustedProxies     []string
 }
 
 func Load() (Config, error) {
@@ -96,6 +106,29 @@ func Load() (Config, error) {
 	if err != nil {
 		validationErrors = append(validationErrors, err)
 	}
+	for _, setting := range []struct {
+		key          EnvKey
+		defaultValue int
+		target       *int
+	}{
+		{API_RATE_PER_MINUTE, 60, &config.APIRatePerMinute},
+		{WRITE_RATE_PER_MINUTE, 30, &config.WriteRatePerMinute},
+		{AUTH_RATE_PER_MINUTE, 10, &config.AuthRatePerMinute},
+	} {
+		*setting.target, err = parsePositiveInteger(setting.key, getEnv(setting.key), setting.defaultValue)
+		if err != nil {
+			validationErrors = append(validationErrors, err)
+		}
+	}
+	config.CodeforcesCooldown, err = parseTimeout(CODEFORCES_COOLDOWN, getEnv(CODEFORCES_COOLDOWN), time.Minute)
+	if err != nil {
+		validationErrors = append(validationErrors, err)
+	}
+	if proxies := getEnv(TRUSTED_PROXIES); proxies != "" {
+		for _, proxy := range strings.Split(proxies, ",") {
+			config.TrustedProxies = append(config.TrustedProxies, strings.TrimSpace(proxy))
+		}
+	}
 
 	return config, errors.Join(validationErrors...)
 }
@@ -105,6 +138,17 @@ func LoadDatabaseURL() (string, error) {
 		return "", err
 	}
 	return getEnv(DATABASE_URL), nil
+}
+
+func parsePositiveInteger(envKey EnvKey, value string, fallback int) (int, error) {
+	if value == "" {
+		return fallback, nil
+	}
+	parsed, err := strconv.Atoi(value)
+	if err != nil || parsed <= 0 {
+		return fallback, fmt.Errorf("%s must be a positive integer", envKey)
+	}
+	return parsed, nil
 }
 
 func loadLocalEnv() error {
