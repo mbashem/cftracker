@@ -218,10 +218,26 @@ make run \
 From another terminal, verify that the server responds:
 
 ```sh
-curl -i http://localhost:8080/
+curl -i http://localhost:8080/health/live
+curl -i http://localhost:8080/health/ready
 ```
 
-A `404` response is expected because `/` has no registered route. It confirms that the API connected to PostgreSQL and started without the frontend.
+Liveness returns `200 {"status":"alive"}` when the API can respond. Readiness returns `200 {"status":"ready"}` when the shared database pool can connect, or `503 {"status":"unavailable"}` when that check fails or exceeds one second. `/` still has no registered route.
+
+## Hosting Health Checks
+
+Both health routes are public and require no bearer token or cookie:
+
+| Platform setting | Path | Behavior |
+| --- | --- | --- |
+| Liveness / restart probe | `/health/live` | Checks the HTTP process without contacting PostgreSQL. |
+| Readiness / traffic-routing probe | `/health/ready` | Uses `PingContext` on the application's shared database pool with a one-second deadline, including pool waits. |
+
+Use a probe timeout of three seconds so the readiness handler can return its `503` before the platform gives up. A starting probe interval is 30 seconds, with three consecutive failures and a ten-second startup grace period. Configure these paths in the hosting platform's health-check settings; creating the HTTP routes alone does not configure traffic routing. If the platform exposes only one health-check path, use `/health/ready` and check whether failure removes traffic, restarts the process, or both. Keep a separate liveness probe independent of database availability where supported.
+
+The Docker image declares a [Docker `HEALTHCHECK`](https://docs.docker.com/reference/dockerfile/#healthcheck) against `/health/ready` with those probe settings. It uses the configured `PORT` (default `8080`). Docker reports container health; automatic traffic removal and restart behavior depend on the hosting platform, and some platforms require their own explicit HTTP probe settings.
+
+Readiness checks database connectivity, not migration state or GitHub/Codeforces availability. Continue applying migrations before starting the API. Health responses do not expose connection strings or database errors.
 
 ## API
 

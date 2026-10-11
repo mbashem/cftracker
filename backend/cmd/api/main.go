@@ -10,6 +10,7 @@ import (
 	"github.com/mbashem/cftracker/backend/configs"
 	"github.com/mbashem/cftracker/backend/internal/auth"
 	"github.com/mbashem/cftracker/backend/internal/db"
+	"github.com/mbashem/cftracker/backend/internal/health"
 	"github.com/mbashem/cftracker/backend/internal/lists"
 	"github.com/mbashem/cftracker/backend/internal/lists/items"
 	"github.com/mbashem/cftracker/backend/internal/routes"
@@ -53,9 +54,10 @@ func main() {
 	router.Use(cors.New(corsConfig))
 
 	routes.RegisterRoutes(router, routes.Dependencies{
-		Auth:  authHandler,
-		Users: userAPI,
-		Lists: listAPI,
+		Health: health.NewAPI(database),
+		Auth:   authHandler,
+		Users:  userAPI,
+		Lists:  listAPI,
 	})
 
 	if err := router.Run(fmt.Sprintf(":%d", config.Port)); err != nil {

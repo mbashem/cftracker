@@ -10,6 +10,11 @@ import (
 // process memory. The app currently runs as a single instance, and losing a
 // pending token on restart is an accepted tradeoff. Use shared storage before
 // running multiple backend instances.
+//
+// Expired tokens are removed only when the same user/handle pair is read again;
+// repeatedly changing handles can leave entries allocated until process restart.
+// We accept this retention for the expected small user base and keep cleanup
+// simple for now. Revisit expiration cleanup and per-user limits if usage grows.
 type VerificationTokenStore struct {
 	mu     sync.Mutex
 	tokens map[verificationTokenKey]verificationToken

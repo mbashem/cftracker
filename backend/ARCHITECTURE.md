@@ -27,7 +27,9 @@ Paths in this table are relative to `backend/` unless they start with `../`.
 | [`cmd/api/main.go`](cmd/api/main.go) | Application entry point; constructs dependencies, middleware, routes, and HTTP listener. |
 | [`configs/configs.go`](configs/configs.go) | Loads environment and optional `.env`, validates required settings, parses CORS origins and provider timeout. |
 | [`internal/db/db.go`](internal/db/db.go) | Opens PostgreSQL, configures the connection pool, and checks connectivity. |
-| [`internal/routes/routes.go`](internal/routes/routes.go) | Registers the auth, user, and list route groups. |
+| [`internal/routes/routes.go`](internal/routes/routes.go) | Registers public health routes and the auth, user, and list route groups. |
+| [`internal/health/health_handlers.go`](internal/health/health_handlers.go) | HTTP liveness and a database readiness check with a one-second deadline. |
+| [`internal/health/health_routes.go`](internal/health/health_routes.go) | Declares the public `/health/live` and `/health/ready` routes. |
 | [`internal/middlewares/auth.go`](internal/middlewares/auth.go) | Checks the bearer JWT and stores the verified `int64 userId` in the Gin context. |
 | [`internal/utils/jwt.go`](internal/utils/jwt.go) | Signs and verifies HS256 JWTs. |
 | [`internal/auth/auth_routes.go`](internal/auth/auth_routes.go) | Public GitHub login and callback routes, including compatibility aliases. |
@@ -84,6 +86,14 @@ classDiagram
     class AuthHandler
     class UserAPI
     class ListAPI
+    class HealthAPI {
+        Live()
+        Ready()
+    }
+    class DatabasePinger {
+        <<interface>>
+        PingContext()
+    }
     class AuthUserRepository {
         <<interface>>
         FindByGitHubID()
@@ -128,6 +138,9 @@ classDiagram
     GinRouter --> AuthHandler : public routes
     GinRouter --> UserAPI : user routes
     GinRouter --> ListAPI : list routes
+    GinRouter --> HealthAPI : public health probes
+    HealthAPI --> DatabasePinger : readiness only
+    DatabasePinger <|.. SQLDB
     AuthHandler --> JWTUtilities : signs JWT
     AuthHandler --> AuthUserRepository
     AuthHandler --> GitHubProvider
@@ -151,9 +164,18 @@ classDiagram
 
 ## HTTP routes and contracts
 
-The canonical prefix is `/api`. Only the two GitHub routes also have aliases without that prefix. `/user/...` and `/lists/...` without `/api` are not registered. `/` returns `404`; there is no health-check endpoint.
+The canonical application prefix is `/api`. Only the two GitHub routes also have aliases without that prefix. `/user/...` and `/lists/...` without `/api` are not registered. `/` returns `404`. Public health probes live under `/health`.
 
 Protected requests require `Authorization: Bearer <JWT>`. Send `Content-Type: application/json` with JSON bodies. Errors from application handlers use `{"error":"message"}`; success messages use `{"message":"message"}`. Gin's default unregistered-route response and middleware responses such as CORS rejection do not necessarily use this JSON envelope.
+
+### Public health routes
+
+| Method and path | Success | Failure |
+| --- | --- | --- |
+| `GET /health/live` | `200 {"status":"alive"}`; no database access. | Process/network failures prevent a response. |
+| `GET /health/ready` | `200 {"status":"ready"}` after the shared database pool responds to `PingContext`. | `503 {"status":"unavailable"}` on database failure, cancellation, or a one-second deadline, including pool waits. |
+
+Neither route requires authentication. Both disable caching with `Cache-Control: no-store`. Readiness inherits request cancellation and any earlier request deadline. It checks connectivity, not migration state or external providers. The Docker health check uses readiness; configure the hosting platform's liveness and readiness probes as described in [README.md](README.md#hosting-health-checks).
 
 ### Public authentication routes
 
@@ -531,7 +553,7 @@ The intended hosting request path is browser/frontend â†’ HTTPS reverse proxy â†
 
 For deployment, apply migrations separately, inject the README's required environment variables, set the frontend API base URL to the reachable API `/api` prefix, configure the exact frontend CORS origin, and register the frontend callback URL in GitHub OAuth settings. Forward `X-Forwarded-Proto: https` from the HTTPS proxy for secure OAuth cookies. The proxy should control that forwarded header. The container exposes port 8080 by default; changing `PORT` also requires matching hosting port configuration.
 
-The service currently has no dedicated readiness/liveness route, refresh/revocation API, application rate limiter, background worker, or explicit graceful-shutdown sequence. `gin.Default()` supplies logging/recovery, while `router.Run()` uses the standard server defaults without application-configured read/write/idle timeouts. These are current implementation boundaries, not features supplied by the diagrams. Consult the hosting provider's proxy/process settings when deploying; this guide does not provision infrastructure.
+The service currently has no refresh/revocation API, application rate limiter, background worker, or explicit graceful-shutdown sequence. `gin.Default()` supplies logging/recovery, while `router.Run()` uses the standard server defaults without application-configured read/write/idle timeouts. These are current implementation boundaries, not features supplied by the diagrams. Consult the hosting provider's proxy/process settings when deploying; this guide does not provision infrastructure.
 
 ## Code navigation and maintenance
 
