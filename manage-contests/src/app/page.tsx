@@ -7,14 +7,13 @@ import { Button, Container, Paper, Stack } from "@mui/material";
 import {
   createOrUpdateProblem,
   deleteAllProblems,
-  getAllProblems,
 } from "@/features/problems/services/ProblemDBService";
-import { readFileSync, writeFileSync } from "fs";
+import { readFileSync } from "fs";
 import {
   createOrUpdateSharedContest,
   deleteAllSharedContests,
-  getAllSharedContests,
 } from "@/features/shared-contests/services/SharedContestsDBService";
+import { saveDatabaseSnapshot } from "@/features/database/services/DatabaseSnapshotService";
 import { fetchAndSaveProblemsByContestId } from "@/features/problems/services/ProblemService";
 import { isError } from "@/utils/result";
 import { sleep } from "@/utils/utils";
@@ -37,19 +36,11 @@ export default function Home() {
   const saveDB = async () => {
     "use server";
     console.log("Server: saving DB");
-    const problemsResult = await getAllProblems();
-    if (isError(problemsResult)) {
-      console.error("Unable to load problems for the database snapshot", problemsResult.error);
+    const snapshotResult = await saveDatabaseSnapshot();
+    if (isError(snapshotResult)) {
+      console.error("Unable to save database snapshot", snapshotResult.error);
       return;
     }
-    writeFileSync("src/saved-db/problems.json", JSON.stringify(problemsResult.value));
-
-    const contests = await getAllContests();
-    writeFileSync("src/saved-db/contests.json", JSON.stringify(contests));
-
-    const sharedContests = await getAllSharedContests();
-    writeFileSync("src/saved-db/shared-contests.json", JSON.stringify(sharedContests));
-
     console.log("Server: saved DB");
   };
 

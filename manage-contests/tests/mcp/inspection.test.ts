@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
@@ -16,6 +16,7 @@ import {
 	syncSharedContestGroup
 } from "../../src/features/shared-contests/services/GroupContestService";
 import { writeRelatedJsonFile } from "../../src/features/shared-contests/services/RelatedFileService";
+import { saveDatabaseSnapshot } from "../../src/features/database/services/DatabaseSnapshotService";
 import { err, isError, ok, type AppError } from "../../src/utils/result";
 
 const toolNames = [
@@ -25,7 +26,8 @@ const toolNames = [
 	"list_ungrouped_contests",
 	"list_problems",
 	"list_shared_contest_groups",
-	"write_related_ts"
+	"write_related_ts",
+	"save_db"
 ] as const;
 
 type ToolName = typeof toolNames[number];
@@ -110,7 +112,8 @@ class FakeManageContestsServices {
 		list_ungrouped_contests: 0,
 		list_problems: 0,
 		list_shared_contest_groups: 0,
-		write_related_ts: 0
+		write_related_ts: 0,
+		save_db: 0
 	};
 	writtenOutputPath?: string;
 	nextError?: AppError;
@@ -279,6 +282,17 @@ class FakeManageContestsServices {
 			return ok({
 				outputPath: this.writtenOutputPath,
 				relatedProblemCount: this.problems.size
+			});
+		},
+		saveDatabaseSnapshot: async () => {
+			const failure = this.startCall("save_db");
+			if (failure) return failure;
+
+			return ok({
+				outputDirectory: "src/saved-db",
+				contestCount: this.contests.size,
+				problemCount: this.problems.size,
+				sharedContestCount: this.mappings.size
 			});
 		}
 	};
@@ -471,6 +485,19 @@ const expectedTools = [
 		outputSchema: rootObjectSchema({
 			outputPath: { type: "string" },
 			relatedProblemCount: nonnegativeIntegerSchema
+		}),
+		annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: false }
+	},
+	{
+		name: "save_db",
+		title: "Save database snapshot",
+		description: "Write the current contests, problems, and shared-contest mappings to src/saved-db/ as JSON snapshots.",
+		inputSchema: emptyInputSchema,
+		outputSchema: rootObjectSchema({
+			outputDirectory: { type: "string" },
+			contestCount: nonnegativeIntegerSchema,
+			problemCount: nonnegativeIntegerSchema,
+			sharedContestCount: nonnegativeIntegerSchema
 		}),
 		annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: false }
 	}
@@ -975,6 +1002,18 @@ async function verifyWorkflow(serverUrl: string, services: FakeManageContestsSer
 	assert.deepEqual(firstWrite, { outputPath, relatedProblemCount: problemCount });
 	assert.deepEqual(repeatedWrite, firstWrite);
 	assert.equal(services.writtenOutputPath, outputPath);
+
+	const savedSnapshot = successfulContent(
+		await callTool(serverUrl, "save_db", {}),
+		`Saved ${services.contests.size} contests, ${problemCount} problems, and ${services.mappings.size} shared-contest mappings to src/saved-db.`
+	);
+	assert.deepEqual(savedSnapshot, {
+		outputDirectory: "src/saved-db",
+		contestCount: services.contests.size,
+		problemCount,
+		sharedContestCount: services.mappings.size
+	});
+	assert.deepEqual(successfulContent(await callTool(serverUrl, "save_db", {})), savedSnapshot);
 }
 
 async function verifyEveryToolFailure(serverUrl: string, services: FakeManageContestsServices) {
@@ -1017,6 +1056,11 @@ async function verifyEveryToolFailure(serverUrl: string, services: FakeManageCon
 			toolName: "write_related_ts",
 			arguments: {},
 			error: { code: "FILESYSTEM_ERROR", publicMessage: "Could not write related.json", retryable: true }
+		},
+		{
+			toolName: "save_db",
+			arguments: {},
+			error: { code: "FILESYSTEM_ERROR", publicMessage: "Could not write database snapshot", retryable: true }
 		}
 	];
 
@@ -1174,7 +1218,8 @@ async function verifyNoInputToolsRejectArguments(
 		"sync_contests",
 		"list_ungrouped_contests",
 		"list_problems",
-		"list_shared_contest_groups"
+		"list_shared_contest_groups",
+		"save_db"
 	];
 
 	for (const toolName of noInputTools) {
@@ -1232,6 +1277,64 @@ async function verifyTemporaryFileWriting() {
 	}
 }
 
+async function verifyDatabaseSnapshotWriting() {
+	const outputDirectory = await mkdtemp(join(tmpdir(), "cftracker-db-snapshot-"));
+	const contests = [{ contestId: 101, name: "Codeforces Round 101" }];
+	const problems = [{ contestId: 101, index: "A", name: "First A", rating: null }];
+	const sharedContests = [{ contestId: 101, parentContestId: 101 }];
+	const dependencies = {
+		getContests: async () => contests,
+		getProblems: async () => ok(problems),
+		getSharedContests: async () => sharedContests,
+		writeFile: async (path: string, contents: string) => writeFile(path, contents, "utf8")
+	};
+
+	try {
+		const first = await saveDatabaseSnapshot(outputDirectory, dependencies);
+		if (isError(first)) assert.fail(first.error.publicMessage);
+		assert.deepEqual(first.value, {
+			outputDirectory,
+			contestCount: 1,
+			problemCount: 1,
+			sharedContestCount: 1
+		});
+		assert.deepEqual(JSON.parse(await readFile(join(outputDirectory, "contests.json"), "utf8")), contests);
+		assert.deepEqual(JSON.parse(await readFile(join(outputDirectory, "problems.json"), "utf8")), problems);
+		assert.deepEqual(JSON.parse(await readFile(join(outputDirectory, "shared-contests.json"), "utf8")), sharedContests);
+
+		const repeated = await saveDatabaseSnapshot(outputDirectory, dependencies);
+		assert.deepEqual(repeated, first);
+
+		let wroteFile = false;
+		const databaseFailure = await saveDatabaseSnapshot(outputDirectory, {
+			...dependencies,
+			getProblems: async () => err({
+				code: "DATABASE_ERROR",
+				publicMessage: "Unable to load problems.",
+				retryable: true
+			}),
+			writeFile: async () => { wroteFile = true; }
+		});
+		assert.equal(wroteFile, false);
+		assert.deepEqual(databaseFailure, err({
+			code: "DATABASE_ERROR",
+			publicMessage: "Unable to load problems.",
+			retryable: true
+		}));
+
+		const writeFailure = await suppressExpectedErrorLog(() =>
+			saveDatabaseSnapshot(join(outputDirectory, "missing"), dependencies)
+		);
+		assert.deepEqual(writeFailure, err({
+			code: "FILESYSTEM_ERROR",
+			publicMessage: "Could not write the database snapshot.",
+			retryable: true
+		}));
+	} finally {
+		await rm(outputDirectory, { recursive: true, force: true });
+	}
+}
+
 async function main() {
 	const services = new FakeManageContestsServices();
 	const testServer = await startTestServer(services.dependencies);
@@ -1242,6 +1345,7 @@ async function main() {
 		await verifyEveryToolFailure(testServer.url, services);
 		await verifyNoInputToolsRejectArguments(testServer.url, services);
 		await verifyTemporaryFileWriting();
+		await verifyDatabaseSnapshotWriting();
 	} finally {
 		await testServer.close();
 	}

@@ -2,6 +2,7 @@ import type { CallToolResult, McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 import { isError } from "@/utils/result";
 import type { AppError, Result } from "@/utils/result";
+import type { DatabaseSnapshotResult } from "@/features/database/services/DatabaseSnapshotService";
 
 type Contest = {
 	contestId: number;
@@ -51,6 +52,7 @@ export type ManageContestsMcpDependencies = {
 		outputPath: string;
 		relatedProblemCount: number;
 	}>>;
+	saveDatabaseSnapshot: () => Promise<Result<DatabaseSnapshotResult>>;
 };
 
 export const MANAGE_CONTESTS_MCP_INSTRUCTIONS = `Use this server to process a newly concluded shared Codeforces contest or resume that workflow in the same conversation.
@@ -59,7 +61,9 @@ Call tools sequentially, never in parallel. A notification that a contest conclu
 
 Present one non-empty contestIds array with IDs and names sorted ascending and ask the operator to confirm that every listed contest belongs to the same group. For a new group, omit parentContestId and state that the smallest ID will be the parent. To add the confirmed contests to an existing group, pass its self-mapped parent as parentContestId. Never call sync_shared_contest_group before confirmation. After confirmation, call sync_shared_contest_group once, then call write_related_ts, using its default path unless the operator supplied a path. The composite tool owns mapping order, two-second waits, and serial problem synchronization; do not reproduce those operations with the standalone sync_contest_problems tool.
 
-Stop immediately after the first tool error and do not run later steps. Keep the confirmed contestIds, optional parentContestId, and first incomplete tool in the conversation. On same-conversation resume, repeat sync_shared_contest_group with the same arguments if it failed or was uncertain, or retry only write_related_ts if group synchronization completed. Ask for confirmation again only if either grouping argument changed.`;
+Stop immediately after the first tool error and do not run later steps. Keep the confirmed contestIds, optional parentContestId, and first incomplete tool in the conversation. On same-conversation resume, repeat sync_shared_contest_group with the same arguments if it failed or was uncertain, or retry only write_related_ts if group synchronization completed. Ask for confirmation again only if either grouping argument changed.
+
+When the operator separately requests a saved database snapshot, call save_db to write contests, problems, and shared-contest mappings to src/saved-db/.`;
 
 const emptyInputSchema = z.object({}).strict();
 const contestIdSchema = z.number().int().positive();
@@ -421,6 +425,40 @@ export function registerManageContestsTools(
 					structuredContent: output
 				};
 				}
+			);
+		}
+	);
+
+	server.registerTool(
+		"save_db",
+		{
+			title: "Save database snapshot",
+			description: "Write the current contests, problems, and shared-contest mappings to src/saved-db/ as JSON snapshots.",
+			inputSchema: emptyInputSchema,
+			outputSchema: z.object({
+				outputDirectory: z.string(),
+				contestCount: z.number().int().nonnegative(),
+				problemCount: z.number().int().nonnegative(),
+				sharedContestCount: z.number().int().nonnegative()
+			}),
+			annotations: {
+				readOnlyHint: false,
+				destructiveHint: true,
+				idempotentHint: true,
+				openWorldHint: false
+			}
+		},
+		async () => {
+			return runTool(
+				"save_db",
+				dependencies.saveDatabaseSnapshot,
+				(output) => ({
+					content: [{
+						type: "text" as const,
+						text: `Saved ${output.contestCount} contests, ${output.problemCount} problems, and ${output.sharedContestCount} shared-contest mappings to ${output.outputDirectory}.`
+					}],
+					structuredContent: output
+				})
 			);
 		}
 	);

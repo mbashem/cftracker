@@ -92,6 +92,7 @@ The endpoint currently exposes these tools:
 | `list_problems` | Return all saved problems. | None |
 | `list_shared_contest_groups` | Return shared groups with contest and problem details. | None |
 | `write_related_ts` | Generate and write plain JSON to `related.json` by default or the supplied path. The tool identifier is retained for compatibility. | Optional `outputPath` |
+| `save_db` | Write the current contests, problems, and shared-contest mappings to `src/saved-db/`. | None |
 
 `sync_shared_contest_group` accepts exactly one operator-confirmed group. It sorts the IDs and creates every mapping serially, then waits two seconds immediately before each supplied contest's serial problem synchronization. Omit `parentContestId` to create a group using the smallest supplied ID as parent. To merge one or more new children into an existing group, supply its self-mapped `parentContestId`; it may be numerically higher or lower than its children. For example: `{ "contestIds": [2131], "parentContestId": 2129 }`. A one-ID array without `parentContestId` remains valid and creates a self-mapping.
 
@@ -112,7 +113,8 @@ Each call depends on the preceding call. If a tool returns an error, stop the wo
 ### Implementation structure
 
 - `src/app/api/mcp/route.ts` creates the HTTP handler and supplies the real application services.
-- `src/features/mcp/McpServer.ts` defines the seven tool contracts and accepts its service dependencies explicitly.
+- `src/features/mcp/McpServer.ts` defines the eight tool contracts and accepts its service dependencies explicitly.
+- `src/features/database/services/DatabaseSnapshotService.ts` shares the snapshot-writing logic between the MCP tool and admin UI.
 - `src/features/shared-contests/services/GroupContestService.ts` owns confirmed-group mapping, the two-second pre-fetch delay, and serial problem synchronization.
 - Service boundaries return `Result<T>` for expected Codeforces, database, validation, and filesystem failures.
 - The MCP boundary converts a failed result into `isError: true` with a JSON text payload containing `code`, `message`, and `retryable`.
@@ -124,7 +126,7 @@ Keep business logic in the existing services. MCP tools should remain thin adapt
 
 ### Automatic Inspector test
 
-The automatic suite starts a random-port HTTP server using the production MCP tool registration and stateful in-memory service implementations. It then invokes the official MCP Inspector CLI as an external process. It does not require Next.js, PostgreSQL, `DATABASE_URL`, Codeforces access, or real file writes.
+The automatic suite starts a random-port HTTP server using the production MCP tool registration and stateful in-memory service implementations. It then invokes the official MCP Inspector CLI as an external process. It also checks snapshot writing in a temporary directory. It does not require Next.js, PostgreSQL, `DATABASE_URL`, or Codeforces access, and it does not change the repository's saved data.
 
 ```bash
 cd manage-contests
