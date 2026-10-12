@@ -9,6 +9,7 @@ import { fetchAndSaveProblemsByContestId } from "@/features/problems/services/Pr
 import { syncSharedContestGroup } from "@/features/shared-contests/services/GroupContestService";
 import { writeRelatedJson } from "@/features/shared-contests/services/RelatedFileService";
 import { getAllSharedContestGroupsWithDetails } from "@/features/shared-contests/services/SharedContestsDBService";
+import { saveDatabaseSnapshot } from "@/features/database/services/DatabaseSnapshotService";
 
 export const runtime = "nodejs";
 
@@ -20,7 +21,8 @@ const handler = createMcpHandler((server) => {
 		listUngroupedContests: getAllUngroupedContests,
 		listProblems: getAllProblems,
 		listSharedContestGroups: getAllSharedContestGroupsWithDetails,
-		writeRelatedJson
+		writeRelatedJson,
+		saveDatabaseSnapshot: () => saveDatabaseSnapshot()
 	});
 }, {
 	serverInfo: {

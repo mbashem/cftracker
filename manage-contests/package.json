@@ -11,7 +11,7 @@
     "start": "next start",
     "lint": "node --experimental-strip-types node_modules/eslint/bin/eslint.js --flag unstable_native_nodejs_ts_config",
     "typecheck": "tsc --noEmit",
-    "test:mcp:inspection": "node --conditions=react-server --import tsx tests/mcp/inspection.ts"
+    "test:mcp:inspection": "node --conditions=react-server --import tsx tests/mcp/inspection.test.ts"
   },
   "dependencies": {
     "@emotion/cache": "^11.14.0",
