@@ -37,7 +37,10 @@ Changing a JWT, Codeforces handle, route alias, or list ID does not reset the co
 ```mermaid
 flowchart TD
     Request[Incoming request] --> CORS[Global CORS middleware]
-    CORS --> Route{Registered route group}
+    CORS --> Body[Global request-body cap]
+    Body --> BodyAllowed{At most 16 KiB?}
+    BodyAllowed -->|No| TooLarge[413: no rate allowance consumed]
+    BodyAllowed -->|Yes| Route{Registered route group}
     Route -->|Health| Health[Health handler: no rate-limit check]
     Route -->|Authentication| IP[Determine client IP]
     IP --> AuthPolicy{Registered route ends in callback?}
@@ -247,7 +250,7 @@ The service reserves a token to calculate an exact retry delay. A delayed reserv
 | Large stored dataset or response | Rate limiting does not enforce account quotas or pagination |
 | Health probes | Exempt from application rate limits; readiness retains its separate bounded database check |
 
-For multiple instances, move allowances to shared enforcement such as a shared store or hosting proxy. A proxy can also apply broader IP/connection protections before requests reach the Go process. Application rate limits complement request-size validation, storage quotas, bounded retrieval, database deadlines, and provider timeouts.
+For multiple instances, move allowances to shared enforcement such as a shared store or hosting proxy. A proxy can also apply broader IP/connection protections before requests reach the Go process. Application rate limits complement request-size validation, storage quotas, database deadlines, and provider timeouts. The implemented body cap and write-time name/storage bounds are described in [USAGE_LIMITS.md](USAGE_LIMITS.md).
 
 ## Code and verification map
 

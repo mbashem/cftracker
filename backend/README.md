@@ -49,6 +49,8 @@ Five seconds is a conservative starting value for this API's small CRUD operatio
 
 ## Rate limits
 
+Request bodies, list-name writes, and account/item creation are also bounded. See [USAGE_LIMITS.md](USAGE_LIMITS.md) for the 16 KiB body cap, 100-character names, 20-list/1,000-item quotas, concurrency guarantees, and existing-data checks. Reads return complete stored data and rely on write-time quotas for collection size.
+
 See [RATE_LIMITING.md](RATE_LIMITING.md) for the complete policy table, request-flow and sequence diagrams, token-bucket examples, endpoint coverage, configuration, client-IP handling, cleanup, and deployment limitations.
 
 Defaults are 60 requests/minute per user for general traffic, 30/minute for writes, ten/minute per IP separately for login and callback, and one Codeforces attempt per user every 60 seconds. Ordinary traffic allows a burst of ten. Rejections return `429` with `Retry-After`; health probes are exempt. Configure `TRUSTED_PROXIES` for your actual hosting proxy. Allowances are process-local and reset on restart.

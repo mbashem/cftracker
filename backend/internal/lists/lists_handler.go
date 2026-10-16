@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/mbashem/cftracker/backend/internal/limits"
 	"github.com/mbashem/cftracker/backend/internal/lists/items"
 	"github.com/mbashem/cftracker/backend/internal/middlewares"
 )
@@ -68,14 +69,13 @@ func (api *API) CreateListHandler(context *gin.Context) {
 		context.JSON(http.StatusBadRequest, gin.H{"error": invalidFormat})
 		return
 	}
-	request.Name = strings.TrimSpace(request.Name)
-	if request.Name == "" {
+	name, err := limits.NormalizeListName(request.Name)
+	if err != nil {
 		context.JSON(http.StatusBadRequest, gin.H{"error": invalidFormat})
 		return
 	}
 
-	// TODO: LIMIT number of list a user can create
-	list := List{Name: request.Name}
+	list := List{Name: name}
 	if err := api.listRepository.Create(context.Request.Context(), userId, &list); err != nil {
 		writeListRepositoryError(context, err, failedToCreateList)
 		return
@@ -96,13 +96,13 @@ func (api *API) UpdateListNameHandler(context *gin.Context) {
 		context.JSON(http.StatusBadRequest, gin.H{"error": invalidFormat})
 		return
 	}
-	request.Name = strings.TrimSpace(request.Name)
-	if request.Name == "" {
+	name, err := limits.NormalizeListName(request.Name)
+	if err != nil {
 		context.JSON(http.StatusBadRequest, gin.H{"error": invalidFormat})
 		return
 	}
 
-	list := &List{Id: listId, Name: request.Name}
+	list := &List{Id: listId, Name: name}
 	if err := api.listRepository.UpdateName(context.Request.Context(), userId, list); err != nil {
 		writeListRepositoryError(context, err, failedToUpdateList)
 		return
@@ -227,6 +227,16 @@ func parseListId(context *gin.Context) (int64, bool) {
 }
 
 func writeListRepositoryError(context *gin.Context, err error, clientMessage API_MESSAGE) {
+	if errors.Is(err, limits.ErrInvalidListName) {
+		context.JSON(http.StatusBadRequest, gin.H{"error": limits.ErrInvalidListName.Error()})
+		return
+	}
+	for _, limitError := range []error{limits.ErrListQuota, limits.ErrItemQuota} {
+		if errors.Is(err, limitError) {
+			context.JSON(http.StatusConflict, gin.H{"error": limitError.Error()})
+			return
+		}
+	}
 	if errors.Is(err, ErrListNotFound) || errors.Is(err, items.ErrListNotFound) {
 		context.JSON(http.StatusNotFound, gin.H{"error": listDoesNotExist})
 		return

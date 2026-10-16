@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"errors"
 	"time"
+
+	"github.com/mbashem/cftracker/backend/internal/limits"
 )
 
 var ErrListNotFound = errors.New("list not found")
@@ -36,6 +38,25 @@ func (repository *Repository) GetItems(ctx context.Context, userId int64, listId
 func (repository *Repository) Create(ctx context.Context, userId int64, item *ListItem) error {
 	ctx, cancel := context.WithTimeout(ctx, repository.timeout)
 	defer cancel()
+	transaction, err := repository.db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
+	if err != nil {
+		return err
+	}
+	defer transaction.Rollback()
+	// Lock the owned parent before counting to serialize concurrent item inserts.
+	var ownedListID int64
+	if err := transaction.QueryRowContext(ctx, `SELECT id FROM lists WHERE id = $1 AND user_id = $2 FOR UPDATE`, item.ListId, userId).Scan(&ownedListID); err != nil {
+		return listQueryError(err)
+	}
+	var count int
+	if err := transaction.QueryRowContext(ctx, `SELECT COUNT(*) FROM (
+		SELECT 1 FROM list_items WHERE list_id = $1 LIMIT $2
+	) AS stored_items`, ownedListID, limits.ItemsPerList).Scan(&count); err != nil {
+		return err
+	}
+	if count >= limits.ItemsPerList {
+		return limits.ErrItemQuota
+	}
 	query := `
 		INSERT INTO list_items (list_id, problem_id, position)
 		SELECT id, $2, $3
@@ -43,13 +64,16 @@ func (repository *Repository) Create(ctx context.Context, userId int64, item *Li
 		WHERE id = $1 AND user_id = $4
 		RETURNING list_id, created_at
 	`
-	return listQueryError(repository.db.QueryRowContext(ctx,
+	if err := listQueryError(transaction.QueryRowContext(ctx,
 		query,
 		item.ListId,
 		item.ProblemId,
 		item.Position,
 		userId,
-	).Scan(&item.ListId, &item.CreatedAt))
+	).Scan(&item.ListId, &item.CreatedAt)); err != nil {
+		return err
+	}
+	return transaction.Commit()
 }
 
 // Delete a problem from a list
@@ -124,6 +148,7 @@ func (repository *Repository) GetListItems(ctx context.Context, userId int64, li
 		FROM lists
 		LEFT JOIN list_items ON list_items.list_id = lists.id
 		WHERE lists.id = $1 AND lists.user_id = $2
+		ORDER BY list_items.position, list_items.created_at, list_items.problem_id
 	`
 	rows, err := repository.db.QueryContext(ctx, query, listId, userId)
 	if err != nil {

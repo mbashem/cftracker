@@ -6,6 +6,8 @@ For configuration and running the service, see [README.md](README.md). For schem
 
 For the complete rate-limit design, endpoint policies, timing examples, configuration, and deployment boundaries, see [RATE_LIMITING.md](RATE_LIMITING.md).
 
+For request-body and name limits, transactional storage quotas, complete collection reads, and existing-data handling, see [USAGE_LIMITS.md](USAGE_LIMITS.md).
+
 ## Contents
 
 - [Source paths and responsibilities](#source-paths-and-responsibilities)
@@ -237,9 +239,9 @@ Every route requires a JWT. For list-specific operations, a missing list and a l
 | `PUT /api/lists/:listId/item` | `{"problem_id":"1900A", "position":0}` | `201 {"message":"Successfully added item to list", "item": ListItem}` |
 | `DELETE /api/lists/:listId/item/:itemId` | `itemId` is the problem ID string, **not** a numeric row ID. | `200 {"message":"Item deleted from list"}` |
 
-Names are required and trimmed; empty names return `400 {"error":"Invalid format"}`. Adding an item requires a nonempty trimmed `problem_id` (binding maximum 100 characters) and an explicitly supplied integer `position >= 0`; invalid bodies return the same `400`. URL-encode problem IDs when constructing item paths.
+Names are required and trimmed; empty names and names longer than 100 Unicode characters return `400 {"error":"Invalid format"}`. Adding an item requires a nonempty trimmed `problem_id` (binding maximum 100 characters) and an explicitly supplied integer `position >= 0`; invalid bodies return the same `400`. All request bodies are capped at 16 KiB before JSON decoding; oversized bodies return `413`. URL-encode problem IDs when constructing item paths.
 
-An item PUT inserts a row; it is not an upsert. Duplicate `(list_id, problem_id)` or duplicate `(user_id, name)` constraints currently become generic `500` operation failures, not `409`. Removing an absent item from an existing owned list succeeds. There is no registered reorder route, pagination, list-count limit, problem metadata lookup, or Codeforces ownership requirement for using lists. List IDs are parsed as signed 64-bit integers; zero/negative IDs normally reach the repository and produce `404`.
+An item PUT inserts a row; it is not an upsert. Duplicate `(list_id, problem_id)` or duplicate `(user_id, name)` constraints currently become generic `500` operation failures when below quota. Quota failures return `409` and take precedence when capacity is exhausted. Removing an absent item from an existing owned list succeeds. Accounts can hold at most 20 lists, each with at most 1,000 items, enforced by transactional parent-row locks and bounded counts. Names contain 1–100 Unicode characters after trimming. Reads return full names and complete collections without read-time limits. Collection sizes rely on write-time quotas; existing data and direct SQL/imports must satisfy those invariants. See [usage limits](USAGE_LIMITS.md). There is no registered reorder route, pagination, problem metadata lookup, or Codeforces ownership requirement for using lists. List IDs are parsed as signed 64-bit integers; zero/negative IDs normally reach the repository and produce `404`.
 
 ### JSON models
 

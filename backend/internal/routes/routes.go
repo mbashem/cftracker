@@ -19,6 +19,7 @@ type Dependencies struct {
 }
 
 func RegisterRoutes(server *gin.Engine, dependencies Dependencies) {
+	server.Use(middlewares.LimitRequestBody)
 	health.RegisterRoutes(server, dependencies.Health)
 	authentication := server.Group("")
 	protected := server.Group("/api", middlewares.Authenticate)
