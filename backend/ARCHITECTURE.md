@@ -30,6 +30,8 @@ Paths in this table are relative to `backend/` unless they start with `../`.
 | --- | --- |
 | [`cmd/api/main.go`](cmd/api/main.go) | Application entry point; constructs dependencies, middleware, routes, and HTTP listener. |
 | [`configs/configs.go`](configs/configs.go) | Loads environment and optional `.env`, validates required settings, parses CORS origins and provider timeout. |
+| [`configs/http_server.go`](configs/http_server.go) | Parses positive HTTP socket and shutdown timeouts with defaults. |
+| [`internal/server/server.go`](internal/server/server.go) | Configures `http.Server`, drains active requests, and force-closes connections if shutdown fails. |
 | [`internal/db/db.go`](internal/db/db.go) | Opens PostgreSQL, configures the connection pool, and checks connectivity. |
 | [`internal/routes/routes.go`](internal/routes/routes.go) | Registers health and feature route groups; installs authentication and rate limits once on shared groups. |
 | [`internal/health/health_handlers.go`](internal/health/health_handlers.go) | HTTP liveness and a database readiness check with a one-second deadline. |
@@ -73,7 +75,7 @@ The application performs these steps in `main()`:
 4. Construct the shared provider HTTP client and GitHub/Codeforces providers using `EXTERNAL_API_TIMEOUT` (default ten seconds).
 5. Construct repositories from the database connection, then handlers from their repository/provider interfaces. Create one Codeforces token store and one shared rate-limit service for this process. Inject the limiter into the user API and route dependencies.
 6. Create Gin with request logging and panic recovery, configure trusted proxies (none by default), install CORS, and register all routes. Protected routes authenticate before applying per-user limits; public authentication routes apply per-IP limits. Health routes are exempt.
-7. Listen on `:<PORT>` (default `8080`). The API listener is HTTP; a hosting reverse proxy can terminate TLS.
+7. Create an explicit `http.Server` with configured header/read/write/idle timeouts and listen on `:<PORT>` (default `8080`). The API listener is HTTP; a hosting reverse proxy can terminate TLS. `main` registers SIGTERM/SIGINT cancellation and waits for the server lifecycle before dependency cleanup.
 
 Startup does **not** apply migrations or verify that the schema is current. Run the migration deployment step before starting the API.
 
@@ -87,6 +89,8 @@ classDiagram
         main()
     }
     class GinRouter
+    class HTTPServer
+    class ServerLifecycle
     class AuthenticateMiddleware
     class RateLimitMiddleware
     class RateLimitService
@@ -139,6 +143,10 @@ classDiagram
         GetVerificationValue()
     }
     Main --> GinRouter : constructs
+    Main --> HTTPServer : configures socket timeouts
+    Main --> ServerLifecycle : signal cancellation
+    HTTPServer --> GinRouter : handler
+    ServerLifecycle --> HTTPServer : serves and drains
     Main --> SQLDB : opens pool
     Main --> VerificationTokenStore : creates
     Main --> RateLimitService : creates shared service
@@ -568,7 +576,9 @@ The intended hosting request path is browser/frontend â†’ HTTPS reverse proxy â†
 
 For deployment, apply migrations separately, inject the README's required environment variables, set the frontend API base URL to the reachable API `/api` prefix, configure the exact frontend CORS origin, and register the frontend callback URL in GitHub OAuth settings. Forward `X-Forwarded-Proto: https` from the HTTPS proxy for secure OAuth cookies. The proxy should control that forwarded header. The container exposes port 8080 by default; changing `PORT` also requires matching hosting port configuration.
 
-The service currently has no refresh/revocation API, background worker, or explicit graceful-shutdown sequence. `gin.Default()` supplies logging/recovery, while `router.Run()` uses the standard server defaults without application-configured read/write/idle timeouts. These are current implementation boundaries, not features supplied by the diagrams. Consult the hosting provider's proxy/process settings when deploying; this guide does not provision infrastructure.
+`gin.Default()` supplies logging/recovery and is served by an explicit `http.Server`. Header/read/write/idle defaults are 5s/10s/30s/60s. On SIGTERM or SIGINT, `Shutdown` stops accepting connections and drains active requests with a fresh 30-second default budget; the signal does not immediately cancel active request contexts. `main` waits before closing PostgreSQL. If draining fails or expires, the server closes remaining connections and reports a failure. Unexpected listener/serving errors are reported after server cleanup. See [HTTP lifecycle configuration](README.md#http-server-lifecycle) and ensure the hosting termination grace period leaves additional cleanup time.
+
+The service currently has no refresh/revocation API or background worker. This guide does not provision hosting infrastructure. HTTP socket deadlines are separate from handler cancellation, database/provider budgets, and proxy limits.
 
 ## Code navigation and maintenance
 

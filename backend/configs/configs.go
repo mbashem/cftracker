@@ -54,6 +54,7 @@ type Config struct {
 	AuthRatePerMinute  int
 	CodeforcesCooldown time.Duration
 	TrustedProxies     []string
+	HTTPServer         HTTPServerConfig
 }
 
 func Load() (Config, error) {
@@ -96,6 +97,10 @@ func Load() (Config, error) {
 	}
 
 	var err error
+	config.HTTPServer, err = loadHTTPServerConfig()
+	if err != nil {
+		validationErrors = append(validationErrors, err)
+	}
 	config.Port, err = parsePort(getEnv(PORT))
 	if err != nil {
 		validationErrors = append(validationErrors, err)

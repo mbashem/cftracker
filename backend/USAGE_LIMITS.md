@@ -17,7 +17,7 @@ The constants and domain errors live in [`internal/limits/limits.go`](internal/l
 
 The middleware reads the bounded body through `http.MaxBytesReader` before any JSON decoder runs, then supplies the buffered bytes to the handler. It does not rely on `Content-Length`: oversized chunked bodies and excessive whitespace after an otherwise valid JSON value also receive `413`. Exactly 16,384 bytes is allowed. Other body-read failures return `400` without exposing transport details.
 
-The cap limits bytes, not request duration or concurrent connections. Hosting proxy and HTTP server timeout protections remain separate deployment concerns.
+The cap limits bytes, not request duration or concurrent connections. The [HTTP server's read deadlines](README.md#http-server-lifecycle) separately bound slow headers and bodies; hosting proxy protections remain a deployment concern.
 
 For a body of `n` bytes and cap `B`, the middleware's read takes `O(min(n, B + 1))` CPU work and `O(min(n, B + 1))` buffer space, allowing for allocation overhead. With the fixed 16 KiB cap, oversized inputs have bounded work and memory. Network waiting time is separate from this computational complexity. The handler's subsequent JSON decoding makes another pass over the bounded buffer.
 

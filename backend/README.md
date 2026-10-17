@@ -31,6 +31,11 @@ Optional variables:
 PORT=8080
 EXTERNAL_API_TIMEOUT=10s
 DATABASE_TIMEOUT=5s
+HTTP_READ_HEADER_TIMEOUT=5s
+HTTP_READ_TIMEOUT=10s
+HTTP_WRITE_TIMEOUT=30s
+HTTP_IDLE_TIMEOUT=60s
+HTTP_SHUTDOWN_TIMEOUT=30s
 API_RATE_PER_MINUTE=60
 WRITE_RATE_PER_MINUTE=30
 AUTH_RATE_PER_MINUTE=10
@@ -46,6 +51,26 @@ GitHub sign-in must start at `/api/auth/github/login`. The handler stores the sh
 `DATABASE_TIMEOUT` is a positive Go duration, defaulting to `5s`. Every application repository operation derives a timeout from the HTTP request context. Its budget includes waiting for a pooled connection, executing SQL, reading rows, and all queries in a multi-step operation or transaction. A client cancellation or earlier parent deadline takes effect first. Provider calls keep their separate `EXTERNAL_API_TIMEOUT` budget; `DATABASE_TIMEOUT` is not an overall HTTP request timeout or a migration-command timeout. Database failures, including timeouts, retain the existing operation-specific HTTP `500` responses.
 
 Five seconds is a conservative starting value for this API's small CRUD operations, not a universal standard or a normal latency target. Healthy queries should finish well below it. Measure database latency and pool waits in production; shorten the budget when those measurements support it, and investigate slow queries or locks before increasing it. The request-context/derived-timeout pattern follows [Go's database cancellation guidance](https://go.dev/doc/database/cancel-operations), whose example also uses five seconds. Keep proxy request budgets large enough for endpoints that perform sequential provider and database operations.
+
+## HTTP server lifecycle
+
+Gin handles routes and middleware through an explicit Go `http.Server`; the API does not use `router.Run()`. The optional settings above accept positive Go durations. Empty values use these defaults, and malformed, zero, or negative values stop startup.
+
+| Setting | Default | Scope |
+| --- | --- | --- |
+| `HTTP_READ_HEADER_TIMEOUT` | `5s` | Reading request headers |
+| `HTTP_READ_TIMEOUT` | `10s` | Reading the entire request, including headers and body |
+| `HTTP_WRITE_TIMEOUT` | `30s` | Response-write deadline; for the current HTTP listener, starts after headers and also includes body reading and handler work before writing |
+| `HTTP_IDLE_TIMEOUT` | `60s` | Waiting for the next request on a keep-alive connection |
+| `HTTP_SHUTDOWN_TIMEOUT` | `30s` | Waiting for active requests to finish after a termination signal |
+
+These defaults are starting budgets for small JSON requests, not universal standards. Socket deadlines complement the 16 KiB body cap and the existing database/provider context deadlines. `WriteTimeout` does not automatically cancel handler work or guarantee a JSON timeout response; a client may see a failed/closed connection. Keep it large enough for sequential body reading, provider calls, database operations, and response writing, especially if their budgets are increased.
+
+On `SIGTERM` or `SIGINT`, the API closes its listener and idle connections through `Shutdown`, then waits for active requests. The signal context is not used as the request base context, and shutdown uses a fresh background-derived timeout, so active work can finish during draining. `main` waits for the drain before closing PostgreSQL. A normal shutdown treats `http.ErrServerClosed` as expected and exits successfully.
+
+If the grace period expires or shutdown fails, the server force-closes remaining HTTP connections, reports the error, performs dependency cleanup, and exits with failure. Requests should honor cancellation; forced connection closure does not wait for handlers that ignore it. Unexpected serving/listener failures are also reported, and remaining server connections are closed. No WebSocket/hijacked connections are currently used; future support would need its own shutdown handling.
+
+Configure the hosting platform to deliver `SIGTERM` to the API process and allow longer than `HTTP_SHUTDOWN_TIMEOUT` before `SIGKILL`—for example, 40 seconds with the default 30-second drain budget, leaving time for cleanup. The Docker command already executes the API directly. A hard kill cannot be drained. Align proxy request and termination budgets with these settings; this repository does not provision the platform's lifecycle settings. See [Go's server API](https://pkg.go.dev/net/http#Server) for timeout semantics and [Shutdown](https://pkg.go.dev/net/http#Server.Shutdown) for draining behavior.
 
 ## Rate limits
 

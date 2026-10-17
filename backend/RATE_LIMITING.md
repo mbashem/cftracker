@@ -246,7 +246,7 @@ The service reserves a token to calculate an exact retry delay. A delayed reserv
 | Multiple users contacting Codeforces | Each has an independent allowance; no global provider budget is enforced |
 | Missing/invalid JWT, unknown path, CORS preflight | No protected user allowance is consumed |
 | Exhausted limiter storage | New identity/policy entries receive `429`; existing entries remain usable subject to their limits |
-| Slow request or large body | Rate limiting does not set body-size or HTTP read-time limits |
+| Slow request or large body | Separate body middleware enforces 16 KiB; configured HTTP server read deadlines bound slow headers/bodies |
 | Large stored dataset or response | Rate limiting does not enforce account quotas or pagination |
 | Health probes | Exempt from application rate limits; readiness retains its separate bounded database check |
 

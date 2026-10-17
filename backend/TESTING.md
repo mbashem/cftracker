@@ -13,7 +13,7 @@ All backend Go tests and shared helpers live under one dedicated root:
 
 ```text
 tests/
-├── unit/          # auth, configs, health, lists, middlewares, users, utils
+├── unit/          # auth, configs, health, limits, lists, middlewares, ratelimit, routes, server, users, utils
 ├── integration/   # database, health, items, lists, migrations, routes, users
 └── support/       # HTTP helpers, provider mocks, PostgreSQL fixtures
 ```
@@ -74,11 +74,12 @@ go test -race ./tests/unit/...
 
 The current tests cover:
 
-- `configs`: application defaults, invalid port and external API timeout values, CORS parsing, required configuration, GitHub redirect URL validation, JWT secret length, process-environment precedence over `.env`, value trimming, and database URL loading from `.env`.
+- `configs`: application defaults, invalid port and provider/database/HTTP timeout values, CORS parsing, required configuration, GitHub redirect URL validation, JWT secret length, process-environment precedence over `.env`, value trimming, and database URL loading from `.env`.
 - `internal/auth`: cryptographically generated GitHub OAuth state, login redirects, HTTP and HTTPS cookie attributes, callback state validation and cookie deletion, new-user and returning-user persistence, provider and repository failures, token-generation failures, JWT user IDs, and concrete GitHub token and user responses without GitHub network access.
 - `internal/lists`: list and list-item handler success responses, request validation, whitespace normalization, missing and foreign lists, repository failures, idempotent item-deletion responses, and exact authenticated repository arguments.
 - `internal/middlewares`: missing or malformed authorization, unsupported schemes, invalid signatures, expiration, invalid `userId` claims, request abortion, and propagation of the authenticated `int64 userId`.
 - `internal/utils`: JWT generation and verification, claims and expiration, invalid signatures, unsupported signing methods, and missing or invalid `userId` claims.
+- `internal/server`: real loopback HTTP connections for slow headers/bodies, expired response-write deadlines, idle keep-alives, successful draining without immediate request cancellation, forced closure after the drain deadline, and listener/serving errors. These tests start temporary listeners, not the application or PostgreSQL.
 - `internal/users`: profile and Codeforces-handle responses, deterministic verification-token creation and reuse, verification state transitions, provider error mapping, concrete Codeforces responses and URL escaping, verification-token storage and expiration, user isolation, handle-bound proofs, historical rename resolution, stale verification rejection, and concurrent token-store access.
 
 These are unit tests and do not use PostgreSQL or external HTTP services. The configuration tests temporarily change process environment variables, the working directory, and the standard logger output. Authentication middleware and JWT tests initialize a package-level signing secret, while OAuth-state, middleware, list-handler, and user-handler tests also change process-wide Gin or logger state. Do not call `t.Parallel()` in these tests while they share process-wide state.
