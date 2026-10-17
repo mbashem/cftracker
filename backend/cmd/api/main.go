@@ -17,6 +17,7 @@ import (
 	"github.com/mbashem/cftracker/backend/internal/health"
 	"github.com/mbashem/cftracker/backend/internal/lists"
 	"github.com/mbashem/cftracker/backend/internal/lists/items"
+	"github.com/mbashem/cftracker/backend/internal/middlewares"
 	"github.com/mbashem/cftracker/backend/internal/ratelimit"
 	"github.com/mbashem/cftracker/backend/internal/routes"
 	"github.com/mbashem/cftracker/backend/internal/server"
@@ -70,7 +71,8 @@ func run(ctx context.Context) error {
 	authHandler := auth.NewAuthHandler(githubProvider, userRepository)
 	listAPI := lists.NewAPI(lists.NewRepository(database, config.DatabaseTimeout), items.NewRepository(database, config.DatabaseTimeout))
 
-	router := gin.Default()
+	router := gin.New()
+	router.Use(middlewares.RequestLogger(gin.DefaultWriter), middlewares.Recovery(gin.DefaultErrorWriter))
 	if err := router.SetTrustedProxies(config.TrustedProxies); err != nil {
 		return fmt.Errorf("invalid trusted proxies: %w", err)
 	}
