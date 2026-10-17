@@ -67,7 +67,7 @@ Paths in this table are relative to `backend/` unless they start with `../`.
 
 The application performs these steps in `main()`:
 
-1. Load configuration. Existing process environment takes precedence over `.env`; invalid required settings stop startup.
+1. Load configuration. Existing process environment takes precedence over `.env`; invalid required settings stop startup. `CORS_ALLOWED_ORIGINS` must yield at least one valid HTTP/HTTPS origin; an empty or entirely invalid list returns a clear configuration error before database initialization or CORS middleware construction.
 2. Initialize the JWT signing secret.
 3. Open PostgreSQL and ping it with a five-second deadline. The pool allows up to ten open and five idle connections. Failure stops startup.
 4. Construct the shared provider HTTP client and GitHub/Codeforces providers using `EXTERNAL_API_TIMEOUT` (default ten seconds).

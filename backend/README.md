@@ -20,6 +20,7 @@ GITHUB_CLIENT_SECRET=replace-with-github-client-secret
 GITHUB_REDIRECT_URL=http://localhost:5173/callback/auth-gh
 DATABASE_URL=postgres://postgres:postgrespw@localhost:5432/cftracker?sslmode=disable
 JWT_SECRET=replace-with-generated-secret
+CORS_ALLOWED_ORIGINS=http://localhost:5173
 ```
 
 Generate `JWT_SECRET` with `openssl rand -base64 32`; it must contain at least 32 bytes of unpredictable data.
@@ -30,7 +31,6 @@ Optional variables:
 PORT=8080
 EXTERNAL_API_TIMEOUT=10s
 DATABASE_TIMEOUT=5s
-CORS_ALLOWED_ORIGINS=http://localhost:5173
 API_RATE_PER_MINUTE=60
 WRITE_RATE_PER_MINUTE=30
 AUTH_RATE_PER_MINUTE=10
@@ -39,7 +39,7 @@ CODEFORCES_COOLDOWN=1m
 # TRUSTED_PROXIES=127.0.0.1,10.0.0.0/8
 ```
 
-`PORT` defaults to `8080`. `EXTERNAL_API_TIMEOUT` accepts Go duration values such as `5s` or `1m` and defaults to `10s`. `CORS_ALLOWED_ORIGINS` accepts comma-separated HTTP or HTTPS origins without paths. Missing or invalid entries are logged and skipped; when none are valid, requests without a browser `Origin` header can still be used for API testing. Do not use `*` because the API allows credentialed CORS requests.
+`PORT` defaults to `8080`. `EXTERNAL_API_TIMEOUT` accepts Go duration values such as `5s` or `1m` and defaults to `10s`. `CORS_ALLOWED_ORIGINS` requires at least one valid HTTP or HTTPS origin without paths, queries, fragments, or credentials; separate multiple origins with commas. Invalid entries are logged and skipped, but an empty or entirely invalid list stops startup during configuration loading, before database initialization, with `CORS_ALLOWED_ORIGINS must contain at least one valid HTTP or HTTPS origin`. Do not use `*` because the API allows credentialed CORS requests. With valid configuration, requests without an `Origin` header remain usable for health checks and direct API clients.
 
 GitHub sign-in must start at `/api/auth/github/login`. The handler stores the short-lived OAuth state in an HTTP-only cookie, and the frontend forwards GitHub's returned `state` with the authorization code. A new login replaces any pending login in the same browser profile. HTTPS deployments behind a reverse proxy must set `X-Forwarded-Proto: https` so the state cookie is marked `Secure`.
 

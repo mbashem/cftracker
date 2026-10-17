@@ -91,6 +91,9 @@ func Load() (Config, error) {
 	}
 
 	config.CORSAllowedOrigins = parseAllowedOrigins(getEnv(CORS_ALLOWED_ORIGINS))
+	if len(config.CORSAllowedOrigins) == 0 {
+		validationErrors = append(validationErrors, fmt.Errorf("%s must contain at least one valid HTTP or HTTPS origin", CORS_ALLOWED_ORIGINS))
+	}
 
 	var err error
 	config.Port, err = parsePort(getEnv(PORT))
@@ -178,7 +181,7 @@ func requireValue(key EnvKey, value string, validationErrors *[]error) {
 func parseAllowedOrigins(value string) []string {
 	origins := make([]string, 0)
 	if value == "" {
-		log.Printf("%s is empty; no browser origins will be allowed", CORS_ALLOWED_ORIGINS)
+		log.Printf("%s is empty", CORS_ALLOWED_ORIGINS)
 		log.Printf("Valid CORS origins: %v", origins)
 		return origins
 	}
@@ -200,6 +203,8 @@ func parseAllowedOrigins(value string) []string {
 			log.Printf("Invalid CORS origin %q: paths, queries, fragments, and credentials are not allowed; skipping it", origin)
 			continue
 		}
+		// URL parsing normalizes the scheme; CORS validates its literal prefix.
+		origin = parsedOrigin.String()
 		if _, found := seen[origin]; found {
 			log.Printf("Duplicate CORS origin %q; skipping it", origin)
 			continue
