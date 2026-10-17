@@ -13,4 +13,6 @@ RUN apk add --no-cache ca-certificates \
 COPY --from=builder /build/api_bin .
 USER cftracker
 EXPOSE 8080
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+	CMD wget -q -O /dev/null -T 2 "http://127.0.0.1:${PORT:-8080}/health/ready" || exit 1
 CMD ["/app/api_bin"]

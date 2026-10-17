@@ -1,13 +1,10 @@
 package users
 
-import (
-	"github.com/gin-gonic/gin"
-	"github.com/mbashem/cftracker/backend/internal/middlewares"
-)
+import "github.com/gin-gonic/gin"
 
-func RegisterRoutes(server *gin.Engine, api *API) {
-	userServer := server.Group("/api/user")
-	userServer.Use(middlewares.Authenticate)
+// RegisterRoutes receives the authenticated /api group from the central registrar.
+func RegisterRoutes(server gin.IRouter, api *API) {
+	userServer := server.Group("/user")
 	userServer.GET("/profile", api.GetProfile)
 	userServer.PUT("/cfhandle", api.UpdateCFHandle)
 	userServer.GET("/cfverification-token", api.GetCFVerificationToken)

@@ -184,7 +184,7 @@ The test verifies:
 | `cmd/migration-check/main.go` | Discovers migration pairs, computes hashes, validates history, and records new checksums. |
 | `cmd/migration-target/main.go` | Resolves a table name to its rollback version. |
 | `scripts/check-schema-drift.sh` | Compares normalized PostgreSQL schema dumps. |
-| `scripts/test-migrations.sh` | Runs the explicitly requested migration lifecycle and negative tests against disposable databases. |
+| `tests/integration/migrations/test-migrations.sh` | Runs the explicitly requested migration lifecycle and negative tests against disposable databases. |
 | `migrations/*.sql` | Defines ordered up and down schema changes. |
 
 Review these invariants when changing migration code:

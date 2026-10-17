@@ -17,7 +17,7 @@ const { userSubmissionsListener } = await import("../../src/data/listeners/userS
 
 export const backendUser = {
   id: 7, github_id: 42, github_username: "octocat", email: "octocat@example.test",
-  avatar_url: "https://example.test/avatar", cf_handle: "tourist", cf_verified: true, admin: false,
+  avatar_url: "https://example.test/avatar", cf_handle: "tourist", cf_verified_handle: "tourist", admin: false,
 };
 export const backendList = { id: 5, user_id: 7, name: "Practice", created_at: "2026-01-01" };
 export const backendItem = { list_id: 5, problem_id: "100A", position: 2, created_at: "2026-01-02" };

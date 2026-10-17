@@ -16,18 +16,25 @@ import (
 type EnvKey string
 
 const (
-	GITHUB_CLIENT_ID     EnvKey = "GITHUB_CLIENT_ID"
-	GITHUB_CLIENT_SECRET EnvKey = "GITHUB_CLIENT_SECRET"
-	GITHUB_REDIRECT_URL  EnvKey = "GITHUB_REDIRECT_URL"
-	DATABASE_URL         EnvKey = "DATABASE_URL"
-	JWT_SECRET           EnvKey = "JWT_SECRET"
-	CORS_ALLOWED_ORIGINS EnvKey = "CORS_ALLOWED_ORIGINS"
-	PORT                 EnvKey = "PORT"
-	EXTERNAL_API_TIMEOUT EnvKey = "EXTERNAL_API_TIMEOUT"
+	GITHUB_CLIENT_ID      EnvKey = "GITHUB_CLIENT_ID"
+	GITHUB_CLIENT_SECRET  EnvKey = "GITHUB_CLIENT_SECRET"
+	GITHUB_REDIRECT_URL   EnvKey = "GITHUB_REDIRECT_URL"
+	DATABASE_URL          EnvKey = "DATABASE_URL"
+	DATABASE_TIMEOUT      EnvKey = "DATABASE_TIMEOUT"
+	JWT_SECRET            EnvKey = "JWT_SECRET"
+	CORS_ALLOWED_ORIGINS  EnvKey = "CORS_ALLOWED_ORIGINS"
+	PORT                  EnvKey = "PORT"
+	EXTERNAL_API_TIMEOUT  EnvKey = "EXTERNAL_API_TIMEOUT"
+	API_RATE_PER_MINUTE   EnvKey = "API_RATE_PER_MINUTE"
+	WRITE_RATE_PER_MINUTE EnvKey = "WRITE_RATE_PER_MINUTE"
+	AUTH_RATE_PER_MINUTE  EnvKey = "AUTH_RATE_PER_MINUTE"
+	CODEFORCES_COOLDOWN   EnvKey = "CODEFORCES_COOLDOWN"
+	TRUSTED_PROXIES       EnvKey = "TRUSTED_PROXIES"
 )
 
 const (
 	DefaultExternalAPITimeout = 10 * time.Second
+	DefaultDatabaseTimeout    = 5 * time.Second
 	DefaultPort               = 8080
 	MinimumJWTSecretLength    = 32
 )
@@ -41,6 +48,13 @@ type Config struct {
 	CORSAllowedOrigins []string
 	Port               int
 	ExternalAPITimeout time.Duration
+	DatabaseTimeout    time.Duration
+	APIRatePerMinute   int
+	WriteRatePerMinute int
+	AuthRatePerMinute  int
+	CodeforcesCooldown time.Duration
+	TrustedProxies     []string
+	HTTPServer         HTTPServerConfig
 }
 
 func Load() (Config, error) {
@@ -78,8 +92,15 @@ func Load() (Config, error) {
 	}
 
 	config.CORSAllowedOrigins = parseAllowedOrigins(getEnv(CORS_ALLOWED_ORIGINS))
+	if len(config.CORSAllowedOrigins) == 0 {
+		validationErrors = append(validationErrors, fmt.Errorf("%s must contain at least one valid HTTP or HTTPS origin", CORS_ALLOWED_ORIGINS))
+	}
 
 	var err error
+	config.HTTPServer, err = loadHTTPServerConfig()
+	if err != nil {
+		validationErrors = append(validationErrors, err)
+	}
 	config.Port, err = parsePort(getEnv(PORT))
 	if err != nil {
 		validationErrors = append(validationErrors, err)
@@ -88,6 +109,33 @@ func Load() (Config, error) {
 	config.ExternalAPITimeout, err = parseExternalAPITimeout(getEnv(EXTERNAL_API_TIMEOUT))
 	if err != nil {
 		validationErrors = append(validationErrors, err)
+	}
+	config.DatabaseTimeout, err = parseTimeout(DATABASE_TIMEOUT, getEnv(DATABASE_TIMEOUT), DefaultDatabaseTimeout)
+	if err != nil {
+		validationErrors = append(validationErrors, err)
+	}
+	for _, setting := range []struct {
+		key          EnvKey
+		defaultValue int
+		target       *int
+	}{
+		{API_RATE_PER_MINUTE, 60, &config.APIRatePerMinute},
+		{WRITE_RATE_PER_MINUTE, 30, &config.WriteRatePerMinute},
+		{AUTH_RATE_PER_MINUTE, 10, &config.AuthRatePerMinute},
+	} {
+		*setting.target, err = parsePositiveInteger(setting.key, getEnv(setting.key), setting.defaultValue)
+		if err != nil {
+			validationErrors = append(validationErrors, err)
+		}
+	}
+	config.CodeforcesCooldown, err = parseTimeout(CODEFORCES_COOLDOWN, getEnv(CODEFORCES_COOLDOWN), time.Minute)
+	if err != nil {
+		validationErrors = append(validationErrors, err)
+	}
+	if proxies := getEnv(TRUSTED_PROXIES); proxies != "" {
+		for _, proxy := range strings.Split(proxies, ",") {
+			config.TrustedProxies = append(config.TrustedProxies, strings.TrimSpace(proxy))
+		}
 	}
 
 	return config, errors.Join(validationErrors...)
@@ -98,6 +146,17 @@ func LoadDatabaseURL() (string, error) {
 		return "", err
 	}
 	return getEnv(DATABASE_URL), nil
+}
+
+func parsePositiveInteger(envKey EnvKey, value string, fallback int) (int, error) {
+	if value == "" {
+		return fallback, nil
+	}
+	parsed, err := strconv.Atoi(value)
+	if err != nil || parsed <= 0 {
+		return fallback, fmt.Errorf("%s must be a positive integer", envKey)
+	}
+	return parsed, nil
 }
 
 func loadLocalEnv() error {
@@ -127,7 +186,7 @@ func requireValue(key EnvKey, value string, validationErrors *[]error) {
 func parseAllowedOrigins(value string) []string {
 	origins := make([]string, 0)
 	if value == "" {
-		log.Printf("%s is empty; no browser origins will be allowed", CORS_ALLOWED_ORIGINS)
+		log.Printf("%s is empty", CORS_ALLOWED_ORIGINS)
 		log.Printf("Valid CORS origins: %v", origins)
 		return origins
 	}
@@ -149,6 +208,8 @@ func parseAllowedOrigins(value string) []string {
 			log.Printf("Invalid CORS origin %q: paths, queries, fragments, and credentials are not allowed; skipping it", origin)
 			continue
 		}
+		// URL parsing normalizes the scheme; CORS validates its literal prefix.
+		origin = parsedOrigin.String()
 		if _, found := seen[origin]; found {
 			log.Printf("Duplicate CORS origin %q; skipping it", origin)
 			continue
@@ -181,16 +242,20 @@ func parsePort(value string) (int, error) {
 }
 
 func parseExternalAPITimeout(value string) (time.Duration, error) {
+	return parseTimeout(EXTERNAL_API_TIMEOUT, value, DefaultExternalAPITimeout)
+}
+
+func parseTimeout(key EnvKey, value string, defaultTimeout time.Duration) (time.Duration, error) {
 	if value == "" {
-		return DefaultExternalAPITimeout, nil
+		return defaultTimeout, nil
 	}
 
 	timeout, err := time.ParseDuration(value)
 	if err != nil {
-		return DefaultExternalAPITimeout, fmt.Errorf("%s must be a valid duration: %w", EXTERNAL_API_TIMEOUT, err)
+		return defaultTimeout, fmt.Errorf("%s must be a valid duration: %w", key, err)
 	}
 	if timeout <= 0 {
-		return DefaultExternalAPITimeout, fmt.Errorf("%s must be greater than zero", EXTERNAL_API_TIMEOUT)
+		return defaultTimeout, fmt.Errorf("%s must be greater than zero", key)
 	}
 
 	return timeout, nil

@@ -1,5 +1,7 @@
 # Backend
 
+See [ARCHITECTURE.md](ARCHITECTURE.md) for the complete route reference, source path map, request and data flows, UML diagrams, and deployment state boundaries.
+
 ## Configuration
 
 For local development, create `.env` from the committed example and replace its placeholder values:
@@ -18,6 +20,7 @@ GITHUB_CLIENT_SECRET=replace-with-github-client-secret
 GITHUB_REDIRECT_URL=http://localhost:5173/callback/auth-gh
 DATABASE_URL=postgres://postgres:postgrespw@localhost:5432/cftracker?sslmode=disable
 JWT_SECRET=replace-with-generated-secret
+CORS_ALLOWED_ORIGINS=http://localhost:5173
 ```
 
 Generate `JWT_SECRET` with `openssl rand -base64 32`; it must contain at least 32 bytes of unpredictable data.
@@ -27,12 +30,55 @@ Optional variables:
 ```env
 PORT=8080
 EXTERNAL_API_TIMEOUT=10s
-CORS_ALLOWED_ORIGINS=http://localhost:5173
+DATABASE_TIMEOUT=5s
+HTTP_READ_HEADER_TIMEOUT=5s
+HTTP_READ_TIMEOUT=10s
+HTTP_WRITE_TIMEOUT=30s
+HTTP_IDLE_TIMEOUT=60s
+HTTP_SHUTDOWN_TIMEOUT=30s
+API_RATE_PER_MINUTE=60
+WRITE_RATE_PER_MINUTE=30
+AUTH_RATE_PER_MINUTE=10
+CODEFORCES_COOLDOWN=1m
+# Set to your hosting proxy's IP addresses/CIDRs when deployed behind one:
+# TRUSTED_PROXIES=127.0.0.1,10.0.0.0/8
 ```
 
-`PORT` defaults to `8080`. `EXTERNAL_API_TIMEOUT` accepts Go duration values such as `5s` or `1m` and defaults to `10s`. `CORS_ALLOWED_ORIGINS` accepts comma-separated HTTP or HTTPS origins without paths. Missing or invalid entries are logged and skipped; when none are valid, requests without a browser `Origin` header can still be used for API testing. Do not use `*` because the API allows credentialed CORS requests.
+`PORT` defaults to `8080`. `EXTERNAL_API_TIMEOUT` accepts Go duration values such as `5s` or `1m` and defaults to `10s`. `CORS_ALLOWED_ORIGINS` requires at least one valid HTTP or HTTPS origin without paths, queries, fragments, or credentials; separate multiple origins with commas. Invalid entries are logged and skipped, but an empty or entirely invalid list stops startup during configuration loading, before database initialization, with `CORS_ALLOWED_ORIGINS must contain at least one valid HTTP or HTTPS origin`. Do not use `*` because the API allows credentialed CORS requests. With valid configuration, requests without an `Origin` header remain usable for health checks and direct API clients.
 
 GitHub sign-in must start at `/api/auth/github/login`. The handler stores the short-lived OAuth state in an HTTP-only cookie, and the frontend forwards GitHub's returned `state` with the authorization code. A new login replaces any pending login in the same browser profile. HTTPS deployments behind a reverse proxy must set `X-Forwarded-Proto: https` so the state cookie is marked `Secure`.
+
+`DATABASE_TIMEOUT` is a positive Go duration, defaulting to `5s`. Every application repository operation derives a timeout from the HTTP request context. Its budget includes waiting for a pooled connection, executing SQL, reading rows, and all queries in a multi-step operation or transaction. A client cancellation or earlier parent deadline takes effect first. Provider calls keep their separate `EXTERNAL_API_TIMEOUT` budget; `DATABASE_TIMEOUT` is not an overall HTTP request timeout or a migration-command timeout. Database failures, including timeouts, retain the existing operation-specific HTTP `500` responses.
+
+Five seconds is a conservative starting value for this API's small CRUD operations, not a universal standard or a normal latency target. Healthy queries should finish well below it. Measure database latency and pool waits in production; shorten the budget when those measurements support it, and investigate slow queries or locks before increasing it. The request-context/derived-timeout pattern follows [Go's database cancellation guidance](https://go.dev/doc/database/cancel-operations), whose example also uses five seconds. Keep proxy request budgets large enough for endpoints that perform sequential provider and database operations.
+
+## HTTP server lifecycle
+
+Gin handles routes and middleware through an explicit Go `http.Server`; the API does not use `router.Run()`. The server package creates and owns the TCP listener through `ListenAndServe`, so `main` does not manage network sockets. The optional settings above accept positive Go durations. Empty values use these defaults, and malformed, zero, or negative values stop startup.
+
+| Setting | Default | Scope |
+| --- | --- | --- |
+| `HTTP_READ_HEADER_TIMEOUT` | `5s` | Reading request headers |
+| `HTTP_READ_TIMEOUT` | `10s` | Reading the entire request, including headers and body |
+| `HTTP_WRITE_TIMEOUT` | `30s` | Response-write deadline; for the current HTTP listener, starts after headers and also includes body reading and handler work before writing |
+| `HTTP_IDLE_TIMEOUT` | `60s` | Waiting for the next request on a keep-alive connection |
+| `HTTP_SHUTDOWN_TIMEOUT` | `30s` | Waiting for active requests to finish after a termination signal |
+
+These defaults are starting budgets for small JSON requests, not universal standards. Socket deadlines complement the 16 KiB body cap and the existing database/provider context deadlines. `WriteTimeout` does not automatically cancel handler work or guarantee a JSON timeout response; a client may see a failed/closed connection. Keep it large enough for sequential body reading, provider calls, database operations, and response writing, especially if their budgets are increased.
+
+On `SIGTERM` or `SIGINT`, the API closes its listener and idle connections through `Shutdown`, then waits for active requests. The signal context is not used as the request base context, and shutdown uses a fresh background-derived timeout, so active work can finish during draining. `main` waits for the drain before closing PostgreSQL. A normal shutdown treats `http.ErrServerClosed` as expected and exits successfully.
+
+If the grace period expires or shutdown fails, the server force-closes remaining HTTP connections, reports the error, performs dependency cleanup, and exits with failure. Requests should honor cancellation; forced connection closure does not wait for handlers that ignore it. Unexpected serving/listener failures are also reported, and remaining server connections are closed. No WebSocket/hijacked connections are currently used; future support would need its own shutdown handling.
+
+Configure the hosting platform to deliver `SIGTERM` to the API process and allow longer than `HTTP_SHUTDOWN_TIMEOUT` before `SIGKILL`—for example, 40 seconds with the default 30-second drain budget, leaving time for cleanup. The Docker command already executes the API directly. A hard kill cannot be drained. Align proxy request and termination budgets with these settings; this repository does not provision the platform's lifecycle settings. See [Go's server API](https://pkg.go.dev/net/http#Server) for timeout semantics and [Shutdown](https://pkg.go.dev/net/http#Server.Shutdown) for draining behavior.
+
+## Rate limits
+
+Request bodies, list-name writes, and account/item creation are also bounded. See [USAGE_LIMITS.md](USAGE_LIMITS.md) for the 16 KiB body cap, 100-character names, 20-list/1,000-item quotas, concurrency guarantees, and existing-data checks. Reads return complete stored data and rely on write-time quotas for collection size.
+
+See [RATE_LIMITING.md](RATE_LIMITING.md) for the complete policy table, request-flow and sequence diagrams, token-bucket examples, endpoint coverage, configuration, client-IP handling, cleanup, and deployment limitations.
+
+Defaults are 60 requests/minute per user for general traffic, 30/minute for writes, ten/minute per IP separately for login and callback, and one Codeforces attempt per user every 60 seconds. Ordinary traffic allows a burst of ten. Rejections return `429` with `Retry-After`; health probes are exempt. Configure `TRUSTED_PROXIES` for your actual hosting proxy. Allowances are process-local and reset on restart.
 
 ## Testing
 
@@ -48,8 +94,8 @@ make test-race
 The configuration, authentication middleware, JWT, and Codeforces verification-token tests can be run directly while working on those packages:
 
 ```sh
-go test ./configs ./internal/auth ./internal/middlewares ./internal/utils ./internal/users
-go test -race ./internal/auth ./internal/middlewares ./internal/users ./internal/utils
+go test ./tests/unit/...
+go test -race ./tests/unit/...
 ```
 
 Configuration tests cover defaults, invalid values, process-environment precedence over `.env`, and database URL loading from `.env`. Authentication middleware tests cover rejected credentials, endpoint abortion, and propagation of a verified `int64 userId`. JWT tests cover generation, verification, expiration, signatures, signing methods, and invalid `userId` claims. Verification-token tests cover storage, replacement, deletion, expiration, and concurrent access.
@@ -211,28 +257,42 @@ make run \
 From another terminal, verify that the server responds:
 
 ```sh
-curl -i http://localhost:8080/
+curl -i http://localhost:8080/health/live
+curl -i http://localhost:8080/health/ready
 ```
 
-A `404` response is expected because `/` has no registered route. It confirms that the API connected to PostgreSQL and started without the frontend.
+Liveness returns `200 {"status":"alive"}` when the API can respond. Readiness returns `200 {"status":"ready"}` when the shared database pool can connect, or `503 {"status":"unavailable"}` when that check fails or exceeds one second. `/` still has no registered route.
 
-# API
+## Hosting Health Checks
 
-- `GET /api/auth/github/login` - initialize GitHub login and OAuth state
-- `GET /api/auth/github/callback?code={code}&state={state}` - return user info and a JWT
+Both health routes are public and require no bearer token or cookie:
 
-The equivalent routes without the `/api` prefix remain available for direct backend clients.
+| Platform setting | Path | Behavior |
+| --- | --- | --- |
+| Liveness / restart probe | `/health/live` | Checks the HTTP process without contacting PostgreSQL. |
+| Readiness / traffic-routing probe | `/health/ready` | Uses `PingContext` on the application's shared database pool with a one-second deadline, including pool waits. |
 
-Authorization header with token 'Bearer {token}' required for following
-GET - /user/profile - returns users info ,
-PUT - /user/cfhandle - body = { "cf_handle": "{handle}" }
-GET - /user/cfverification-token - returns verification token - {"token": "{token}"}
-GET - /user/verify-cftoken - verifies verification token
+Use a probe timeout of three seconds so the readiness handler can return its `503` before the platform gives up. A starting probe interval is 30 seconds, with three consecutive failures and a ten-second startup grace period. Configure these paths in the hosting platform's health-check settings; creating the HTTP routes alone does not configure traffic routing. If the platform exposes only one health-check path, use `/health/ready` and check whether failure removes traffic, restarts the process, or both. Keep a separate liveness probe independent of database availability where supported.
 
-set cf firstName as the token recieved from verification token. It is valid for 1 hour
+The Docker image declares a [Docker `HEALTHCHECK`](https://docs.docker.com/reference/dockerfile/#healthcheck) against `/health/ready` with those probe settings. It uses the configured `PORT` (default `8080`). Docker reports container health; automatic traffic removal and restart behavior depend on the hosting platform, and some platforms require their own explicit HTTP probe settings.
 
-- Go to settings -> social -> firstName
+Readiness checks database connectivity, not migration state or GitHub/Codeforces availability. Continue applying migrations before starting the API. Health responses do not expose connection strings or database errors.
 
+## API
+
+The canonical API prefix is `/api`. GitHub login and callback are public; `/api/user` and `/api/lists` require `Authorization: Bearer <token>`. Only the GitHub routes also have aliases without `/api`.
+
+See the [complete HTTP route and payload reference](ARCHITECTURE.md#http-routes-and-contracts), [GitHub login sequence](ARCHITECTURE.md#github-authentication-flow), and [Codeforces ownership sequence](ARCHITECTURE.md#codeforces-ownership-flow).
+
+## Codeforces ownership and handle changes
+
+The database and API expose `cf_handle` (the selected account) and `cf_verified_handle` (the account whose ownership was proved). There is no separate verification boolean. The backend treats the selected account as verified only when both nonempty handles match, ignoring case. Frontend authentication state preserves the verified handle as `cfVerifiedHandle`. Migration `000002_create_users` creates the verified-handle column directly. Existing disposable backend databases using the previous schema must be recreated before applying this revised migration history.
+
+When a previously verified user changes their selected handle, the backend calls Codeforces `user.info` with `checkHistoricHandles=true` using the stored verified handle. If the returned current handle matches the requested handle, both handles are updated and verification is retained. Selecting a different account preserves the old verified handle but makes the selected account unverified; it must pass the token challenge. A failed historical lookup leaves both stored handles unchanged so the request can be retried.
+
+Token ownership checks use `checkHistoricHandles=false` and tokens are bound to the user and selected handle. Database writes compare both previously read handles atomically. A concurrent handle change returns HTTP `409` with `Codeforces handle changed; please retry`, without saving stale verification. No handle version is used.
+
+Pending tokens remain in process memory and expire after one hour. Run a single backend instance until token storage is shared across instances.
 
 ## Docker
 
