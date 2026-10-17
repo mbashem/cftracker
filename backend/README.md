@@ -72,6 +72,10 @@ If the grace period expires or shutdown fails, the server force-closes remaining
 
 Configure the hosting platform to deliver `SIGTERM` to the API process and allow longer than `HTTP_SHUTDOWN_TIMEOUT` before `SIGKILL`—for example, 40 seconds with the default 30-second drain budget, leaving time for cleanup. The Docker command already executes the API directly. A hard kill cannot be drained. Align proxy request and termination budgets with these settings; this repository does not provision the platform's lifecycle settings. See [Go's server API](https://pkg.go.dev/net/http#Server) for timeout semantics and [Shutdown](https://pkg.go.dev/net/http#Server.Shutdown) for draining behavior.
 
+## Request logging
+
+Access logs omit query strings, including OAuth callback `code` and `state`. Panic recovery excludes raw requests, headers, and panic values. Configure the same filtering in hosting proxy logs; see [LOGGING.md](LOGGING.md) for behavior, an NGINX example, and deployment verification.
+
 ## Rate limits
 
 Request bodies, list-name writes, and account/item creation are also bounded. See [USAGE_LIMITS.md](USAGE_LIMITS.md) for the 16 KiB body cap, 100-character names, 20-list/1,000-item quotas, concurrency guarantees, and existing-data checks. Reads return complete stored data and rely on write-time quotas for collection size.
