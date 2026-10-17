@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -92,9 +91,5 @@ func run(ctx context.Context) error {
 	})
 
 	httpServer := server.New(fmt.Sprintf(":%d", config.Port), router, config.HTTPServer)
-	listener, err := net.Listen("tcp", httpServer.Addr)
-	if err != nil {
-		return fmt.Errorf("listen HTTP: %w", err)
-	}
-	return server.Serve(ctx, httpServer, listener, config.HTTPServer.ShutdownTimeout)
+	return server.ListenAndServe(ctx, httpServer, config.HTTPServer.ShutdownTimeout)
 }

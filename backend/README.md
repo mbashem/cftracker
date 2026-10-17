@@ -54,7 +54,7 @@ Five seconds is a conservative starting value for this API's small CRUD operatio
 
 ## HTTP server lifecycle
 
-Gin handles routes and middleware through an explicit Go `http.Server`; the API does not use `router.Run()`. The optional settings above accept positive Go durations. Empty values use these defaults, and malformed, zero, or negative values stop startup.
+Gin handles routes and middleware through an explicit Go `http.Server`; the API does not use `router.Run()`. The server package creates and owns the TCP listener through `ListenAndServe`, so `main` does not manage network sockets. The optional settings above accept positive Go durations. Empty values use these defaults, and malformed, zero, or negative values stop startup.
 
 | Setting | Default | Scope |
 | --- | --- | --- |

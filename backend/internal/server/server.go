@@ -24,6 +24,15 @@ func New(address string, handler http.Handler, config configs.HTTPServerConfig) 
 	}
 }
 
+// ListenAndServe owns listener creation and the complete serving/shutdown lifecycle.
+func ListenAndServe(ctx context.Context, server *http.Server, shutdownTimeout time.Duration) error {
+	listener, err := net.Listen("tcp", server.Addr)
+	if err != nil {
+		return fmt.Errorf("listen HTTP: %w", err)
+	}
+	return Serve(ctx, server, listener, shutdownTimeout)
+}
+
 // Serve blocks until serving fails or shutdown completes. The stop context is
 // deliberately separate from request contexts so a signal does not abort draining work.
 func Serve(ctx context.Context, server *http.Server, listener net.Listener, shutdownTimeout time.Duration) error {

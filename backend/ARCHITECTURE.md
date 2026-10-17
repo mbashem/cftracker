@@ -28,10 +28,10 @@ Paths in this table are relative to `backend/` unless they start with `../`.
 
 | Path | Responsibility |
 | --- | --- |
-| [`cmd/api/main.go`](cmd/api/main.go) | Application entry point; constructs dependencies, middleware, routes, and HTTP listener. |
+| [`cmd/api/main.go`](cmd/api/main.go) | Constructs dependencies, middleware, routes, and HTTP server configuration; delegates network lifecycle to the server package. |
 | [`configs/configs.go`](configs/configs.go) | Loads environment and optional `.env`, validates required settings, parses CORS origins and provider timeout. |
 | [`configs/http_server.go`](configs/http_server.go) | Parses positive HTTP socket and shutdown timeouts with defaults. |
-| [`internal/server/server.go`](internal/server/server.go) | Configures `http.Server`, drains active requests, and force-closes connections if shutdown fails. |
+| [`internal/server/server.go`](internal/server/server.go) | Configures `http.Server`, owns TCP listener creation, drains active requests, and force-closes connections if shutdown fails. |
 | [`internal/db/db.go`](internal/db/db.go) | Opens PostgreSQL, configures the connection pool, and checks connectivity. |
 | [`internal/routes/routes.go`](internal/routes/routes.go) | Registers health and feature route groups; installs authentication and rate limits once on shared groups. |
 | [`internal/health/health_handlers.go`](internal/health/health_handlers.go) | HTTP liveness and a database readiness check with a one-second deadline. |
