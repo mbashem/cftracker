@@ -108,7 +108,7 @@ The currently tested production files `configs/configs.go`, `internal/middleware
 
 ## Database migrations
 
-The API only opens and validates the database connection during startup. Apply schema changes separately from the `backend` directory; the Makefile reads `DATABASE_URL` from the environment or `.env`.
+The API only opens and validates the database connection during startup. Apply schema changes separately from the `backend` directory. The Makefile uses `.env` as a fallback for unset variables; exported values win over the same keys in `.env`, and Make command-line assignments win over both. `MIGRATION_DATABASE_URL`, when set, selects the migration target instead of the `DATABASE_URL` fallback. See [migration environment precedence](MIGRATION_FLOW.md#migrate-up).
 
 See [`MIGRATION_FLOW.md`](MIGRATION_FLOW.md) for a code-review guide to migration ordering, checksum verification, rollback behavior, and schema-drift detection.
 

@@ -14,7 +14,14 @@ TEST_DATABASE_ADMIN_URL ?=
 COVERAGE_FILE ?= ../coverage/backend.out
 
 ifneq (,$(wildcard .env))
+# Treat .env as a fallback, matching godotenv.Load in the application.
+# Delayed value expansion preserves literal dollars, hashes, and whitespace.
+dotenv_environment_variables := $(foreach key,$(.VARIABLES),$(if $(filter environment,$(origin $(key))),$(key)))
+$(foreach key,$(dotenv_environment_variables),$(eval dotenv_original_$(key) := $$(value $(key))))
 include .env
+$(foreach key,$(dotenv_environment_variables),$(if $(filter file,$(origin $(key))),$(eval $(key) := $$(value dotenv_original_$(key)))))
+# Do not export the temporary copies (which can contain credentials).
+unexport dotenv_environment_variables $(addprefix dotenv_original_,$(dotenv_environment_variables))
 export
 endif
 

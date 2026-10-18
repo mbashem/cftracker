@@ -15,6 +15,16 @@ Migration metadata comes first so every application-table migration can be regis
 
 ## Migrate up
 
+The Makefile treats `.env` as a fallback: existing exported variables (including empty values) take precedence over the same keys in `.env`, and Make command-line assignments take precedence over both. `MIGRATION_DATABASE_URL` selects an explicit migration target; when unset, it falls back to `DATABASE_URL`. A dedicated migration target in `.env` still takes precedence over the `DATABASE_URL` fallback, so check both settings when selecting a database.
+
+To select the target explicitly for an operation:
+
+```sh
+make migrate-up MIGRATION_DATABASE_URL="$DATABASE_URL"
+```
+
+An empty selected URL stops the command before migration. The same environment precedence applies to the reference and test database settings loaded by Make.
+
 Running:
 
 ```sh
