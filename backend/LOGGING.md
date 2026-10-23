@@ -1,6 +1,6 @@
 # HTTP request logging
 
-The API uses `gin.New()` with explicit access logging and panic recovery middleware. Access logs include timestamp, response status, latency, client IP, method, and escaped URL path. Query strings are omitted on every route, including both `/api/auth/github/callback` and `/auth/github/callback`. The middleware leaves the request unchanged so OAuth handlers still receive `code` and `state`.
+The API uses `gin.New()` with explicit access logging and panic recovery middleware. Access logs include timestamp, response status, latency, client IP, method, and escaped URL path. Query strings are omitted on every route, including both `/api/v1/auth/github/callback` and `/v1/auth/github/callback`. The middleware leaves the request unchanged so OAuth handlers still receive `code` and `state`.
 
 Raw Gin handler errors are excluded because an error can contain a URL or credentials. Panic recovery returns HTTP 500 and logs the method, escaped path, panic type, and stack trace. It omits the panic value and Gin's default request/header dump in both debug and release modes. Avoid adding application logs containing authorization codes, OAuth state, cookies, authorization headers, tokens, or complete request URLs.
 
@@ -28,4 +28,4 @@ No hosting proxy is provisioned by this repository. The example must be applied 
 
 Run `go test ./tests/unit/middlewares/...` from `backend/`. Tests cover both callback aliases, rejected callbacks, duplicate and encoded query keys, unchanged handler parameters, handler errors, and panic recovery in debug and release modes.
 
-After configuring hosting, send a callback request with dummy values such as `/api/auth/github/callback?code=logging-check-code&state=logging-check-state`. Without a matching state cookie, HTTP 400 is expected. Inspect application, proxy, gateway, and tracing logs: the path and status may appear, but neither dummy value should appear. Use dummy values instead of real OAuth credentials. This deployment check is separate from the repository's unit tests.
+After configuring hosting, send a callback request with dummy values such as `/api/v1/auth/github/callback?code=logging-check-code&state=logging-check-state`. Without a matching state cookie, HTTP 400 is expected. Inspect application, proxy, gateway, and tracing logs: the path and status may appear, but neither dummy value should appear. Use dummy values instead of real OAuth credentials. This deployment check is separate from the repository's unit tests.

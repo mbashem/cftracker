@@ -22,7 +22,7 @@ import (
 const (
 	testGitHubClientID      = "github-client-id"
 	testGitHubClientSecret  = "github-client-secret"
-	testGitHubRedirectURL   = "http://localhost:8080/auth/github/callback"
+	testGitHubRedirectURL   = "http://localhost:8080/v1/auth/github/callback"
 	testDatabaseURL         = "postgres://postgres:postgrespw@localhost:5432/cftracker_test?sslmode=disable"
 	testJWTSecret           = "test-jwt-secret-with-enough-bytes"
 	testNonIntegerPort      = "not-a-port"

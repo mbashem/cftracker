@@ -129,7 +129,7 @@ vi.mock("../../src/hooks/useUser", () => ({
 }));
 vi.mock("../../src/util/env", () => ({
   get IS_BACKEND_AVAILABLE() { return frontend.backendAvailable; },
-  BACKEND_API_URL: "https://backend.example.test",
+  BACKEND_API_URL: "https://backend.example.test/api/v1",
   IS_DEBUG_MODE: false,
 }));
 

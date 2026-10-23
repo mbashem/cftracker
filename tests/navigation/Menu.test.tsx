@@ -76,7 +76,7 @@ test.each([
   expect(screen.queryByRole("link", { name: "Lists" }) !== null).toBe(backend && authenticated);
   const signIn = screen.queryByTitle("Sign in with GitHub");
   expect(signIn !== null).toBe(backend && !authenticated);
-  if (signIn) expect(signIn.getAttribute("href")).toBe("https://backend.example.test/auth/github/login");
+  if (signIn) expect(signIn.getAttribute("href")).toBe("https://backend.example.test/api/v1/auth/github/login");
   if (backend && authenticated) {
     // Logout currently shares the refresh title; identify the icon within the navigation.
     const logout = screen.getByRole("navigation").querySelector('svg[data-icon="arrow-right-from-bracket"]')?.closest("a");

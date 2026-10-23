@@ -4,7 +4,7 @@ import { Provider } from "react-redux";
 import type { PropsWithChildren } from "react";
 
 // Set the endpoint before importing the real query modules; no hook mocks here.
-vi.stubEnv("VITE_BACKEND_API_URL", "https://backend.example.test");
+vi.stubEnv("VITE_BACKEND_API_URL", "https://backend.example.test/api");
 vi.stubEnv("VITE_DEBUG_MODE", "false");
 const { userApi } = await import("../../src/data/queries/userQuery");
 const { listApi } = await import("../../src/data/queries/listQuery");

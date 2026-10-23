@@ -22,7 +22,7 @@ func RegisterRoutes(server *gin.Engine, dependencies Dependencies) {
 	server.Use(middlewares.LimitRequestBody)
 	health.RegisterRoutes(server, dependencies.Health)
 	authentication := server.Group("")
-	protected := server.Group("/api", middlewares.Authenticate)
+	protected := server.Group("/api/v1", middlewares.Authenticate)
 	if dependencies.RateLimits != nil {
 		authentication.Use(middlewares.LimitAuthentication(dependencies.RateLimits))
 		protected.Use(middlewares.LimitUser(dependencies.RateLimits))

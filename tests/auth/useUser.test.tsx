@@ -29,7 +29,7 @@ test("GitHub callback maps the user, clears the previous error and persists the 
   expect(StorageService.getJWTToken()).toBe("test-session");
   const request = backend.requests[0];
   const url = new URL(request.url);
-  expect(url.pathname).toBe("/auth/github/callback");
+  expect(url.pathname).toBe("/api/v1/auth/github/callback");
   expect(url.searchParams.get("code")).toBe("code +/?");
   expect(url.searchParams.get("state")).toBe("state &?");
   expect(request.method).toBe("GET");

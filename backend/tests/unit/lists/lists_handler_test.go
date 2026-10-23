@@ -28,7 +28,7 @@ const (
 	testCreatedListID       = int64(8)
 	testListName            = "Contest preparation"
 	testProblemID           = "1845A"
-	testListsPath           = "/api/lists"
+	testListsPath           = "/api/v1/lists"
 
 	testInvalidListIDMessage        = "Invalid list Id"
 	testInvalidFormatMessage        = "Invalid format"

@@ -40,7 +40,7 @@ const (
 	userNotFound                    = "User not found"
 	failedToLoadUser                = "Failed to load user"
 	testUserHandlerID               = int64(42)
-	testUserHandlerPath             = "/api/user"
+	testUserHandlerPath             = "/api/v1/user"
 	testProfilePath                 = testUserHandlerPath + "/profile"
 	testCFHandlePath                = testUserHandlerPath + "/cfhandle"
 	testVerificationTokenPath       = testUserHandlerPath + "/cfverification-token"

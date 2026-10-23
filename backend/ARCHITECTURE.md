@@ -185,7 +185,7 @@ classDiagram
 
 ## HTTP routes and contracts
 
-The canonical application prefix is `/api`. Only the two GitHub routes also have aliases without that prefix. `/user/...` and `/lists/...` without `/api` are not registered. `/` returns `404`. Public health probes live under `/health`.
+The canonical application prefix is `/api/v1`. Only the two GitHub routes also have aliases under `/v1` instead of that prefix. `/user/...` and `/lists/...` without `/api/v1` are not registered. `/` returns `404`. Public health probes live under `/health`.
 
 Protected requests require `Authorization: Bearer <JWT>`. Send `Content-Type: application/json` with JSON bodies. Errors from application handlers use `{"error":"message"}`; success messages use `{"message":"message"}`. Gin's default unregistered-route response and middleware responses such as CORS rejection do not necessarily use this JSON envelope.
 
@@ -204,10 +204,10 @@ Neither route requires authentication. Both disable caching with `Cache-Control:
 
 | Method and path | Input | Success | Failure |
 | --- | --- | --- | --- |
-| `GET /api/auth/github/login` | No body. Browser navigation. | `307` redirect to GitHub; sets OAuth state cookie. | `500` if state generation fails. |
-| `GET /api/auth/github/callback` | Query `code` and `state`; matching state cookie. | `200 {"user": User, "token": "JWT"}` | `400` invalid/missing state; `500` token exchange, user fetch/decode, persistence, or JWT generation failure; `502` rejected GitHub user response. |
+| `GET /api/v1/auth/github/login` | No body. Browser navigation. | `307` redirect to GitHub; sets OAuth state cookie. | `500` if state generation fails. |
+| `GET /api/v1/auth/github/callback` | Query `code` and `state`; matching state cookie. | `200 {"user": User, "token": "JWT"}` | `400` invalid/missing state; `500` token exchange, user fetch/decode, persistence, or JWT generation failure; `502` rejected GitHub user response. |
 
-Aliases: `GET /auth/github/login` and `GET /auth/github/callback` have identical behavior.
+Aliases: `GET /v1/auth/github/login` and `GET /v1/auth/github/callback` have identical behavior.
 
 ### Protected user routes
 
@@ -215,10 +215,10 @@ All four routes can return `401 {"error":"Unauthorized"}` before the handler run
 
 | Method and path | Input | Success | Additional failures |
 | --- | --- | --- | --- |
-| `GET /api/user/profile` | None | `200 {"user": User}` | No additional handler-specific errors. |
-| `PUT /api/user/cfhandle` | `{"cf_handle":"tourist"}` | `200 {"message":"CF Handle updated"}` | `400` invalid body/handle; `409` stale handles; `500` database write; provider errors below. |
-| `GET /api/user/cfverification-token` | None; selected handle is read from the database. | `200 {"token":"9-character challenge"}` | `400` already verified; `500` token generation failure. |
-| `GET /api/user/verify-cftoken` | None; reads the challenge and selected handle server-side. | `200 {"message":"User verified"}` | `400` already verified or invalid/expired/missing token; `409` stale handles; `500` database write; provider errors below. |
+| `GET /api/v1/user/profile` | None | `200 {"user": User}` | No additional handler-specific errors. |
+| `PUT /api/v1/user/cfhandle` | `{"cf_handle":"tourist"}` | `200 {"message":"CF Handle updated"}` | `400` invalid body/handle; `409` stale handles; `500` database write; provider errors below. |
+| `GET /api/v1/user/cfverification-token` | None; selected handle is read from the database. | `200 {"token":"9-character challenge"}` | `400` already verified; `500` token generation failure. |
+| `GET /api/v1/user/verify-cftoken` | None; reads the challenge and selected handle server-side. | `200 {"message":"User verified"}` | `400` already verified or invalid/expired/missing token; `409` stale handles; `500` database write; provider errors below. |
 
 Handle input is required, limited to 255 characters by binding validation, then trimmed; whitespace-only values and semicolons are rejected. With no stored proof, selecting a handle does not call Codeforces or establish that the account exists. The challenge endpoint currently does not reject an empty selected handle; clients should select a handle first.
 
@@ -240,13 +240,13 @@ Every route requires a JWT. For list-specific operations, a missing list and a l
 
 | Method and path | Input | Success |
 | --- | --- | --- |
-| `GET /api/lists` | None | `200 {"message":"Lists fetched successfully", "lists": List[]}` |
-| `POST /api/lists` | `{"name":"Practice"}` | `201 {"message":"List created", "list": List}` |
-| `GET /api/lists/:listId` | List ID | `200 {"message":"List fetched successfully", "list": List, "items": ListItem[]}` |
-| `PUT /api/lists/:listId` | `{"name":"Updated name"}` | `200 {"message":"List name updated"}` |
-| `DELETE /api/lists/:listId` | List ID | `200 {"message":"List deleted"}` |
-| `PUT /api/lists/:listId/item` | `{"problem_id":"1900A", "position":0}` | `201 {"message":"Successfully added item to list", "item": ListItem}` |
-| `DELETE /api/lists/:listId/item/:itemId` | `itemId` is the problem ID string, **not** a numeric row ID. | `200 {"message":"Item deleted from list"}` |
+| `GET /api/v1/lists` | None | `200 {"message":"Lists fetched successfully", "lists": List[]}` |
+| `POST /api/v1/lists` | `{"name":"Practice"}` | `201 {"message":"List created", "list": List}` |
+| `GET /api/v1/lists/:listId` | List ID | `200 {"message":"List fetched successfully", "list": List, "items": ListItem[]}` |
+| `PUT /api/v1/lists/:listId` | `{"name":"Updated name"}` | `200 {"message":"List name updated"}` |
+| `DELETE /api/v1/lists/:listId` | List ID | `200 {"message":"List deleted"}` |
+| `PUT /api/v1/lists/:listId/item` | `{"problem_id":"1900A", "position":0}` | `201 {"message":"Successfully added item to list", "item": ListItem}` |
+| `DELETE /api/v1/lists/:listId/item/:itemId` | `itemId` is the problem ID string, **not** a numeric row ID. | `200 {"message":"Item deleted from list"}` |
 
 Names are required and trimmed; empty names and names longer than 100 Unicode characters return `400 {"error":"Invalid format"}`. Adding an item requires a nonempty trimmed `problem_id` (binding maximum 100 characters) and an explicitly supplied integer `position >= 0`; invalid bodies return the same `400`. All request bodies are capped at 16 KiB before JSON decoding; oversized bodies return `413`. URL-encode problem IDs when constructing item paths.
 
@@ -295,11 +295,11 @@ sequenceDiagram
     participant Repo as Users repository
     participant DB as PostgreSQL
     User->>Browser: Choose GitHub login
-    Browser->>Auth: GET /api/auth/github/login
+    Browser->>Auth: GET /api/v1/auth/github/login
     Auth-->>Browser: Set HttpOnly state cookie; 307 to GitHub
     Browser->>GitHub: Authorize with state and redirect URI
     GitHub-->>Browser: Redirect to frontend callback with code and state
-    Browser->>Auth: GET /api/auth/github/callback?code=...&state=... plus cookie
+    Browser->>Auth: GET /api/v1/auth/github/callback?code=...&state=... plus cookie
     Auth->>Auth: Compare state in constant time
     alt State absent or mismatched
         Auth-->>Browser: 400 Invalid GitHub OAuth state
@@ -382,11 +382,11 @@ sequenceDiagram
     participant DB as PostgreSQL via users repository
     participant Tokens as In-memory token store
     participant CF as Codeforces
-    Client->>API: PUT /api/user/cfhandle with selected handle
+    Client->>API: PUT /api/v1/user/cfhandle with selected handle
     API->>DB: Read user; conditionally save selected handle
     DB-->>API: Success
     API-->>Client: 200 CF Handle updated
-    Client->>API: GET /api/user/cfverification-token
+    Client->>API: GET /api/v1/user/cfverification-token
     API->>DB: Read selected and verified handles
     DB-->>API: Unverified user
     API->>Tokens: Get token for user ID and lowercase handle
@@ -397,7 +397,7 @@ sequenceDiagram
     API-->>Client: 200 token
     Client-->>User: Ask user to set Codeforces firstName to token
     User->>CF: Update Settings / Social / First name
-    Client->>API: GET /api/user/verify-cftoken
+    Client->>API: GET /api/v1/user/verify-cftoken
     API->>DB: Read current selected and verified handles
     DB-->>API: User snapshot
     API->>CF: user.info selected handle, checkHistoricHandles=false
@@ -433,7 +433,7 @@ sequenceDiagram
     participant API as User API
     participant CF as Codeforces
     participant DB as PostgreSQL via users repository
-    Client->>API: PUT /api/user/cfhandle with requested handle
+    Client->>API: PUT /api/v1/user/cfhandle with requested handle
     API->>DB: Read selected and verified handle snapshot
     DB-->>API: User snapshot
     alt Verified handle exists and differs from requested handle
@@ -480,7 +480,7 @@ sequenceDiagram
     participant Lists as Lists repository
     participant Items as Items repository
     participant DB as PostgreSQL
-    Client->>Auth: PUT /api/lists/12/item with problem_id and position
+    Client->>Auth: PUT /api/v1/lists/12/item with problem_id and position
     Auth->>API: Authenticated userId
     API->>API: Parse listId; validate item JSON
     API->>Items: Create(userId, item)
@@ -494,7 +494,7 @@ sequenceDiagram
         Items-->>API: Item
         API-->>Client: 201 item and message
     end
-    Client->>Auth: GET /api/lists/12
+    Client->>Auth: GET /api/v1/lists/12
     Auth->>API: Authenticated userId
     API->>Lists: GetById(userId, 12)
     Lists->>DB: SELECT list WHERE id=12 AND user_id=userId
@@ -575,7 +575,7 @@ The intended hosting request path is browser/frontend â†’ HTTPS reverse proxy â†
 | Provider calls | Outbound HTTPS to GitHub and Codeforces | Require network egress, CA certificates, and the configured timeout. |
 | PostgreSQL pool | Per-process `sql.DB` | At most ten open connections per API process; application repository operations inherit request cancellation and a five-second default timeout, including pool waits. |
 
-For deployment, apply migrations separately, inject the README's required environment variables, set the frontend API base URL to the reachable API `/api` prefix, configure the exact frontend CORS origin, and register the frontend callback URL in GitHub OAuth settings. Forward `X-Forwarded-Proto: https` from the HTTPS proxy for secure OAuth cookies. The proxy should control that forwarded header. The container exposes port 8080 by default; changing `PORT` also requires matching hosting port configuration.
+For deployment, apply migrations separately, inject the README's required environment variables, set `VITE_BACKEND_API_URL` to the reachable `/api` prefix (the frontend appends `/v1`), configure the exact frontend CORS origin, and register the frontend callback URL in GitHub OAuth settings. Forward `X-Forwarded-Proto: https` from the HTTPS proxy for secure OAuth cookies. The proxy should control that forwarded header. The container exposes port 8080 by default; changing `PORT` also requires matching hosting port configuration.
 
 `gin.New()` uses explicit access logging and recovery middleware and is served by an explicit `http.Server`. Logs exclude query strings and raw request/panic dumps; see [logging configuration](LOGGING.md). Header/read/write/idle defaults are 5s/10s/30s/60s. On SIGTERM or SIGINT, `Shutdown` stops accepting connections and drains active requests with a fresh 30-second default budget; the signal does not immediately cancel active request contexts. `main` waits before closing PostgreSQL. If draining fails or expires, the server closes remaining connections and reports a failure. Unexpected listener/serving errors are reported after server cleanup. See [HTTP lifecycle configuration](README.md#http-server-lifecycle) and ensure the hosting termination grace period leaves additional cleanup time.
 

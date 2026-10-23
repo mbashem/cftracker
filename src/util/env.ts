@@ -1,4 +1,5 @@
-export const BACKEND_API_URL = import.meta.env.VITE_BACKEND_API_URL;
+const backendApiBaseUrl = import.meta.env.VITE_BACKEND_API_URL?.replace(/\/+$/, "");
+export const BACKEND_API_URL = backendApiBaseUrl ? `${backendApiBaseUrl}/v1` : undefined;
 export const IS_BACKEND_AVAILABLE = import.meta.env.VITE_IS_BACKEND_AVAILABLE === "true";
 export const BACKEND_NOT_AVAILBLE_MESSAGE = import.meta.env.VITE_BACKEND_NOT_AVAILBLE_MESSAGE;
 export const IS_DEBUG_MODE = import.meta.env.VITE_DEBUG_MODE === "true";

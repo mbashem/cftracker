@@ -79,7 +79,7 @@ CORS may terminate a request before it reaches these groups, including preflight
 | --- | --- | --- |
 | Public health | None of these rate-limit policies | Liveness and readiness |
 | Authentication | `LimitAuthentication` | GitHub login and callback, including compatibility aliases |
-| Protected `/api` | `Authenticate`, then `LimitUser` | Users and lists |
+| Protected `/api/v1` | `Authenticate`, then `LimitUser` | Users and lists |
 
 Feature registrars accept `gin.IRouter`, the routing interface implemented by both `*gin.Engine` and `*gin.RouterGroup`. This allows the central registrar to pass an existing group with its middleware already attached. The main server remains a `*gin.Engine`.
 
@@ -91,19 +91,19 @@ User routes add `/user` to the protected group; list routes add `/lists`. Featur
 
 | Method and path | Applied policies |
 | --- | --- |
-| `GET /auth/github/login`, `GET /api/auth/github/login` | Login by IP; aliases share a bucket |
-| `GET /auth/github/callback`, `GET /api/auth/github/callback` | Callback by IP; aliases share a bucket |
-| `GET /api/user/profile` | General |
-| `PUT /api/user/cfhandle` | General + write; Codeforces only if a historical lookup is needed |
-| `GET /api/user/cfverification-token` | General |
-| `GET /api/user/verify-cftoken` | General; Codeforces if verification reaches the provider call |
-| `GET /api/lists` | General |
-| `POST /api/lists` | General + write |
-| `GET /api/lists/:listId` | General |
-| `PUT /api/lists/:listId` | General + write |
-| `DELETE /api/lists/:listId` | General + write |
-| `PUT /api/lists/:listId/item` | General + write |
-| `DELETE /api/lists/:listId/item/:itemId` | General + write |
+| `GET /v1/auth/github/login`, `GET /api/v1/auth/github/login` | Login by IP; aliases share a bucket |
+| `GET /v1/auth/github/callback`, `GET /api/v1/auth/github/callback` | Callback by IP; aliases share a bucket |
+| `GET /api/v1/user/profile` | General |
+| `PUT /api/v1/user/cfhandle` | General + write; Codeforces only if a historical lookup is needed |
+| `GET /api/v1/user/cfverification-token` | General |
+| `GET /api/v1/user/verify-cftoken` | General; Codeforces if verification reaches the provider call |
+| `GET /api/v1/lists` | General |
+| `POST /api/v1/lists` | General + write |
+| `GET /api/v1/lists/:listId` | General |
+| `PUT /api/v1/lists/:listId` | General + write |
+| `DELETE /api/v1/lists/:listId` | General + write |
+| `PUT /api/v1/lists/:listId/item` | General + write |
+| `DELETE /api/v1/lists/:listId/item/:itemId` | General + write |
 | `GET /health/live`, `GET /health/ready` | Exempt |
 
 The verification endpoint uses GET today, so it consumes no write allowance. Its external work is still protected by the stricter Codeforces policy.

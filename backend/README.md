@@ -46,7 +46,7 @@ CODEFORCES_COOLDOWN=1m
 
 `PORT` defaults to `8080`. `EXTERNAL_API_TIMEOUT` accepts Go duration values such as `5s` or `1m` and defaults to `10s`. `CORS_ALLOWED_ORIGINS` requires at least one valid HTTP or HTTPS origin without paths, queries, fragments, or credentials; separate multiple origins with commas. Invalid entries are logged and skipped, but an empty or entirely invalid list stops startup during configuration loading, before database initialization, with `CORS_ALLOWED_ORIGINS must contain at least one valid HTTP or HTTPS origin`. Do not use `*` because the API allows credentialed CORS requests. With valid configuration, requests without an `Origin` header remain usable for health checks and direct API clients.
 
-GitHub sign-in must start at `/api/auth/github/login`. The handler stores the short-lived OAuth state in an HTTP-only cookie, and the frontend forwards GitHub's returned `state` with the authorization code. A new login replaces any pending login in the same browser profile. HTTPS deployments behind a reverse proxy must set `X-Forwarded-Proto: https` so the state cookie is marked `Secure`.
+GitHub sign-in must start at `/api/v1/auth/github/login`. The handler stores the short-lived OAuth state in an HTTP-only cookie, and the frontend forwards GitHub's returned `state` with the authorization code. A new login replaces any pending login in the same browser profile. HTTPS deployments behind a reverse proxy must set `X-Forwarded-Proto: https` so the state cookie is marked `Secure`.
 
 `DATABASE_TIMEOUT` is a positive Go duration, defaulting to `5s`. Every application repository operation derives a timeout from the HTTP request context. Its budget includes waiting for a pooled connection, executing SQL, reading rows, and all queries in a multi-step operation or transaction. A client cancellation or earlier parent deadline takes effect first. Provider calls keep their separate `EXTERNAL_API_TIMEOUT` budget; `DATABASE_TIMEOUT` is not an overall HTTP request timeout or a migration-command timeout. Database failures, including timeouts, retain the existing operation-specific HTTP `500` responses.
 
@@ -284,7 +284,7 @@ Readiness checks database connectivity, not migration state or GitHub/Codeforces
 
 ## API
 
-The canonical API prefix is `/api`. GitHub login and callback are public; `/api/user` and `/api/lists` require `Authorization: Bearer <token>`. Only the GitHub routes also have aliases without `/api`.
+The canonical API prefix is `/api/v1`. GitHub login and callback are public; `/api/v1/user` and `/api/v1/lists` require `Authorization: Bearer <token>`. GitHub routes also have aliases under `/v1/auth/github`. Unversioned application routes are not registered. The frontend appends `/v1` to `VITE_BACKEND_API_URL`, so keep that setting pointed at the `/api` base.
 
 See the [complete HTTP route and payload reference](ARCHITECTURE.md#http-routes-and-contracts), [GitHub login sequence](ARCHITECTURE.md#github-authentication-flow), and [Codeforces ownership sequence](ARCHITECTURE.md#codeforces-ownership-flow).
 
@@ -300,6 +300,9 @@ Pending tokens remain in process memory and expire after one hour. Run a single 
 
 ## Docker
 
+For production Compose deployment with private PostgreSQL, separate application
+credentials, migrations, and manual backups, follow [DEPLOYMENT.md](DEPLOYMENT.md).
+
 Build one environment-neutral image from the `backend` directory:
 
 ```sh
@@ -310,7 +313,8 @@ Keep production configuration outside the repository and image, restrict its fil
 
 ```sh
 chmod 600 /secure/path/cftracker.env
-docker run --env-file /secure/path/cftracker.env -p 8080:8080 cftracker-backend
+docker run -d --restart unless-stopped --stop-timeout=40 \
+  --env-file /secure/path/cftracker.env -p 127.0.0.1:8080:8080 cftracker-backend
 ```
 
 With Docker Compose, use `env_file` to inject the same protected host file:
@@ -319,10 +323,12 @@ With Docker Compose, use `env_file` to inject the same protected host file:
 services:
   backend:
     image: cftracker-backend
+    restart: unless-stopped
+    stop_grace_period: 40s
     env_file:
       - /secure/path/cftracker.env
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
 ```
 
 When PostgreSQL runs on the host during local Docker development, use `host.docker.internal` in `DATABASE_URL`:
