@@ -1,0 +1,78 @@
+name: cftracker
+
+services:
+  postgres:
+    image: postgres:14-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: cftracker
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+    secrets:
+      - postgres_password
+      - app_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/deploy/init-app-role.sql:/docker-entrypoint-initdb.d/10-app-role.sql:ro
+    networks: [database]
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U postgres -d cftracker"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    logging: &logging
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: dockerfile
+      target: backend
+    restart: unless-stopped
+    stop_grace_period: 40s
+    env_file: ["/etc/cftracker/backend.env"]
+    environment:
+      PORT: "8080"
+      GIN_MODE: release
+      HTTP_SHUTDOWN_TIMEOUT: 30s
+    ports: ["127.0.0.1:8080:8080"]
+    networks: [database, outbound]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    logging: *logging
+
+  migrate:
+    profiles: [tools]
+    build:
+      context: ./backend
+      dockerfile: dockerfile
+      target: migration
+    env_file: ["/etc/cftracker/migration.env"]
+    networks: [database]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    logging: *logging
+
+networks:
+  database:
+    internal: true
+  outbound:
+
+volumes:
+  postgres_data:
+
+secrets:
+  postgres_password:
+    file: /etc/cftracker/postgres-password
+  app_password:
+    file: /etc/cftracker/app-password

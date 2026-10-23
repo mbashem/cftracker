@@ -4,14 +4,29 @@ WORKDIR /build
 COPY . /build
 RUN CGO_ENABLED=0 go build -o api_bin ./cmd/api
 
-FROM alpine
+FROM builder AS migration-builder
+RUN CGO_ENABLED=0 go build -o migration-check ./cmd/migration-check \
+	&& CGO_ENABLED=0 GOBIN=/build go install -tags postgres github.com/golang-migrate/migrate/v4/cmd/migrate@v4.17.1
+
+FROM alpine AS runtime
 
 WORKDIR /app
 RUN apk add --no-cache ca-certificates \
 	&& addgroup -S cftracker \
 	&& adduser -S cftracker -G cftracker
-COPY --from=builder /build/api_bin .
 USER cftracker
+
+FROM runtime AS migration
+USER root
+RUN apk add --no-cache postgresql-client
+USER cftracker
+COPY --from=migration-builder /build/migration-check /build/migrate /app/
+COPY migrations /app/migrations
+COPY deploy/migrate.sh /app/migrate.sh
+CMD ["sh", "/app/migrate.sh"]
+
+FROM runtime AS backend
+COPY --from=builder /build/api_bin .
 EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
 	CMD wget -q -O /dev/null -T 2 "http://127.0.0.1:${PORT:-8080}/health/ready" || exit 1

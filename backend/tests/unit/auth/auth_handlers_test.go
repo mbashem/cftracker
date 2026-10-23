@@ -35,8 +35,8 @@ const (
 	githubOAuthStateCookieName = "cftracker_github_oauth_state"
 	githubOAuthStateLength     = 32
 	githubOAuthStateMaxAge     = 10 * 60
-	testGitHubLoginPath        = "/api/auth/github/login"
-	testGitHubCallbackPath     = "/api/auth/github/callback"
+	testGitHubLoginPath        = "/api/v1/auth/github/login"
+	testGitHubCallbackPath     = "/api/v1/auth/github/callback"
 	testGitHubOAuthState       = "test-oauth-state"
 	testDifferentOAuthState    = "different-oauth-state"
 	testGitHubOAuthCode        = "test-oauth-code"

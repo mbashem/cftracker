@@ -18,7 +18,7 @@ import (
 
 const (
 	testGitHubProviderTokenURL     = "https://github.test/login/oauth/access_token"
-	testGitHubProviderRedirectURL  = "https://cftracker.test/auth/github/callback"
+	testGitHubProviderRedirectURL  = "https://cftracker.test/v1/auth/github/callback"
 	testGitHubProviderClientID     = "test-client-id"
 	testGitHubProviderClientSecret = "test-client-secret"
 	testGitHubProviderAccessToken  = "test-access-token"
