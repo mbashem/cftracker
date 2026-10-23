@@ -94,7 +94,7 @@ func TestCompleteAPIWorkflow(t *testing.T) {
 	ownerClient := newWorkflowHTTPClient(t)
 	ownerSession := authenticateWorkflowUser(t, ownerClient, server.URL, workflowOwnerCode, ownerGitHubUser)
 	profile := decodeWorkflowJSON[workflowResponseBody](t, performWorkflowRequest(
-		t, ownerClient, http.MethodGet, server.URL+"/api/user/profile", ownerSession.Token, "",
+		t, ownerClient, http.MethodGet, server.URL+"/api/v1/user/profile", ownerSession.Token, "",
 	), http.StatusOK)
 	if profile.User != ownerSession.User {
 		t.Fatalf("profile user = %+v, want %+v", profile.User, ownerSession.User)
@@ -104,7 +104,7 @@ func TestCompleteAPIWorkflow(t *testing.T) {
 		t,
 		ownerClient,
 		http.MethodPost,
-		server.URL+"/api/lists",
+		server.URL+"/api/v1/lists",
 		ownerSession.Token,
 		fmt.Sprintf(`{"name":%q}`, workflowListName),
 	), http.StatusCreated)
@@ -113,7 +113,7 @@ func TestCompleteAPIWorkflow(t *testing.T) {
 		createdList.List.CreatedAt.IsZero() {
 		t.Fatalf("create-list response = %+v", createdList)
 	}
-	listPath := fmt.Sprintf("/api/lists/%d", createdList.List.Id)
+	listPath := fmt.Sprintf("/api/v1/lists/%d", createdList.List.Id)
 
 	firstItem := addWorkflowItem(
 		t, ownerClient, server.URL, ownerSession.Token, createdList.List.Id, workflowFirstProblemID, 0,
@@ -142,19 +142,19 @@ func TestCompleteAPIWorkflow(t *testing.T) {
 	otherClient := newWorkflowHTTPClient(t)
 	otherSession := authenticateWorkflowUser(t, otherClient, server.URL, workflowOtherUserCode, otherGitHubUser)
 	otherProfile := decodeWorkflowJSON[workflowResponseBody](t, performWorkflowRequest(
-		t, otherClient, http.MethodGet, server.URL+"/api/user/profile", otherSession.Token, "",
+		t, otherClient, http.MethodGet, server.URL+"/api/v1/user/profile", otherSession.Token, "",
 	), http.StatusOK)
 	if otherProfile.User != otherSession.User {
 		t.Fatalf("other profile user = %+v, want %+v", otherProfile.User, otherSession.User)
 	}
 	otherLists := decodeWorkflowJSON[workflowResponseBody](t, performWorkflowRequest(
-		t, otherClient, http.MethodGet, server.URL+"/api/lists", otherSession.Token, "",
+		t, otherClient, http.MethodGet, server.URL+"/api/v1/lists", otherSession.Token, "",
 	), http.StatusOK)
 	if otherLists.Lists == nil || len(otherLists.Lists) != 0 {
 		t.Fatalf("other user's lists = %+v, want non-nil empty slice", otherLists.Lists)
 	}
 
-	missingListPath := fmt.Sprintf("/api/lists/%d", createdList.List.Id+1000000)
+	missingListPath := fmt.Sprintf("/api/v1/lists/%d", createdList.List.Id+1000000)
 	foreignOperations := []struct {
 		name        string
 		method      string
@@ -240,7 +240,7 @@ func authenticateWorkflowUser(
 ) workflowResponseBody {
 	t.Helper()
 	loginResponse := performWorkflowRequest(
-		t, client, http.MethodGet, serverURL+"/api/auth/github/login", "", "",
+		t, client, http.MethodGet, serverURL+"/api/v1/auth/github/login", "", "",
 	)
 	if loginResponse.status != http.StatusTemporaryRedirect {
 		t.Fatalf("GitHub login status = %d, want %d; body = %s", loginResponse.status, http.StatusTemporaryRedirect, loginResponse.body)
@@ -254,7 +254,7 @@ func authenticateWorkflowUser(
 		t.Fatal("GitHub authorization state is empty")
 	}
 
-	callbackURL, err := url.Parse(serverURL + "/api/auth/github/callback")
+	callbackURL, err := url.Parse(serverURL + "/api/v1/auth/github/callback")
 	if err != nil {
 		t.Fatalf("parse callback URL: %v", err)
 	}
@@ -295,7 +295,7 @@ func addWorkflowItem(
 		t,
 		client,
 		http.MethodPut,
-		fmt.Sprintf("%s/api/lists/%d/item", serverURL, listID),
+		fmt.Sprintf("%s/api/v1/lists/%d/item", serverURL, listID),
 		token,
 		fmt.Sprintf(`{"problem_id":%q,"position":%d}`, problemID, position),
 	), http.StatusCreated)
