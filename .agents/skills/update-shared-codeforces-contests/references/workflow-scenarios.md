@@ -2,6 +2,8 @@
 
 Use these scenarios as behavioral checks when executing the shared-contest workflow. They illustrate decisions; the contest IDs and names are examples.
 
+All tool-call scenarios assume explicit permission already covers the MCP endpoint and the relevant Codeforces API actions. If that permission is missing, explain the specific actions and destinations, request permission, and wait before connecting or calling tools. In particular, `sync_contests` fetches Codeforces data and updates the local contest database before contest-group confirmation. A concluded-contest notification alone does not authorize that access.
+
 ## 1. Server unavailable
 
 The MCP tools cannot connect.

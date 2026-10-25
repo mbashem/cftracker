@@ -43,6 +43,7 @@ Apply these conventions within `backend/`. Follow a more specific backend skill 
 ## Verify Proportionally
 
 - Format changed Go code and run focused tests for the affected behavior.
-- Run broader tests, race detection, `go vet`, integration tests, or migration checks when the change crosses those boundaries.
+- Run broader isolated tests, race detection, or `go vet` when the change crosses those boundaries. Follow the shared `testing` skill for test isolation.
+- Run integration tests or migration checks that interact with real databases, services, or other system resources only when the user explicitly requests and authorizes their concrete scope, including setup and cleanup. A general request to implement, test, or verify a change does not authorize this integration work.
 - Keep every production file covered by an introduced unit-test suite at 100% statement coverage when the file is simple enough for that standard.
 - Report what was verified, what was not run, and any remaining risk without overstating what a test proves.

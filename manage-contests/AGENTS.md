@@ -10,4 +10,4 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 ## Shared-contest MCP workflow
 
-When asked to process or resume a concluded shared Codeforces contest, use `$update-shared-codeforces-contests` from `../.agents/skills/update-shared-codeforces-contests/SKILL.md`. If its MCP server is unavailable, start `npm run dev -- -H 127.0.0.1 -p 3000` from this directory in a persistent command-line session, wait for Next.js readiness, and reconnect before continuing. Process one confirmed group at a time and do not change application code unless separately requested.
+When asked to process or resume a concluded shared Codeforces contest, use `$update-shared-codeforces-contests` from `../.agents/skills/update-shared-codeforces-contests/SKILL.md`. The MCP server is managed externally; do not start, stop, or restart it. If its tools are unavailable, report that the server must be started externally and that Codex may need a new session or an explicit MCP reconnect, then stop the workflow. Process one confirmed group at a time and do not change application code unless separately requested.
