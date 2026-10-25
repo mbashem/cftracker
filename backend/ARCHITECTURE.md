@@ -28,7 +28,9 @@ Paths in this table are relative to `backend/` unless they start with `../`.
 
 | Path | Responsibility |
 | --- | --- |
-| [`cmd/api/main.go`](cmd/api/main.go) | Constructs dependencies, middleware, routes, and HTTP server configuration; delegates network lifecycle to the server package. |
+| [`cmd/api/main.go`](cmd/api/main.go) | Loads configuration, owns the database lifetime, initializes JWT signing, and delegates router assembly and HTTP server lifecycle. |
+| [`internal/app/dependencies.go`](internal/app/dependencies.go) | Constructs providers, repositories, handlers, and the shared rate limiter from application configuration. |
+| [`internal/app/router.go`](internal/app/router.go) | Assembles request logging, recovery, trusted proxies, CORS, and feature routes. |
 | [`configs/configs.go`](configs/configs.go) | Loads environment and optional `.env`, validates required settings, parses CORS origins and provider timeout. |
 | [`configs/http_server.go`](configs/http_server.go) | Parses positive HTTP socket and shutdown timeouts with defaults. |
 | [`internal/server/server.go`](internal/server/server.go) | Configures `http.Server`, owns TCP listener creation, drains active requests, and force-closes connections if shutdown fails. |
@@ -68,13 +70,13 @@ Paths in this table are relative to `backend/` unless they start with `../`.
 
 ## Startup and dependencies
 
-The application performs these steps in `main()`:
+The entry point owns configuration, database cleanup, and the server lifecycle. It delegates request setup to `app.NewRouter(config, database)`:
 
 1. Load configuration. Existing process environment takes precedence over `.env`; invalid required settings stop startup. `CORS_ALLOWED_ORIGINS` must yield at least one valid HTTP/HTTPS origin; an empty or entirely invalid list returns a clear configuration error before database initialization or CORS middleware construction.
 2. Initialize the JWT signing secret.
 3. Open PostgreSQL and ping it with a five-second deadline. The pool allows up to ten open and five idle connections. Failure stops startup.
-4. Construct the shared provider HTTP client and GitHub/Codeforces providers using `EXTERNAL_API_TIMEOUT` (default ten seconds).
-5. Construct repositories from the database connection, then handlers from their repository/provider interfaces. Create one Codeforces token store and one shared rate-limit service for this process. Inject the limiter into the user API and route dependencies.
+4. In the application package, construct one shared rate-limit service from configuration, then the shared provider HTTP client and GitHub/Codeforces providers using `EXTERNAL_API_TIMEOUT` (default ten seconds).
+5. Construct repositories from the database connection, then handlers from their repository/provider interfaces. Create one Codeforces token store for this process. Inject the shared limiter into the user API and route dependencies.
 6. Create Gin with explicit query-free request logging and panic recovery, configure trusted proxies (none by default), install CORS, and register all routes. Protected routes authenticate before applying per-user limits; public authentication routes apply per-IP limits. Health routes are exempt. See [request logging](LOGGING.md) for application and proxy filtering.
 7. Create an explicit `http.Server` with configured header/read/write/idle timeouts and listen on `:<PORT>` (default `8080`). The API listener is HTTP; a hosting reverse proxy can terminate TLS. `main` registers SIGTERM/SIGINT cancellation and waits for the server lifecycle before dependency cleanup.
 
@@ -88,6 +90,9 @@ The handler-to-interface arrows show the injected boundaries. Concrete repositor
 classDiagram
     class Main {
         main()
+    }
+    class ApplicationSetup {
+        NewRouter()
     }
     class GinRouter
     class HTTPServer
@@ -143,14 +148,15 @@ classDiagram
         GetCurrentHandle()
         GetVerificationValue()
     }
-    Main --> GinRouter : constructs
+    Main --> ApplicationSetup : configuration and database
+    ApplicationSetup --> GinRouter : constructs
     Main --> HTTPServer : configures socket timeouts
     Main --> ServerLifecycle : signal cancellation
     HTTPServer --> GinRouter : handler
     ServerLifecycle --> HTTPServer : serves and drains
     Main --> SQLDB : opens pool
-    Main --> VerificationTokenStore : creates
-    Main --> RateLimitService : creates shared service
+    ApplicationSetup --> VerificationTokenStore : creates
+    ApplicationSetup --> RateLimitService : creates shared service
     GinRouter --> AuthenticateMiddleware : protected routes
     GinRouter --> RateLimitMiddleware : user budgets and auth IP budgets
     RateLimitMiddleware --> RateLimitService
