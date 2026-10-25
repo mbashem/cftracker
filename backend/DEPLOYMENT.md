@@ -1,5 +1,11 @@
 # Production Compose deployment
 
+For a VPS installation, SSH/firewall recovery, DNS/IPv6/NGINX/HTTPS,
+local image transfer, and repeatable release scripts, follow the
+[VPS runbook](deploy/vps/README.md). It uses placeholders for deployment-specific
+values and includes verification steps. That workflow needs no source checkout
+or registry on the server.
+
 Run commands from the repository root. This setup assumes a Linux server with
 Docker Compose and an HTTPS reverse proxy on the host. Keep one backend replica:
 verification tokens and rate-limit allowances are process-local. CI is optional
@@ -19,9 +25,14 @@ openssl rand -base64 32  # JWT signing secret
 Write the administrator and application passwords to
 `/etc/cftracker/postgres-password` and `/etc/cftracker/app-password`, respectively.
 Use the hex passwords unchanged in the connection URLs below. Other passwords
-must be URL-encoded. Set all four configuration files below to mode `600`; never
-commit them. Compose secret mounts are backed by host files, not an encrypted
-secret store.
+must be URL-encoded. Set `postgres-password`, `backend.env`, and `migration.env`
+to mode `600`. Set `app-password` to `644`: the PostgreSQL SQL initializer runs
+as the container's database user and must read this bind-mounted secret. Keep
+the parent `/etc/cftracker` directory at `700`, preventing other unprivileged
+host users from accessing the file. Mount the application password only into
+PostgreSQL; privileged host/Docker users can still access it. Never commit these
+files. Compose secret mounts are backed by host files, not an encrypted secret
+store.
 
 `/etc/cftracker/backend.env`:
 
