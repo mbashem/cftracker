@@ -455,7 +455,14 @@ bash -n backend/deploy/vps/bundle.sh backend/deploy/vps/server.sh
 PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s backend/deploy/vps -p 'test_*.py'
 ```
 
-Tests mock Docker; they do not contact a network, run containers, use SSH, or
-modify host services. A real Ubuntu end-to-end deployment remains an operator
-check. Script execution of build/pull/SSH/Certbot/public health checks is networked
-and must be separately authorized if performed by an automated agent.
+Unit tests execute the real manifest renderer, configuration validator, secret
+initializer, and checksum writer. File objects, environment access, host permission
+changes, and randomness are mocked at their boundaries; the functions under test
+are not mocked or reimplemented. Each test class has its own file. Tests do not
+create/read real test files, launch subprocesses, change the real environment, or
+contact services. Disable bytecode output as shown above to avoid Python caches.
+Assertions verify requested operations and their outcomes against mocked system
+dependencies; actual host permissions, Bash orchestration, backups, and service
+behavior still need separate operator verification. Script execution of
+build/pull/SSH/Certbot/public health checks is networked and must be separately
+authorized if performed by an automated agent.

@@ -19,35 +19,40 @@ def validate_origin(value):
         raise SystemExit("Invalid origin.")
 
 
-def initialize_config(directory):
-    """Create first-installation credentials, refusing existing secret files."""
-    # Protect files even when this helper is invoked separately from server.sh.
-    os.umask(0o077)
-    frontend, origins = os.environ["frontend"], os.environ["origins"]
+def configuration_contents(frontend, origins, client_id, client_secret, admin, app, jwt):
+    """Validate supplied values and return file contents without system access."""
     validate_origin(frontend)
     for value in origins.split(","):
         validate_origin(value)
-    for key in ("client_id", "client_secret"):
-        if not re.fullmatch(r"[A-Za-z0-9_-]+", os.environ[key]):
+    for credential in (client_id, client_secret):
+        if not re.fullmatch(r"[A-Za-z0-9_-]+", credential):
             raise SystemExit("Invalid or empty OAuth credential.")
-    names = ("postgres-password", "app-password", "backend.env", "migration.env")
-    directory.mkdir(mode=0o700, exist_ok=True)
-    directory.chmod(0o700)
-    if any((directory / name).exists() for name in names):
-        raise SystemExit("Configuration already exists; edit it manually. No secrets were replaced.")
-    # Generate independent credentials; hex passwords need no URL percent-encoding.
-    admin, app = secrets.token_hex(32), secrets.token_hex(32)
-    contents = {
+    return {
         "postgres-password": admin + "\n",
         "app-password": app + "\n",
         "migration.env": f"MIGRATION_DATABASE_URL=postgres://postgres:{admin}@postgres:5432/cftracker?sslmode=disable\n",
         "backend.env": f"DATABASE_URL=postgres://cftracker_app:{app}@postgres:5432/cftracker?sslmode=disable\n"
-            f"JWT_SECRET={secrets.token_urlsafe(32)}\n"
-            f'GITHUB_CLIENT_ID={os.environ["client_id"]}\n'
-            f'GITHUB_CLIENT_SECRET={os.environ["client_secret"]}\n'
+            f"JWT_SECRET={jwt}\n"
+            f"GITHUB_CLIENT_ID={client_id}\n"
+            f"GITHUB_CLIENT_SECRET={client_secret}\n"
             f"GITHUB_REDIRECT_URL={frontend}/callback/auth-gh\n"
             f"CORS_ALLOWED_ORIGINS={origins}\nTRUSTED_PROXIES=\n",
     }
+
+
+def initialize_config(directory):
+    """Create first-installation credentials, refusing existing secret files."""
+    # Keep filesystem and random-number operations in the deployment entry point.
+    os.umask(0o077)
+    contents = configuration_contents(
+        os.environ["frontend"], os.environ["origins"],
+        os.environ["client_id"], os.environ["client_secret"],
+        secrets.token_hex(32), secrets.token_hex(32), secrets.token_urlsafe(32),
+    )
+    directory.mkdir(mode=0o700, exist_ok=True)
+    directory.chmod(0o700)
+    if any((directory / name).exists() for name in contents):
+        raise SystemExit("Configuration already exists; edit it manually. No secrets were replaced.")
     for name, content in contents.items():
         with (directory / name).open("x") as file:
             file.write(content)

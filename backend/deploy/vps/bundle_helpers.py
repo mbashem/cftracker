@@ -5,9 +5,8 @@ from pathlib import Path
 import re
 
 
-def render_compose(root, output, release):
-    """Convert the production manifest to use the release's prebuilt images."""
-    text = (root / "compose.production.yml").read_text()
+def render_compose(text, release):
+    """Return an image-only manifest from source text without accessing files."""
     # Fail visibly if the source manifest changes instead of shipping a partial edit.
     for target in ("backend", "migration"):
         pattern = rf"    build:\n      context: ./backend\n      dockerfile: dockerfile\n      target: {target}\n"
@@ -19,9 +18,7 @@ def render_compose(root, output, release):
     old = "./backend/deploy/init-app-role.sql:"
     if text.count(old) != 1:
         raise SystemExit("Production SQL mount changed; update bundle_helpers.py before deploying.")
-    (output / "compose.yml").write_text(
-        text.replace(old, "/etc/cftracker/init-app-role.sql:")
-    )
+    return text.replace(old, "/etc/cftracker/init-app-role.sql:")
 
 
 def write_checksums(directory):
@@ -52,7 +49,8 @@ def main():
     if args.command == "resolve-path":
         print(args.path.resolve())
     elif args.command == "render-compose":
-        render_compose(args.root, args.output, args.release)
+        source = (args.root / "compose.production.yml").read_text()
+        (args.output / "compose.yml").write_text(render_compose(source, args.release))
     else:
         write_checksums(args.directory)
 

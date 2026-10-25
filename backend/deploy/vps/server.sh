@@ -107,8 +107,7 @@ deploy() {
   printf '\n'
   compose ps
 }
-# Allow offline tests to exercise deployment orchestration with stubbed commands.
-# Loading functions for tests must not start deployments or alter host services.
+# Allow functions to be loaded without starting administrative operations.
 if [[ ${BASH_SOURCE[0]} != "$0" ]]; then return 0; fi
 # Show help by default, or select the requested operation and its arguments.
 command=${1:-help}
