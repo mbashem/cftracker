@@ -15,7 +15,9 @@ For table tests, put it above the top-level test function so it applies to all c
 
 - Give table-test cases self-explanatory names that describe the input and expected behavior shown by `go test -v`.
 - Initialize process-global test state explicitly in every test or subtest; do not depend on test execution order.
-- Treat local Docker and PostgreSQL services as shared infrastructure: do not stop, remove, or recreate their containers unless explicitly requested. For live integration testing, create `cftracker_test` immediately before migration and testing, then drop only that database afterward even when tests fail; leave the services and all other databases untouched.
+- Follow the shared `testing` skill for isolation. Real database tests require an explicit user request and authorization for their concrete setup, execution, and cleanup scope.
+- Treat local Docker and PostgreSQL services as shared infrastructure: do not stop, remove, or recreate their containers unless explicitly requested. For ordinary live integration testing, create `cftracker_test` immediately before migration and testing, then drop only that database afterward even when tests fail; leave the services and all other databases untouched.
+- Migration lifecycle testing is a separate workflow: follow `backend/MIGRATION_FLOW.md` before running `make test-migrations`. Its script drops and recreates both `cftracker_test` and `cftracker_test_reference`, including existing databases with those names, and cleans up the databases it creates on exit. Obtain explicit authorization for both disposable databases and their removal before running it; leave services and all other databases untouched.
 - Keep repeated dummy data in constants or small mock-data helpers. Keep one-off test literals inline when that is clearer.
 - Build fixtures from one default mock-data helper and pass override groups for scenario-specific changes.
 - Pass fixture data into setup helpers instead of letting helpers silently choose default values.
