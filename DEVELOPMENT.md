@@ -116,6 +116,8 @@ https://codeforces.com/api/problemset.problems?lang=en
 Vite emits all saved catalogs as separate hashed JSON assets; RTK Query fetches them on demand and uses the existing normalization. Contest data is loaded from a checked-in generated snapshot. Refresh scripts live in `scripts/`.
 
 Debug mode is controlled by `VITE_DEBUG_MODE=true`. It is independent of Vite's built-in `import.meta.env.DEV`, so `npm run dev` can use live problem data when the flag is unset.
+For animation debugging, development startup temporarily displays the twinkling dots for at least three seconds. Adjust or remove `INITIAL_LOADING_DEBUG_DELAY_MS` in `src/App.tsx` when finished. This delay uses Vite's `DEV` flag and does not apply to production builds or later navigation.
+
 
 User submissions are fetched for comma-separated Codeforces handles entered in the navbar. Submission status is converted into solved, attempted, and unsolved states in feature hooks.
 
