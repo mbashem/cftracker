@@ -1,5 +1,5 @@
 import "./App.css";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { Route, Routes } from "react-router";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -10,6 +10,10 @@ import ContestPage from "./components/contest/ContestPage";
 import useTheme from "./data/hooks/useTheme";
 import AuthGuard from "./util/route/AuthGuard";
 import useAppBootstrap from "./hooks/useAppBootstrap";
+import Loading from "./components/common/Loading";
+
+// Temporary development-only hold to inspect the startup animation.
+const INITIAL_LOADING_DEBUG_DELAY_MS = 3000;
 
 // const ContestPage = lazy(() => import("./components/contest/ContestPage"));
 const ProblemPage = lazy(() => import("./components/problem/ProblemPage"));
@@ -22,6 +26,19 @@ function App() {
   useAppBootstrap();
 
   const { theme } = useTheme();
+  const [isDebugLoading, setIsDebugLoading] = useState(import.meta.env.DEV);
+
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    const timeout = setTimeout(() => setIsDebugLoading(false), INITIAL_LOADING_DEBUG_DELAY_MS);
+    return () => clearTimeout(timeout);
+  }, []);
+
+  const loadingIndicator = (
+    <div className="d-flex justify-content-center">
+      <Loading />
+    </div>
+  );
 
   return (
     <div
@@ -32,16 +49,8 @@ function App() {
         {" "}
         <Menu />
       </div>
-      <div className="d-flex flex-column justify-content-between" style={{ minHeight: "calc(100vh - 60px)" }}>
-        <Suspense
-          fallback={
-            <div className="d-flex justify-content-center pt-5 mt-5">
-              <div className="spinner-border text-secondary" role="status">
-                <span className="sr-only">Loading...</span>
-              </div>
-            </div>
-          }
-        >
+      <div className="d-flex flex-column flex-grow-1 justify-content-between">
+        {isDebugLoading ? loadingIndicator : <Suspense fallback={loadingIndicator}>
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path={Path.PROBLEMS} element={<ProblemPage key="problems" />} />
@@ -57,7 +66,7 @@ function App() {
               }
             />
           </Routes>
-        </Suspense>
+        </Suspense>}
       </div>
       <ToastContainer />
     </div>
