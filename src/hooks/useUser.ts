@@ -1,41 +1,42 @@
 import { useLazyAuthenticateQuery } from "../data/queries/userQuery";
-import { beginAuthentication, errorAuthenticatingUser, removeUser, setUser } from "../data/reducers/userSlice";
+import { beginAuthentication, errorAuthenticatingUser, removeUser } from "../data/reducers/userSlice";
 import useUserStore from "../data/hooks/useUserStore";
 import { useAppDispatch } from "../data/store";
-import { StorageService } from "../util/StorageService";
-import { isDefined } from "../util/util";
+import { validateSession } from "../data/actions/authentication";
+import { useCallback } from "react";
 
 function useUser() {
 	const dispatch = useAppDispatch();
 	const { userList } = useUserStore();
-	const user = userList.user;
+	const user = userList.authenticationStatus === 'authenticated' ? userList.user : undefined;
 	const [authenticate] = useLazyAuthenticateQuery();
 
 	async function handleGithubCallback(code: string, state: string) {
 		dispatch(beginAuthentication());
 		const version = dispatch((_dispatch, getState) => getState().userList.authenticationVersion);
 		const isCurrentRequest = () => dispatch((_dispatch, getState) => getState().userList.authenticationVersion) === version;
+		let token: string;
 		try {
-			const user = await authenticate({ code, state }).unwrap();
+			const candidate = await authenticate({ code, state }).unwrap();
 			if (!isCurrentRequest()) return;
-			dispatch(setUser(user));
-			StorageService.setJWTToken(user.jwtToken);
-			return;
+			token = candidate.jwtToken;
 		} catch (err: any) {
 			if (!isCurrentRequest()) return;
 			console.log(err);
 			let errorMessage = err?.data?.error ?? "Authentication failed!";
+			dispatch(removeUser());
 			dispatch(errorAuthenticatingUser({ errorMessage }));
 			throw new Error(errorMessage);
 		}
+		const verified = await dispatch(validateSession(token));
+		if (verified === false) throw new Error("Could not verify your profile. Please sign in again.");
 	}
 
-	function logout() {
-		StorageService.removeJWTToken();
+	const logout = useCallback(() => {
 		dispatch(removeUser());
-	}
+	}, [dispatch]);
 
-	return { handleGithubCallback, logout, user, isAuthenticated: isDefined(user) };
+	return { handleGithubCallback, logout, user, isAuthenticated: user !== undefined, isCheckingAuthentication: userList.authenticationStatus === 'checking' };
 }
 
 export default useUser;

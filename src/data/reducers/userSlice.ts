@@ -7,12 +7,17 @@ export interface UserState {
   id: number;
   user?: User;
   authenticationVersion: number;
+  authenticationStatus: 'checking' | 'authenticated' | 'unauthenticated';
+  authenticationInitialized: boolean;
+  sessionToken?: string;
 }
 
-const userInitialState: UserState = {
+export const userInitialState: UserState = {
   handles: [],
   error: '',
   authenticationVersion: 0,
+  authenticationStatus: 'unauthenticated',
+  authenticationInitialized: false,
   id: 0,
 };
 
@@ -39,14 +44,30 @@ const userSlice = createSlice({
     },
     setUser(state, action: PayloadAction<User>) {
       state.user = action.payload;
+      state.sessionToken = action.payload.jwtToken;
+      state.authenticationStatus = 'authenticated';
+      state.authenticationInitialized = true;
       state.error = "";
+    },
+    checkAuthentication(state, action: PayloadAction<string | undefined>) {
+      state.authenticationVersion = (state.authenticationVersion ?? 0) + 1;
+      state.authenticationInitialized = true;
+      state.authenticationStatus = action.payload ? 'checking' : 'unauthenticated';
+      state.sessionToken = action.payload;
+      state.user = undefined;
+      state.error = '';
     },
     beginAuthentication(state) {
       state.authenticationVersion = (state.authenticationVersion ?? 0) + 1;
+      state.authenticationStatus = 'checking';
+      state.authenticationInitialized = true;
     },
     removeUser(state) {
       state.authenticationVersion = (state.authenticationVersion ?? 0) + 1;
       state.user = undefined;
+      state.sessionToken = undefined;
+      state.authenticationStatus = 'unauthenticated';
+      state.authenticationInitialized = true;
     },
     errorAuthenticatingUser(state, action: PayloadAction<{ errorMessage: string; }>) {
       state.error = action.payload.errorMessage;
@@ -54,6 +75,6 @@ const userSlice = createSlice({
   },
 });
 
-export const { beginAuthentication, addHandle, removeHandle, removeAllHandle, setUser, removeUser, errorAuthenticatingUser } = userSlice.actions;
+export const { beginAuthentication, checkAuthentication, addHandle, removeHandle, removeAllHandle, setUser, removeUser, errorAuthenticatingUser } = userSlice.actions;
 
 export default userSlice.reducer;

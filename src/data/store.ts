@@ -4,12 +4,13 @@ import { TypedUseSelectorHook, useDispatch, useSelector } from "react-redux";
 
 import userSubmissions from './reducers/userSubmissionsSlice';
 import appSlice, { type AppState, initialAppState } from './reducers/appSlice';
-import userSlice from './reducers/userSlice';
+import userSlice, { userInitialState } from './reducers/userSlice';
 import { userApi } from './queries/userQuery';
 import { StorageService } from '../util/StorageService';
 import { listApi } from './queries/listQuery';
 import { codeforcesApi } from './queries/codeforcesQuery';
 import { userSubmissionsListener } from './listeners/userSubmissionsListener';
+import { authenticationListener } from './listeners/authenticationListener';
 import { IS_DEBUG_MODE } from '../util/env';
 import { validateValue, type ValidatorRecord, validators } from '../util/validators';
 import { ThemesType } from '../util/Theme';
@@ -55,6 +56,14 @@ function loadFromLocalStorage(): any {
     console.log(persedData);
     return {
       ...persedData,
+      userList: {
+        ...userInitialState,
+        ...(persedData.userList && typeof persedData.userList === 'object' ? persedData.userList : {}),
+        user: undefined,
+        sessionToken: StorageService.getJWTToken() ?? undefined,
+        authenticationStatus: StorageService.getJWTToken() ? 'checking' : 'unauthenticated',
+        authenticationInitialized: false,
+      },
       appState: validateValue(persedData.appState, initialAppState, appStateValidators),
     };
   } catch (e) {
@@ -66,7 +75,7 @@ function loadFromLocalStorage(): any {
 const store = configureStore({
   reducer: rootReducer,
   middleware: (getDefaultMiddleware) => {
-    const middleware = getDefaultMiddleware().prepend(userSubmissionsListener.middleware);
+    const middleware = getDefaultMiddleware().prepend(authenticationListener.middleware, userSubmissionsListener.middleware);
     if (IS_REDUX_LOGGING_ENABLED) middleware.push(logger);
     return middleware.concat([userApi.middleware, listApi.middleware, codeforcesApi.middleware]);
   },

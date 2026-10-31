@@ -8,8 +8,10 @@ import useCallbackHandler from "./useCallbackHandler";
 import usePageTracking from "./usePageTracking";
 import useToast from "./useToast";
 import useUserStore from "../data/hooks/useUserStore";
+import useAuthenticationBootstrap from "./useAuthenticationBootstrap";
 
 function useAppBootstrap() {
+  useAuthenticationBootstrap();
   const { theme } = useTheme();
   const { showErrorToast } = useToast();
   const { isProblemListLoading, problemListError } = useProblemsStore();
