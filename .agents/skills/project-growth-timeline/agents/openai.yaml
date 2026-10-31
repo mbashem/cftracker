@@ -1,4 +1,4 @@
 interface:
-  display_name: Project growth timeline
-  short_description: Generate main-only cloc history and SVG growth graphs
-  default_prompt: Generate the project's six-month cloc timeline and SVG graph.
+  display_name: "Project growth timeline"
+  short_description: "Generate main history and branch snapshot growth graphs"
+  default_prompt: "Use $project-growth-timeline to generate the project's six-month cloc timeline and SVG graph."

@@ -57,12 +57,6 @@ export function getStartOfCurrentWeek(referenceDate: Date = new Date()): Date {
   return startOfWeek;
 }
 
-function getStartOfNextWeek(referenceDate: Date): Date {
-  const startOfNextWeek = getStartOfCurrentWeek(referenceDate);
-  startOfNextWeek.setDate(startOfNextWeek.getDate() + DAYS_IN_WEEK);
-  return startOfNextWeek;
-}
-
 export function getSnapshotDateRange(
   period: SnapshotPeriod,
   customRange: SnapshotCustomRange,
@@ -71,20 +65,15 @@ export function getSnapshotDateRange(
   const today = new Date(referenceDate);
   today.setHours(0, 0, 0, 0);
   let startDate: Date | undefined;
-  let endDate: Date | undefined;
+  let endDate: Date | undefined = new Date(today);
+  endDate.setDate(endDate.getDate() + 1);
 
   switch (period) {
     case SnapshotPeriod.WEEK:
-      startDate = getStartOfCurrentWeek(today);
-      endDate = getStartOfNextWeek(today);
-      break;
     case SnapshotPeriod.MONTH:
-      startDate = new Date(today.getFullYear(), today.getMonth(), 1);
-      endDate = new Date(today.getFullYear(), today.getMonth() + 1, 1);
-      break;
     case SnapshotPeriod.YEAR:
-      startDate = new Date(today.getFullYear(), 0, 1);
-      endDate = new Date(today.getFullYear() + 1, 0, 1);
+      startDate = new Date(today);
+      startDate.setDate(startDate.getDate() - ({ Week: 7, Month: 30, Year: 365 }[period] - 1));
       break;
     case SnapshotPeriod.CUSTOM:
       startDate = customRange.minDate === undefined ? undefined : parseDateInputValue(customRange.minDate);

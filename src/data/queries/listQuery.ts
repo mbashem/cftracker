@@ -1,6 +1,7 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
 import { createBaseQuery } from './baseQuery';
 import { jsonToList, jsonToListItem, List, ListItem, ListWithItem } from '../../types/list';
+import type { UserState } from '../reducers/userSlice';
 
 export enum ListApiTags {
 	Lists = "Lists"
@@ -9,9 +10,17 @@ function IndividualPostTag(listId: number) {
 	return [{ "type": ListApiTags.Lists, "id": listId }];
 }
 
+const baseQuery = createBaseQuery();
+
 export const listApi = createApi({
 	reducerPath: 'listApi',
-	baseQuery: createBaseQuery(),
+	baseQuery: (args, api, extraOptions) => {
+		const { userList } = api.getState() as { userList: UserState };
+		if (userList.authenticationStatus !== 'authenticated' || !userList.user) {
+			return { error: { status: 401, data: { error: "Sign in to manage lists." } } };
+		}
+		return baseQuery(args, api, extraOptions);
+	},
 	tagTypes: [ListApiTags.Lists],
 	endpoints: (builder) => ({
 		getAllLists: builder.query<List[], void>({

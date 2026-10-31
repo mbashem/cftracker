@@ -11,6 +11,7 @@ import submissionsReducer, { errorFetchingUserSubmissions, requestUserSubmission
 import Theme, { ThemesType } from "../../src/util/Theme";
 
 vi.mock("../../src/hooks/useCallbackHandler", () => ({ default: () => {} }));
+vi.mock("../../src/hooks/useAuthenticationBootstrap", () => ({ default: () => {} }));
 
 beforeEach(() => {
   resetFrontendMocks();

@@ -1,6 +1,6 @@
 ---
 name: update-shared-codeforces-contests
-description: Process or resume an operator-confirmed shared Codeforces contest through the manage-contests MCP server. Use when a shared contest has concluded and its contest mappings, problems, and related.ts data need updating; do not use for generic Codeforces questions or manage-contests code changes.
+description: Process or resume an operator-confirmed shared Codeforces contest through the manage-contests MCP server. Use when a shared contest has concluded and its contest mappings, problems, and related.json data need updating; do not use for generic Codeforces questions or manage-contests code changes.
 ---
 
 # Update Shared Codeforces Contests
@@ -8,6 +8,10 @@ description: Process or resume an operator-confirmed shared Codeforces contest t
 Process exactly one operator-confirmed shared-contest group through the manage-contests MCP server.
 
 Before executing or resuming this workflow, read [references/workflow-scenarios.md](references/workflow-scenarios.md). The scenarios define the expected behavior at ambiguous, rejected, failed, and resumed states.
+
+## Obtain external-access permission
+
+Before connecting to the MCP server or calling tools that contact Codeforces, obtain explicit permission for the specific action and destinations, including the actual MCP endpoint and `https://codeforces.com/api`. Explain that discovery starts with `sync_contests`, which fetches the contest catalog and updates the local contest database. A request to process a concluded contest does not itself authorize external access. Wait for affirmative approval; reuse existing permission only when it covers the same actions and destinations. Contest-group confirmation below is a separate requirement.
 
 ## Connect the server
 
@@ -43,7 +47,7 @@ A correction, rejection, or ambiguous reply is not confirmation. Do not call `sy
 ## Execute the confirmed workflow
 
 1. Call `sync_shared_contest_group` once with the exact confirmed `contestIds` and include the confirmed `parentContestId` only when extending an existing group.
-2. Call `write_related_ts` once. Omit `outputPath` to use the default; pass it only when the operator supplied a destination.
+2. Call `write_related_ts` once. The tool name is retained for compatibility; its default output is `../src/data/saved_api/related.json`. Omit `outputPath` to use the default; pass it only when the operator supplied a destination.
 3. Report the parent, group members, mapping results, synchronized problem counts, written path, and related-problem count.
 
 `sync_shared_contest_group` owns the internal sequence: it sorts IDs ascending, uses the supplied existing parent or otherwise the smallest ID as parent, maps each supplied contest, then waits two seconds immediately before each supplied contest's serial problem synchronization. Do not add client-side waits or reproduce those internal calls.

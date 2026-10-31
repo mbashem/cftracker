@@ -34,10 +34,11 @@ const (
 )
 
 type AuthHandler struct {
-	githubProvider GitHubProvider
-	userRepository users.AuthUserRepository
-	generateState  func() (string, error)
-	generateToken  func(email string, userID int64) (string, error)
+	githubProvider         GitHubProvider
+	userRepository         users.AuthUserRepository
+	generateState          func() (string, error)
+	generateToken          func(email string, userID int64) (string, error)
+	allowedFrontendOrigins []string
 }
 
 type HandlerOption func(*AuthHandler)
@@ -66,6 +67,11 @@ func NewAuthHandler(githubProvider GitHubProvider, userRepository users.AuthUser
 }
 
 func (handler *AuthHandler) GitHubLogin(context *gin.Context) {
+	redirectURL, valid := handler.frontendRedirectURL(context)
+	if !valid {
+		context.JSON(http.StatusBadRequest, gin.H{"error": "Invalid frontend origin"})
+		return
+	}
 	state, err := handler.generateState()
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"error": failedToInitializeGitHub})
@@ -73,7 +79,7 @@ func (handler *AuthHandler) GitHubLogin(context *gin.Context) {
 	}
 
 	setGitHubOAuthStateCookie(context, state)
-	url := handler.githubProvider.AuthorizationURL(state)
+	url := handler.githubProvider.AuthorizationURL(state, redirectURL)
 	context.Redirect(http.StatusTemporaryRedirect, url)
 }
 
@@ -83,7 +89,12 @@ func (handler *AuthHandler) GitHubCallback(context *gin.Context) {
 		return
 	}
 
-	githubUser, err := handler.githubProvider.Authenticate(context.Request.Context(), context.Query("code"))
+	redirectURL, valid := handler.frontendRedirectURL(context)
+	if !valid {
+		context.JSON(http.StatusBadRequest, gin.H{"error": "Invalid frontend origin"})
+		return
+	}
+	githubUser, err := handler.githubProvider.Authenticate(context.Request.Context(), context.Query("code"), redirectURL)
 	if err != nil {
 		writeGitHubProviderError(context, err)
 		return

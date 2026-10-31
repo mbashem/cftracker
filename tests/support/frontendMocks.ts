@@ -120,7 +120,11 @@ vi.mock("../../src/hooks/useToast", () => ({
 }));
 vi.mock("../../src/data/hooks/useUserStore", () => ({
   default: () => ({
-    userList: { handles: frontend.handles, id: frontend.userId },
+    userList: {
+      handles: frontend.handles, id: frontend.userId,
+      authenticationStatus: frontend.authenticated ? 'authenticated' : 'unauthenticated',
+      user: frontend.authenticated ? { id: frontend.userId, jwtToken: `session-${frontend.userId}` } : undefined,
+    },
     updateUsers: frontend.updateUsers, syncUserSubmissions: frontend.syncUserSubmissions,
   }),
 }));
@@ -129,7 +133,7 @@ vi.mock("../../src/hooks/useUser", () => ({
 }));
 vi.mock("../../src/util/env", () => ({
   get IS_BACKEND_AVAILABLE() { return frontend.backendAvailable; },
-  BACKEND_API_URL: "https://backend.example.test",
+  BACKEND_API_URL: "https://backend.example.test/api/v1",
   IS_DEBUG_MODE: false,
 }));
 

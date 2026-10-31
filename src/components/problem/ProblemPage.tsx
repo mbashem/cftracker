@@ -8,6 +8,9 @@ import ProblemFilterModal from "./ProblemFilterModal";
 import ProblemTable from "./problem-list/ProblemTable";
 import useProblemPage from "./useProblemPage";
 import { formatTimestampDate } from "../../util/time";
+import useUser from "../../hooks/useUser";
+import useToast from "../../hooks/useToast";
+import { IS_BACKEND_AVAILABLE } from "../../util/env";
 
 function getSubmissionRangeText(after?: number, before?: number) {
   const range = [];
@@ -17,6 +20,8 @@ function getSubmissionRangeText(after?: number, before?: number) {
 }
 
 function ProblemPage() {
+  const { isAuthenticated } = useUser();
+  const { showErrorToast } = useToast();
   const {
     state,
     theme,
@@ -106,10 +111,11 @@ function ProblemPage() {
                 theme={theme}
                 filterState={filterState}
                 showAddToList={showAddToList}
+                showListPicker={IS_BACKEND_AVAILABLE && isAuthenticated && !showAddToList}
                 list={list}
-                addToList={addProblemToList}
+                addToList={(id) => { void addProblemToList(id).catch(error => showErrorToast(error?.message ?? "Could not add problem to list.")); }}
                 problemsAddedToList={problemsAddedToList}
-                deleteFromList={deleteProblemFromList}
+                deleteFromList={(id) => { void deleteProblemFromList(id).catch(error => showErrorToast(error?.message ?? "Could not remove problem from list.")); }}
                 sortList={sortList}
               />
             )}

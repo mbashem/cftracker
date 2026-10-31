@@ -30,6 +30,7 @@ func ListenAndServe(ctx context.Context, server *http.Server, shutdownTimeout ti
 	if err != nil {
 		return fmt.Errorf("listen HTTP: %w", err)
 	}
+	log.Printf("HTTP server listening on %s", listener.Addr())
 	return Serve(ctx, server, listener, shutdownTimeout)
 }
 

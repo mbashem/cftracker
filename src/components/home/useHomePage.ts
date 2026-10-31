@@ -58,6 +58,7 @@ function useHomePage() {
   const isLoading = hasHandles && (loading > 0 || isPreparingInitialSync);
 
   return {
+    submissions: rawSubmissions,
     handles,
     addHandle,
     removeHandle,

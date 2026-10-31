@@ -2,6 +2,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Loading from "../../common/Loading";
 import useIndividualListPage from "./useIndividualListPage";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
+import "../../common/IconButton.css";
 
 interface Props {
   listId: number;
@@ -32,7 +33,7 @@ function IndividualListPage({ listId }: Props) {
                   <button
                     type="button"
                     aria-label={`Remove ${item.problemId} from list`}
-                    className={"btn " + theme.btn}
+                    className="btn btn-ghost btn-ghost-danger"
                     onClick={() => deleteButtonClicked(item.problemId)}
                   >
                     <FontAwesomeIcon icon={faTrash} />

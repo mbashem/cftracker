@@ -20,6 +20,10 @@ export const userApi = createApi({
 	reducerPath: 'userApi',
 	baseQuery: createBaseQuery(),
 	endpoints: (builder) => ({
+		getProfile: builder.query<User, string>({
+			query: () => ({ url: "/user/profile", method: "GET" }),
+			transformResponse: (response: Pick<AuthenticationResponse, 'user'>, _meta, token): User => mapUser(response.user, token),
+		}),
 		authenticate: builder.query<User, { code: string; state: string }>({
 			query: (body) => ({
 				url: "/auth/github/callback",
@@ -27,20 +31,18 @@ export const userApi = createApi({
 				method: 'GET'
 			}),
 			transformResponse: (response: AuthenticationResponse): User => {
-				return {
-					id: response.user.id,
-					githubId: response.user.github_id,
-					githubUsername: response.user.github_username,
-					email: response.user.email,
-					avatarUrl: response.user.avatar_url,
-					cfHandle: response.user.cf_handle,
-					cfVerifiedHandle: response.user.cf_verified_handle,
-					admin: response.user.admin,
-					jwtToken: response.token
-				};
+				return mapUser(response.user, response.token);
 			}
 		}),
 	}),
 });
 
 export const { useLazyAuthenticateQuery } = userApi
+
+function mapUser(user: AuthenticationResponse['user'], token: string): User {
+	return {
+		id: user.id, githubId: user.github_id, githubUsername: user.github_username,
+		email: user.email, avatarUrl: user.avatar_url, cfHandle: user.cf_handle,
+		cfVerifiedHandle: user.cf_verified_handle, admin: user.admin, jwtToken: token,
+	};
+}

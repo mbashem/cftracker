@@ -4,16 +4,18 @@ import { Provider } from "react-redux";
 import type { PropsWithChildren } from "react";
 
 // Set the endpoint before importing the real query modules; no hook mocks here.
-vi.stubEnv("VITE_BACKEND_API_URL", "https://backend.example.test");
+vi.stubEnv("VITE_BACKEND_API_URL", "https://backend.example.test/api");
 vi.stubEnv("VITE_DEBUG_MODE", "false");
+vi.stubEnv("VITE_IS_BACKEND_AVAILABLE", "true");
 const { userApi } = await import("../../src/data/queries/userQuery");
 const { listApi } = await import("../../src/data/queries/listQuery");
-const { default: userReducer } = await import("../../src/data/reducers/userSlice");
+const { default: userReducer, setUser } = await import("../../src/data/reducers/userSlice");
 
 const { codeforcesApi } = await import("../../src/data/queries/codeforcesQuery");
 const { default: userSubmissions } = await import("../../src/data/reducers/userSubmissionsSlice");
 const { default: appState } = await import("../../src/data/reducers/appSlice");
 const { userSubmissionsListener } = await import("../../src/data/listeners/userSubmissionsListener");
+const { authenticationListener } = await import("../../src/data/listeners/authenticationListener");
 
 export const backendUser = {
   id: 7, github_id: 42, github_username: "octocat", email: "octocat@example.test",
@@ -21,6 +23,11 @@ export const backendUser = {
 };
 export const backendList = { id: 5, user_id: 7, name: "Practice", created_at: "2026-01-01" };
 export const backendItem = { list_id: 5, problem_id: "100A", position: 2, created_at: "2026-01-02" };
+export const authenticatedUser = {
+  id: 7, githubId: 42, githubUsername: "octocat", email: "octocat@example.test",
+  avatarUrl: "https://example.test/avatar", cfHandle: "tourist", cfVerifiedHandle: "tourist",
+  admin: false, jwtToken: "test-session",
+};
 
 export function setupBackendMock(catalogApi = codeforcesApi) {
   const requests: Request[] = [];
@@ -32,7 +39,7 @@ export function setupBackendMock(catalogApi = codeforcesApi) {
   vi.stubGlobal("fetch", fetchMock);
   const store = configureStore({
     reducer: { appState, userSubmissions, [catalogApi.reducerPath]: catalogApi.reducer, userList: userReducer, [userApi.reducerPath]: userApi.reducer, [listApi.reducerPath]: listApi.reducer },
-    middleware: (defaults) => defaults().prepend(userSubmissionsListener.middleware).concat(userApi.middleware, listApi.middleware, catalogApi.middleware),
+    middleware: (defaults) => defaults().prepend(authenticationListener.middleware, userSubmissionsListener.middleware).concat(userApi.middleware, listApi.middleware, catalogApi.middleware),
   });
   const wrapper = ({ children }: PropsWithChildren) => <Provider store={store}>{children}</Provider>;
   function respond(body: unknown, status = 200) {
@@ -47,6 +54,9 @@ export function setupBackendMock(catalogApi = codeforcesApi) {
     store.dispatch(listApi.util.resetApiState());
     vi.unstubAllGlobals();
   }
-  return { store, wrapper, requests, fetchMock, respond, dispose };
+  function authenticate(user = authenticatedUser) {
+    store.dispatch(setUser(user));
+  }
+  return { store, wrapper, requests, fetchMock, respond, dispose, authenticate };
 }
 export { userApi, listApi, codeforcesApi };

@@ -1,7 +1,8 @@
 import { toast } from "react-toastify";
+import { useCallback } from "react";
 
 function useToast() {
-	function showGeneralToast(message: string) {
+	const showGeneralToast = useCallback((message: string) => {
 		toast(message, {
 			position: "bottom-right",
 			autoClose: 500,
@@ -12,7 +13,7 @@ function useToast() {
 			progress: undefined,
 			theme: "dark",
 		});
-	}
+	}, []);
 
 	function showErrorToast(message: string) {
 		toast.error(message, {
