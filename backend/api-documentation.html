@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="CFTracker REST API reference: authentication, profiles, Codeforces verification, saved lists, health checks, and errors.">
+  <title>CFTracker · REST API documentation</title>
+  <style>
+    :root { color-scheme: light dark; --bg: #f5f7fb; --panel: #fff; --text: #172234; --muted: #526176; --line: #dce3ed; --accent: #2458ca; --code: #edf2fa; --note: #eff5ff; }
+    * { box-sizing: border-box; }
+    html { scroll-padding-top: 1.5rem; }
+    body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.65 system-ui, sans-serif; }
+    a { color: var(--accent); text-underline-offset: .18em; }
+    a:focus-visible { outline: 3px solid var(--accent); outline-offset: 4px; border-radius: 2px; }
+    .skip { position: absolute; left: 1rem; top: -5rem; z-index: 2; padding: .5rem 1rem; background: var(--panel); }
+    .skip:focus { top: 1rem; }
+    .layout { max-width: 1440px; margin: auto; display: grid; grid-template-columns: 250px minmax(0, 1fr); }
+    aside { padding: 2.5rem 1.5rem; border-right: 1px solid var(--line); }
+    nav { position: sticky; top: 1.5rem; }
+    .brand { font-weight: 800; font-size: 1.2rem; letter-spacing: -.03em; }
+    .small, .eyebrow { font-size: .8rem; color: var(--muted); }
+    nav ul { list-style: none; padding: 0; }
+    nav li { margin: .5rem 0; }
+    nav a { text-decoration: none; }
+    main { min-width: 0; padding: 3rem clamp(1rem, 4vw, 4rem); }
+    .eyebrow { text-transform: uppercase; letter-spacing: .12em; font-weight: 700; }
+    h1 { font-size: clamp(2rem, 4vw, 3.2rem); line-height: 1.15; letter-spacing: -.04em; margin: .7rem 0 1rem; }
+    h2 { margin: 3rem 0 1rem; font-size: 1.65rem; letter-spacing: -.025em; }
+    h3 { font-size: 1.1rem; margin: 0 0 1rem; overflow-wrap: anywhere; }
+    h4 { font-size: .92rem; margin-bottom: .5rem; }
+    p { margin: .7rem 0; }
+    .lead { font-size: 1.1rem; color: var(--muted); max-width: 55rem; }
+    .note { background: var(--note); border-left: 3px solid var(--accent); padding: .8rem 1.1rem; margin: 1.25rem 0; }
+    .endpoint { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 1.4rem; margin: 1rem 0; }
+    .method { display: inline-block; font: 700 .75rem/1.5 ui-monospace, monospace; padding: .2rem .5rem; border: 1px solid currentColor; border-radius: 5px; margin-right: .4rem; vertical-align: middle; }
+    .get { color: #127149; } .post { color: #2458ca; } .put { color: #8a5700; } .delete { color: #b32942; }
+    .auth { display: block; color: var(--muted); font-size: .82rem; margin: -.4rem 0 1rem; }
+    code, pre { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: .88em; }
+    code { background: var(--code); padding: .12rem .3rem; border-radius: 4px; overflow-wrap: anywhere; }
+    pre { background: var(--code); border: 1px solid var(--line); border-radius: 8px; padding: 1rem; overflow-x: auto; line-height: 1.6; }
+    pre code { padding: 0; overflow-wrap: normal; }
+    .table-wrap { overflow-x: auto; }
+    table { border-collapse: collapse; width: 100%; background: var(--panel); font-size: .9rem; }
+    caption { text-align: left; color: var(--muted); margin-bottom: .6rem; }
+    th, td { text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); padding: .7rem .8rem; }
+    th { font-size: .8rem; color: var(--muted); }
+    td code { white-space: nowrap; }
+    .models { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 270px), 1fr)); gap: 1rem; }
+    .models pre { margin: 0; }
+    footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--line); color: var(--muted); font-size: .85rem; }
+    @media (max-width: 850px) { .layout { grid-template-columns: 1fr; } aside { padding: 1rem; border-right: 0; border-bottom: 1px solid var(--line); } nav { position: static; } nav ul { display: flex; flex-wrap: wrap; gap: .4rem 1rem; margin-bottom: 0; } nav li { margin: 0; } main { padding-top: 1.7rem; } }
+    @media (prefers-color-scheme: dark) { :root { --bg: #0f1724; --panel: #172234; --text: #e6edf8; --muted: #b1bfd3; --line: #344258; --accent: #9ebcff; --code: #202e44; --note: #1c2d49; } .get { color: #80dcb0; } .post { color: #a5c2ff; } .put { color: #f1c679; } .delete { color: #ffa4b1; } }
+    @media print { :root { color-scheme: light; --bg: #fff; --panel: #fff; --text: #111; --muted: #444; --line: #ccc; --code: #f5f5f5; --note: #f5f5f5; } aside, .skip { display: none; } .layout { display: block; } main { padding: 0; } .endpoint { break-inside: avoid; } pre { white-space: pre-wrap; overflow-wrap: anywhere; } a { color: inherit; } }
+  </style>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to API reference</a>
+  <div class="layout">
+    <aside>
+      <nav aria-label="API reference sections">
+        <div class="brand">CFTracker</div>
+        <div class="small">REST API · v1</div>
+        <ul>
+          <li><a href="#overview">Overview</a></li>
+          <li><a href="#routes">Endpoint index</a></li>
+          <li><a href="#authentication">Authentication</a></li>
+          <li><a href="#models">Response models</a></li>
+          <li><a href="#health">Health</a></li>
+          <li><a href="#github">GitHub OAuth</a></li>
+          <li><a href="#users">Profile &amp; Codeforces</a></li>
+          <li><a href="#lists">Lists &amp; items</a></li>
+          <li><a href="#errors">Errors &amp; limits</a></li>
+          <li><a href="#sources">Source reference</a></li>
+        </ul>
+      </nav>
+    </aside>
+    <main id="main">
+      <header id="overview">
+        <div class="eyebrow">Backend developer reference</div>
+        <h1>REST API documentation</h1>
+        <p class="lead">GitHub sign-in, Codeforces ownership verification, and private problem lists. This reference describes the current Go backend; examples are illustrative, not recorded live responses.</p>
+        <p><a href="api-tester.html">Open the API testing workspace →</a> to send requests, sign in with GitHub, or use a saved bearer token.</p>
+        <p>Application base: <code>http://localhost:8080/api/v1</code>. Replace the origin with your deployment host. Health probes use <code>/health</code> directly.</p>
+        <p>Send JSON bodies with <code>Content-Type: application/json</code>. Protected routes require a bearer token. JSON response fields use <code>snake_case</code>; timestamps are RFC 3339 strings, with optional fractional seconds and timezone offsets.</p>
+        <div class="note">The frontend setting <code>VITE_BACKEND_API_URL</code> should end at <code>/api</code>; the frontend appends <code>/v1</code>. Unversioned application routes and <code>/</code> are not registered.</div>
+      </header>
+
+      <section id="routes" aria-labelledby="routes-heading">
+        <h2 id="routes-heading">Endpoint index</h2>
+        <div class="table-wrap"><table>
+          <caption>15 canonical endpoints. Protected endpoints operate on the authenticated user's account and lists.</caption>
+          <thead><tr><th scope="col">Method</th><th scope="col">Path</th><th scope="col">Access</th><th scope="col">Purpose</th></tr></thead>
+          <tbody>
+            <tr><td>GET</td><td><a href="#live"><code>/health/live</code></a></td><td>Public</td><td>Process liveness</td></tr>
+            <tr><td>GET</td><td><a href="#ready"><code>/health/ready</code></a></td><td>Public</td><td>Database connectivity</td></tr>
+            <tr><td>GET</td><td><a href="#login"><code>/api/v1/auth/github/login</code></a></td><td>Public</td><td>Start OAuth</td></tr>
+            <tr><td>GET</td><td><a href="#callback"><code>/api/v1/auth/github/callback</code></a></td><td>OAuth cookie</td><td>Exchange authorization code</td></tr>
+            <tr><td>GET</td><td><a href="#profile"><code>/api/v1/user/profile</code></a></td><td>Bearer</td><td>Read profile</td></tr>
+            <tr><td>PUT</td><td><a href="#handle"><code>/api/v1/user/cfhandle</code></a></td><td>Bearer</td><td>Select Codeforces handle</td></tr>
+            <tr><td>GET</td><td><a href="#challenge"><code>/api/v1/user/cfverification-token</code></a></td><td>Bearer</td><td>Get ownership challenge</td></tr>
+            <tr><td>GET</td><td><a href="#verify"><code>/api/v1/user/verify-cftoken</code></a></td><td>Bearer</td><td>Check ownership proof</td></tr>
+            <tr><td>GET</td><td><a href="#list-all"><code>/api/v1/lists</code></a></td><td>Bearer</td><td>Read lists</td></tr>
+            <tr><td>POST</td><td><a href="#list-create"><code>/api/v1/lists</code></a></td><td>Bearer</td><td>Create list</td></tr>
+            <tr><td>GET</td><td><a href="#list-get"><code>/api/v1/lists/:listId</code></a></td><td>Bearer</td><td>Read list and items</td></tr>
+            <tr><td>PUT</td><td><a href="#list-rename"><code>/api/v1/lists/:listId</code></a></td><td>Bearer</td><td>Rename list</td></tr>
+            <tr><td>DELETE</td><td><a href="#list-delete"><code>/api/v1/lists/:listId</code></a></td><td>Bearer</td><td>Delete list</td></tr>
+            <tr><td>PUT</td><td><a href="#item-add"><code>/api/v1/lists/:listId/item</code></a></td><td>Bearer</td><td>Insert problem</td></tr>
+            <tr><td>DELETE</td><td><a href="#item-delete"><code>/api/v1/lists/:listId/item/:itemId</code></a></td><td>Bearer</td><td>Remove problem</td></tr>
+          </tbody>
+        </table></div>
+        <p>Compatibility aliases: <code>GET /v1/auth/github/login</code> and <code>GET /v1/auth/github/callback</code>. They behave like their canonical GitHub routes and share the same respective rate-limit budgets.</p>
+      </section>
+
+      <section id="authentication" aria-labelledby="authentication-heading">
+        <h2 id="authentication-heading">Authentication</h2>
+        <ol>
+          <li>Navigate the browser to the backend's <a href="#login">GitHub login endpoint</a>.</li>
+          <li>The backend sets an HTTP-only state cookie and redirects to GitHub.</li>
+          <li>GitHub redirects directly to the allowlisted calling origin plus <code>/callback/auth-gh</code>. Register this URL in the GitHub OAuth app as well.</li>
+          <li>The frontend forwards the returned <code>code</code> and <code>state</code> to the backend callback, including cookies.</li>
+          <li>Use the returned <code>token</code> in <code>Authorization: Bearer &lt;token&gt;</code> for protected requests.</li>
+        </ol>
+        <p>Session JWTs expire two hours after issuance. The API has no refresh, logout, or token-revocation endpoint. Client logout clears local credentials and private state; it does not revoke an issued JWT.</p>
+        <p>The OAuth state cookie is named <code>cftracker_github_oauth_state</code>, has a ten-minute maximum age, and is consumed before the code exchange. It is HTTP-only, scoped to <code>/</code>, and uses <code>Secure; SameSite=None</code> for HTTPS, otherwise <code>SameSite=Lax</code>. A new login replaces the pending challenge.</p>
+        <p>Browser clients must include credentials on the callback, for example <code>credentials: "include"</code>. Their origin must be listed in <code>CORS_ALLOWED_ORIGINS</code>. Behind HTTPS termination, forward <code>X-Forwarded-Proto: https</code> so the backend sets the secure cookie correctly.</p>
+        <h3>Example protected request</h3>
+        <pre><code>API_ORIGIN='http://localhost:8080'
+API_BASE="$API_ORIGIN/api/v1"
+JWT='REPLACE_WITH_SESSION_TOKEN'
+
+curl "$API_BASE/user/profile" \
+  -H "Authorization: Bearer $JWT"</code></pre>
+      </section>
+
+      <section id="models" aria-labelledby="models-heading">
+        <h2 id="models-heading">Response models</h2>
+        <p>Objects below are examples. User fields are always serialized; unset strings may be empty. Empty list collections and item collections are arrays.</p>
+        <div class="models">
+          <div><h3>User</h3><pre><code>{
+  "id": 7,
+  "github_id": 42,
+  "github_username": "example-user",
+  "email": "user@example.test",
+  "avatar_url": "https://example.test/avatar.png",
+  "cf_handle": "tourist",
+  "cf_verified_handle": "tourist",
+  "admin": false
+}</code></pre></div>
+          <div><h3>List</h3><pre><code>{
+  "id": 5,
+  "user_id": 7,
+  "name": "Practice",
+  "created_at": "2026-10-26T12:00:00Z"
+}</code></pre></div>
+          <div><h3>ListItem</h3><pre><code>{
+  "list_id": 5,
+  "problem_id": "1900A",
+  "position": 0,
+  "created_at": "2026-10-26T12:01:00Z"
+}</code></pre></div>
+        </div>
+        <p>Codeforces ownership is verified when <code>cf_handle</code> is nonempty and equals <code>cf_verified_handle</code>, ignoring case. There is no separate verification boolean. A stored verified handle can differ from the selected handle.</p>
+      </section>
+
+      <section id="health" aria-labelledby="health-heading">
+        <h2 id="health-heading">Health</h2>
+        <article class="endpoint" id="live" data-method="GET" data-path="/health/live">
+          <h3><span class="method get">GET</span> /health/live</h3><span class="auth">Public · no request body</span>
+          <p>Checks whether the HTTP process can respond. No database or provider call.</p>
+          <pre><code>HTTP 200
+{"status":"alive"}</code></pre>
+          <p>Response header: <code>Cache-Control: no-store</code>.</p>
+        </article>
+        <article class="endpoint" id="ready" data-method="GET" data-path="/health/ready">
+          <h3><span class="method get">GET</span> /health/ready</h3><span class="auth">Public · no request body</span>
+          <p>Pings the shared database pool with a one-second deadline, including pool waits and any earlier request cancellation.</p>
+          <pre><code>HTTP 200
+{"status":"ready"}
+
+HTTP 503
+{"status":"unavailable"}</code></pre>
+          <p>Response header: <code>Cache-Control: no-store</code>. This checks connectivity, not migration state or GitHub/Codeforces availability. Health probes are exempt from application rate limits.</p>
+        </article>
+      </section>
+
+      <section id="github" aria-labelledby="github-heading">
+        <h2 id="github-heading">GitHub OAuth</h2>
+        <article class="endpoint" id="login" data-method="GET" data-path="/api/v1/auth/github/login">
+          <h3><span class="method get">GET</span> /api/v1/auth/github/login</h3><span class="auth">Public · browser navigation · no request body</span>
+          <p>Uses the request's <code>Origin</code>, or the <code>Referer</code> origin when absent, and requires an exact match in <code>CORS_ALLOWED_ORIGINS</code>. GitHub returns directly to that origin plus <code>/callback/auth-gh</code>. No redirect environment variable or alternate-domain parameter is supported. Sets the existing HTTP-only OAuth state cookie and redirects to GitHub with <code>user:email</code> scope.</p>
+          <pre><code>HTTP 307
+Location: [GitHub authorization URL]
+Set-Cookie: cftracker_github_oauth_state=[challenge]; ...</code></pre>
+          <p><strong>Errors:</strong> <code>400</code> — <code>Invalid frontend origin</code>; <code>500</code> — <code>Failed to initialize GitHub login</code>; <code>429</code> — authentication IP allowance exhausted.</p>
+        </article>
+        <article class="endpoint" id="callback" data-method="GET" data-path="/api/v1/auth/github/callback">
+          <h3><span class="method get">GET</span> /api/v1/auth/github/callback</h3><span class="auth">Public route · requires the matching OAuth state cookie</span>
+          <p>Query parameters: <code>code</code> (GitHub authorization code) and <code>state</code> (the value GitHub returned). No JSON body. The state must match the cookie from login.</p>
+          <p>After validating state, the backend exchanges the code, retrieves the GitHub user, creates or updates the local account, and signs a session JWT. The response is JSON; it does not redirect to the frontend.</p>
+          <pre><code>HTTP 200
+{
+  "user": {
+    "id": 7,
+    "github_id": 42,
+    "github_username": "example-user",
+    "email": "user@example.test",
+    "avatar_url": "https://example.test/avatar.png",
+    "cf_handle": "",
+    "cf_verified_handle": "",
+    "admin": false
+  },
+  "token": "SESSION_JWT"
+}</code></pre>
+          <p><strong>Errors:</strong> <code>400</code> — <code>Invalid GitHub OAuth state</code>; <code>502</code> — <code>GitHub user request failed</code>; <code>500</code> — token exchange, user retrieval/decoding, local persistence, or JWT generation failed; <code>429</code> — callback IP allowance exhausted.</p>
+          <p>Once a valid state is consumed, a failed exchange requires starting a fresh login. Missing or invalid code is handled by the provider exchange and is not a separate local <code>400</code> validation.</p>
+        </article>
+      </section>
+
+      <section id="users" aria-labelledby="users-heading">
+        <h2 id="users-heading">Profile &amp; Codeforces ownership</h2>
+        <p>All four endpoints require bearer authentication. They may return <code>404 {"error":"User not found"}</code> or <code>500 {"error":"Failed to load user"}</code> when loading the account.</p>
+        <article class="endpoint" id="profile" data-method="GET" data-path="/api/v1/user/profile">
+          <h3><span class="method get">GET</span> /api/v1/user/profile</h3><span class="auth">Bearer token · no request body</span>
+          <p>Returns <code>200 {"user": User}</code>. Use this endpoint after updating or verifying a handle to refresh the client profile. No session token is included.</p>
+        </article>
+        <article class="endpoint" id="handle" data-method="PUT" data-path="/api/v1/user/cfhandle">
+          <h3><span class="method put">PUT</span> /api/v1/user/cfhandle</h3><span class="auth">Bearer token · JSON body</span>
+          <pre><code>{"cf_handle":"tourist"}</code></pre>
+          <p><code>cf_handle</code> is required, has a binding limit of 255 characters, and is trimmed. Whitespace-only values and semicolons are rejected.</p>
+          <p>Without a stored verified handle, this only selects a handle: it does not contact Codeforces or prove account existence. When changing a previously verified handle, the backend resolves its history through Codeforces. A matching rename updates both handles and preserves verification. Selecting a different account retains the old proof but leaves the selected account unverified.</p>
+          <pre><code>HTTP 200
+{"message":"CF Handle updated"}</code></pre>
+          <p><strong>Errors:</strong> <code>400</code> — <code>Invalid request</code>; <code>409</code> — <code>Codeforces handle changed; please retry</code>; <code>500</code> — <code>Failed to update CF Handle</code>; <a href="#provider-errors">Codeforces provider errors</a>; <code>429</code> when a required provider lookup is on cooldown.</p>
+          <p>A failed historical lookup leaves stored handles unchanged. Re-read the profile before retrying a stale update.</p>
+        </article>
+        <article class="endpoint" id="challenge" data-method="GET" data-path="/api/v1/user/cfverification-token">
+          <h3><span class="method get">GET</span> /api/v1/user/cfverification-token</h3><span class="auth">Bearer token · no request body or query parameters</span>
+          <p>Creates or reuses a nine-character challenge bound to the authenticated user and selected handle. Pending challenges expire after one hour and are stored in memory; restarting the backend loses them.</p>
+          <pre><code>HTTP 200
+{"token":"aB3dE6gH9"}</code></pre>
+          <p><strong>Errors:</strong> <code>400</code> — <code>User is already verified</code>; <code>500</code> — <code>Failed to generate token</code>.</p>
+          <p>Select a handle first. The current handler does not explicitly reject an empty selected handle. This challenge is distinct from the session JWT and is not an Authorization credential.</p>
+        </article>
+        <article class="endpoint" id="verify" data-method="GET" data-path="/api/v1/user/verify-cftoken">
+          <h3><span class="method get">GET</span> /api/v1/user/verify-cftoken</h3><span class="auth">Bearer token · no request body or query parameters · updates ownership state</span>
+          <ol>
+            <li>Select your Codeforces handle with <a href="#handle">PUT /user/cfhandle</a>.</li>
+            <li>Obtain the <a href="#challenge">ownership challenge</a>.</li>
+            <li>Set that Codeforces account's <strong>first name</strong> to the exact challenge and save its profile.</li>
+            <li>Call this endpoint. The backend reads Codeforces <code>user.info</code> and compares <code>firstName</code> with its stored challenge.</li>
+            <li>On success, refresh <a href="#profile">your profile</a>. The challenge is deleted and <code>cf_verified_handle</code> is set to the selected handle.</li>
+          </ol>
+          <pre><code>HTTP 200
+{"message":"User verified"}</code></pre>
+          <p>The challenge is read server-side; do not submit it as a query parameter. Handle matching ignores case, while the challenge comparison is exact. The provider lookup disables historical-handle matching for this ownership check.</p>
+          <p><strong>Errors:</strong> <code>400</code> — <code>User is already verified</code> or <code>Invalid token</code> (including missing, expired, or mismatched challenges); <code>409</code> — <code>Codeforces handle changed; please retry</code>; <code>500</code> — <code>Failed to verify user. Please try again later!</code>; <a href="#provider-errors">provider errors</a>; <code>429</code> on cooldown.</p>
+        </article>
+      </section>
+
+      <section id="lists" aria-labelledby="lists-heading">
+        <h2 id="lists-heading">Private lists &amp; items</h2>
+        <p>Every endpoint requires bearer authentication. Ownership comes from the JWT; do not send <code>user_id</code>. A missing list and a list owned by another account both return <code>404 {"error":"List does not exist"}</code>.</p>
+        <p>List names are trimmed, must contain 1–100 Unicode characters, and must be unique per account. Limits: 20 lists per account and 1,000 items per list. There is no pagination or exposed reorder endpoint.</p>
+        <article class="endpoint" id="list-all" data-method="GET" data-path="/api/v1/lists">
+          <h3><span class="method get">GET</span> /api/v1/lists</h3><span class="auth">Bearer token · no request body</span>
+          <p>Returns owned lists ordered by ID. An account with no lists receives <code>"lists": []</code>.</p>
+          <pre><code>HTTP 200
+{
+  "message":"Lists fetched successfully",
+  "lists":[{"id":5,"user_id":7,"name":"Practice","created_at":"2026-10-26T12:00:00Z"}]
+}</code></pre>
+          <p><strong>Database failure:</strong> <code>500</code> — <code>Failed to find the list</code>.</p>
+        </article>
+        <article class="endpoint" id="list-create" data-method="POST" data-path="/api/v1/lists">
+          <h3><span class="method post">POST</span> /api/v1/lists</h3><span class="auth">Bearer token · JSON body</span>
+          <pre><code>{"name":"Practice"}</code></pre>
+          <pre><code>HTTP 201
+{
+  "message":"List created",
+  "list":{"id":5,"user_id":7,"name":"Practice","created_at":"2026-10-26T12:00:00Z"}
+}</code></pre>
+          <p><strong>Errors:</strong> <code>400</code> — <code>Invalid format</code> for malformed or invalid input; <code>409</code> — <code>maximum of 20 lists per account reached</code>; <code>500</code> — <code>Failed to create list</code>, including a duplicate name under the current error mapping.</p>
+          <h4>Example request</h4>
+          <pre><code>curl -X POST "$API_BASE/lists" \
+  -H "Authorization: Bearer $JWT" \
+  -H 'Content-Type: application/json' \
+  --data '{"name":"Practice"}'</code></pre>
+        </article>
+        <article class="endpoint" id="list-get" data-method="GET" data-path="/api/v1/lists/:listId">
+          <h3><span class="method get">GET</span> /api/v1/lists/:listId</h3><span class="auth">Bearer token · path parameter: list ID</span>
+          <p>Returns the list and its items as sibling fields. Items are ordered by position, creation time, then problem ID. An empty list returns <code>"items": []</code>.</p>
+          <pre><code>HTTP 200
+{
+  "message":"List fetched successfully",
+  "list":{"id":5,"user_id":7,"name":"Practice","created_at":"2026-10-26T12:00:00Z"},
+  "items":[{"list_id":5,"problem_id":"1900A","position":0,"created_at":"2026-10-26T12:01:00Z"}]
+}</code></pre>
+          <p><strong>Database failures:</strong> <code>500</code> — <code>Failed to find the list</code> or <code>Failed to get list items</code>.</p>
+        </article>
+        <article class="endpoint" id="list-rename" data-method="PUT" data-path="/api/v1/lists/:listId">
+          <h3><span class="method put">PUT</span> /api/v1/lists/:listId</h3><span class="auth">Bearer token · JSON body</span>
+          <pre><code>{"name":"Updated practice"}</code></pre>
+          <pre><code>HTTP 200
+{"message":"List name updated"}</code></pre>
+          <p>The same name-validation rules apply. The response does not include the updated list; refetch it if needed. <code>400</code> — <code>Invalid format</code>; <code>500</code> — <code>Failed to update list</code>, including duplicate-name database failures.</p>
+        </article>
+        <article class="endpoint" id="list-delete" data-method="DELETE" data-path="/api/v1/lists/:listId">
+          <h3><span class="method delete">DELETE</span> /api/v1/lists/:listId</h3><span class="auth">Bearer token · no request body</span>
+          <p>Deletes the owned list and its items through database cascade. A second delete of the now-missing list returns <code>404</code>.</p>
+          <pre><code>HTTP 200
+{"message":"List deleted"}</code></pre>
+          <p><strong>Database failure:</strong> <code>500</code> — <code>Failed to delete list</code>.</p>
+        </article>
+        <article class="endpoint" id="item-add" data-method="PUT" data-path="/api/v1/lists/:listId/item">
+          <h3><span class="method put">PUT</span> /api/v1/lists/:listId/item</h3><span class="auth">Bearer token · JSON body</span>
+          <pre><code>{"problem_id":"1900A","position":0}</code></pre>
+          <p><code>problem_id</code> is required, trimmed, and limited to 100 characters before trimming. <code>position</code> must be explicitly supplied as an integer greater than or equal to zero; zero is valid. The API does not validate the problem against Codeforces. Positions need not be consecutive or unique.</p>
+          <pre><code>HTTP 201
+{
+  "message":"Successfully added item to list",
+  "item":{"list_id":5,"problem_id":"1900A","position":0,"created_at":"2026-10-26T12:01:00Z"}
+}</code></pre>
+          <div class="note">Despite the PUT method, this endpoint inserts an item; it does not update or upsert an existing item. Duplicate problem IDs in the same list currently produce a database error mapped to <code>500</code>. Do not blindly retry an uncertain insertion: read the list first.</div>
+          <p><strong>Errors:</strong> <code>400</code> — <code>Invalid format</code>; <code>409</code> — <code>maximum of 1000 items per list reached</code>; <code>500</code> — <code>Failed to add item to list</code>. At quota, even an attempted duplicate may return <code>409</code> because the count is checked first.</p>
+          <h4>Example request</h4>
+          <pre><code>curl -X PUT "$API_BASE/lists/5/item" \
+  -H "Authorization: Bearer $JWT" \
+  -H 'Content-Type: application/json' \
+  --data '{"problem_id":"1900A","position":0}'</code></pre>
+        </article>
+        <article class="endpoint" id="item-delete" data-method="DELETE" data-path="/api/v1/lists/:listId/item/:itemId">
+          <h3><span class="method delete">DELETE</span> /api/v1/lists/:listId/item/:itemId</h3><span class="auth">Bearer token · no request body</span>
+          <p><code>itemId</code> is the problem ID string, such as <code>1900A</code>, not a numeric row ID. URL-encode it as a path segment. Removing an absent item still succeeds when the caller owns the list.</p>
+          <pre><code>HTTP 200
+{"message":"Item deleted from list"}</code></pre>
+          <p><strong>Database failure:</strong> <code>500</code> — <code>Failed to delete item from list</code>.</p>
+        </article>
+        <p>All list-specific routes reject nonnumeric or overflowing <code>listId</code> values with <code>400 {"error":"Invalid list Id"}</code>. Numeric IDs that do not identify an owned list return <code>404</code>.</p>
+      </section>
+
+      <section id="errors" aria-labelledby="errors-heading">
+        <h2 id="errors-heading">Errors &amp; limits</h2>
+        <p>Application errors use a single string field, without a machine-readable error code:</p>
+        <pre><code>{"error":"Unauthorized"}</code></pre>
+        <p>Handle status codes explicitly. Unregistered routes, CORS rejection, and infrastructure failures may return a different body or no JSON; do not assume every failure has an <code>error</code> field.</p>
+        <div class="table-wrap"><table>
+          <caption>Common responses; endpoint sections describe operation-specific errors.</caption>
+          <thead><tr><th scope="col">Status</th><th scope="col">Meaning</th><th scope="col">Client action</th></tr></thead>
+          <tbody>
+            <tr><td>400</td><td>Invalid input, malformed list ID, invalid OAuth state or ownership challenge</td><td>Correct input; restart OAuth or obtain a new challenge when appropriate.</td></tr>
+            <tr><td>401</td><td>Missing, malformed, invalid, or expired bearer token: <code>Unauthorized</code></td><td>Clear the invalid session and private state; sign in again.</td></tr>
+            <tr><td>403</td><td>A browser origin may be rejected by CORS middleware.</td><td>Check deployment origin configuration; this need not be JSON.</td></tr>
+            <tr><td>404</td><td>User/list missing, list not owned, or route unregistered</td><td>Stop using stale resources; verify the versioned path.</td></tr>
+            <tr><td>409</td><td>List/item quota or concurrent Codeforces handle change</td><td>Free capacity or refresh the profile before retrying.</td></tr>
+            <tr><td>413</td><td><code>Request body exceeds 16 KiB</code></td><td>Reduce the full body size, including trailing whitespace.</td></tr>
+            <tr><td>429</td><td><code>Too many requests. Try again later.</code></td><td>Respect the integer seconds in <code>Retry-After</code>.</td></tr>
+            <tr><td>500</td><td>Database, token-generation, or some provider failures</td><td>Show the failure; check current state before retrying a write.</td></tr>
+            <tr><td>502</td><td>Rejected or malformed upstream response</td><td>Report provider failure and allow a later retry.</td></tr>
+            <tr><td>503</td><td>Readiness check failed</td><td>Wait for database connectivity; do not interpret this as schema verification.</td></tr>
+          </tbody>
+        </table></div>
+        <p>All request bodies are capped at 16 KiB before decoding. Failure to read a body returns <code>400 {"error":"Failed to read request body"}</code>. Handler validation rejects malformed and missing required fields; unknown JSON fields are not a documented strict-schema guarantee.</p>
+        <h3 id="rate-limits">Rate limits</h3>
+        <div class="table-wrap"><table>
+          <caption>Default token-bucket refill rates, not fixed-window request counts. Operators can override them.</caption>
+          <thead><tr><th scope="col">Policy</th><th scope="col">Default</th><th scope="col">Scope</th><th scope="col">Setting</th></tr></thead>
+          <tbody>
+            <tr><td>Protected API</td><td>60/minute; burst 10</td><td>Shared across protected routes per user</td><td><code>API_RATE_PER_MINUTE</code></td></tr>
+            <tr><td>Writes</td><td>30/minute; burst 10</td><td>Additional allowance for POST/PUT/PATCH/DELETE per user</td><td><code>WRITE_RATE_PER_MINUTE</code></td></tr>
+            <tr><td>GitHub login / callback</td><td>10/minute each; burst 10 each</td><td>Separate login and callback buckets per IP, shared with aliases</td><td><code>AUTH_RATE_PER_MINUTE</code></td></tr>
+            <tr><td>Codeforces calls</td><td>One request per minute; burst 1</td><td>Shared per user by ownership checks and historical-handle lookups</td><td><code>CODEFORCES_COOLDOWN</code></td></tr>
+          </tbody>
+        </table></div>
+        <p>A <code>429</code> also sets <code>Cache-Control: no-store</code>. <code>Retry-After</code> is exposed to CORS clients. Rate allowances and ownership challenges are process-local; use one backend instance until those stores are shared. Even though ownership verification uses GET, it changes state and may consume the Codeforces allowance.</p>
+        <h3 id="provider-errors">Codeforces provider errors</h3>
+        <div class="table-wrap"><table>
+          <caption>Applies to ownership verification and historical-handle lookup.</caption>
+          <thead><tr><th scope="col">Condition</th><th scope="col">Status</th><th scope="col">Error string</th></tr></thead>
+          <tbody>
+            <tr><td>Cannot construct request</td><td>500</td><td>Failed to make request object</td></tr>
+            <tr><td>Transport failure or timeout</td><td>500</td><td>Failed to make request to CF</td></tr>
+            <tr><td>Upstream HTTP status other than 200</td><td>502</td><td>Codeforces request failed</td></tr>
+            <tr><td>Malformed JSON, non-OK payload, invalid result or handle</td><td>502</td><td>Error parsing CF response</td></tr>
+            <tr><td>OK payload with an empty result array</td><td>400</td><td>Codeforces user not found</td></tr>
+          </tbody>
+        </table></div>
+        <p>These are mappings of upstream responses, not guarantees about how Codeforces represents a nonexistent account.</p>
+      </section>
+
+      <section id="sources" aria-labelledby="sources-heading">
+        <h2 id="sources-heading">Source reference</h2>
+        <p>This is a standalone, offline HTML document with no external stylesheets, scripts, fonts, or API requests. It is not served automatically by the backend. Open it as a local file or include it in your documentation hosting.</p>
+        <ul>
+          <li><a href="internal/routes/routes.go">Route registration</a> and <a href="internal/middlewares/auth.go">bearer authentication</a></li>
+          <li><a href="internal/auth/auth_handlers.go">GitHub handlers</a> and <a href="internal/utils/jwt.go">JWT lifetime</a></li>
+          <li><a href="internal/users/users_handler.go">User handlers</a>, <a href="internal/users/codeforces_provider.go">Codeforces provider</a>, and <a href="internal/users/users_cfverification.go">challenge storage</a></li>
+          <li><a href="internal/lists/lists_handler.go">List handlers</a> and <a href="internal/lists/items/list_items_repository.go">item behavior</a></li>
+          <li><a href="internal/health/health_handlers.go">Health handlers</a>, <a href="internal/limits/limits.go">quotas</a>, and <a href="internal/ratelimit/limiter.go">rate limits</a></li>
+          <li><a href="README.md">Backend setup</a> and <a href="ARCHITECTURE.md">architecture and request flows</a></li>
+        </ul>
+      </section>
+      <footer>CFTracker backend · REST API v1 · documented from local source on 26 October 2026.</footer>
+    </main>
+  </div>
+</body>
+</html>
