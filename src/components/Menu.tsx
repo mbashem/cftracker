@@ -1,15 +1,12 @@
 import { faGithub } from "@fortawesome/free-brands-svg-icons";
 import { faMoon } from "@fortawesome/free-regular-svg-icons";
 import {
-  faInfo,
-  faSignIn,
-  faSignOut,
+  faRightFromBracket,
   faSun,
   faSync,
 } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { memo } from "react";
-import { Nav, Navbar, OverlayTrigger, Popover } from "react-bootstrap";
+import { memo, useCallback, useMemo } from "react";
+import { Nav, Navbar } from "react-bootstrap";
 import { Link } from "react-router";
 import { Path } from "../util/route/path";
 import { ThemesType } from "../util/Theme";
@@ -19,23 +16,76 @@ import { BACKEND_API_URL, IS_BACKEND_AVAILABLE } from "../util/env";
 import useToast from "../hooks/useToast";
 import useUser from "../hooks/useUser";
 import useUserStore from "../data/hooks/useUserStore";
+import AboutMenuItem from "./common/AboutMenuItem";
 import EditableText from "./common/EditableText";
+import MenuItem, { type MenuItemDefinition } from "./common/MenuItem";
 
 function Menu() {
   const { userList, updateUsers, syncUserSubmissions } = useUserStore();
   const { theme, changeThemeMod } = useTheme();
-  const { isAuthenticated, logout } = useUser();
+  const { isAuthenticated, isCheckingAuthentication, logout } = useUser();
 
   const { showGeneralToast } = useToast();
 
-  const submitUser = (handle: string) => {
+  const submitUser = useCallback((handle: string) => {
     showGeneralToast(`Handles entered: ${handle}`);
     updateUsers(handle);
-  };
+  }, [showGeneralToast, updateUsers]);
 
-  const sync = () => {
-    syncUserSubmissions();
-  };
+  const items = useMemo<MenuItemDefinition[]>(() => [
+    { id: "issues", kind: "route", label: "Issues", to: Path.Issues, active: true },
+    { id: "lists", kind: "route", label: "Lists", to: Path.Lists, active: true, visible: IS_BACKEND_AVAILABLE && isAuthenticated },
+    { id: "stats", kind: "route", label: "Stats", to: Path.Stats, active: true },
+    { id: "problems", kind: "route", label: "Problems", to: Path.PROBLEMS, active: true },
+    { id: "contests", kind: "route", label: "Contests", to: Path.CONTESTS },
+    {
+      id: "about", kind: "custom", content: (
+        <AboutMenuItem theme={theme} />
+      ),
+    },
+    {
+      id: "theme", kind: "action", label: "Change Theme",
+      icon: theme.themeType === ThemesType.DARK ? faMoon : faSun,
+      onSelect: () => changeThemeMod(theme.themeType === ThemesType.DARK ? ThemesType.LIGHT : ThemesType.DARK),
+    },
+    { id: "refresh", kind: "action", label: "Refresh Submissions", icon: faSync, onSelect: () => syncUserSubmissions() },
+    {
+      id: "handles", kind: "custom", content: (
+        <EditableText
+          value={userList.handles.join(",")}
+          displayValue={userList.handles
+            .map((handle) => handle.startsWith("@") ? handle : `@${handle}`)
+            .join(", ")}
+          label="Handles"
+          placeholder="handle1,handle2,.."
+          formClassName="form-inline d-flex my-2 my-lg-0 nav-item"
+          inputClassName={theme.bgText}
+          viewClassName="my-2 my-lg-0"
+          viewVariant="inverse"
+          editTitle="Click to edit handles"
+          onSubmit={submitUser}
+        />
+      ),
+    },
+    {
+      id: "checking-authentication", kind: "custom", visible: IS_BACKEND_AVAILABLE && isCheckingAuthentication,
+      content: (
+        <span className="nav-link" role="status">
+          <span className="spinner-border spinner-border-sm" aria-hidden="true" />
+          <span className="visually-hidden">Checking sign-in…</span>
+        </span>
+      ),
+    },
+    {
+      id: "sign-out", kind: "action", label: "Sign out", icon: faRightFromBracket, onSelect: logout,
+      visible: IS_BACKEND_AVAILABLE && !isCheckingAuthentication && isAuthenticated,
+    },
+    {
+      id: "sign-in", kind: "link", label: "Sign in with GitHub", icon: faGithub,
+      href: `${BACKEND_API_URL}/auth/github/login`,
+      visible: IS_BACKEND_AVAILABLE && !isCheckingAuthentication && !isAuthenticated,
+    },
+  ], [theme, isAuthenticated, isCheckingAuthentication, changeThemeMod, syncUserSubmissions, userList.handles, submitUser, logout]);
 
   return (
     <Navbar className={"navbar navbar-expand-lg p-2 ps-4 pe-4 " + theme.navbar} expand="md">
@@ -48,153 +98,7 @@ function Menu() {
 
         <Navbar.Collapse id="basic-navbar-nav">
           <Nav className="ms-auto mt-2 mt-lg-0">
-            <li className="nav-item active">
-              <Link to={Path.Issues} className="nav-link">
-                {/* <span className="p-1">{<FontAwesomeIcon icon={faBars} />}</span> */}
-                <span>Issues</span>
-              </Link>
-            </li>
-            {IS_BACKEND_AVAILABLE && isAuthenticated && (
-              <li className="nav-item active">
-                <Link to={Path.Lists} className="nav-link">
-                  {/* <span className="p-1">{<FontAwesomeIcon icon={faBars} />}</span> */}
-                  <span>Lists</span>
-                </Link>
-              </li>
-            )}
-            <li className="nav-item active">
-              <Link to={Path.Stats} className="nav-link">
-                {/* <span className="p-1">{<FontAwesomeIcon icon={faBars} />}</span> */}
-                <span>Stats</span>
-              </Link>
-            </li>
-            <li className="nav-item active">
-              <Link to={Path.PROBLEMS} className="nav-link">
-                {/* <span className="p-1">{<FontAwesomeIcon icon={faBars} />}</span> */}
-                <span>Problems</span>
-              </Link>
-            </li>
-            <li className="nav-item">
-              <Link to={Path.CONTESTS} className="nav-link">
-                {/*  <span className="p-1">  {<FontAwesomeIcon icon={faListAlt} />}  </span>*/}
-                <span>Contests</span>
-              </Link>
-            </li>
-
-            <li className="nav-item">
-              <OverlayTrigger
-                trigger="click"
-                placement="bottom"
-                key="bottom"
-                overlay={
-                  <Popover id="popover-basic" className={theme.bgText}>
-                    <Popover.Header as="h3" className={theme.bgText}>
-                      <div className="d-flex align-items-center">
-                        <span className={theme.bgText}>
-                          CFTracker (Created by{" "}
-                          <a href="https://codeforces.com/profile/bashem" className={" " + theme.text} target="__blank">
-                            bashem
-                          </a>
-                          )
-                        </span>
-                      </div>
-                    </Popover.Header>
-                    <Popover.Body className={theme.bgText}>
-                      <ul className="list-group list-group-flush">
-                        <li className={"list-group-item " + theme.bgText}>
-                          <span className="pe-2">Source Code</span>
-                          <a
-                            href="https://github.com/mbashem/cftracker"
-                            className="text-secondary pt-1 fs-5"
-                            target="__blank"
-                          >
-                            {<FontAwesomeIcon icon={faGithub} />}
-                          </a>
-                        </li>
-                      </ul>
-                    </Popover.Body>
-                  </Popover>
-                }
-              >
-                <a href="#" onClick={(e) => e.preventDefault()} className="nav-link" title="Created by Bashem">
-                  <FontAwesomeIcon icon={faInfo} />
-                </a>
-              </OverlayTrigger>
-            </li>
-
-            <li className="nav-item">
-              <a
-                className={"nav-link"}
-                href="#"
-                title="Change Theme"
-                onClick={(e) => {
-                  e.preventDefault();
-                  if (theme.themeType === ThemesType.DARK) changeThemeMod(ThemesType.LIGHT);
-                  else changeThemeMod(ThemesType.DARK);
-                }}
-              >
-                <FontAwesomeIcon icon={theme.themeType === ThemesType.DARK ? faMoon : faSun} />
-              </a>
-            </li>
-
-            <li className="nav-item">
-              <a
-                className="nav-link"
-                onClick={(e) => {
-                  e.preventDefault();
-                  sync();
-                }}
-                title="Refresh Submissions"
-                href="#"
-              >
-                <FontAwesomeIcon icon={faSync} />
-              </a>
-            </li>
-
-            <li className="nav-item">
-              <EditableText
-                value={userList.handles.join(",")}
-                displayValue={userList.handles
-                  .map((handle) => handle.startsWith("@") ? handle : `@${handle}`)
-                  .join(", ")}
-                label="Handles"
-                placeholder="handle1,handle2,.."
-                formClassName="form-inline d-flex my-2 my-lg-0 nav-item"
-                inputClassName={theme.bgText}
-                viewClassName="my-2 my-lg-0"
-                viewVariant="inverse"
-                editTitle="Click to edit handles"
-                onSubmit={submitUser}
-              />
-            </li>
-
-            {IS_BACKEND_AVAILABLE && isAuthenticated ? (
-              <li className="nav-item">
-                <a
-                  className="nav-link"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    logout();
-                  }}
-                  title="Refresh Submissions"
-                  href="#"
-                >
-                  <FontAwesomeIcon icon={faSignOut} />
-                </a>
-              </li>
-            ) : (
-              IS_BACKEND_AVAILABLE && (
-                <li className="nav-item">
-                  <a
-                    className="nav-link"
-                    title="Sign in with GitHub"
-                    href={`${BACKEND_API_URL}/auth/github/login`}
-                  >
-                    <FontAwesomeIcon icon={faSignIn} />
-                  </a>
-                </li>
-              )
-            )}
+            {items.filter((item) => item.visible !== false).map((item) => <MenuItem key={item.id} item={item} />)}
           </Nav>
         </Navbar.Collapse>
       </div>
