@@ -19,9 +19,8 @@ def validate_origin(value):
         raise SystemExit("Invalid origin.")
 
 
-def configuration_contents(frontend, origins, client_id, client_secret, admin, app, jwt):
+def configuration_contents(origins, client_id, client_secret, admin, app, jwt):
     """Validate supplied values and return file contents without system access."""
-    validate_origin(frontend)
     for value in origins.split(","):
         validate_origin(value)
     for credential in (client_id, client_secret):
@@ -35,7 +34,6 @@ def configuration_contents(frontend, origins, client_id, client_secret, admin, a
             f"JWT_SECRET={jwt}\n"
             f"GITHUB_CLIENT_ID={client_id}\n"
             f"GITHUB_CLIENT_SECRET={client_secret}\n"
-            f"GITHUB_REDIRECT_URL={frontend}/callback/auth-gh\n"
             f"CORS_ALLOWED_ORIGINS={origins}\nTRUSTED_PROXIES=\n",
     }
 
@@ -45,7 +43,7 @@ def initialize_config(directory):
     # Keep filesystem and random-number operations in the deployment entry point.
     os.umask(0o077)
     contents = configuration_contents(
-        os.environ["frontend"], os.environ["origins"],
+        os.environ["origins"],
         os.environ["client_id"], os.environ["client_secret"],
         secrets.token_hex(32), secrets.token_hex(32), secrets.token_urlsafe(32),
     )

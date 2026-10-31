@@ -84,7 +84,7 @@ func TestCompleteAPIWorkflow(t *testing.T) {
 	router := gin.New()
 	routes.RegisterRoutes(router, routes.Dependencies{
 		Health: health.NewAPI(database),
-		Auth:   auth.NewAuthHandler(githubProvider, userRepository),
+		Auth:   auth.NewAuthHandler(githubProvider, userRepository, auth.WithFrontendOrigins([]string{"https://frontend.test"})),
 		Users:  users.NewAPI(userRepository, users.NewVerificationTokenStore(), codeforcesProvider),
 		Lists:  lists.NewAPI(listRepository, itemRepository),
 	})
@@ -376,6 +376,7 @@ func performWorkflowRequest(
 	if err != nil {
 		t.Fatalf("create %s %s request: %v", method, endpoint, err)
 	}
+	request.Header.Set("Origin", "https://frontend.test")
 	if body != "" {
 		request.Header.Set("Content-Type", "application/json")
 	}

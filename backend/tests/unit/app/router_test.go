@@ -59,12 +59,14 @@ func TestRouterAssemblyPreservesRoutesAndCORS(t *testing.T) {
 	}
 
 	response := httptest.NewRecorder()
-	router.ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/api/v1/auth/github/login", nil))
+	request := httptest.NewRequest(http.MethodGet, "/api/v1/auth/github/login", nil)
+	request.Header.Set("Referer", testFrontendOrigin+"/problems")
+	router.ServeHTTP(response, request)
 	location, err := url.Parse(response.Header().Get("Location"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if response.Code != http.StatusTemporaryRedirect || location.Host != "github.com" || location.Query().Get("client_id") != config.GitHubClientID || location.Query().Get("redirect_uri") != config.GitHubRedirectURL || location.Query().Get("state") == "" {
+	if response.Code != http.StatusTemporaryRedirect || location.Host != "github.com" || location.Query().Get("client_id") != config.GitHubClientID || location.Query().Get("redirect_uri") != testFrontendOrigin+"/callback/auth-gh" || location.Query().Get("state") == "" {
 		t.Fatalf("OAuth configuration not wired: status = %d, location = %v", response.Code, location)
 	}
 }
@@ -131,7 +133,6 @@ func newRouterMockConfig(t *testing.T) configs.Config {
 	})
 	return configs.Config{
 		GitHubClientID: "router-client", GitHubClientSecret: "router-secret",
-		GitHubRedirectURL:  "https://frontend.example.test/callback/auth-gh",
 		CORSAllowedOrigins: []string{testFrontendOrigin},
 		ExternalAPITimeout: time.Second, DatabaseTimeout: time.Second,
 		APIRatePerMinute: 60, WriteRatePerMinute: 30, AuthRatePerMinute: 1,

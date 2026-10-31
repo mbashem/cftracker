@@ -21,8 +21,8 @@ var (
 )
 
 type GitHubProvider interface {
-	AuthorizationURL(state string) string
-	Authenticate(context.Context, string) (*GitHubUser, error)
+	AuthorizationURL(state string, redirectURL string) string
+	Authenticate(context.Context, string, string) (*GitHubUser, error)
 }
 
 type GitHubClient struct {
@@ -46,16 +46,20 @@ func NewGitHubClient(oauthConfig *oauth2.Config, httpClient *http.Client, timeou
 	}
 }
 
-func (client *GitHubClient) AuthorizationURL(state string) string {
-	return client.oauthConfig.AuthCodeURL(state)
+func (client *GitHubClient) AuthorizationURL(state string, redirectURL string) string {
+	config := *client.oauthConfig
+	config.RedirectURL = redirectURL
+	return config.AuthCodeURL(state)
 }
 
-func (client *GitHubClient) Authenticate(ctx context.Context, code string) (*GitHubUser, error) {
+func (client *GitHubClient) Authenticate(ctx context.Context, code string, redirectURL string) (*GitHubUser, error) {
 	providerContext, cancel := context.WithTimeout(ctx, client.timeout)
 	defer cancel()
 
 	providerContext = context.WithValue(providerContext, oauth2.HTTPClient, client.httpClient)
-	token, err := client.oauthConfig.Exchange(providerContext, code)
+	config := *client.oauthConfig
+	config.RedirectURL = redirectURL
+	token, err := config.Exchange(providerContext, code)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrGitHubTokenExchange, err)
 	}
@@ -65,7 +69,7 @@ func (client *GitHubClient) Authenticate(ctx context.Context, code string) (*Git
 		return nil, fmt.Errorf("%w: %w", ErrGitHubUserRequest, err)
 	}
 
-	response, err := client.oauthConfig.Client(providerContext, token).Do(request)
+	response, err := config.Client(providerContext, token).Do(request)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrGitHubUserRequest, err)
 	}
