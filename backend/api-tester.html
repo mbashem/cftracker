@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A browser-local CFTracker REST API testing workspace with GitHub authentication and saved bearer tokens.">
+  <title>CFTracker · API testing workspace</title>
+  <style>
+    :root { color-scheme: light; --bg:#f1f4f8; --panel:#fff; --ink:#182335; --muted:#607087; --line:#dce3ed; --blue:#245bd7; --nav:#152237; --code:#111e31; }
+    * { box-sizing:border-box; } body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.6 system-ui,sans-serif; }
+    a { color:var(--blue); } button,input,textarea,select { font:inherit; } button { cursor:pointer; } button:disabled { opacity:.55; cursor:wait; }
+    button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible { outline:3px solid #7ca7ff; outline-offset:3px; }
+    .shell { display:grid; grid-template-columns:300px minmax(0,1fr); min-height:100vh; }
+    aside { background:var(--nav); color:#edf4ff; padding:2rem 1.4rem; } .brand { font-size:1.35rem; font-weight:800; letter-spacing:-.04em; } .subtle { color:var(--muted); font-size:.85rem; }
+    aside .subtle { color:#a7bad5; } aside a { color:#bed2ff; } aside h2 { font-size:.8rem; text-transform:uppercase; letter-spacing:.1em; margin:2rem 0 .7rem; color:#a7bad5; }
+    main { min-width:0; padding:2rem clamp(1rem,3vw,3rem); } header { display:flex; justify-content:space-between; gap:1rem; align-items:flex-start; margin-bottom:1.4rem; }
+    h1 { margin:0; font-size:clamp(1.7rem,3vw,2.5rem); letter-spacing:-.04em; line-height:1.2; } h2 { font-size:1.1rem; margin:0 0 1rem; } h3 { font-size:.92rem; margin:1.3rem 0 .5rem; } p { margin:.5rem 0; }
+    label { display:block; font-size:.82rem; font-weight:650; margin:.9rem 0 .35rem; } input,select,textarea { display:block; width:100%; border:1px solid var(--line); border-radius:7px; padding:.65rem .75rem; background:var(--panel); color:var(--ink); }
+    aside input { background:#203149; border-color:#43536c; color:#fff; } input[type=checkbox] { display:inline-block; width:auto; margin-right:.5rem; }
+    textarea { font:13px/1.7 ui-monospace,monospace; resize:vertical; min-height:140px; } .button { border:1px solid var(--line); border-radius:7px; background:var(--panel); color:var(--ink); padding:.6rem .85rem; font-weight:600; }
+    .primary { background:var(--blue); border-color:var(--blue); color:white; } .wide { width:100%; margin-top:.7rem; } aside .button:not(.primary) { background:#24364f; color:#eef4ff; border-color:#43536c; }
+    .row { display:flex; flex-wrap:wrap; align-items:center; gap:.6rem; } .row > .grow { flex:1; } .columns { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:1.3rem; align-items:start; }
+    .card { min-width:0; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:1.3rem; box-shadow:0 3px 12px #12233b04; } .card + .card { margin-top:1.3rem; }
+    .badge { display:inline-block; font:700 .74rem ui-monospace,monospace; border-radius:5px; padding:.35rem .5rem; background:#e8eefc; color:#2358cb; } .status { border-radius:100px; padding:.4rem .8rem; background:#e7edf5; font-size:.8rem; white-space:nowrap; }
+    .status[data-signed-in=true] { background:#def3e8; color:#166544; } .message { background:#eaf1ff; color:#22498c; border:1px solid #c6d7fa; padding:.75rem 1rem; border-radius:8px; margin:0 0 1rem; overflow-wrap:anywhere; }
+    .message[data-error=true] { background:#fff0f0; color:#922f3c; border-color:#edc6cc; } [hidden] { display:none !important; }
+    pre { margin:.7rem 0 0; background:var(--code); color:#dce8ff; border-radius:8px; padding:1rem; font:12px/1.7 ui-monospace,monospace; overflow:auto; max-height:550px; white-space:pre-wrap; overflow-wrap:anywhere; }
+    code { font: .86em ui-monospace,monospace; overflow-wrap:anywhere; } .path { overflow-wrap:anywhere; font:13px/1.6 ui-monospace,monospace; margin:.8rem 0; }
+    .parameters { display:grid; grid-template-columns:1fr 1fr; gap:.8rem; } details { margin-top:1rem; } summary { cursor:pointer; font-size:.88rem; font-weight:650; }
+    .history { display:grid; gap:.5rem; } .history button { text-align:left; width:100%; border:1px solid var(--line); background:#f8faff; border-radius:7px; padding:.65rem; color:var(--ink); overflow-wrap:anywhere; }
+    .history .meta { display:block; color:var(--muted); font-size:.78rem; } .checks { font-weight:400; } .response-meta { font-size:.85rem; color:var(--muted); } .response-meta[data-ok=false] { color:#a32e40; }
+    .setup { margin:1.3rem 0; } .setup ol { padding-left:1.3rem; } .setup pre { max-height:none; } .footnote { margin:1.2rem 0; font-size:.8rem; color:var(--muted); }
+    @media(max-width:1050px) { .columns { grid-template-columns:1fr; } } @media(max-width:700px) { .shell { grid-template-columns:1fr; } aside { padding:1.3rem; } main { padding:1.3rem; } header { flex-wrap:wrap; } .parameters { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <aside aria-label="Backend and authentication">
+      <div class="brand">CFTracker <span class="badge">API LAB</span></div>
+      <p class="subtle">Your browser-local testing workspace.</p>
+      <h2>Backend</h2>
+      <form id="origin-form">
+        <label for="origin">API origin</label>
+        <input id="origin" type="url" list="saved-origins" value="http://localhost:8080" required autocomplete="off">
+        <datalist id="saved-origins"></datalist>
+        <button class="button wide" type="submit">Use backend</button>
+      </form>
+      <p class="subtle">Tokens and history are stored separately for each backend origin.</p>
+      <h2>Authentication</h2>
+      <button id="github-login" class="button primary wide" type="button">Sign in with GitHub ↗</button>
+      <form id="token-form">
+        <label for="token">Or paste an authentication token</label>
+        <input id="token" type="password" autocomplete="off" spellcheck="false" placeholder="JWT or Bearer JWT">
+        <label class="checks"><input id="show-token" type="checkbox">Show token</label>
+        <button class="button wide" type="submit">Save token</button>
+      </form>
+      <button id="check-session" class="button wide" type="button">Check session / load profile</button>
+      <button id="logout" class="button wide" type="button">Clear session</button>
+      <p id="profile-summary" class="subtle">No saved session.</p>
+      <h2>Workspace</h2>
+      <p class="subtle">Settings, tokens, drafts, profiles, and the latest 30 responses are saved in this browser's local storage. Saved response bodies are limited to 200,000 characters.</p>
+      <p class="subtle">Clear session removes this backend's token, profile, and response history. Clear all local data removes every saved backend workspace.</p>
+      <button id="clear-all" class="button wide" type="button">Clear all local data</button>
+      <p><a href="/backend/api-documentation.html">Open API documentation ↗</a></p>
+    </aside>
+    <main>
+      <header>
+        <div><h1>API testing workspace</h1><p class="subtle">Choose an endpoint. Inspect the request. Send when ready.</p></div>
+        <span id="session-status" class="status" data-signed-in="false">Signed out</span>
+      </header>
+      <p id="startup-message" class="message">Serve this directory over HTTP to enable the tester. The setup instructions below show how. No requests run until you send one or return from GitHub sign-in.</p>
+      <p id="message" class="message" role="status" aria-live="polite" hidden></p>
+      <p id="storage-message" class="message" role="alert" hidden></p>
+      <div class="columns">
+        <div>
+          <section class="card" aria-labelledby="request-heading">
+            <h2 id="request-heading">Request</h2>
+            <form id="request-form">
+              <label for="endpoint">Endpoint</label>
+              <select id="endpoint"></select>
+              <p class="path"><span id="request-method" class="badge">GET</span> <span id="request-url"></span></p>
+              <div class="parameters">
+                <div id="list-id-field" hidden><label for="list-id">listId</label><input id="list-id" placeholder="5" autocomplete="off"></div>
+                <div id="item-id-field" hidden><label for="item-id">itemId / problem ID</label><input id="item-id" placeholder="1900A" autocomplete="off"></div>
+              </div>
+              <div id="body-field" hidden><label for="request-body">JSON request body</label><textarea id="request-body" spellcheck="false"></textarea><p class="subtle">Sent verbatim, so malformed JSON can also be tested.</p></div>
+              <p id="request-note" class="subtle"></p>
+              <details><summary>Request headers</summary><pre id="request-headers"></pre></details>
+              <button id="send" class="button primary wide" type="submit" disabled>Send request</button>
+            </form>
+          </section>
+          <section class="card" aria-labelledby="history-heading">
+            <h2 id="history-heading">Recent responses <span id="history-count" class="subtle"></span></h2>
+            <div id="history" class="history"><p class="subtle">No requests yet.</p></div>
+          </section>
+        </div>
+        <section class="card" aria-labelledby="response-heading">
+          <div class="row"><h2 id="response-heading" class="grow">Response</h2><button id="copy-response" class="button" type="button">Copy body</button></div>
+          <p id="response-meta" class="response-meta" aria-live="polite">Your response will appear here.</p>
+          <pre id="response-body" tabindex="0">No response yet.</pre>
+          <details><summary>Response headers</summary><pre id="response-headers">—</pre></details>
+          <details><summary>Sent request body</summary><pre id="sent-body">—</pre></details>
+        </section>
+      </div>
+      <details class="card setup" id="setup">
+        <summary>First-time setup · HTTP, CORS, and GitHub OAuth</summary>
+        <ol>
+          <li>Run the command below from the repository root. It serves only the tester assets and documentation on loopback. Open <code>http://localhost:8000/backend/api-tester.html</code>. Opening a <code>file://</code> URL is insufficient for JavaScript modules, cookies, and a usable CORS origin.</li>
+          <li>Add the tester's exact origin, such as <code>http://localhost:8000</code>, to the backend's comma-separated <code>CORS_ALLOWED_ORIGINS</code>. Use your existing deployment procedure to apply configuration changes.</li>
+          <li>Enter the backend origin in the sidebar. You can immediately test health endpoints or paste an existing token.</li>
+          <li>For GitHub sign-in, add this tester's origin to <code>CORS_ALLOWED_ORIGINS</code> and register <code id="callback-url">http://localhost:8000/callback/auth-gh</code> in the GitHub OAuth app. The local tester server also serves this page at that callback path. No backend redirect setting or alternate-domain parameter is needed.</li>
+          <li>Click Sign in with GitHub. This page exchanges the returned code using the backend's HTTP-only state cookie, then saves the session token and profile. No client secret belongs in this page.</li>
+        </ol>
+        <pre>python3 backend/serve-api-tester.py</pre>
+        <p class="subtle">For local HTTP, use the same hostname for the tester and backend (for example, localhost on both). HTTPS deployments must forward X-Forwarded-Proto correctly. Browser restrictions on cross-site cookies can prevent OAuth even with CORS configured.</p>
+        <p class="subtle">Requests include cookies, and bearer tokens are sent only to protected endpoints on the selected backend. Redirected API requests are rejected. Responses are displayed as text, never as HTML.</p>
+      </details>
+      <p class="footnote">This tool runs entirely in your browser and is not served automatically by the Go API. API requests can modify real backend data. The request button shows the exact method being sent.</p>
+    </main>
+  </div>
+  <script type="module" src="/backend/api-tester.mjs"></script>
+</body>
+</html>
