@@ -4,10 +4,12 @@ import useTheme from "../../data/hooks/useTheme";
 import { Verdict } from "../../types/CF/Submission";
 import { SearchKeys } from "../../util/constants";
 import { Path } from "../../util/route/path";
-import { formatDateInputLabel } from "../../util/time";
+import { formatDate } from "../../util/time";
 import CheckList from "../common/forms/CheckList";
 import InputDateRange from "../common/forms/Input/InputDateRange";
 import Card from "../common/cards/Card";
+import ActiveDaysChart from "./ActiveDaysChart";
+import type Submission from "../../types/CF/Submission";
 import {
   SnapshotPeriod,
   type ContestIdRange,
@@ -20,6 +22,7 @@ const SNAPSHOT_PERIODS = Object.values(SnapshotPeriod);
 const SECONDS_PER_DAY = 86_400;
 
 interface SnapshotProps {
+  submissions: readonly Submission[];
   statistics: HomeStatistics;
   statisticDetails: {
     solvedContestRange?: ContestIdRange;
@@ -60,23 +63,23 @@ function getSubmissionRangeSearchParams(range: SnapshotDateRange): NavigationSea
 function getPeriodText(period: SnapshotPeriod) {
   switch (period) {
     case SnapshotPeriod.WEEK:
-      return "this week";
+      return "in the past week";
     case SnapshotPeriod.MONTH:
-      return "this month";
+      return "in the past month";
     case SnapshotPeriod.YEAR:
-      return "this year";
+      return "in the past year";
     case SnapshotPeriod.CUSTOM:
       return "in the selected range";
   }
 }
 
-function getRangeLabel(period: SnapshotPeriod, customRange: SnapshotCustomRange) {
-  if (period !== SnapshotPeriod.CUSTOM) return `Current ${period.toLowerCase()}`;
-  if (customRange.minDate !== undefined && customRange.maxDate !== undefined) {
-    return `${formatDateInputLabel(customRange.minDate)} to ${formatDateInputLabel(customRange.maxDate)}`;
-  }
-  if (customRange.minDate !== undefined) return `Since ${formatDateInputLabel(customRange.minDate)}`;
-  if (customRange.maxDate !== undefined) return `Through ${formatDateInputLabel(customRange.maxDate)}`;
+function getRangeLabel(range: SnapshotDateRange) {
+  const start = range.startTimeSeconds === undefined ? undefined : new Date(range.startTimeSeconds * 1000);
+  const end = range.endTimeSeconds === undefined ? undefined : new Date(range.endTimeSeconds * 1000);
+  if (end !== undefined) end.setDate(end.getDate() - 1);
+  if (start !== undefined && end !== undefined) return `${formatDate(start)} to ${formatDate(end)}`;
+  if (start !== undefined) return `Since ${formatDate(start)}`;
+  if (end !== undefined) return `Through ${formatDate(end)}`;
   return "All time";
 }
 
@@ -86,6 +89,7 @@ function getRangeDayCount(range: SnapshotDateRange) {
 }
 
 function Snapshot({
+  submissions,
   statistics,
   statisticDetails,
   period,
@@ -137,7 +141,12 @@ function Snapshot({
     {
       label: "Active days",
       value: canShowStatistics
-        ? `${formatNumber(statistics.activeDays)}${rangeDayCount === undefined ? "" : ` / ${formatNumber(rangeDayCount)}`}`
+        ? (
+          <span className="d-flex flex-column align-items-start">
+            <span>{`${formatNumber(statistics.activeDays)}${rangeDayCount === undefined ? "" : ` / ${formatNumber(rangeDayCount)}`}`}</span>
+            <ActiveDaysChart submissions={submissions} period={period} startTimeSeconds={range.startTimeSeconds} endTimeSeconds={range.endTimeSeconds} />
+          </span>
+        )
         : unavailableValue,
       description: `Days with at least one submission ${periodText}.`,
       searchParams: activeDayDetailsParams,
@@ -168,7 +177,7 @@ function Snapshot({
         <div>
           <p className="home-section-kicker text-uppercase fw-semibold mb-1">Progress</p>
           <h2 className="h3 fw-bold mb-0" id="snapshot-heading">Snapshot</h2>
-          <span className="home-snapshot-range small">{getRangeLabel(period, customRange)}</span>
+          <span className="home-snapshot-range small">{getRangeLabel(range)}</span>
         </div>
         <CheckList
           items={SNAPSHOT_PERIODS}

@@ -7,6 +7,7 @@ import "./HomePage.css";
 
 function HomePage() {
   const {
+    submissions,
     handles,
     addHandle,
     removeHandle,
@@ -34,6 +35,7 @@ function HomePage() {
         error={error}
       />
       <Snapshot
+        submissions={submissions}
         statistics={statistics}
         statisticDetails={statisticDetails}
         period={snapshotPeriod}
