@@ -1,6 +1,7 @@
 import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import { faPlus, faXmark } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import "./IconButton.css";
 
 interface IconButtonProps {
   icon: IconDefinition;
@@ -12,7 +13,7 @@ function IconButton({ icon, label, onClick }: IconButtonProps) {
   return (
     <button
       type="button"
-      className="btn btn-sm border-0 p-0 text-reset"
+      className="btn btn-ghost btn-sm border-0 p-0 text-reset"
       aria-label={label}
       title={label}
       onClick={onClick}

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Modal } from "react-bootstrap";
 import Theme from "../../util/Theme";
 import React from "react";
+import "./IconButton.css";
 
 interface childrenProps {
   closeModal: () => void;
@@ -15,6 +16,7 @@ interface PropsType {
   theme: Theme;
   button?: React.ReactNode;
   buttonLabel?: string;
+  buttonClassName?: string;
   size?: "sm" | "lg" | "xl";
 }
 
@@ -31,7 +33,7 @@ function CustomModal(props: PropsType) {
 
   return (
     <>
-      <button type="button" aria-label={props.buttonLabel} className={"btn " + props.theme.btn} onClick={handleShow}>
+      <button type="button" aria-label={props.buttonLabel} className={"btn " + (props.buttonClassName ?? props.theme.btn)} onClick={handleShow}>
         {props.button === undefined ? <FontAwesomeIcon icon={faFilter} /> : props.button}
       </button>
       <Modal className="modal" size={props.size} show={show} onHide={handleClose}>

@@ -1,0 +1,33 @@
+.btn.btn-ghost {
+  color: inherit;
+  background-color: transparent;
+  border-color: transparent;
+}
+
+.btn.btn-ghost:hover,
+.btn.btn-ghost:active {
+  color: inherit;
+  background-color: var(--theme-accent-soft, rgba(13, 110, 253, 0.12));
+  border-color: transparent;
+}
+
+.btn.btn-ghost-danger {
+  color: var(--bs-danger, #dc3545);
+}
+
+.btn.btn-ghost-danger:hover,
+.btn.btn-ghost-danger:active {
+  color: var(--bs-danger, #dc3545);
+  background-color: var(--theme-danger-soft, rgba(220, 53, 69, 0.12));
+}
+
+.btn.btn-ghost:disabled {
+  background-color: transparent;
+  border-color: transparent;
+}
+
+.btn.btn-ghost:focus-visible {
+  outline: 2px solid var(--theme-accent, #0d6efd);
+  outline-offset: 2px;
+  box-shadow: none;
+}

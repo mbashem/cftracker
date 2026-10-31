@@ -16,6 +16,7 @@ interface ProblemTableProps {
   solved: Set<string>;
   attempted: Set<string>;
   showAddToList: boolean;
+  showListPicker?: boolean;
   list?: List;
   problemsAddedToList: Set<string>;
   sortList: (sortBy: SortProblemBy) => void;
@@ -32,6 +33,7 @@ function ProblemTable({
   solved,
   attempted,
   showAddToList,
+  showListPicker = false,
   list,
   problemsAddedToList,
   sortList,
@@ -67,7 +69,7 @@ function ProblemTable({
               <div>{getSortIcon(SortProblemBy.SolveCount)}</div>
             </div>
           </th>
-          {showAddToList && <th scope="col">Add To {list?.name}</th>}
+          {(showAddToList || showListPicker) && <th scope="col">{showAddToList ? `Add To ${list?.name}` : "Lists"}</th>}
         </tr>
       </thead>
       <tbody className={theme.bg}>
@@ -79,6 +81,7 @@ function ProblemTable({
           pageSelected={pageSelected}
           theme={theme}
           showAddToList={showAddToList}
+          showListPicker={showListPicker}
           addToList={addToList}
           problemsAddedToList={problemsAddedToList}
           deleteFromList={deleteFromList}

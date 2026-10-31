@@ -5,6 +5,8 @@ import { getProblemUrl, isNumber } from "../../../util/util";
 import { ATTEMPTED_PROBLEMS, SOLVED_PROBLEMS } from "../../../util/constants";
 import Problem from "../../../types/CF/Problem";
 import Theme from "../../../util/Theme";
+import ProblemListPicker from "../ProblemListPicker";
+import "../../common/IconButton.css";
 
 interface ProblemListProps {
   problems: Problem[];
@@ -14,6 +16,7 @@ interface ProblemListProps {
   solved: Set<string>;
   attempted: Set<string>;
   showAddToList: boolean;
+  showListPicker?: boolean;
   problemsAddedToList: Set<string>;
   addToList: (id: string) => void;
   deleteFromList: (id: string) => void;
@@ -66,17 +69,21 @@ const ProblemList = (props: ProblemListProps): React.JSX.Element => {
             {props.problemsAddedToList.has(problem.id) ? (
               <button
                 type="button"
-                className={"btn " + props.theme.btnDanger}
+                className="btn btn-ghost btn-ghost-danger"
+                aria-label={`Remove ${problem.id} from selected list`}
                 onClick={() => props.deleteFromList(problem.id)}
               >
                 <FontAwesomeIcon icon={faTrash} />
               </button>
             ) : (
-              <button type="button" className={"btn " + props.theme.btn} onClick={() => props.addToList(problem.id)}>
+              <button type="button" className="btn btn-ghost" aria-label={`Add ${problem.id} to selected list`} onClick={() => props.addToList(problem.id)}>
                 <FontAwesomeIcon icon={faAdd} />
               </button>
             )}
           </td>
+        )}
+        {!props.showAddToList && props.showListPicker && (
+          <td className="p-2"><ProblemListPicker problemId={problem.id} /></td>
         )}
       </tr>
     );
