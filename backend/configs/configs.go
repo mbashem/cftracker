@@ -18,7 +18,6 @@ type EnvKey string
 const (
 	GITHUB_CLIENT_ID      EnvKey = "GITHUB_CLIENT_ID"
 	GITHUB_CLIENT_SECRET  EnvKey = "GITHUB_CLIENT_SECRET"
-	GITHUB_REDIRECT_URL   EnvKey = "GITHUB_REDIRECT_URL"
 	DATABASE_URL          EnvKey = "DATABASE_URL"
 	DATABASE_TIMEOUT      EnvKey = "DATABASE_TIMEOUT"
 	JWT_SECRET            EnvKey = "JWT_SECRET"
@@ -42,7 +41,6 @@ const (
 type Config struct {
 	GitHubClientID     string
 	GitHubClientSecret string
-	GitHubRedirectURL  string
 	DatabaseURL        string
 	JWTSecret          string
 	CORSAllowedOrigins []string
@@ -65,7 +63,6 @@ func Load() (Config, error) {
 	config := Config{
 		GitHubClientID:     getEnv(GITHUB_CLIENT_ID),
 		GitHubClientSecret: getEnv(GITHUB_CLIENT_SECRET),
-		GitHubRedirectURL:  getEnv(GITHUB_REDIRECT_URL),
 		DatabaseURL:        getEnv(DATABASE_URL),
 		JWTSecret:          getEnv(JWT_SECRET),
 	}
@@ -73,7 +70,6 @@ func Load() (Config, error) {
 	var validationErrors []error
 	requireValue(GITHUB_CLIENT_ID, config.GitHubClientID, &validationErrors)
 	requireValue(GITHUB_CLIENT_SECRET, config.GitHubClientSecret, &validationErrors)
-	requireValue(GITHUB_REDIRECT_URL, config.GitHubRedirectURL, &validationErrors)
 	requireValue(DATABASE_URL, config.DatabaseURL, &validationErrors)
 	requireValue(JWT_SECRET, config.JWTSecret, &validationErrors)
 
@@ -83,12 +79,6 @@ func Load() (Config, error) {
 			JWT_SECRET,
 			MinimumJWTSecretLength,
 		))
-	}
-
-	if config.GitHubRedirectURL != "" {
-		if err := validateHTTPURL(GITHUB_REDIRECT_URL, config.GitHubRedirectURL); err != nil {
-			validationErrors = append(validationErrors, err)
-		}
 	}
 
 	config.CORSAllowedOrigins = parseAllowedOrigins(getEnv(CORS_ALLOWED_ORIGINS))

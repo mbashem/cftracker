@@ -135,17 +135,16 @@ case "$command" in
     # Collect first-installation settings interactively, with the client secret
     # hidden while typing. Do not accept unattended input for secret initialization.
     [[ -t 0 ]] || fail 'init requires an interactive terminal.'
-    read -r -p 'Frontend origin (https://...): ' frontend
     read -r -p 'Allowed origins, comma-separated (include localhost if needed): ' origins
     read -r -p 'GitHub OAuth client ID: ' client_id
     read -r -s -p 'GitHub OAuth client secret: ' client_secret
     # Pass settings to the configuration writer without exposing the client secret
     # in command-line arguments.
     printf '\n'
-    export frontend origins client_id client_secret
+    export origins client_id client_secret
     python3 "$directory/server_helpers.py" init "$config"
     # Remove credentials from the shell's environment after initialization.
-    unset frontend origins client_id client_secret ;;
+    unset origins client_id client_secret ;;
   deploy) deploy ;;
   backup) backup ;;
   check)

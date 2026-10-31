@@ -18,7 +18,6 @@ class InitializeConfigTest(unittest.TestCase):
         # Replace the module's system dependencies, not the initializer under test.
         self.os = self.enterContext(patch.object(server_helpers, "os"))
         self.os.environ = {
-            "frontend": "https://frontend.example.com",
             "origins": "https://frontend.example.com,http://localhost:5173",
             "client_id": "test-client-id",
             "client_secret": "test-client-secret",
@@ -64,7 +63,7 @@ class InitializeConfigTest(unittest.TestCase):
                     file.chmod.assert_not_called()
 
     def test_invalid_settings_fail_before_directory_or_file_changes(self):
-        self.os.environ["frontend"] = "https://frontend.example.com/path"
+        self.os.environ["origins"] = "https://frontend.example.com/path"
         with self.assertRaisesRegex(SystemExit, "Origins must"):
             server_helpers.initialize_config(self.directory)
         self.directory.mkdir.assert_not_called()

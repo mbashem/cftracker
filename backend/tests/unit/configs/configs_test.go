@@ -22,7 +22,6 @@ import (
 const (
 	testGitHubClientID      = "github-client-id"
 	testGitHubClientSecret  = "github-client-secret"
-	testGitHubRedirectURL   = "http://localhost:8080/v1/auth/github/callback"
 	testDatabaseURL         = "postgres://postgres:postgrespw@localhost:5432/cftracker_test?sslmode=disable"
 	testJWTSecret           = "test-jwt-secret-with-enough-bytes"
 	testNonIntegerPort      = "not-a-port"
@@ -43,7 +42,6 @@ const (
 type configMockData struct {
 	gitHubClientID     string
 	gitHubClientSecret string
-	gitHubRedirectURL  string
 	databaseURL        string
 	jwtSecret          string
 	corsAllowedOrigins string
@@ -56,7 +54,6 @@ var (
 	dotEnvConfigOverrides = configMockData{
 		gitHubClientID:     "dotenv-client-id",
 		gitHubClientSecret: "dotenv-client-secret",
-		gitHubRedirectURL:  "http://dotenv.example.com/callback",
 		databaseURL:        "postgres://dotenv",
 		jwtSecret:          "dotenv-jwt-secret-with-enough-bytes",
 		corsAllowedOrigins: "https://dotenv.example.com",
@@ -368,13 +365,6 @@ func TestLoadRejectsInvalidValues(t *testing.T) {
 			expectedErrorText: "GITHUB_CLIENT_SECRET is required",
 		},
 		{
-			name: "empty GitHub redirect URL is rejected",
-			configureMockData: func(mockData *configMockData) {
-				mockData.gitHubRedirectURL = ""
-			},
-			expectedErrorText: "GITHUB_REDIRECT_URL is required",
-		},
-		{
 			name: "empty database URL is rejected",
 			configureMockData: func(mockData *configMockData) {
 				mockData.databaseURL = ""
@@ -387,13 +377,6 @@ func TestLoadRejectsInvalidValues(t *testing.T) {
 				mockData.jwtSecret = ""
 			},
 			expectedErrorText: "JWT_SECRET is required",
-		},
-		{
-			name: "malformed GitHub redirect URL is rejected",
-			configureMockData: func(mockData *configMockData) {
-				mockData.gitHubRedirectURL = "not-a-url"
-			},
-			expectedErrorText: "GITHUB_REDIRECT_URL must be a valid HTTP or HTTPS URL",
 		},
 		{
 			name: "JWT secret below minimum length is rejected",
@@ -500,7 +483,6 @@ func TestLoadUsesProcessEnvironmentBeforeDotEnv(t *testing.T) {
 	}{
 		{fieldName: "GitHubClientID", actual: config.GitHubClientID, expected: processEnvData.gitHubClientID},
 		{fieldName: "GitHubClientSecret", actual: config.GitHubClientSecret, expected: processEnvData.gitHubClientSecret},
-		{fieldName: "GitHubRedirectURL", actual: config.GitHubRedirectURL, expected: processEnvData.gitHubRedirectURL},
 		{fieldName: "DatabaseURL", actual: config.DatabaseURL, expected: processEnvData.databaseURL},
 		{fieldName: "JWTSecret", actual: config.JWTSecret, expected: processEnvData.jwtSecret},
 	}
@@ -570,7 +552,6 @@ func newConfigMockData(overrides ...configMockData) configMockData {
 	mockData := configMockData{
 		gitHubClientID:     testGitHubClientID,
 		gitHubClientSecret: testGitHubClientSecret,
-		gitHubRedirectURL:  testGitHubRedirectURL,
 		databaseURL:        testDatabaseURL,
 		jwtSecret:          testJWTSecret,
 		corsAllowedOrigins: "http://localhost:5173",
@@ -589,9 +570,6 @@ func (mockData *configMockData) applyOverride(override configMockData) {
 	}
 	if override.gitHubClientSecret != "" {
 		mockData.gitHubClientSecret = override.gitHubClientSecret
-	}
-	if override.gitHubRedirectURL != "" {
-		mockData.gitHubRedirectURL = override.gitHubRedirectURL
 	}
 	if override.databaseURL != "" {
 		mockData.databaseURL = override.databaseURL
@@ -617,7 +595,6 @@ func (mockData configMockData) envValues() map[string]string {
 	return map[string]string{
 		string(configs.GITHUB_CLIENT_ID):         mockData.gitHubClientID,
 		string(configs.GITHUB_CLIENT_SECRET):     mockData.gitHubClientSecret,
-		string(configs.GITHUB_REDIRECT_URL):      mockData.gitHubRedirectURL,
 		string(configs.DATABASE_URL):             mockData.databaseURL,
 		string(configs.JWT_SECRET):               mockData.jwtSecret,
 		string(configs.CORS_ALLOWED_ORIGINS):     mockData.corsAllowedOrigins,

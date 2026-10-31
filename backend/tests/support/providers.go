@@ -7,11 +7,13 @@ import (
 )
 
 type GitHubProviderMock[User any] struct {
-	AuthorizationBaseURL string
-	UsersByCode          map[string]User
-	AuthenticationError  error
-	AuthorizationStates  []string
-	AuthenticationCodes  []string
+	AuthorizationBaseURL    string
+	UsersByCode             map[string]User
+	AuthenticationError     error
+	AuthorizationStates     []string
+	AuthorizationRedirects  []string
+	AuthenticationRedirects []string
+	AuthenticationCodes     []string
 }
 
 func NewGitHubProviderMock[User any](authorizationBaseURL string, usersByCode map[string]User) *GitHubProviderMock[User] {
@@ -21,8 +23,9 @@ func NewGitHubProviderMock[User any](authorizationBaseURL string, usersByCode ma
 	}
 }
 
-func (provider *GitHubProviderMock[User]) AuthorizationURL(state string) string {
+func (provider *GitHubProviderMock[User]) AuthorizationURL(state string, redirectURL string) string {
 	provider.AuthorizationStates = append(provider.AuthorizationStates, state)
+	provider.AuthorizationRedirects = append(provider.AuthorizationRedirects, redirectURL)
 	authorizationURL, err := url.Parse(provider.AuthorizationBaseURL)
 	if err != nil {
 		panic(fmt.Sprintf("parse mock GitHub authorization URL: %v", err))
@@ -33,8 +36,9 @@ func (provider *GitHubProviderMock[User]) AuthorizationURL(state string) string 
 	return authorizationURL.String()
 }
 
-func (provider *GitHubProviderMock[User]) Authenticate(ctx context.Context, code string) (*User, error) {
+func (provider *GitHubProviderMock[User]) Authenticate(ctx context.Context, code string, redirectURL string) (*User, error) {
 	provider.AuthenticationCodes = append(provider.AuthenticationCodes, code)
+	provider.AuthenticationRedirects = append(provider.AuthenticationRedirects, redirectURL)
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}

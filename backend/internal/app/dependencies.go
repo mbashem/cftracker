@@ -23,7 +23,7 @@ func newDependencies(config configs.Config, database *sql.DB) (routes.Dependenci
 
 	providerHTTPClient := &http.Client{Timeout: config.ExternalAPITimeout}
 	githubProvider := auth.NewGitHubClient(
-		auth.NewOAuthConfig(config.GitHubClientID, config.GitHubClientSecret, config.GitHubRedirectURL),
+		auth.NewOAuthConfig(config.GitHubClientID, config.GitHubClientSecret),
 		providerHTTPClient,
 		config.ExternalAPITimeout,
 	)
@@ -32,7 +32,7 @@ func newDependencies(config configs.Config, database *sql.DB) (routes.Dependenci
 
 	return routes.Dependencies{
 		Health: health.NewAPI(database),
-		Auth:   auth.NewAuthHandler(githubProvider, userRepository),
+		Auth:   auth.NewAuthHandler(githubProvider, userRepository, auth.WithFrontendOrigins(config.CORSAllowedOrigins)),
 		Users: users.NewAPI(userRepository, users.NewVerificationTokenStore(), codeforcesProvider,
 			users.WithRateLimits(rateLimits)),
 		Lists: lists.NewAPI(lists.NewRepository(database, config.DatabaseTimeout),
