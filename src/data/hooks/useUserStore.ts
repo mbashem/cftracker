@@ -2,12 +2,13 @@ import { addHandle as addHandleAction, removeAllHandle, removeHandle as removeHa
 import { requestUserSubmissions } from "../reducers/userSubmissionsSlice";
 import { useAppDispatch, useAppSelector } from "../store";
 import { splitStringBySeparator } from "../../util/util";
+import { useCallback } from "react";
 
 function useUserStore() {
 	const dispatch = useAppDispatch();
 	const userList = useAppSelector(state => state.userList);
 
-	function updateUsers(handle: string) {
+	const updateUsers = useCallback((handle: string) => {
 		const currentId = Math.max(Date.now(), userList.id + 1);
 		const handles = [...new Set(
 			splitStringBySeparator(handle, ",").map(handle => handle.trim()).filter((handle) => handle.length)
@@ -20,11 +21,11 @@ function useUserStore() {
 
 		for (const handle of handles)
 			dispatch(addHandleAction({ handle, id: currentId }));
-	}
+	}, [dispatch, userList.id]);
 
-	function syncUserSubmissions(wait = false) {
+	const syncUserSubmissions = useCallback((wait = false) => {
 		dispatch(requestUserSubmissions(userList.handles, wait));
-	}
+	}, [dispatch, userList.handles]);
 
 	function addHandle(handle: string) {
 		updateUsers([...userList.handles, handle.trim()].join(","));

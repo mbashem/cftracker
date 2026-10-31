@@ -120,7 +120,11 @@ vi.mock("../../src/hooks/useToast", () => ({
 }));
 vi.mock("../../src/data/hooks/useUserStore", () => ({
   default: () => ({
-    userList: { handles: frontend.handles, id: frontend.userId },
+    userList: {
+      handles: frontend.handles, id: frontend.userId,
+      authenticationStatus: frontend.authenticated ? 'authenticated' : 'unauthenticated',
+      user: frontend.authenticated ? { id: frontend.userId, jwtToken: `session-${frontend.userId}` } : undefined,
+    },
     updateUsers: frontend.updateUsers, syncUserSubmissions: frontend.syncUserSubmissions,
   }),
 }));
