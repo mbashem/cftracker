@@ -1,6 +1,8 @@
 import { listApi } from "../queries/listQuery";
+import useUser from "../../hooks/useUser";
 
 function useListApi() {
+	const { user } = useUser();
 	const [createListMutation] = listApi.useCreateListMutation();
 	const [addProblemToListMutation] = listApi.useAddToListMutation();
 	const [deleteListMutation] = listApi.useDeleteListMutation();
@@ -73,7 +75,17 @@ function useListApi() {
 		}
 	}
 
-	return { getListWithItems, createList, addProblemToList, deleteProblemFromList, deleteList, updateListName, useGetAllListsQuery: listApi.useGetAllListsQuery, useGetListQuery: listApi.useGetListQuery };
+	function useGetAllListsQuery(options: { skip?: boolean } = {}) {
+		const query = listApi.useGetAllListsQuery(undefined, { skip: user === undefined || options.skip });
+		return { ...query, data: user === undefined ? undefined : query.currentData };
+	}
+
+	function useGetListQuery(listId: number) {
+		const query = listApi.useGetListQuery(listId, { skip: user === undefined });
+		return { ...query, data: user === undefined ? undefined : query.currentData };
+	}
+
+	return { getListWithItems, createList, addProblemToList, deleteProblemFromList, deleteList, updateListName, useGetAllListsQuery, useGetListQuery };
 }
 
 export default useListApi;
