@@ -9,13 +9,13 @@ def render_compose(text, release):
     """Return an image-only manifest from source text without accessing files."""
     # Fail visibly if the source manifest changes instead of shipping a partial edit.
     for target in ("backend", "migration"):
-        pattern = rf"    build:\n      context: ./backend\n      dockerfile: dockerfile\n      target: {target}\n"
+        pattern = rf"    build:\n      context: \.\n      dockerfile: dockerfile\n      target: {target}\n"
         replacement = f"    image: cftracker-{target}:{release}\n    pull_policy: never\n"
         text, count = re.subn(pattern, replacement, text)
         if count != 1:
             raise SystemExit("Production build layout changed; update bundle_helpers.py before deploying.")
     # Keep the database mount stable across release directories.
-    old = "./backend/deploy/init-app-role.sql:"
+    old = "./deploy/init-app-role.sql:"
     if text.count(old) != 1:
         raise SystemExit("Production SQL mount changed; update bundle_helpers.py before deploying.")
     return text.replace(old, "/etc/cftracker/init-app-role.sql:")
@@ -49,7 +49,7 @@ def main():
     if args.command == "resolve-path":
         print(args.path.resolve())
     elif args.command == "render-compose":
-        source = (args.root / "compose.production.yml").read_text()
+        source = (args.root / "backend" / "compose.production.yml").read_text()
         (args.output / "compose.yml").write_text(render_compose(source, args.release))
     else:
         write_checksums(args.directory)

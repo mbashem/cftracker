@@ -10,17 +10,17 @@ services:
     image: postgres:14-alpine
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./backend/deploy/init-app-role.sql:/docker-entrypoint-initdb.d/10-app-role.sql:ro
+      - ./deploy/init-app-role.sql:/docker-entrypoint-initdb.d/10-app-role.sql:ro
   backend:
     build:
-      context: ./backend
+      context: .
       dockerfile: dockerfile
       target: backend
     ports: ["127.0.0.1:8080:8080"]
   migrate:
     profiles: [tools]
     build:
-      context: ./backend
+      context: .
       dockerfile: dockerfile
       target: migration
 volumes:
@@ -57,7 +57,7 @@ class ComposeRenderingTest(unittest.TestCase):
             with self.subTest(source=source), self.assertRaises(SystemExit):
                 render_compose(source, "release-001")
     def test_missing_or_duplicated_sql_mount_is_rejected(self):
-        mount = "./backend/deploy/init-app-role.sql:"
+        mount = "./deploy/init-app-role.sql:"
         for source in (COMPOSE_SOURCE.replace(mount, "./changed.sql:"), COMPOSE_SOURCE + mount):
             with self.subTest(source=source), self.assertRaises(SystemExit):
                 render_compose(source, "release-001")
