@@ -16,7 +16,6 @@ import { formatDateInputValue } from "../../util/time";
 import {
 	clampNumber,
 	getRandomInteger,
-	isDefined,
 	isNumber,
 } from "../../util/util";
 import { validators } from "../../util/validators";
@@ -25,6 +24,7 @@ import useContestStore from "../../data/hooks/useContestStore";
 import { Path } from "../../util/route/path";
 import useProblemState from "./useProblemState";
 import useAppNavigation from "../../hooks/useAppNavigation";
+import useUserStore from "../../data/hooks/useUserStore";
 
 export interface ProblemFilterState {
 	tags: Set<string>;
@@ -61,6 +61,10 @@ function getRatingRange(minRating: number, maxRating: number): ProblemRatingRang
 }
 
 function useProblemPage() {
+	const { userList } = useUserStore();
+	const user = userList.authenticationStatus === 'authenticated' ? userList.user : undefined;
+	const session = user === undefined ? undefined : `${user.id}:${user.jwtToken}`;
+	const [loadedSession, setLoadedSession] = useState<string>();
 	const { navigateTo } = useAppNavigation();
 	const { getSearchParam } = useAppSearchParams();
 	const [isRandomRequested, setRandomSearchValue] = useSearchParamState<boolean>(
@@ -251,10 +255,12 @@ function useProblemPage() {
 		setProblemsAddedToList(new Set());
 		pendingListAdditions.current = new Set();
 		nextListPosition.current = 0;
-		if (listId === undefined) return;
+		setLoadedSession(undefined);
+		if (listId === undefined || session === undefined) return;
 
 		api.getListWithItems(listId).then(listWithItems => {
 			if (cancelled) return;
+			setLoadedSession(session);
 			setList(listWithItems);
 			nextListPosition.current = listWithItems.items.reduce(
 				(max, item) => Math.max(max, item.position),
@@ -265,7 +271,7 @@ function useProblemPage() {
 			if (!cancelled) showErrorToast(err?.message ?? "Failed to find allready added problems");
 		});
 		return () => { cancelled = true; };
-	}, [listId]);
+	}, [listId, session]);
 
 	useEffect(() => {
 		setRandomProblem(
@@ -302,7 +308,10 @@ function useProblemPage() {
 		});
 	}, []);
 
+	const hasCurrentList = session !== undefined && loadedSession === session && list?.id === listId;
+
 	async function addProblemToList(problemId: string) {
+		if (!hasCurrentList) return;
 		if (listId === undefined) throw new Error("ListId is undefined");
 		const pending = pendingListAdditions.current;
 		if (problemsAddedToList.has(problemId) || pending.has(problemId)) return;
@@ -319,12 +328,15 @@ function useProblemPage() {
 			);
 			setProblemsAddedToList(current => new Set(current).add(problemId));
 			return;
+		} catch (error) {
+			if (generation === listGeneration.current) throw error;
 		} finally {
 			pending.delete(problemId);
 		}
 	}
 
 	async function deleteProblemFromList(problemId: string) {
+		if (!hasCurrentList) return;
 		if (listId === undefined) throw new Error("ListId is undefined");
 		const generation = listGeneration.current;
 		try {
@@ -341,14 +353,14 @@ function useProblemPage() {
 			});
 			return;
 		} catch (err) {
-			throw err;
+			if (generation === listGeneration.current) throw err;
 		}
 	}
 
 	return {
 		state,
 		theme,
-		list,
+		list: hasCurrentList ? list : undefined,
 		problemList,
 		tagList,
 		selected,
@@ -361,8 +373,8 @@ function useProblemPage() {
 		attempted,
 		currentPageProblems,
 		selectableVerdictStatuses: SELECTABLE_VERDICT_STATUSES,
-		showAddToList: isDefined(listId),
-		problemsAddedToList,
+		showAddToList: hasCurrentList,
+		problemsAddedToList: hasCurrentList ? problemsAddedToList : new Set<string>(),
 		isRandomActive: randomProblem !== undefined,
 		submissionRange: {
 			after: submittedAfter,
