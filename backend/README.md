@@ -17,7 +17,6 @@ Required variables:
 ```env
 GITHUB_CLIENT_ID=replace-with-github-client-id
 GITHUB_CLIENT_SECRET=replace-with-github-client-secret
-GITHUB_REDIRECT_URL=http://localhost:5173/callback/auth-gh
 DATABASE_URL=postgres://postgres:postgrespw@localhost:5432/cftracker?sslmode=disable
 JWT_SECRET=replace-with-generated-secret
 CORS_ALLOWED_ORIGINS=http://localhost:5173
@@ -46,7 +45,7 @@ CODEFORCES_COOLDOWN=1m
 
 `PORT` defaults to `8080`. `EXTERNAL_API_TIMEOUT` accepts Go duration values such as `5s` or `1m` and defaults to `10s`. `CORS_ALLOWED_ORIGINS` requires at least one valid HTTP or HTTPS origin without paths, queries, fragments, or credentials; separate multiple origins with commas. Invalid entries are logged and skipped, but an empty or entirely invalid list stops startup during configuration loading, before database initialization, with `CORS_ALLOWED_ORIGINS must contain at least one valid HTTP or HTTPS origin`. Do not use `*` because the API allows credentialed CORS requests. With valid configuration, requests without an `Origin` header remain usable for health checks and direct API clients.
 
-GitHub sign-in must start at `/api/v1/auth/github/login`. The handler stores the short-lived OAuth state in an HTTP-only cookie, and the frontend forwards GitHub's returned `state` with the authorization code. A new login replaces any pending login in the same browser profile. HTTPS deployments behind a reverse proxy must set `X-Forwarded-Proto: https` so the state cookie is marked `Secure`.
+GitHub sign-in starts at `/api/v1/auth/github/login`. The handler selects the request's `Origin`, or the `Referer` origin for browser navigation when `Origin` is absent, and requires an exact match in `CORS_ALLOWED_ORIGINS`. Missing or unlisted origins receive `400`. GitHub returns directly to that origin plus `/callback/auth-gh`; the frontend forwards code and state to `/api/v1/auth/github/callback` with cookies included. The same derived callback URL is used during code exchange, without mutating shared OAuth configuration. No redirect environment variable or alternate-domain parameter is supported. Register each frontend callback URL in the GitHub OAuth app as well: the backend allowlist does not override GitHub callback restrictions. A new login replaces the pending state cookie. HTTPS proxies must set `X-Forwarded-Proto: https` so the state cookie is marked `Secure`.
 
 `DATABASE_TIMEOUT` is a positive Go duration, defaulting to `5s`. Every application repository operation derives a timeout from the HTTP request context. Its budget includes waiting for a pooled connection, executing SQL, reading rows, and all queries in a multi-step operation or transaction. A client cancellation or earlier parent deadline takes effect first. Provider calls keep their separate `EXTERNAL_API_TIMEOUT` budget; `DATABASE_TIMEOUT` is not an overall HTTP request timeout or a migration-command timeout. Database failures, including timeouts, retain the existing operation-specific HTTP `500` responses.
 
@@ -55,6 +54,8 @@ Five seconds is a conservative starting value for this API's small CRUD operatio
 ## HTTP server lifecycle
 
 Gin handles routes and middleware through an explicit Go `http.Server`; the API does not use `router.Run()`. The server package creates and owns the TCP listener through `ListenAndServe`, so `main` does not manage network sockets. The optional settings above accept positive Go durations. Empty values use these defaults, and malformed, zero, or negative values stop startup.
+
+After binding successfully, the server logs its actual listening address and port, for example `HTTP server listening on [::]:8080`. A failed bind returns an error instead of logging a successful listener.
 
 | Setting | Default | Scope |
 | --- | --- | --- |
@@ -254,7 +255,6 @@ make run \
   JWT_SECRET=test-secret-with-at-least-32-bytes \
   GITHUB_CLIENT_ID=test \
   GITHUB_CLIENT_SECRET=test \
-  GITHUB_REDIRECT_URL=http://localhost:5173/callback/auth-gh \
   CORS_ALLOWED_ORIGINS=http://localhost:5173
 ```
 
@@ -286,7 +286,13 @@ Readiness checks database connectivity, not migration state or GitHub/Codeforces
 
 The canonical API prefix is `/api/v1`. GitHub login and callback are public; `/api/v1/user` and `/api/v1/lists` require `Authorization: Bearer <token>`. GitHub routes also have aliases under `/v1/auth/github`. Unversioned application routes are not registered. The frontend appends `/v1` to `VITE_BACKEND_API_URL`, so keep that setting pointed at the `/api` base.
 
-See the [complete HTTP route and payload reference](ARCHITECTURE.md#http-routes-and-contracts), [GitHub login sequence](ARCHITECTURE.md#github-authentication-flow), and [Codeforces ownership sequence](ARCHITECTURE.md#codeforces-ownership-flow).
+Open the [HTML REST API documentation](api-documentation.html) for endpoint details, request and response examples, authentication, errors, and rate limits. It is self-contained and can be read offline. See also the [HTTP route and payload reference](ARCHITECTURE.md#http-routes-and-contracts), [GitHub login sequence](ARCHITECTURE.md#github-authentication-flow), and [Codeforces ownership sequence](ARCHITECTURE.md#codeforces-ownership-flow).
+
+The [API testing workspace](api-tester.html) supports endpoint presets, editable request bodies, GitHub sign-in, and pasted bearer tokens. It stores settings, tokens, drafts, profiles, and up to 30 responses per backend origin in browser local storage. Clearing a session removes its token, profile, and response history; clearing all local data removes all tester workspaces. API requests can modify the configured backend's data.
+
+Run `python3 backend/serve-api-tester.py` from the repository root, then open `http://localhost:8000/backend/api-tester.html`. This loopback server exposes only the tester assets and documentation, and omits request logs so OAuth codes are not recorded. It does not serve `.env` or source files. Add `http://localhost:8000` to the backend's `CORS_ALLOWED_ORIGINS`. Token paste works with an existing session JWT. For GitHub sign-in, register `http://localhost:8000/callback/auth-gh` in the GitHub OAuth app. The loopback server serves the tester at that callback path too. No backend redirect setting is needed. The tester exchanges the code through the backend with cookies included and removes OAuth parameters from the address bar. No GitHub client secret is handled by the tester.
+
+Run isolated tester-client checks with `node --test backend/tests/unit/api-tester/client.test.mjs` and DOM checks with `node node_modules/vitest/vitest.mjs run --config backend/tests/unit/api-tester/vitest.config.mjs` from the repository root using the Node version in `.nvmrc` and the already installed root development dependencies. These checks use in-memory storage and mocked requests; they do not contact the API, GitHub, or Codeforces.
 
 ## Codeforces ownership and handle changes
 

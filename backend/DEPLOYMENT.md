@@ -6,7 +6,9 @@ local image transfer, and repeatable release scripts, follow the
 values and includes verification steps. That workflow needs no source checkout
 or registry on the server.
 
-Run commands from the repository root. This setup assumes a Linux server with
+Run commands from the repository root using `backend/compose.production.yml`.
+The manifest's build contexts and SQL mount are relative to `backend/`.
+This setup assumes a Linux server with
 Docker Compose and an HTTPS reverse proxy on the host. Keep one backend replica:
 verification tokens and rate-limit allowances are process-local. CI is optional
 for this workflow. Start with a clean production database as currently agreed.
@@ -42,7 +44,6 @@ DATABASE_URL=postgres://cftracker_app:APPLICATION_PASSWORD@postgres:5432/cftrack
 JWT_SECRET=GENERATED_JWT_SECRET
 GITHUB_CLIENT_ID=PRODUCTION_CLIENT_ID
 GITHUB_CLIENT_SECRET=PRODUCTION_CLIENT_SECRET
-GITHUB_REDIRECT_URL=https://your-frontend.example/callback/auth-gh
 CORS_ALLOWED_ORIGINS=https://your-frontend.example
 # Set this to the actual reverse-proxy source address/CIDR seen by the container.
 TRUSTED_PROXIES=
@@ -65,13 +66,13 @@ single-host network; the database connection is not encrypted.
 ## First deployment
 
 ```sh
-docker compose -f compose.production.yml config --quiet
-docker compose -f compose.production.yml build backend migrate
-docker compose -f compose.production.yml up -d postgres
-docker compose -f compose.production.yml run --rm migrate
-docker compose -f compose.production.yml up -d backend
-docker compose -f compose.production.yml ps
-docker compose -f compose.production.yml logs --tail=100 backend
+docker compose -f backend/compose.production.yml config --quiet
+docker compose -f backend/compose.production.yml build backend migrate
+docker compose -f backend/compose.production.yml up -d postgres
+docker compose -f backend/compose.production.yml run --rm migrate
+docker compose -f backend/compose.production.yml up -d backend
+docker compose -f backend/compose.production.yml ps
+docker compose -f backend/compose.production.yml logs --tail=100 backend
 ```
 
 On the first initialization of an empty volume, PostgreSQL creates the restricted
@@ -93,7 +94,7 @@ database Compose file alongside this setup or publish pgAdmin publicly.
 Configure the host proxy for HTTPS, forwarding to `127.0.0.1:8080`, preserving
 paths, cookies, and Authorization, setting `X-Forwarded-Proto: https`, and omitting
 OAuth query strings from access logs. Configure GitHub's OAuth callback URL to
-match `GITHUB_REDIRECT_URL`. Set frontend build variables:
+match each frontend origin plus `/callback/auth-gh`. CORS entries remain origins without paths. No backend redirect environment variable is required. Set frontend build variables:
 
 ```dotenv
 VITE_BACKEND_API_URL=https://your-api.example/api
@@ -129,7 +130,7 @@ Once data is retained, preserve applied migrations and add new versions.
 SSH to the server and connect through the container's local socket:
 
 ```sh
-docker compose -f compose.production.yml exec postgres \
+docker compose -f backend/compose.production.yml exec postgres \
   psql -U postgres -d cftracker
 ```
 
@@ -137,7 +138,7 @@ Create a custom-format database backup on the host:
 
 ```sh
 umask 077
-docker compose -f compose.production.yml exec -T postgres \
+docker compose -f backend/compose.production.yml exec -T postgres \
   pg_dump -U postgres -d cftracker -Fc > cftracker.dump
 ```
 
@@ -149,7 +150,7 @@ separately. Docker and host administrators can access the local database.
 To inspect an archive without changing data:
 
 ```sh
-docker compose -f compose.production.yml exec -T postgres \
+docker compose -f backend/compose.production.yml exec -T postgres \
   pg_restore --list < cftracker.dump
 ```
 

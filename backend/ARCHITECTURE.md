@@ -210,7 +210,7 @@ Neither route requires authentication. Both disable caching with `Cache-Control:
 
 | Method and path | Input | Success | Failure |
 | --- | --- | --- | --- |
-| `GET /api/v1/auth/github/login` | No body. Browser navigation. | `307` redirect to GitHub; sets OAuth state cookie. | `500` if state generation fails. |
+| `GET /api/v1/auth/github/login` | Origin/Referer supplies the frontend origin; exact origin must be allowlisted. | `307` redirect to GitHub; sets the OAuth state cookie. | `400` invalid/missing frontend origin; `500` if state generation fails. |
 | `GET /api/v1/auth/github/callback` | Query `code` and `state`; matching state cookie. | `200 {"user": User, "token": "JWT"}` | `400` invalid/missing state; `500` token exchange, user fetch/decode, persistence, or JWT generation failure; `502` rejected GitHub user response. |
 
 Aliases: `GET /v1/auth/github/login` and `GET /v1/auth/github/callback` have identical behavior.
@@ -290,7 +290,7 @@ This example shows the two model shapes together, not a single endpoint response
 
 ## GitHub authentication flow
 
-`GITHUB_REDIRECT_URL` points to the frontend callback page (locally `/callback/auth-gh`), rather than directly to the backend callback handler. That page forwards the query parameters to the API using a credentialed request so the state cookie accompanies it.
+The callback URL is derived per request from Origin (or Referer when Origin is absent) plus `/callback/auth-gh`, requiring an exact origin in `CORS_ALLOWED_ORIGINS`. GitHub redirects directly to that frontend, which forwards code/state to `/api/v1/auth/github/callback` using a credentialed request. The existing state validation and JSON session response remain. The provider uses a per-request copy of the OAuth configuration for authorization and token exchange. Register frontend callback URLs in GitHub as well; there is no redirect environment variable or alternate-domain parameter.
 
 ```mermaid
 sequenceDiagram
@@ -304,7 +304,7 @@ sequenceDiagram
     Browser->>Auth: GET /api/v1/auth/github/login
     Auth-->>Browser: Set HttpOnly state cookie; 307 to GitHub
     Browser->>GitHub: Authorize with state and redirect URI
-    GitHub-->>Browser: Redirect to frontend callback with code and state
+    GitHub-->>Browser: Redirect directly to allowlisted frontend callback with code and state
     Browser->>Auth: GET /api/v1/auth/github/callback?code=...&state=... plus cookie
     Auth->>Auth: Compare state in constant time
     alt State absent or mismatched
