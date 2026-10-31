@@ -12,7 +12,7 @@ services:
       - app_password
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./backend/deploy/init-app-role.sql:/docker-entrypoint-initdb.d/10-app-role.sql:ro
+      - ./deploy/init-app-role.sql:/docker-entrypoint-initdb.d/10-app-role.sql:ro
     networks: [database]
     healthcheck:
       test: [CMD-SHELL, "pg_isready -U postgres -d cftracker"]
@@ -27,7 +27,7 @@ services:
 
   backend:
     build:
-      context: ./backend
+      context: .
       dockerfile: dockerfile
       target: backend
     restart: unless-stopped
@@ -50,7 +50,7 @@ services:
   migrate:
     profiles: [tools]
     build:
-      context: ./backend
+      context: .
       dockerfile: dockerfile
       target: migration
     env_file: ["/etc/cftracker/migration.env"]
