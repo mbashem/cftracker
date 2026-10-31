@@ -69,7 +69,9 @@ Persisted storage key names belong under `StorageService.Keys`. Do not define st
 
 Location: `src/components/home/`
 
-The Home page provides handle-aware weekly, monthly, yearly, and custom snapshots with quick links into existing problem and contest flows. Custom date ranges may be open-ended and the last selection is saved locally. Statistics are derived from raw submissions so shared-problem expansion does not inflate counts. The `status` query parameter selects solve-status filters. The `random` query parameter remains in the URL while random mode is active, including after filter changes; cancelling returns to the normal problem or contest page.
+The Home page provides handle-aware rolling weekly, monthly, yearly, and custom snapshots with quick links into existing problem and contest flows. Custom date ranges may be open-ended and the last selection is saved locally. Statistics are derived from raw submissions so shared-problem expansion does not inflate counts. The `status` query parameter selects solve-status filters. The `random` query parameter remains in the URL while random mode is active, including after filter changes; cancelling returns to the normal problem or contest page.
+
+Snapshot ranges contain exactly 7 days for Week, 30 for Month, and 365 for Year, including today. These limits also apply across leap years and month boundaries. The actual date range is displayed, and drill-downs use the same inclusive dates. Active days reuses the submission heatmap renderer in a label-free compact mode: Week has daily cells, Month has calendar-week cells, and Year has calendar-month cells. Custom ranges use days up to 14 days, weeks up to 90 days, months up to 730 days, and years beyond that. Partial calendar buckets are clipped to the selected range. An open custom start uses the first submission within the selected range; an open end extends through today, including empty final months or years. Month cells follow the first through last day of each calendar month; year cells follow January 1 through December 31, with partial first and last cells when needed. Hover or keyboard focus shows the covered dates and raw submission count, plus distinct active days for aggregated cells. Colors use the same opaque blue levels as the submission heatmap, with empty buckets grey. Levels scale to the range's maximum (at least five submissions); even one submission retains a visible fill when an older period is much busier. Light and dark themes use separate palettes.
 
 ### Contests
 
@@ -99,6 +101,12 @@ Location: `src/components/list/`
 
 Lists require the optional backend. The frontend uses RTK Query APIs from `src/data/queries/listQuery.ts`. Authenticated routes are guarded by `src/util/route/AuthGuard.ts`.
 
+Authentication changes are observed by `src/data/listeners/authenticationListener.ts`, which synchronizes the stored bearer token and clears private API caches when the account or session changes. List query hooks skip requests while signed out, and the list API also blocks direct signed-out requests. The public Problems page clears its private list state on session changes and hides list controls until the current session's list loads; ordinary problem filters remain available.
+
+At startup, a stored bearer token is validated through `/api/v1/user/profile`; saved identity and authentication flags are not trusted. GitHub callbacks also validate the resulting token through the profile endpoint before marking the session authenticated. Protected routes wait while that check runs. Any profile failure clears authentication, and stale checks cannot overwrite a newer session.
+
+Authenticated users can choose Add to list on any problem row, without selecting a page-wide list first. The chooser adds that specific problem to the chosen list after its highest existing position, skips existing membership, and shows request failures with retry. Authentication changes close the chooser and prevent stale list lookups from triggering an add. The row action is a transparent plus icon; there is no page-wide list picker. Opening Add Problem from Lists keeps that list as the fixed target for repeated per-problem add/remove operations. Available lists are requested only when the picker opens, and existing RTK Query cache entries are reused. The Lists page uses wrapping buttons sized to their names rather than an expanding button group.
+
 ### Manage Contests
 
 Location: `manage-contests/`
@@ -116,8 +124,8 @@ https://codeforces.com/api/problemset.problems?lang=en
 Vite emits all saved catalogs as separate hashed JSON assets; RTK Query fetches them on demand and uses the existing normalization. Contest data is loaded from a checked-in generated snapshot. Refresh scripts live in `scripts/`.
 
 Debug mode is controlled by `VITE_DEBUG_MODE=true`. It is independent of Vite's built-in `import.meta.env.DEV`, so `npm run dev` can use live problem data when the flag is unset.
-For animation debugging, development startup temporarily displays the twinkling dots for at least three seconds. Adjust or remove `INITIAL_LOADING_DEBUG_DELAY_MS` in `src/App.tsx` when finished. This delay uses Vite's `DEV` flag and does not apply to production builds or later navigation.
 
+For animation debugging, development startup temporarily displays the twinkling dots for at least three seconds. Adjust or remove `INITIAL_LOADING_DEBUG_DELAY_MS` in `src/App.tsx` when finished. This delay uses Vite's `DEV` flag and does not apply to production builds or later navigation.
 
 User submissions are fetched for comma-separated Codeforces handles entered in the navbar. Submission status is converted into solved, attempted, and unsolved states in feature hooks.
 

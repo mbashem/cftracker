@@ -152,7 +152,8 @@ bash backend/deploy/vps/bundle.sh release-001 /tmp/cftracker-release-001
 scp -r /tmp/cftracker-release-001 DEPLOY_USER@VPS_HOST:~/
 ```
 
-The bundle contains two amd64 images in `images.tar`, image-only `compose.yml`,
+The bundle renders `backend/compose.production.yml` into image-only `compose.yml`.
+It contains two amd64 images in `images.tar`, that generated manifest,
 initialization SQL, `server.sh`, its `server_helpers.py` companion, this runbook,
 build metadata, and SHA-256 checksums. Keep the server script and its Python
 companion together. Local preparation logic lives separately in
@@ -189,7 +190,7 @@ For a fresh VPS, inside the release directory:
 sudo bash server.sh init
 ```
 
-Supply frontend origin, comma-separated allowed origins, and OAuth credentials
+Supply comma-separated allowed frontend origins and OAuth credentials
 at the prompts. Secret input is hidden. Example origins:
 
 ```text
@@ -198,10 +199,10 @@ https://frontend.example.com,https://preview.example.com,http://localhost:5173
 
 No trailing slash or path in origins. Add `http://127.0.0.1:5173` only if used.
 CORS is browser policy, not authorization; local frontend writes hit production.
-`GITHUB_REDIRECT_URL` is the chosen frontend origin plus `/callback/auth-gh`.
-Configure the exact callback in the GitHub OAuth app. One callback does not
-automatically return users to every allowed frontend origin; use a separate
-development OAuth/backend configuration for complete local login testing.
+Login derives its callback from the calling Origin/Referer plus `/callback/auth-gh`
+and validates the origin against `CORS_ALLOWED_ORIGINS`. Register each callback
+in the GitHub OAuth app too. No redirect environment variable or alternate-domain
+parameter is used.
 
 The initializer refuses to replace any of the four existing files. It generates
 independent administrator/application passwords and JWT secret. `/etc/cftracker`
