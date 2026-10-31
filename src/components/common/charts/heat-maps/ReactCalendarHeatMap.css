@@ -1,0 +1,27 @@
+.compact-heatmap {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  max-width: 100%;
+  margin-top: 0.5rem;
+  vertical-align: middle;
+}
+
+.compact-heatmap__cell {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 0.8rem;
+  height: 0.8rem;
+  border-radius: 3px;
+}
+
+.compact-heatmap__cell:focus-visible {
+  outline: 2px solid var(--theme-accent);
+  outline-offset: 2px;
+}
+
+.heatmap-cell--empty {
+  border: 1px solid #9299ad;
+  stroke: #9299ad;
+  stroke-width: 0.75px;
+}
