@@ -456,14 +456,19 @@ bash -n backend/deploy/vps/bundle.sh backend/deploy/vps/server.sh
 PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s backend/deploy/vps -p 'test_*.py'
 ```
 
-Unit tests execute the real manifest renderer, configuration validator, secret
-initializer, and checksum writer. File objects, environment access, host permission
-changes, and randomness are mocked at their boundaries; the functions under test
-are not mocked or reimplemented. Each test class has its own file. Tests do not
-create/read real test files, launch subprocesses, change the real environment, or
-contact services. Disable bytecode output as shown above to avoid Python caches.
-Assertions verify requested operations and their outcomes against mocked system
-dependencies; actual host permissions, Bash orchestration, backups, and service
-behavior still need separate operator verification. Script execution of
+Compose rendering tests read the checked-in `backend/compose.production.yml`
+and exercise the real renderer, including rejection of incompatible build and
+SQL-mount changes. The command test launches the actual Python render command,
+writes its release manifest into a temporary directory, checks the output, and
+removes that directory afterward. These checks use real local file access and
+process execution, without Docker, services, or network access; they require
+authorization for that local scope when run by an automated agent.
+
+Configuration, initializer, and checksum unit tests still mock filesystem,
+environment, permission, and randomness boundaries. They verify the production
+functions' behavior against those dependencies, not actual host permissions.
+Disable bytecode output as shown above to avoid Python caches. Compose schema
+validity, Bash orchestration, backups, and service behavior still need separate
+operator verification. Script execution of
 build/pull/SSH/Certbot/public health checks is networked and must be separately
 authorized if performed by an automated agent.
