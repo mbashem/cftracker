@@ -1,21 +1,19 @@
-import { frontend, resetFrontendMocks } from "../support/frontendMocks";
-import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
-import { afterEach, beforeEach, expect, test, vi } from "vitest";
+import { setupFrontendTests } from "../support/frontendTestSetup";
+import { frontend } from "../support/frontendMocks";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { expect, test } from "vitest";
 import SubmissionsHeatMap from "../../src/components/stats/charts/SubmissionsHeatMap";
 import { Verdict } from "../../src/types/CF/Submission";
 import { StorageService } from "../../src/util/StorageService";
 import Theme, { ThemesType } from "../../src/util/Theme";
 import { createSubmission, seedProblemFixtures } from "../support/problemFixtures";
 
-beforeEach(() => {
-  resetFrontendMocks();
-  localStorage.clear();
+setupFrontendTests(() => {
   seedProblemFixtures();
   const dates = [new Date(2025, 0, 1, 0, 1), new Date(2024, 1, 29, 23, 59), new Date(2023, 11, 31, 23, 59), new Date(2024, 0, 1, 0, 1), new Date(2024, 1, 29, 0, 1)];
   // Deliberately unordered, with two submissions on local leap day.
   frontend.submissions = dates.map((date, index) => createSubmission(index + 1, frontend.problems[0], Verdict.WRONG_ANSWER, date.getTime() / 1000));
 });
-afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 
 function cells(svg: SVGSVGElement) { return svg.querySelectorAll("rect"); }
 function select(value: string) {

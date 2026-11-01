@@ -4,7 +4,6 @@ import hashlib
 from pathlib import Path
 import re
 
-
 def render_compose(text, release):
     """Return an image-only manifest from source text without accessing files."""
     # Fail visibly if the source manifest changes instead of shipping a partial edit.
@@ -20,7 +19,6 @@ def render_compose(text, release):
         raise SystemExit("Production SQL mount changed; update bundle_helpers.py before deploying.")
     return text.replace(old, "/etc/cftracker/init-app-role.sql:")
 
-
 def write_checksums(directory):
     """Record transfer-integrity checks without loading large images into RAM."""
     with (directory / "SHA256SUMS").open("w") as manifest:
@@ -32,7 +30,6 @@ def write_checksums(directory):
                 for chunk in iter(lambda: source.read(1024 * 1024), b""):
                     digest.update(chunk)
             manifest.write(f"{digest.hexdigest()}  {path.name}\n")
-
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
@@ -53,7 +50,6 @@ def main():
         (args.output / "compose.yml").write_text(render_compose(source, args.release))
     else:
         write_checksums(args.directory)
-
 
 if __name__ == "__main__":
     main()

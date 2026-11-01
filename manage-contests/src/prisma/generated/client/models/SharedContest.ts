@@ -52,7 +52,6 @@ export type SharedContestCountAggregateOutputType = {
   _all: number
 }
 
-
 export type SharedContestAvgAggregateInputType = {
   contestId?: true
   parentContestId?: true
@@ -148,9 +147,6 @@ export type GetSharedContestAggregateType<T extends SharedContestAggregateArgs> 
     : Prisma.GetScalarType<T[P], AggregateSharedContest[P]>
 }
 
-
-
-
 export type SharedContestGroupByArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.SharedContestWhereInput
   orderBy?: Prisma.SharedContestOrderByWithAggregationInput | Prisma.SharedContestOrderByWithAggregationInput[]
@@ -187,8 +183,6 @@ export type GetSharedContestGroupByPayload<T extends SharedContestGroupByArgs> =
       }
     >
   >
-
-
 
 export type SharedContestWhereInput = {
   AND?: Prisma.SharedContestWhereInput | Prisma.SharedContestWhereInput[]
@@ -502,8 +496,6 @@ export type SharedContestUncheckedUpdateManyWithoutParentContestInput = {
   contestId?: Prisma.IntFieldUpdateOperationsInput | number
 }
 
-
-
 export type SharedContestSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   contestId?: boolean
   parentContestId?: boolean
@@ -807,7 +799,6 @@ export interface SharedContestDelegate<ExtArgs extends runtime.Types.Extensions.
    */
   upsert<T extends SharedContestUpsertArgs>(args: Prisma.SelectSubset<T, SharedContestUpsertArgs<ExtArgs>>): Prisma.Prisma__SharedContestClient<runtime.Types.Result.GetResult<Prisma.$SharedContestPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
 
-
   /**
    * Count the number of SharedContests.
    * Note, that providing `undefined` is treated as the value not being there.
@@ -971,9 +962,6 @@ export interface Prisma__SharedContestClient<T, Null = never, ExtArgs extends ru
   finally(onfinally?: (() => void) | undefined | null): runtime.Types.Utils.JsPromise<T>
 }
 
-
-
-
 /**
  * Fields of the SharedContest model
  */
@@ -982,7 +970,6 @@ export interface SharedContestFieldRefs {
   readonly parentContestId: Prisma.FieldRef<"SharedContest", 'Int'>
 }
     
-
 // Custom InputTypes
 /**
  * SharedContest findUnique

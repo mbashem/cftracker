@@ -16,8 +16,7 @@ beforeEach(() => {
   localStorage.clear(); backend = setupBackendMock(); backend.authenticate(); rejectAddition = false;
   items = [{ list_id: 5, problem_id: "100B", position: 4, created_at: "2026-01-01" }];
   vi.spyOn(console, "log").mockImplementation(() => {});
-  backend.fetchMock.mockImplementation(async input => {
-    const request = new Request(input); backend.requests.push(request);
+  backend.handleRequests(async request => {
     const path = new URL(request.url).pathname;
     if (path === "/api/v1/lists") return Response.json({ lists: [backendList] });
     if (request.method === "PUT") {
@@ -81,10 +80,10 @@ test("logout while list details load closes the chooser and prevents a subsequen
   page();
   fireEvent.click(screen.getByRole("button", { name: "Add 100A to a list" }));
   const choice = await screen.findByRole("button", { name: "Add 100A to Practice" });
-  let resolve!: (response: Response) => void;
-  backend.fetchMock.mockImplementationOnce(() => new Promise(done => { resolve = done; }));
+  const { resolve } = backend.deferResponse();
+  const previousRequests = backend.requests.length;
   fireEvent.click(choice);
-  await waitFor(() => expect(resolve).toBeDefined());
+  await waitFor(() => expect(backend.requests).toHaveLength(previousRequests + 1));
   act(() => { backend.store.dispatch(removeUser()); });
   await act(async () => { resolve(Response.json({ list: backendList, items })); });
   await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());

@@ -4,7 +4,6 @@ import unittest
 
 from bundle_helpers import render_compose
 
-
 MANIFEST_PATH = Path(__file__).resolve().parents[2] / "compose.production.yml"
 
 class ComposeRenderingTest(unittest.TestCase):

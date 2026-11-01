@@ -10,7 +10,6 @@ from unittest.mock import patch
 
 import generate_timeline as timeline
 
-
 class TimelineRefreshTests(unittest.TestCase):
     def setUp(self):
         self.directory = tempfile.TemporaryDirectory(prefix='cftracker-timeline-test-')
@@ -124,7 +123,6 @@ class TimelineRefreshTests(unittest.TestCase):
             ('main', '1111111'), ('dev', '2222222'),
         ])
         self.assertTrue(timeline.CSV_PATH.read_bytes().startswith(original))
-
 
 if __name__ == '__main__':
     unittest.main()

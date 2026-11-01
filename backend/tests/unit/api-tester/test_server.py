@@ -11,7 +11,6 @@ spec = importlib.util.spec_from_file_location(
 server = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(server)
 
-
 class TesterServerTest(unittest.TestCase):
     def handler(self, path):
         handler = object.__new__(server.TesterHandler)

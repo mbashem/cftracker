@@ -5,6 +5,8 @@ description: CFTracker frontend development and review conventions, including th
 
 # Develop CFTracker Frontend
 
+Keep at most one consecutive blank line in code files, including tests and scripts. Lines containing only spaces or tabs count as blank. This rule does not apply to documentation, prose, or skill instruction files.
+
 Apply this skill to the main CFTracker frontend, including files under `src/` and its root-level frontend configuration. Do not apply it to `backend/` or `manage-contests/`.
 
 ## Do Not Run The Application Without A Request

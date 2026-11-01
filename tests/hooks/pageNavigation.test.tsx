@@ -78,7 +78,6 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-
 function randomPage(kind: "problem" | "contest") {
   return kind === "problem" ? {
     isRandomActive: page.isRandomActive,

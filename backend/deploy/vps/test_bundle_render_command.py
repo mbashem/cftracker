@@ -5,9 +5,7 @@ import sys
 import tempfile
 import unittest
 
-
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
-
 
 class BundleRenderCommandTest(unittest.TestCase):
     def test_writes_image_only_release_compose_from_production_manifest(self):

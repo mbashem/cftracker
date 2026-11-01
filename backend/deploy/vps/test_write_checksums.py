@@ -5,7 +5,6 @@ from unittest.mock import MagicMock
 
 from bundle_helpers import write_checksums
 
-
 class WriteChecksumsTest(unittest.TestCase):
     def setUp(self):
         self.directory = MagicMock(spec=Path)

@@ -45,7 +45,6 @@ function useStatPage() {
 		groupedProblems.get(verdict)?.get(submission.problem.rating)?.add(submission.problem.id);
 	}
 
-
 	return {
 		submissionsByVerdict,
 		problemIDsBySimpleVerdict,

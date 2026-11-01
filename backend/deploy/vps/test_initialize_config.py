@@ -5,7 +5,6 @@ from unittest.mock import MagicMock, patch
 
 import server_helpers
 
-
 class InitializeConfigTest(unittest.TestCase):
     def setUp(self):
         self.directory = MagicMock(spec=Path)

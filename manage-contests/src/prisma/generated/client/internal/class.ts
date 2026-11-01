@@ -14,7 +14,6 @@
 import * as runtime from "@prisma/client/runtime/client"
 import type * as Prisma from "./prismaNamespace"
 
-
 const config: runtime.GetPrismaClientConfig = {
   "previewFeatures": [],
   "clientVersion": "7.9.1",
@@ -54,8 +53,6 @@ config.compilerWasm = {
 
   importName: "./query_compiler_fast_bg.js"
 }
-
-
 
 export type LogOptions<ClientOptions extends Prisma.PrismaClientOptions> =
   'log' extends keyof ClientOptions ? ClientOptions['log'] extends Array<Prisma.LogLevel | Prisma.LogDefinition> ? Prisma.GetEvents<ClientOptions['log']> : never : never
@@ -165,7 +162,6 @@ export interface PrismaClient<
    * Read more in our [docs](https://pris.ly/d/raw-queries).
    */
   $queryRawUnsafe<T = unknown>(query: string, ...values: any[]): Prisma.PrismaPromise<T>;
-
 
   /**
    * Allows the running of a sequence of read/write operations that are guaranteed to either succeed or fail as a whole.

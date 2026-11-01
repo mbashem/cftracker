@@ -5,7 +5,6 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlsplit
 
-
 ROOT = Path(__file__).resolve().parent
 ASSETS = {
     "/callback/auth-gh": ("api-tester.html", "text/html; charset=utf-8"),
@@ -14,7 +13,6 @@ ASSETS = {
     "/backend/api-tester-client.mjs": ("api-tester-client.mjs", "text/javascript; charset=utf-8"),
     "/backend/api-documentation.html": ("api-documentation.html", "text/html; charset=utf-8"),
 }
-
 
 class TesterHandler(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -54,7 +52,6 @@ class TesterHandler(BaseHTTPRequestHandler):
         # OAuth callback query strings contain one-use authorization credentials.
         pass
 
-
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--port", type=int, default=8000)
@@ -65,7 +62,6 @@ def main():
             server.serve_forever()
         except KeyboardInterrupt:
             pass
-
 
 if __name__ == "__main__":
     main()

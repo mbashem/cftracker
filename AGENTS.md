@@ -1,3 +1,7 @@
+# Blank-line spacing
+
+Keep at most one consecutive blank line in code files, including tests and scripts. Lines containing only spaces or tabs count as blank. This rule does not apply to documentation, prose, or skill instruction files.
+
 # Show diffs after edits
 
 After every task that edits files, provide an explicit way to review the diff.

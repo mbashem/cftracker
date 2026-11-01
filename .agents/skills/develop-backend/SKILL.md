@@ -5,6 +5,8 @@ description: CFTracker backend development conventions for Go implementation, re
 
 # Develop CFTracker Backend
 
+Keep at most one consecutive blank line in code files, including tests and scripts. Lines containing only spaces or tabs count as blank. This rule does not apply to documentation, prose, or skill instruction files.
+
 Apply these conventions within `backend/`. Follow a more specific backend skill as well when one applies; let its domain-specific rules take precedence.
 
 ## Understand The Change

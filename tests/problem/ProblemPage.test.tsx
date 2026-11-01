@@ -1,14 +1,14 @@
-import { frontend, resetFrontendMocks } from "../support/frontendMocks";
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { afterEach, beforeEach, expect, test } from "vitest";
+import { setupFrontendTests } from "../support/frontendTestSetup";
+import { frontend } from "../support/frontendMocks";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { expect, test } from "vitest";
 import ProblemPage from "../../src/components/problem/ProblemPage";
 import { createSubmission, seedProblemFixtures } from "../support/problemFixtures";
 import { createRouterWrapper, LocationProbe } from "../support/router";
 import { formatTimestampDate } from "../../src/util/time";
 import { Verdict } from "../../src/types/CF/Submission";
 
-beforeEach(() => { resetFrontendMocks(); localStorage.clear(); seedProblemFixtures(); });
-afterEach(cleanup);
+setupFrontendTests(seedProblemFixtures);
 
 function setup(query = "") {
   return render(<><ProblemPage /><LocationProbe /></>, {

@@ -58,7 +58,6 @@ export type ProblemCountAggregateOutputType = {
   _all: number
 }
 
-
 export type ProblemAvgAggregateInputType = {
   contestId?: true
   rating?: true
@@ -160,9 +159,6 @@ export type GetProblemAggregateType<T extends ProblemAggregateArgs> = {
     : Prisma.GetScalarType<T[P], AggregateProblem[P]>
 }
 
-
-
-
 export type ProblemGroupByArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.ProblemWhereInput
   orderBy?: Prisma.ProblemOrderByWithAggregationInput | Prisma.ProblemOrderByWithAggregationInput[]
@@ -201,8 +197,6 @@ export type GetProblemGroupByPayload<T extends ProblemGroupByArgs> = Prisma.Pris
       }
     >
   >
-
-
 
 export type ProblemWhereInput = {
   AND?: Prisma.ProblemWhereInput | Prisma.ProblemWhereInput[]
@@ -484,8 +478,6 @@ export type ProblemUncheckedUpdateManyWithoutContestInput = {
   index?: Prisma.StringFieldUpdateOperationsInput | string
   rating?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
 }
-
-
 
 export type ProblemSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   name?: boolean
@@ -793,7 +785,6 @@ export interface ProblemDelegate<ExtArgs extends runtime.Types.Extensions.Intern
    */
   upsert<T extends ProblemUpsertArgs>(args: Prisma.SelectSubset<T, ProblemUpsertArgs<ExtArgs>>): Prisma.Prisma__ProblemClient<runtime.Types.Result.GetResult<Prisma.$ProblemPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
 
-
   /**
    * Count the number of Problems.
    * Note, that providing `undefined` is treated as the value not being there.
@@ -956,9 +947,6 @@ export interface Prisma__ProblemClient<T, Null = never, ExtArgs extends runtime.
   finally(onfinally?: (() => void) | undefined | null): runtime.Types.Utils.JsPromise<T>
 }
 
-
-
-
 /**
  * Fields of the Problem model
  */
@@ -969,7 +957,6 @@ export interface ProblemFieldRefs {
   readonly rating: Prisma.FieldRef<"Problem", 'Int'>
 }
     
-
 // Custom InputTypes
 /**
  * Problem findUnique

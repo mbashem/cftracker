@@ -20,10 +20,8 @@ BREAKDOWN_FIELDS = ['timestamp', 'branch', 'commit', 'normal_code_lines', 'test_
 FIELDS = ['timestamp', 'branch', 'commit', 'files', 'blank_lines', 'comment_lines',
           'code_lines', 'excluded_extensions', 'excluded_directories']
 
-
 def git(*args):
     return subprocess.check_output(['git', *args], cwd=ROOT).decode().strip()
-
 
 def count_snapshot(commit):
     archive = subprocess.check_output(['git', 'archive', commit], cwd=ROOT)
@@ -40,20 +38,17 @@ def count_snapshot(commit):
                          and is_test_path(Path(path).relative_to(directory)))
     return report['SUM'], test_lines
 
-
 def is_test_path(path):
     """Include test support/fixtures in test directories and named test files."""
     return (any(part.lower() in ('test', 'tests', '__tests__', 'testdata')
                 for part in path.parts[:-1])
             or re.search(r'(?:[._](?:test|spec)\.[^.]+|_test\.go)$', path.name) is not None)
 
-
 def measure(timestamp, branch, commit):
     total, _ = count_snapshot(commit)
     return dict(zip(FIELDS, [timestamp, branch, commit[:7], total['nFiles'],
                             total['blank'], total['comment'], total['code'],
                             'json', '.git;node_modules;dist;build']))
-
 
 def breakdown(rows):
     if BREAKDOWN_PATH.exists():
@@ -88,7 +83,6 @@ def breakdown(rows):
                 writer.writeheader()
             writer.writerows(additions)
     return result
-
 
 def render(rows):
     dates = [date.fromisoformat(row['timestamp']).toordinal() for row in rows]
@@ -134,11 +128,9 @@ def render(rows):
     svg.append('<text x="100" y="646" font-size="12" fill="#64748b">Measured with cloc · excludes JSON, .git, node_modules, dist, build · time-proportional x-axis</text></g></svg>')
     SVG_PATH.write_text('\n'.join(svg) + '\n')
 
-
 def snapshot_identity(row):
     """Match the date, branch, and seven-character commit recorded in the CSV."""
     return row['timestamp'], row['branch'], row['commit'][:7]
-
 
 def main():
     today = datetime.now(ZoneInfo('Asia/Dhaka')).date()
@@ -202,7 +194,6 @@ Code lines grew from {int(rows[0]['code_lines']):,} to {int(last['code_lines']):
     timeline.write_text(prefix + summary)
     print(f'Added {len(additions)} snapshots; rendered {len(rows)} measurements.')
     print(f"Latest: {last['timestamp']} {last['branch']} {last['commit']}: {int(last['code_lines']):,} code lines, {last['files']} files")
-
 
 if __name__ == '__main__':
     main()
