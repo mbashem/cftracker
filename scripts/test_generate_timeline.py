@@ -1,9 +1,11 @@
-"""Regression tests for preserving and refreshing growth snapshots."""
+"""Exercise snapshot refreshes with a temporary Git history and real cloc."""
 import contextlib
 import csv
 from datetime import datetime
 import io
+import os
 from pathlib import Path
+import subprocess
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -16,9 +18,28 @@ class TimelineRefreshTests(unittest.TestCase):
         self.addCleanup(self.directory.cleanup)
         self.root = Path(self.directory.name)
         self.root.joinpath('docs').mkdir()
-        self.branch = 'dev'
-        self.commit = '2222222' + '2' * 33
         self.today = datetime(2026, 10, 4)
+        self.git_environment = os.environ | {
+            'GIT_CONFIG_GLOBAL': os.devnull,
+            'GIT_CONFIG_SYSTEM': os.devnull,
+            'GIT_AUTHOR_DATE': '2026-10-04T00:00:00+06:00',
+            'GIT_COMMITTER_DATE': '2026-10-04T00:00:00+06:00',
+        }
+        self.run_git('init', '-b', 'dev')
+        self.run_git('config', 'user.name', 'Timeline Test')
+        self.run_git('config', 'user.email', 'timeline-test@example.invalid')
+        (self.root / 'source.py').write_text('print(1)\n' * 8)
+        (self.root / 'tests').mkdir()
+        (self.root / 'tests/test_source.py').write_text('assert True\n' * 2)
+        (self.root / 'excluded.json').write_text('{"excluded": true}\n')
+        self.run_git('add', '.')
+        self.run_git('commit', '-m', 'Initial counted source')
+        self.first_commit = self.run_git('rev-parse', '--short=7', 'HEAD')
+        self.run_git('update-ref', 'refs/remotes/origin/main', 'HEAD')
+        (self.root / 'source.py').write_text('# next version\n' + 'print(1)\n' * 8)
+        self.run_git('add', 'source.py')
+        self.run_git('commit', '-m', 'Second counted source')
+        self.commit = self.run_git('rev-parse', '--short=7', 'HEAD')
         for name, value in [
             ('ROOT', self.root),
             ('CSV_PATH', self.root / 'docs/totals.csv'),
@@ -31,25 +52,20 @@ class TimelineRefreshTests(unittest.TestCase):
         clock = patch.object(timeline, 'datetime')
         self.clock = clock.start()
         self.addCleanup(clock.stop)
-        git = patch.object(timeline, 'git', side_effect=self.git)
-        git.start()
-        self.addCleanup(git.stop)
-        counter = patch.object(timeline, 'count_snapshot', return_value=(
-            {'nFiles': 2, 'blank': 0, 'comment': 0, 'code': 10}, 2,
-        ))
-        self.counter = counter.start()
-        self.addCleanup(counter.stop)
 
-    def git(self, *args):
-        if args == ('branch', '--show-current'):
-            return self.branch
-        if args == ('rev-parse', 'HEAD'):
-            return self.commit
-        if args[0] == 'rev-list':
-            return ''
-        raise AssertionError(f'Unexpected git command: {args}')
+    def run_git(self, *arguments):
+        return subprocess.check_output([
+            'git', '-c', 'core.hooksPath=' + os.devnull,
+            '-c', 'commit.gpgsign=false', *arguments,
+        ], cwd=self.root, env=self.git_environment, stderr=subprocess.PIPE, text=True).strip()
 
-    def seed(self, timestamp='2026-10-04', branch='dev', commit='1111111'):
+    def select_branch(self, name):
+        if name != 'dev':
+            self.run_git('branch', name)
+        self.run_git('symbolic-ref', 'HEAD', 'refs/heads/' + name)
+
+    def seed(self, timestamp='2026-10-04', branch='dev', commit=None):
+        commit = commit or self.first_commit
         row = dict(zip(timeline.FIELDS, [timestamp, branch, commit, 2, 0, 0, 10,
                                          'json', '.git;node_modules;dist;build']))
         with timeline.CSV_PATH.open('w', newline='') as file:
@@ -73,46 +89,47 @@ class TimelineRefreshTests(unittest.TestCase):
     def test_new_commit_on_same_day_appends_and_preserves_history(self):
         original = self.seed()
         rows = self.refresh()
-        self.assertEqual([row['commit'] for row in rows], ['1111111', '2222222'])
+        self.assertEqual([row['commit'] for row in rows], [self.first_commit, self.commit])
         self.assertTrue(timeline.CSV_PATH.read_bytes().startswith(original))
-        self.assertIn('2026-10-04 · dev · 2222222', timeline.SVG_PATH.read_text())
-        self.assertIn('`2222222`', (self.root / 'PROJECT_TIMELINE.md').read_text())
+        self.assertIn(f'2026-10-04 · dev · {self.commit}', timeline.SVG_PATH.read_text())
+        self.assertIn(f'`{self.commit}`', (self.root / 'PROJECT_TIMELINE.md').read_text())
+        self.assertEqual((int(rows[-1]['files']), int(rows[-1]['code_lines'])), (2, 10))
         with timeline.BREAKDOWN_PATH.open(newline='') as file:
-            self.assertEqual(len(list(csv.DictReader(file))), 2)
+            breakdown = list(csv.DictReader(file))
+            self.assertEqual(len(breakdown), 2)
+            self.assertEqual((int(breakdown[-1]['normal_code_lines']),
+                              int(breakdown[-1]['test_code_lines'])), (8, 2))
 
     # Generated by Codex and not thoroughly checked for correctness.
     def test_branch_change_with_same_commit_gets_its_own_snapshot(self):
-        original = self.seed(commit='2222222')
-        self.branch = 'feature/chart'
+        original = self.seed(commit=self.commit)
+        self.select_branch('feature/chart')
         rows = self.refresh()
         self.assertEqual([(row['branch'], row['commit']) for row in rows], [
-            ('dev', '2222222'), ('feature/chart', '2222222'),
+            ('dev', self.commit), ('feature/chart', self.commit),
         ])
         self.assertTrue(timeline.CSV_PATH.read_bytes().startswith(original))
-        self.assertIn('feature/chart · 2222222', timeline.SVG_PATH.read_text())
+        self.assertIn(f'feature/chart · {self.commit}', timeline.SVG_PATH.read_text())
 
     # Generated by Codex and not thoroughly checked for correctness.
-    def test_unchanged_snapshot_does_not_remeasure_or_duplicate(self):
-        self.seed(commit='2222222')
+    def test_unchanged_snapshot_does_not_duplicate_or_change_outputs(self):
+        self.seed(commit=self.commit)
         self.refresh()
         files = [timeline.CSV_PATH, timeline.BREAKDOWN_PATH, timeline.SVG_PATH,
                  self.root / 'PROJECT_TIMELINE.md']
         before = [path.read_bytes() for path in files]
         self.refresh()
-        self.counter.assert_not_called()
         self.assertEqual(before, [path.read_bytes() for path in files])
 
     # Generated by Codex and not thoroughly checked for correctness.
     def test_return_to_recorded_branch_updates_latest_without_duplicate(self):
-        self.seed(commit='2222222')
-        self.branch = 'feature/chart'
+        self.seed(commit=self.commit)
+        self.select_branch('feature/chart')
         self.refresh()
-        self.branch = 'dev'
-        self.counter.reset_mock()
+        self.select_branch('dev')
         rows = self.refresh()
         self.assertEqual(len(rows), 2)
-        self.counter.assert_not_called()
-        self.assertIn('Latest recorded: 2026-10-04 · dev · 2222222', timeline.SVG_PATH.read_text())
+        self.assertIn(f'Latest recorded: 2026-10-04 · dev · {self.commit}', timeline.SVG_PATH.read_text())
 
     # Generated by Codex and not thoroughly checked for correctness.
     def test_main_interval_is_preserved_while_current_branch_is_appended(self):
@@ -120,7 +137,7 @@ class TimelineRefreshTests(unittest.TestCase):
         original = self.seed(timestamp='2026-08-01', branch='main')
         rows = self.refresh()
         self.assertEqual([(row['branch'], row['commit']) for row in rows], [
-            ('main', '1111111'), ('dev', '2222222'),
+            ('main', self.first_commit), ('dev', self.commit),
         ])
         self.assertTrue(timeline.CSV_PATH.read_bytes().startswith(original))
 
