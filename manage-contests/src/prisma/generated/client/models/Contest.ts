@@ -50,7 +50,6 @@ export type ContestCountAggregateOutputType = {
   _all: number
 }
 
-
 export type ContestAvgAggregateInputType = {
   contestId?: true
 }
@@ -144,9 +143,6 @@ export type GetContestAggregateType<T extends ContestAggregateArgs> = {
     : Prisma.GetScalarType<T[P], AggregateContest[P]>
 }
 
-
-
-
 export type ContestGroupByArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.ContestWhereInput
   orderBy?: Prisma.ContestOrderByWithAggregationInput | Prisma.ContestOrderByWithAggregationInput[]
@@ -183,8 +179,6 @@ export type GetContestGroupByPayload<T extends ContestGroupByArgs> = Prisma.Pris
       }
     >
   >
-
-
 
 export type ContestWhereInput = {
   AND?: Prisma.ContestWhereInput | Prisma.ContestWhereInput[]
@@ -483,7 +477,6 @@ export type ContestUncheckedUpdateWithoutParentSharedContestInput = {
   SharedContest?: Prisma.SharedContestUncheckedUpdateManyWithoutContestNestedInput
 }
 
-
 /**
  * Count Type ContestCountOutputType
  */
@@ -530,7 +523,6 @@ export type ContestCountOutputTypeCountSharedContestArgs<ExtArgs extends runtime
 export type ContestCountOutputTypeCountParentSharedContestArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.SharedContestWhereInput
 }
-
 
 export type ContestSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   contestId?: boolean
@@ -830,7 +822,6 @@ export interface ContestDelegate<ExtArgs extends runtime.Types.Extensions.Intern
    */
   upsert<T extends ContestUpsertArgs>(args: Prisma.SelectSubset<T, ContestUpsertArgs<ExtArgs>>): Prisma.Prisma__ContestClient<runtime.Types.Result.GetResult<Prisma.$ContestPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
 
-
   /**
    * Count the number of Contests.
    * Note, that providing `undefined` is treated as the value not being there.
@@ -995,9 +986,6 @@ export interface Prisma__ContestClient<T, Null = never, ExtArgs extends runtime.
   finally(onfinally?: (() => void) | undefined | null): runtime.Types.Utils.JsPromise<T>
 }
 
-
-
-
 /**
  * Fields of the Contest model
  */
@@ -1006,7 +994,6 @@ export interface ContestFieldRefs {
   readonly name: Prisma.FieldRef<"Contest", 'String'>
 }
     
-
 // Custom InputTypes
 /**
  * Contest findUnique

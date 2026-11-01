@@ -54,8 +54,6 @@ export const raw = runtime.raw
 export const Sql = runtime.Sql
 export type Sql = runtime.Sql
 
-
-
 /**
  * Decimal.js
  */
@@ -100,7 +98,6 @@ export type InputJsonObject = runtime.InputJsonObject
 export type InputJsonArray = runtime.InputJsonArray
 export type InputJsonValue = runtime.InputJsonValue
 
-
 export const NullTypes = {
   DbNull: runtime.NullTypes.DbNull as (new (secret: never) => typeof runtime.DbNull),
   JsonNull: runtime.NullTypes.JsonNull as (new (secret: never) => typeof runtime.JsonNull),
@@ -126,7 +123,6 @@ export const JsonNull = runtime.JsonNull
  * @see https://www.prisma.io/docs/concepts/components/prisma-client/working-with-fields/working-with-json-fields#filtering-on-a-json-field
  */
 export const AnyNull = runtime.AnyNull
-
 
 type SelectAndInclude = {
   select: any
@@ -203,7 +199,6 @@ export type XOR<T, U> =
     ((Without<T, U> & U) | (Without<U, T> & T)) & object
   : U : T
 
-
 /**
  * Is T a Record?
  */
@@ -218,7 +213,6 @@ type IsObject<T extends any> = T extends Array<any>
 : T extends object
 ? True
 : False
-
 
 /**
  * If it's T[], return T
@@ -390,11 +384,9 @@ export type PickEnumerable<T, K extends Enumerable<keyof T> | keyof T> = Prisma_
  */
 export type ExcludeUnderscoreKeys<T extends string> = T extends `_${string}` ? never : T
 
-
 export type FieldRef<Model, FieldType> = runtime.FieldRef<Model, FieldType>
 
 type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRef<Model, FieldType>
-
 
 export const ModelName = {
   Problem: 'Problem',
@@ -403,8 +395,6 @@ export const ModelName = {
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
-
-
 
 export interface TypeMapCb<GlobalOmitOptions = {}> extends runtime.Types.Utils.Fn<{extArgs: runtime.Types.Extensions.InternalArgs }, runtime.Types.Utils.Record<string, any>> {
   returns: TypeMap<this['params']['extArgs'], GlobalOmitOptions>
@@ -679,7 +669,6 @@ export const TransactionIsolationLevel = runtime.makeStrictEnum({
 
 export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof typeof TransactionIsolationLevel]
 
-
 export const ProblemScalarFieldEnum = {
   name: 'name',
   contestId: 'contestId',
@@ -689,14 +678,12 @@ export const ProblemScalarFieldEnum = {
 
 export type ProblemScalarFieldEnum = (typeof ProblemScalarFieldEnum)[keyof typeof ProblemScalarFieldEnum]
 
-
 export const ContestScalarFieldEnum = {
   contestId: 'contestId',
   name: 'name'
 } as const
 
 export type ContestScalarFieldEnum = (typeof ContestScalarFieldEnum)[keyof typeof ContestScalarFieldEnum]
-
 
 export const SharedContestScalarFieldEnum = {
   contestId: 'contestId',
@@ -705,14 +692,12 @@ export const SharedContestScalarFieldEnum = {
 
 export type SharedContestScalarFieldEnum = (typeof SharedContestScalarFieldEnum)[keyof typeof SharedContestScalarFieldEnum]
 
-
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
 } as const
 
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
-
 
 export const QueryMode = {
   default: 'default',
@@ -721,7 +706,6 @@ export const QueryMode = {
 
 export type QueryMode = (typeof QueryMode)[keyof typeof QueryMode]
 
-
 export const NullsOrder = {
   first: 'first',
   last: 'last'
@@ -729,54 +713,40 @@ export const NullsOrder = {
 
 export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
 
-
-
 /**
  * Field references
  */
-
 
 /**
  * Reference to a field of type 'String'
  */
 export type StringFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'String'>
     
-
-
 /**
  * Reference to a field of type 'String[]'
  */
 export type ListStringFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'String[]'>
     
-
-
 /**
  * Reference to a field of type 'Int'
  */
 export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int'>
     
-
-
 /**
  * Reference to a field of type 'Int[]'
  */
 export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int[]'>
     
-
-
 /**
  * Reference to a field of type 'Float'
  */
 export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
     
-
-
 /**
  * Reference to a field of type 'Float[]'
  */
 export type ListFloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float[]'>
     
-
 /**
  * Batch Payload for updateMany & deleteMany & createMany
  */
@@ -964,7 +934,6 @@ export type LogEvent = {
   target: string
 }
 /* End Types for Logging */
-
 
 export type PrismaAction =
   | 'findUnique'

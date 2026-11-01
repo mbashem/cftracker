@@ -22,7 +22,6 @@ export type * from './prismaNamespace'
 
 export const Decimal = runtime.Decimal
 
-
 export const NullTypes = {
   DbNull: runtime.NullTypes.DbNull as (new (secret: never) => typeof runtime.DbNull),
   JsonNull: runtime.NullTypes.JsonNull as (new (secret: never) => typeof runtime.JsonNull),
@@ -49,7 +48,6 @@ export const JsonNull = runtime.JsonNull
  */
 export const AnyNull = runtime.AnyNull
 
-
 export const ModelName = {
   Problem: 'Problem',
   Contest: 'Contest',
@@ -71,7 +69,6 @@ export const TransactionIsolationLevel = runtime.makeStrictEnum({
 
 export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof typeof TransactionIsolationLevel]
 
-
 export const ProblemScalarFieldEnum = {
   name: 'name',
   contestId: 'contestId',
@@ -81,14 +78,12 @@ export const ProblemScalarFieldEnum = {
 
 export type ProblemScalarFieldEnum = (typeof ProblemScalarFieldEnum)[keyof typeof ProblemScalarFieldEnum]
 
-
 export const ContestScalarFieldEnum = {
   contestId: 'contestId',
   name: 'name'
 } as const
 
 export type ContestScalarFieldEnum = (typeof ContestScalarFieldEnum)[keyof typeof ContestScalarFieldEnum]
-
 
 export const SharedContestScalarFieldEnum = {
   contestId: 'contestId',
@@ -97,7 +92,6 @@ export const SharedContestScalarFieldEnum = {
 
 export type SharedContestScalarFieldEnum = (typeof SharedContestScalarFieldEnum)[keyof typeof SharedContestScalarFieldEnum]
 
-
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -105,14 +99,12 @@ export const SortOrder = {
 
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
 
-
 export const QueryMode = {
   default: 'default',
   insensitive: 'insensitive'
 } as const
 
 export type QueryMode = (typeof QueryMode)[keyof typeof QueryMode]
-
 
 export const NullsOrder = {
   first: 'first',

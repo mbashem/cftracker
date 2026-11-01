@@ -5,6 +5,8 @@ description: Process or resume an operator-confirmed shared Codeforces contest t
 
 # Update Shared Codeforces Contests
 
+Keep at most one consecutive blank line in code files, including tests and scripts. Lines containing only spaces or tabs count as blank. This rule does not apply to documentation, prose, or skill instruction files.
+
 Process exactly one operator-confirmed shared-contest group through the manage-contests MCP server.
 
 Before executing or resuming this workflow, read [references/workflow-scenarios.md](references/workflow-scenarios.md). The scenarios define the expected behavior at ambiguous, rejected, failed, and resumed states.

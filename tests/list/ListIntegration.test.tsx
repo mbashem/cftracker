@@ -9,8 +9,7 @@ let name: string;
 let removed: boolean;
 beforeEach(() => {
   localStorage.clear(); backend = setupBackendMock(); backend.authenticate(); name = "Practice"; removed = false;
-  backend.fetchMock.mockImplementation(async input => {
-    const request = new Request(input); backend.requests.push(request);
+  backend.handleRequests(async request => {
     if (request.method === "PUT") name = (await request.json()).name;
     if (request.method === "DELETE") removed = true;
     if (new URL(request.url).pathname === "/api/v1/lists") return Response.json({ lists: removed ? [] : [{ ...backendList, name }] });

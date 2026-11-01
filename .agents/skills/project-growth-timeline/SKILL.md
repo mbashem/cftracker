@@ -5,6 +5,8 @@ description: Measure a repository's six-month codebase history from main and gen
 
 # Project growth timeline
 
+Keep at most one consecutive blank line in code files, including tests and scripts. Lines containing only spaces or tabs count as blank. This rule does not apply to documentation, prose, or skill instruction files.
+
 Use this skill when the user asks for the repository's historical codebase growth, a six-month project timeline, or a graph based on `cloc`.
 
 ## Preserve snapshots

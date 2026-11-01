@@ -3,7 +3,6 @@ import unittest
 
 from server_helpers import configuration_contents, validate_origin
 
-
 class ConfigurationContentsTest(unittest.TestCase):
     def contents(self, **overrides):
         values = {

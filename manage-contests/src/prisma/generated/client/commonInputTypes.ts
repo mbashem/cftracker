@@ -13,7 +13,6 @@ import type * as runtime from "@prisma/client/runtime/client"
 import * as $Enums from "./enums"
 import type * as Prisma from "./internal/prismaNamespace"
 
-
 export type StringFilter<$PrismaModel = never> = {
   equals?: string | Prisma.StringFieldRefInput<$PrismaModel>
   in?: string[] | Prisma.ListStringFieldRefInput<$PrismaModel>
@@ -212,5 +211,4 @@ export type NestedFloatNullableFilter<$PrismaModel = never> = {
   gte?: number | Prisma.FloatFieldRefInput<$PrismaModel>
   not?: Prisma.NestedFloatNullableFilter<$PrismaModel> | number | null
 }
-
 

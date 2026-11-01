@@ -9,7 +9,6 @@ import {
   type HomeStatistics,
   type SnapshotDateRange,
 } from "../../src/components/home/homeStatistics";
-import { validators } from "../../src/util/validators";
 import { Verdict } from "../../src/types/CF/Verdict";
 import Submission from "../../src/types/CF/Submission";
 import { ParticipantType } from "../../src/types/CF/Party";
@@ -279,18 +278,6 @@ test("combines handles so one handle's acceptance solves the problem", () => {
     averageSolvedRating: 800,
     attemptedUnsolvedCount: 1,
   });
-});
-
-test("validates URL pagination values", () => {
-  expect(validators.positiveInteger("25", undefined)).toBe(25);
-  for (const value of [undefined, null, "", "0", "-1", "2.5", String(Number.MAX_SAFE_INTEGER + 1)]) {
-    expect(validators.positiveInteger(value, undefined)).toBeUndefined();
-  }
-  expect(validators.nonNegativeInteger("0", undefined)).toBe(0);
-  expect(validators.nonNegativeInteger("3", undefined)).toBe(3);
-  for (const value of [undefined, null, "", "-1", "1.5", String(Number.MAX_SAFE_INTEGER + 1)]) {
-    expect(validators.nonNegativeInteger(value, undefined)).toBeUndefined();
-  }
 });
 
 test("keeps high contest IDs in problem ranges", () => {

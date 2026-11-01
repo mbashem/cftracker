@@ -65,7 +65,6 @@ function useAdvancedState<T>(
     });
   }, [validator]);
 
-
   useEffect(() => {
     setSafeValue(getResolvedValue(value));
   }, [storageKey, searchKey, searchValue]);

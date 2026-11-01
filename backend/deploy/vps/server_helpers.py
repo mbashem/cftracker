@@ -8,7 +8,6 @@ import secrets
 import sys
 from urllib.parse import urlsplit
 
-
 def validate_origin(value):
     """Accept only origins that are safe to write into an environment file."""
     url = urlsplit(value)
@@ -17,7 +16,6 @@ def validate_origin(value):
         raise SystemExit("Origins must be HTTP(S) scheme and host, with no trailing slash or path.")
     if any(c.isspace() for c in value) or "$" in value:
         raise SystemExit("Invalid origin.")
-
 
 def configuration_contents(origins, client_id, client_secret, admin, app, jwt):
     """Validate supplied values and return file contents without system access."""
@@ -36,7 +34,6 @@ def configuration_contents(origins, client_id, client_secret, admin, app, jwt):
             f"GITHUB_CLIENT_SECRET={client_secret}\n"
             f"CORS_ALLOWED_ORIGINS={origins}\nTRUSTED_PROXIES=\n",
     }
-
 
 def initialize_config(directory):
     """Create first-installation credentials, refusing existing secret files."""
@@ -58,7 +55,6 @@ def initialize_config(directory):
     (directory / "app-password").chmod(0o644)
     print("Configuration created. Confirm OAuth callback in GitHub; proxy trust is still pending.")
 
-
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
@@ -72,7 +68,6 @@ def main():
     else:
         # Read resolved Compose data privately and print only the requested image.
         print(json.load(sys.stdin)["services"][args.service]["image"])
-
 
 if __name__ == "__main__":
     main()

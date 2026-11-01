@@ -1,6 +1,7 @@
-import { frontend, resetFrontendMocks } from "../support/frontendMocks";
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { afterEach, beforeEach, expect, test, vi } from "vitest";
+import { setupFrontendTests } from "../support/frontendTestSetup";
+import { frontend } from "../support/frontendMocks";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { expect, test, vi } from "vitest";
 import ContestPage from "../../src/components/contest/ContestPage";
 import { StorageService } from "../../src/util/StorageService";
 import { Verdict } from "../../src/types/CF/Submission";
@@ -9,8 +10,7 @@ import Theme, { ThemesType } from "../../src/util/Theme";
 import { seedContestFixtures } from "../support/contestFixtures";
 import { createRouterWrapper, LocationProbe } from "../support/router";
 
-beforeEach(() => { resetFrontendMocks(); localStorage.clear(); seedContestFixtures(); });
-afterEach(() => { cleanup(); vi.restoreAllMocks(); });
+setupFrontendTests(seedContestFixtures);
 
 function setup(query = "") {
   return render(<><ContestPage /><LocationProbe /></>, { wrapper: createRouterWrapper(`/contests?${query}`) });
@@ -54,6 +54,10 @@ test("categories support single, multiple, All, and empty selection", () => {
   fireEvent.click(screen.getByTitle("Enable Multiselect"));
   fireEvent.click(screen.getByRole("button", { name: "Div. 1" }));
   expect(rowIds()).toEqual([200, 201]);
+  fireEvent.click(screen.getByTitle("Disable Multiselect"));
+  expect(rowIds()).toEqual([200]);
+  fireEvent.click(screen.getByTitle("Enable Multiselect"));
+  fireEvent.click(screen.getByRole("button", { name: "Div. 1" }));
   fireEvent.click(screen.getByRole("button", { name: "All" }));
   expect(rowIds()).toEqual([100, 101, 102, 15000, 200, 201]);
   fireEvent.click(screen.getByRole("button", { name: "All" }));

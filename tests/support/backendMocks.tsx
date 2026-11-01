@@ -2,6 +2,7 @@ import { vi } from "vitest";
 import { configureStore } from "@reduxjs/toolkit";
 import { Provider } from "react-redux";
 import type { PropsWithChildren } from "react";
+import { createDeferred } from "./deferred";
 
 // Set the endpoint before importing the real query modules; no hook mocks here.
 vi.stubEnv("VITE_BACKEND_API_URL", "https://backend.example.test/api");
@@ -31,22 +32,31 @@ export const authenticatedUser = {
 
 export function setupBackendMock(catalogApi = codeforcesApi) {
   const requests: Request[] = [];
-  const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
-    const request = new Request(input);
-    requests.push(request);
-    return Response.json({});
-  });
+  type ResponseHandler = (request: Request) => Response | Promise<Response>;
+  function recordRequest(handler: ResponseHandler) {
+    return async (input: RequestInfo | URL, init?: RequestInit) => {
+      const request = new Request(input, init);
+      requests.push(request);
+      return handler(request);
+    };
+  }
+  const fetchMock = vi.fn(recordRequest(() => Response.json({})));
   vi.stubGlobal("fetch", fetchMock);
   const store = configureStore({
     reducer: { appState, userSubmissions, [catalogApi.reducerPath]: catalogApi.reducer, userList: userReducer, [userApi.reducerPath]: userApi.reducer, [listApi.reducerPath]: listApi.reducer },
     middleware: (defaults) => defaults().prepend(authenticationListener.middleware, userSubmissionsListener.middleware).concat(userApi.middleware, listApi.middleware, catalogApi.middleware),
   });
   const wrapper = ({ children }: PropsWithChildren) => <Provider store={store}>{children}</Provider>;
+  function handleRequests(handler: ResponseHandler) {
+    fetchMock.mockImplementation(recordRequest(handler));
+  }
   function respond(body: unknown, status = 200) {
-    fetchMock.mockImplementation(async (input) => {
-      requests.push(new Request(input));
-      return Response.json(body, { status });
-    });
+    handleRequests(() => Response.json(body, { status }));
+  }
+  function deferResponse() {
+    const deferred = createDeferred<Response>();
+    fetchMock.mockImplementationOnce(recordRequest(() => deferred.promise));
+    return deferred;
   }
   function dispose() {
     store.dispatch(catalogApi.util.resetApiState());
@@ -57,6 +67,6 @@ export function setupBackendMock(catalogApi = codeforcesApi) {
   function authenticate(user = authenticatedUser) {
     store.dispatch(setUser(user));
   }
-  return { store, wrapper, requests, fetchMock, respond, dispose, authenticate };
+  return { store, wrapper, requests, fetchMock, respond, handleRequests, deferResponse, dispose, authenticate };
 }
 export { userApi, listApi, codeforcesApi };

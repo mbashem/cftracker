@@ -5,6 +5,8 @@ description: CFTracker frontend test conventions for adding, reviewing, or refac
 
 # Frontend Tests
 
+Keep at most one consecutive blank line in code files, including tests and scripts. Lines containing only spaces or tabs count as blank. This rule does not apply to documentation, prose, or skill instruction files.
+
 Apply [develop-frontend](../develop-frontend/SKILL.md) alongside this skill for frontend execution boundaries and the repository Node version. Keep work scoped to the requested behavior: a test-plan request produces a plan rather than executable coverage for the entire application.
 
 ## Repository setup

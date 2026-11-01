@@ -4,6 +4,7 @@ import type Problem from "../../src/types/CF/Problem";
 import type Contest from "../../src/types/CF/Contest";
 import type Submission from "../../src/types/CF/Submission";
 import type { List, ListItem, ListWithItem } from "../../src/types/list";
+import { createList, createListItem } from "./listFixtures";
 
 interface FrontendMocks {
   problems: Problem[];
@@ -41,8 +42,8 @@ interface FrontendMocks {
   getListWithItems: Mock<(id: number) => Promise<ListWithItem>>;
 }
 
-// Shared dependency mocks for page, navigation, menu, and list tests.
-const frontend: FrontendMocks = vi.hoisted(() => ({
+// Fresh defaults shared by initialization and per-test reset.
+const createFrontendState = vi.hoisted(() => () => ({
   problems: [] as Problem[],
   submissions: [] as Submission[],
   rawSubmissions: undefined as Submission[] | undefined,
@@ -63,6 +64,11 @@ const frontend: FrontendMocks = vi.hoisted(() => ({
   individualList: undefined as ListWithItem | undefined,
   individualListLoading: false,
   individualListError: undefined as unknown,
+}));
+
+// Shared dependency mocks for page, navigation, menu, and list tests.
+const frontend: FrontendMocks = vi.hoisted(() => ({
+  ...createFrontendState(),
   handleGithubCallback: vi.fn(),
   createList: vi.fn(), updateListName: vi.fn(), deleteList: vi.fn(),
   addProblemToList: vi.fn(), deleteProblemFromList: vi.fn(),
@@ -138,31 +144,13 @@ vi.mock("../../src/util/env", () => ({
 }));
 
 export function resetFrontendMocks() {
-  frontend.problems = [];
-  frontend.submissions = [];
-  frontend.rawSubmissions = undefined;
-  frontend.contests = [];
-  frontend.loading = false;
-  frontend.contestLoading = undefined;
-  frontend.problemError = undefined;
-  frontend.contestError = undefined;
-  frontend.submissionError = undefined;
+  Object.assign(frontend, createFrontendState());
   frontend.theme = new Theme(ThemesType.LIGHT);
-  frontend.handles = [];
-  frontend.userId = 1;
-  frontend.authenticated = false;
-  frontend.backendAvailable = false;
-  frontend.lists = [];
-  frontend.listsLoading = false;
-  frontend.listsError = undefined;
-  frontend.individualList = undefined;
-  frontend.individualListLoading = false;
-  frontend.individualListError = undefined;
   frontend.handleGithubCallback.mockReset().mockResolvedValue(undefined);
-  frontend.createList.mockReset().mockImplementation(async name => ({ id: 5, userId: 1, name, createdAt: "2026-01-01" }));
+  frontend.createList.mockReset().mockImplementation(async name => createList({ name }));
   frontend.updateListName.mockReset().mockResolvedValue(undefined);
   frontend.deleteList.mockReset().mockResolvedValue(undefined);
-  frontend.addProblemToList.mockReset().mockImplementation(async (listId, problemId, position) => ({ listId, problemId, position, createdAt: "2026-01-01" }));
+  frontend.addProblemToList.mockReset().mockImplementation(async (listId, problemId, position) => createListItem({ listId, problemId, position }));
   frontend.deleteProblemFromList.mockReset().mockResolvedValue(undefined);
   frontend.changeThemeMod.mockReset();
   frontend.updateUsers.mockReset();
@@ -170,9 +158,7 @@ export function resetFrontendMocks() {
   frontend.logout.mockReset();
   frontend.showErrorToast.mockReset();
   frontend.showGeneralToast.mockReset();
-  frontend.getListWithItems.mockReset().mockImplementation(async (id) => ({
-    id, userId: 1, name: "Test list", createdAt: "2026-01-01", items: [],
-  }));
+  frontend.getListWithItems.mockReset().mockImplementation(async id => createList({ id, name: "Test list" }));
 }
 
 export { frontend };
