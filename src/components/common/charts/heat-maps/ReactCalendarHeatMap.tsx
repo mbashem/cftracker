@@ -68,53 +68,56 @@ function ReactCalendarHeatMap({ data, minimumValueForMaxColor, onDayCellMouseLea
     return 15;
   }, [width]);
 
-  if (compact) {
-    return (
-      <span className="compact-heatmap" role="group" aria-label={label}>
-        {data.map((cell, index) => {
-          const details = cell.label ?? `${cell.date.toDateString()}: ${cell.value}`;
-          return (
-            <OverlayTrigger key={cell.date.getTime()} placement="top" overlay={<Tooltip id={`${tooltipId}-${index}`}>{details}</Tooltip>}>
-              <span className={`compact-heatmap__cell${cell.value === 0 ? " heatmap-cell--empty" : ""}`} role="img" tabIndex={0} aria-label={details}
-                style={{ backgroundColor: getColor(cell.value) }} />
-            </OverlayTrigger>
-          );
-        })}
-      </span>
-    );
-  }
+  const compactColumns = Math.max(1, Math.min(data.length, Math.floor(Math.max(1, Math.min(320, width - 80)) / cellSize)));
+  const cells = compact
+    ? data.map((cell, index) => ({ ...cell, x: (index % compactColumns) * cellSize, y: Math.floor(index / compactColumns) * cellSize }))
+    : daysInYear.map(({ date, day, week }) => ({ date, value: parsedData[date.toDateString()] ?? 0, label: undefined, x: week * cellSize, y: day * cellSize }));
 
   return (
-    <svg width={cellSize * 53 + 80}>
-      <g transform={`translate(50, 20)`}>
-        {monthLabels.map((label, i) => (
+    <svg
+      className={`calendar-heatmap${compact ? " compact-heatmap" : ""}`}
+      width={compact ? compactColumns * cellSize : cellSize * 53 + 80}
+      height={compact ? Math.ceil(data.length / compactColumns) * cellSize : undefined}
+      viewBox={compact ? `0 0 ${compactColumns * cellSize} ${Math.max(1, Math.ceil(data.length / compactColumns) * cellSize)}` : undefined}
+      role={compact ? "group" : undefined}
+      aria-label={label}
+    >
+      <g transform={compact ? undefined : "translate(50, 20)"}>
+        {!compact && monthLabels.map((label, i) => (
           <text key={i} className={theme.text} x={i * 4.5 * cellSize} y={-10} fontSize="10" textAnchor="start">
             {label}
           </text>
         ))}
 
         {/* Day cells */}
-        {daysInYear.map(({ date, day, week }) => (
-          <rect
-            key={date.toString()}
-            x={week * cellSize}
-            y={day * cellSize}
-            width={cellSize - 2}
-            height={cellSize - 2}
-            fill={getColor(parsedData[date.toDateString()])}
-            className={(parsedData[date.toDateString()] ?? 0) === 0 ? "heatmap-cell--empty" : undefined}
-            onMouseEnter={(event) =>
-              onDayCellMouseOver?.({ date: date, value: parsedData[date.toDateString()] ?? 0 }, event.pageX, event.pageY)
-            }
-            onMouseLeave={onDayCellMouseLeave}
-            rx="2"
-            ry="2"
-          >
-            {/* <title>{`${date}: ${parsedData[date.toString()] ?? 0}`}</title> */}
-          </rect>
-        ))}
+        {cells.map(({ date, value, label: cellLabel, x, y }, index) => {
+          const details = cellLabel ?? `${date.toDateString()}: ${value}`;
+          const cell = (
+            <rect
+              key={date.getTime()}
+              x={x}
+              y={y}
+              width={cellSize - 2}
+              height={cellSize - 2}
+              fill={getColor(value)}
+              className={`heatmap__cell${value === 0 ? " heatmap-cell--empty" : ""}`}
+              role={compact ? "img" : undefined}
+              tabIndex={compact ? 0 : undefined}
+              aria-label={compact ? details : undefined}
+              onMouseEnter={(event) => onDayCellMouseOver?.({ date, value }, event.pageX, event.pageY)}
+              onMouseLeave={onDayCellMouseLeave}
+              rx="2"
+              ry="2"
+            />
+          );
+          return compact ? (
+            <OverlayTrigger key={date.getTime()} placement="top" overlay={<Tooltip id={`${tooltipId}-${index}`}>{details}</Tooltip>}>
+              {cell}
+            </OverlayTrigger>
+          ) : cell;
+        })}
 
-        {dayLabels.map((d, i) => (
+        {!compact && dayLabels.map((d, i) => (
           <text
             key={d}
             className={theme.text}

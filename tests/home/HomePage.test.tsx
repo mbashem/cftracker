@@ -77,5 +77,5 @@ test("Custom with both date fields blank shows the current year even when all su
   const chart = screen.getByRole("group", { name: "Yearly submission activity for the selected range" });
   expect(chart.querySelectorAll('[role="img"]')).toHaveLength(4);
   const currentYear = screen.getByRole("img", { name: "Thu Jan 01 2026 – Sun Oct 04 2026: 0 submissions · 0/277 active days" });
-  expect(currentYear.style.backgroundColor).toBe("rgb(199, 201, 212)");
+  expect(currentYear.getAttribute("fill")).toBe("#c7c9d4");
 });
