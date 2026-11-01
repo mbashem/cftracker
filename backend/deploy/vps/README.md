@@ -453,20 +453,29 @@ From the repository root:
 
 ```sh
 bash -n backend/deploy/vps/bundle.sh backend/deploy/vps/server.sh
-PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s backend/deploy/vps -p 'test_*.py'
+PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s backend/tests/integration/deployment -p 'test_*.py'
 ```
 
+Deployment Python tests live centrally in `backend/tests/integration/deployment/`.
+They use local temporary resources without database or Docker integration.
 Compose rendering tests read the checked-in `backend/compose.production.yml`
 and exercise the real renderer, including rejection of incompatible build and
 SQL-mount changes. The command test launches the actual Python render command,
 writes its release manifest into a temporary directory, checks the output, and
 removes that directory afterward. These checks use real local file access and
-process execution, without Docker, services, or network access; they require
-authorization for that local scope when run by an automated agent.
+process execution, without Docker, services, or network access. Their writes and
+cleanup are confined to their own temporary directories.
 
-Configuration, initializer, and checksum unit tests still mock filesystem,
-environment, permission, and randomness boundaries. They verify the production
-functions' behavior against those dependencies, not actual host permissions.
+Configuration checks run the actual initializer CLI in a temporary directory.
+They parse the written environment files and database URLs, verify generated
+credentials match their respective files, inspect actual file permissions,
+check that secrets are absent from command output, and verify that reruns refuse
+to replace existing credentials. Invalid inputs must leave no output directory.
+Initializer failure tests use actual existing files, invalid destinations, and
+exclusive-create failures in disposable directories. Checksum tests run the real
+CLI and writer against actual files, including an input larger than the streaming
+chunk size, empty files, and unreadable directory entries. No filesystem or
+randomness mocks are used in these deployment tests.
 Disable bytecode output as shown above to avoid Python caches. Compose schema
 validity, Bash orchestration, backups, and service behavior still need separate
 operator verification. Script execution of

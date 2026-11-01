@@ -87,7 +87,7 @@ Defaults are 60 requests/minute per user for general traffic, 30/minute for writ
 
 ## Testing
 
-See the [`TESTING.md`](TESTING.md) backend testing guide for the complete unit, integration, race, coverage, and database-safety workflow.
+See the [`TESTING.md`](TESTING.md) backend testing guide for the complete unit, integration, race, coverage, and database-safety workflow, including [centralized Python test commands](TESTING.md#python-checks).
 
 Unit tests do not require PostgreSQL. Run the complete unit suite and race detector from the `backend` directory:
 
