@@ -246,11 +246,10 @@ agent explains the commands and interprets the results you share.
 
 ### Save the database backup on your computer
 
-Do this **after installing the new release files but before deploying**. The new
-`server.sh backup` command streams the dump to standard output; older installed
-scripts may still write dumps on the VPS, so use the newly installed script.
-Do not run the streaming command alone in a terminal. Run it over SSH with the
-output redirected **on your computer**, as below. No dump file is saved on the VPS.
+Do this **before deploying**. Run `pg_dump` directly in the existing PostgreSQL
+container over SSH, with the output redirected **on your computer**, as below.
+No server backup script or server-side dump file is needed. Do not run the
+streaming command alone without redirecting its binary output.
 
 No PostgreSQL installation is needed on your computer. The existing PostgreSQL
 container exports and inspects the archive; inspection streams your local file
@@ -270,7 +269,7 @@ Replace the release name and SSH placeholders consistently.
   backup="$HOME/Backups/cftracker/release-001.dump"
   test ! -e "$backup"
   ssh -T -o BatchMode=yes DEPLOY_USER@VPS_HOST \
-    'cd /srv/cftracker/releases/release-001 && sudo -n bash server.sh backup' \
+    'sudo -n docker exec cftracker-postgres-1 pg_dump -U postgres -d cftracker -Fc' \
     > "$backup.partial"
   test -s "$backup.partial"
   ssh -T -o BatchMode=yes DEPLOY_USER@VPS_HOST \
@@ -310,7 +309,7 @@ readability, starts/waits for PostgreSQL without recreating an existing database
 container, runs migrations without reconciling dependency
 containers, and starts/waits for the backend. It never deletes volumes, prunes images, rotates
 secrets, or automatically rolls back a failed migration. Use only one operator at
-a time. The script locks deployment, backup, and initialization against each
+a time. The script locks deployment and initialization against each
 other. A failed deployment is not automatically undone; inspect before retrying.
 
 The command requires `--local-backup-confirmed` and refuses to deploy without it.

@@ -82,8 +82,9 @@ concrete commands for the agreed release; ensure an existing destination stops
 the sequence rather than silently reusing it.
 
 Before deployment, guide the user through the runbook's **local backup** steps
-from their **Mac/local terminal**. Use the newly installed release's `server.sh
-backup`, streaming its output over SSH into a protected local `.partial` file.
+from their **Mac/local terminal**. Have them run `pg_dump` directly in the existing
+PostgreSQL container over SSH, streaming into a protected local `.partial` file.
+There is no server backup command or script to install or invoke.
 Never redirect the archive inside a remote command or save it on the VPS. Choose
 a local directory outside the repository and cloud-synced folders. Do not require
 PostgreSQL tools on the user's computer. After successful export, guide them to
