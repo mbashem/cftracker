@@ -2,7 +2,7 @@
 # Run a reviewed, trusted bundle on Ubuntu using sudo bash server.sh COMMAND.
 # Stop if a required step fails rather than continuing a partial deployment.
 set -euo pipefail
-# Protect newly created secrets and backups from other unprivileged host users.
+# Protect newly created secrets from other unprivileged host users.
 umask 077
 # Find this bundle's directory, regardless of where the operator runs the script.
 directory=$(cd "$(dirname "$0")" && pwd)
@@ -37,12 +37,6 @@ server {
     }
 }
 EOF
-}
-backup() {
-  # Stream the archive over SSH to a file on the operator's computer. Never
-  # create a dump on the VPS or mix status messages into the binary output.
-  [[ ! -t 1 ]] || fail 'Backup is binary output. Redirect SSH output to a local backup file; see the runbook.'
-  compose exec -T postgres pg_dump -U postgres -d cftracker -Fc
 }
 deploy() {
   # The VPS cannot inspect a file on the operator's computer. Require their
@@ -104,21 +98,20 @@ shift || true
 # Allow help and NGINX configuration preview without administrative privileges.
 case "$command" in
   help|--help|-h)
-    echo 'Commands: init | deploy --local-backup-confirmed | backup | check HOST | nginx-config HOST | nginx HOST | https HOST'
-    echo 'backup streams binary output: invoke over SSH and redirect to a file on your local computer.'
+    echo 'Commands: init | deploy --local-backup-confirmed | check HOST | nginx-config HOST | nginx HOST | https HOST'
     echo 'init prompts for OAuth settings; never use it to rotate existing credentials.'
     exit 0 ;;
   nginx-config) nginx_config "${1:-}"; exit 0 ;;
-  init|deploy|backup|check|nginx|https) ;;
+  init|deploy|check|nginx|https) ;;
   *) fail 'Unknown command; run help.' ;;
 esac
 # Require administrative privileges for protected files, Docker, and host services.
 [[ $EUID == 0 ]] || fail 'Run on the VPS with sudo bash server.sh COMMAND.'
-if [[ $command == deploy || $command == backup || $command == init ]]; then
-  # Refuse concurrent initialization, deployment, or backup operations. The shared
+if [[ $command == deploy || $command == init ]]; then
+  # Refuse concurrent initialization or deployment operations. The shared
   # lock is released when this process exits, including after a deployment failure.
   exec 9>/run/lock/cftracker-deploy.lock
-  flock -n 9 || fail 'Another CFTracker deployment, backup, or initialization is running.'
+  flock -n 9 || fail 'Another CFTracker deployment or initialization is running.'
 fi
 case "$command" in
   init)
@@ -136,7 +129,6 @@ case "$command" in
     # Remove credentials from the shell's environment after initialization.
     unset origins client_id client_secret ;;
   deploy) deploy "$@" ;;
-  backup) backup ;;
   check)
     # Check container status, NGINX syntax, direct API readiness, hostname routing,
     # and public IPv4 HTTPS. These commands inspect services but do not reconfigure them.
