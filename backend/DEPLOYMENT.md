@@ -134,25 +134,15 @@ docker compose -f backend/compose.production.yml exec postgres \
   psql -U postgres -d cftracker
 ```
 
-Create a custom-format database backup on the host:
-
-```sh
-umask 077
-docker compose -f backend/compose.production.yml exec -T postgres \
-  pg_dump -U postgres -d cftracker -Fc > cftracker.dump
-```
-
-Check command success before treating a dump as complete. Keep copies off the
-server and periodically test restoration. This dump contains the database, not
-cluster roles; retain the application-role initialization and credential setup
-separately. Docker and host administrators can access the local database.
-
-To inspect an archive without changing data:
-
-```sh
-docker compose -f backend/compose.production.yml exec -T postgres \
-  pg_restore --list < cftracker.dump
-```
+For VPS backups, follow [the local backup procedure](deploy/vps/README.md#save-the-database-backup-on-your-computer).
+Run the SSH command from your computer and redirect the dump locally, not on the
+VPS. It streams `pg_dump -Fc` without saving a dump file on the server. Check
+command success and stream the local file to the existing container's
+`pg_restore --list` before deployment. No local PostgreSQL tools or server-side
+dump file are needed; the release command requires `--local-backup-confirmed`.
+Archive listing is not a full restore test. Dumps contain the database, not
+cluster roles; retain initialization SQL and credential recovery separately and
+securely. Keep backups outside cloud-synced folders and periodically test restore.
 
 For an actual restore, stop the backend, create an empty destination database
 owned by the administrator, restore with `pg_restore --no-owner --no-privileges`,

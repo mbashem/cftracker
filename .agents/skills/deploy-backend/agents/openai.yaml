@@ -1,0 +1,4 @@
+interface:
+  display_name: "Guide CFTracker Backend Deployment"
+  short_description: "Guide a manual backend release step by step"
+  default_prompt: "Use $deploy-backend to guide me through deploying my backend changes. Give me commands to run and wait for my results; do not execute the deployment yourself."
