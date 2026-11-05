@@ -16,6 +16,16 @@ hostname_valid() {
   # Reject URLs and configuration punctuation before using a hostname in NGINX.
   [[ ${1:-} =~ ^[a-zA-Z0-9]([a-zA-Z0-9.-]*[a-zA-Z0-9])?$ && $1 == *.* ]] || fail 'Supply a DNS hostname, without URL, port, or path.'
 }
+check_http_redirect() {
+  local response
+  # Inspect the first response without following it: serving HTTP directly or
+  # redirecting to a different hostname must not pass the HTTPS routing check.
+  response=$(curl --fail --silent --show-error --output /dev/null \
+    --write-out '%{http_code} %{redirect_url}' \
+    -H "Host: $1" http://127.0.0.1/health/ready)
+  [[ $response == "301 https://$1/health/ready" || $response == "308 https://$1/health/ready" ]] || \
+    fail 'HTTP must permanently redirect to the configured HTTPS readiness URL.'
+}
 nginx_config() {
   hostname_valid "${1:-}"
   # Prepare an HTTP proxy site for the supplied hostname and the local API.
@@ -130,13 +140,13 @@ case "$command" in
     unset origins client_id client_secret ;;
   deploy) deploy "$@" ;;
   check)
-    # Check container status, NGINX syntax, direct API readiness, hostname routing,
+    # Check container status, NGINX syntax, direct API readiness, HTTP redirect,
     # and public IPv4 HTTPS. These commands inspect services but do not reconfigure them.
     hostname_valid "${1:-}"
     compose ps
     nginx -t
     curl --fail --show-error http://127.0.0.1:8080/health/ready
-    curl --fail --show-error -H "Host: $1" http://127.0.0.1/health/ready
+    check_http_redirect "$1"
     curl -4 --fail --show-error "https://$1/health/ready"
     echo 'If an AAAA record exists, also test curl -6 externally. Run certbot renew --dry-run separately.' ;;
   nginx)
