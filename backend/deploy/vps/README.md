@@ -480,6 +480,10 @@ sudo bash server.sh check api.example.com
 sudo docker compose exec postgres psql -U postgres -d cftracker
 ```
 
+The `check` command requires HTTP to return a permanent redirect (301 or 308) to
+`https://api.example.com/health/ready`, using the hostname supplied to the command.
+It checks HTTPS readiness separately. Run it after HTTPS has been configured.
+
 Create backups from your computer using the streaming procedure above; do not
 schedule server-side dump files. Any scheduled backup should run on your computer
 and needs SSH access, protected local storage, and failure reporting. Protect dumps as secrets.
