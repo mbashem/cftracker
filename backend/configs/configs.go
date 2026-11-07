@@ -21,6 +21,9 @@ const (
 	DATABASE_URL          EnvKey = "DATABASE_URL"
 	DATABASE_TIMEOUT      EnvKey = "DATABASE_TIMEOUT"
 	JWT_SECRET            EnvKey = "JWT_SECRET"
+	JWT_TTL               EnvKey = "JWT_TTL"
+	JWT_ACTIVE_KEY_IDS    EnvKey = "JWT_ACTIVE_KEY_IDS"
+	JWT_KEYS              EnvKey = "JWT_KEYS"
 	CORS_ALLOWED_ORIGINS  EnvKey = "CORS_ALLOWED_ORIGINS"
 	PORT                  EnvKey = "PORT"
 	EXTERNAL_API_TIMEOUT  EnvKey = "EXTERNAL_API_TIMEOUT"
@@ -36,6 +39,7 @@ const (
 	DefaultDatabaseTimeout    = 5 * time.Second
 	DefaultPort               = 8080
 	MinimumJWTSecretLength    = 32
+	DefaultJWTTTL             = 7 * 24 * time.Hour
 )
 
 type Config struct {
@@ -43,6 +47,9 @@ type Config struct {
 	GitHubClientSecret string
 	DatabaseURL        string
 	JWTSecret          string
+	JWTTTL             time.Duration
+	JWTActiveKeyIDs    []string
+	JWTKeys            map[string]string
 	CORSAllowedOrigins []string
 	Port               int
 	ExternalAPITimeout time.Duration
@@ -71,7 +78,9 @@ func Load() (Config, error) {
 	requireValue(GITHUB_CLIENT_ID, config.GitHubClientID, &validationErrors)
 	requireValue(GITHUB_CLIENT_SECRET, config.GitHubClientSecret, &validationErrors)
 	requireValue(DATABASE_URL, config.DatabaseURL, &validationErrors)
-	requireValue(JWT_SECRET, config.JWTSecret, &validationErrors)
+	if getEnv(JWT_KEYS) == "" {
+		requireValue(JWT_SECRET, config.JWTSecret, &validationErrors)
+	}
 
 	if config.JWTSecret != "" && len([]byte(config.JWTSecret)) < MinimumJWTSecretLength {
 		validationErrors = append(validationErrors, fmt.Errorf(
@@ -87,6 +96,17 @@ func Load() (Config, error) {
 	}
 
 	var err error
+	config.JWTKeys, config.JWTActiveKeyIDs, err = loadJWTKeys(config.JWTSecret)
+	if err != nil {
+		validationErrors = append(validationErrors, err)
+	}
+	config.JWTTTL, err = parseTimeout(JWT_TTL, getEnv(JWT_TTL), DefaultJWTTTL)
+	if err != nil {
+		validationErrors = append(validationErrors, err)
+	} else if config.JWTTTL < time.Second {
+		// JWT expiration is encoded in whole seconds.
+		validationErrors = append(validationErrors, fmt.Errorf("%s must be at least one second", JWT_TTL))
+	}
 	config.HTTPServer, err = loadHTTPServerConfig()
 	if err != nil {
 		validationErrors = append(validationErrors, err)

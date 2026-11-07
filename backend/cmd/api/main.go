@@ -31,7 +31,7 @@ func run(ctx context.Context) error {
 		return fmt.Errorf("invalid configuration: %w", err)
 	}
 
-	utils.Init(config.JWTSecret)
+	utils.Init(config.JWTSecret, config.JWTTTL, config.JWTActiveKeyIDs, config.JWTKeys)
 
 	database, err := db.InitDB(config.DatabaseURL)
 	if err != nil {
