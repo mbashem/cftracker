@@ -328,7 +328,7 @@ sequenceDiagram
         end
         DB-->>Repo: Saved user ID
         Repo-->>Auth: Success
-        Auth->>Auth: Sign two-hour HS256 JWT
+        Auth->>Auth: Sign HS256 JWT with configured lifetime (default seven days)
         Auth-->>Browser: 200 user and JWT
         Browser->>Browser: Convert fields; store authentication state and JWT
     end
@@ -336,7 +336,9 @@ sequenceDiagram
 
 The state cookie lasts ten minutes. It uses `HttpOnly` and path `/`; HTTPS requests (including `X-Forwarded-Proto: https`) use `Secure` and `SameSite=None`, while HTTP uses `SameSite=Lax`. A new login replaces the pending state for that browser. A valid state is consumed before contacting GitHub, so a later failure requires starting login again. The GitHub access token is used by the provider and is not saved in the application database or returned to the frontend.
 
-The app JWT contains `email`, `userId`, and a two-hour expiry. Protected handlers derive identity from the signed `userId`, not from user IDs supplied in a request body. Existing-user login updates only GitHub profile fields and preserves Codeforces handles and admin status. There are no refresh-token, server-side logout, or token-revocation routes; frontend logout removes its local session, and an issued JWT remains usable until expiry or a signing-secret change.
+The app JWT contains `email`, `userId`, and an expiry controlled by `JWT_TTL` (default `168h`, seven days). New tokens carry a `kid` header chosen uniformly at random from `JWT_ACTIVE_KEY_IDS`, a nonempty JSON array of unique IDs; `JWT_KEYS` supplies the signing and retained verification keys. Every active ID must exist in that map. Verification selects the key directly by `kid`, including retained keys outside the active list. Without rotation settings, `JWT_SECRET` supplies the `default` key. Tokens without `kid` are accepted only while `JWT_SECRET` is retained. Unknown or malformed IDs never fall back to a different key. Configuration is validated and copied into the signer before serving requests. HS256 and an unexpired `exp` are required. See [key rotation](README.md#jwt-signing-key-rotation) for migration and retirement steps.
+
+Existing tokens retain the expiry set when they were issued. Protected handlers derive identity from the signed `userId`, not from user IDs supplied in a request body. Existing-user login updates only GitHub profile fields and preserves Codeforces handles and admin status. There are no refresh-token, server-side logout, or per-session revocation routes; frontend logout removes its local session. A token remains usable until expiry or removal/replacement of its verification key.
 
 ## Protected request flow
 
@@ -576,7 +578,7 @@ The intended hosting request path is browser/frontend â†’ HTTPS reverse proxy â†
 | Pending CF challenges | API process memory, one-hour validity | Restart loses pending challenges; request a new token afterward. Use shared storage before running multiple API instances. |
 | Rate-limit allowances | API process memory, at most 10,000 identity/policy entries | Restart resets allowances. Idle cleanup runs on traffic. Multiple API instances require shared enforcement; see [rate-limit configuration](README.md#rate-limits). |
 | OAuth state | Browser HttpOnly cookie, ten minutes | Callback requires the same browser cookie. Cross-origin requests include credentials; browser cookie policies still apply. |
-| App JWT | Returned to client, two-hour expiry | Restart with the same secret preserves JWT validity. Expired tokens require login again. |
+| App JWT | Returned to client, expiry set by `JWT_TTL` (default seven days) | Retained keys preserve sessions across rotation. Expiry or key removal requires login again. |
 | JWT and GitHub secrets | Injected process environment or local `.env` | Required at startup; keep production configuration outside the image/repository. |
 | Provider calls | Outbound HTTPS to GitHub and Codeforces | Require network egress, CA certificates, and the configured timeout. |
 | PostgreSQL pool | Per-process `sql.DB` | At most ten open connections per API process; application repository operations inherit request cancellation and a five-second default timeout, including pool waits. |

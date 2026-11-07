@@ -12,7 +12,7 @@ cp .env.example .env
 
 The API loads `.env` when that file exists. Values already present in the process environment take precedence. A `.env` file is not required when the deployment environment provides configuration directly.
 
-Required variables:
+Required variables (`JWT_SECRET` is optional when a signing keyring is configured):
 
 ```env
 GITHUB_CLIENT_ID=replace-with-github-client-id
@@ -24,10 +24,63 @@ CORS_ALLOWED_ORIGINS=http://localhost:5173
 
 Generate `JWT_SECRET` with `openssl rand -base64 32`; it must contain at least 32 bytes of unpredictable data.
 
+`JWT_TTL` controls the lifetime of newly issued session tokens. It defaults to
+`168h` (seven days) when unset. Use a Go duration of at least one second, such as
+`24h` or `168h`; `7d` is not supported. Invalid values stop startup. Changing it
+requires restarting the backend and does not alter tokens already issued.
+
+### JWT signing-key rotation
+
+By default, `JWT_SECRET` signs new tokens with key ID `default` and verifies old
+tokens without a key ID. Existing installations need no configuration change.
+To rotate keys, configure a JSON keyring and a list of active signing key IDs:
+
+```env
+JWT_ACTIVE_KEY_IDS='["rotation-2"]'
+JWT_KEYS='{"default":"REPLACE_WITH_EXISTING_SECRET","rotation-2":"REPLACE_WITH_NEW_RANDOM_SECRET"}'
+```
+
+Replace both placeholders before use. Each secret needs at least 32 bytes of
+unpredictable data; generate a fresh value with `openssl rand -base64 32`.
+Keep these settings in protected backend environment files, never in Git or an
+image. Single quotes around the JSON work with `.env` and Compose `env_file`;
+when injecting a process environment directly, supply the JSON without those
+outer quotes. The active list must be nonempty, contain unique nonempty IDs, and
+reference keys in `JWT_KEYS`. Invalid configuration stops startup.
+
+Each new token uses a uniformly random active key and records its ID in `kid`.
+Verification selects that ID directly from all configured keys. For multiple
+signing keys, use an array such as `["rotation-2","rotation-3"]` and include both
+secrets in `JWT_KEYS`. Keys outside the active list only verify existing tokens.
+
+1. Retain the existing `JWT_SECRET` and include it as `default` in `JWT_KEYS`.
+   That preserves both older tokens without a key ID and tokens issued by the
+   default configuration. Use a new, unique ID for the new secret.
+2. Restart/recreate the backend with both keys and only the new ID in the active
+   list to stop issuing with the old key. On multiple instances, distribute the
+   keyring everywhere before changing active lists. Multiple active IDs are
+   supported, but retirement starts only after every instance stops signing with
+   the retiring key.
+3. Retain old keys until all tokens they signed have expired, measured from the
+   last issuance using each key. Account for the lifetime used at issuance and
+   any clock differences; shortening `JWT_TTL` does not shorten existing tokens.
+4. Remove the retired ID from `JWT_KEYS`. Remove `JWT_SECRET` too when no tokens
+   without a key ID need it, then restart/recreate the backend. Removing a key
+   invalidates tokens signed by it. Unknown, empty, or nonstring IDs are rejected;
+   there is no fallback to another key for a token that supplies an ID.
+
+For a compromised secret, remove every keyring entry containing it and its legacy
+`JWT_SECRET` value immediately instead of waiting for expiry. Affected users must
+log in again. Do not reuse an ID for a different secret or roll back to a retired
+key configuration. Rotation is operator-managed; there is no scheduler, hot reload,
+refresh-token flow, or per-session revocation endpoint. All accepted tokens must
+use HS256 and include an unexpired `exp` claim.
+
 Optional variables:
 
 ```env
 PORT=8080
+JWT_TTL=168h
 EXTERNAL_API_TIMEOUT=10s
 DATABASE_TIMEOUT=5s
 HTTP_READ_HEADER_TIMEOUT=5s
