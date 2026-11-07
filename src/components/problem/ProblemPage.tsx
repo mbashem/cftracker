@@ -10,7 +10,7 @@ import useProblemPage from "./useProblemPage";
 import { formatTimestampDate } from "../../util/time";
 import useUser from "../../hooks/useUser";
 import useToast from "../../hooks/useToast";
-import { IS_BACKEND_AVAILABLE } from "../../util/env";
+import { isBackendAccessEnabled } from "../../util/backendAccess";
 
 function getSubmissionRangeText(after?: number, before?: number) {
   const range = [];
@@ -111,7 +111,7 @@ function ProblemPage() {
                 theme={theme}
                 filterState={filterState}
                 showAddToList={showAddToList}
-                showListPicker={IS_BACKEND_AVAILABLE && isAuthenticated && !showAddToList}
+                showListPicker={isBackendAccessEnabled() && isAuthenticated && !showAddToList}
                 list={list}
                 addToList={(id) => { void addProblemToList(id).catch(error => showErrorToast(error?.message ?? "Could not add problem to list.")); }}
                 problemsAddedToList={problemsAddedToList}

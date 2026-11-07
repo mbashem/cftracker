@@ -12,7 +12,8 @@ import { Path } from "../util/route/path";
 import { ThemesType } from "../util/Theme";
 import siteLogo from "../util/assets/siteLogo.png";
 import useTheme from "../data/hooks/useTheme";
-import { BACKEND_API_URL, IS_BACKEND_AVAILABLE } from "../util/env";
+import { BACKEND_API_URL } from "../util/env";
+import { isBackendAccessEnabled } from "../util/backendAccess";
 import useToast from "../hooks/useToast";
 import useUser from "../hooks/useUser";
 import useUserStore from "../data/hooks/useUserStore";
@@ -24,6 +25,7 @@ function Menu() {
   const { userList, updateUsers, syncUserSubmissions } = useUserStore();
   const { theme, changeThemeMod } = useTheme();
   const { isAuthenticated, isCheckingAuthentication, logout } = useUser();
+  const backendEnabled = isBackendAccessEnabled();
 
   const { showGeneralToast } = useToast();
 
@@ -34,7 +36,7 @@ function Menu() {
 
   const items = useMemo<MenuItemDefinition[]>(() => [
     { id: "issues", kind: "route", label: "Issues", to: Path.Issues, active: true },
-    { id: "lists", kind: "route", label: "Lists", to: Path.Lists, active: true, visible: IS_BACKEND_AVAILABLE && isAuthenticated },
+    { id: "lists", kind: "route", label: "Lists", to: Path.Lists, active: true, visible: backendEnabled && isAuthenticated },
     { id: "stats", kind: "route", label: "Stats", to: Path.Stats, active: true },
     { id: "problems", kind: "route", label: "Problems", to: Path.PROBLEMS, active: true },
     { id: "contests", kind: "route", label: "Contests", to: Path.CONTESTS },
@@ -68,7 +70,7 @@ function Menu() {
       ),
     },
     {
-      id: "checking-authentication", kind: "custom", visible: IS_BACKEND_AVAILABLE && isCheckingAuthentication,
+      id: "checking-authentication", kind: "custom", visible: backendEnabled && isCheckingAuthentication,
       content: (
         <span className="nav-link" role="status">
           <span className="spinner-border spinner-border-sm" aria-hidden="true" />
@@ -78,14 +80,14 @@ function Menu() {
     },
     {
       id: "sign-out", kind: "action", label: "Sign out", icon: faRightFromBracket, onSelect: logout,
-      visible: IS_BACKEND_AVAILABLE && !isCheckingAuthentication && isAuthenticated,
+      visible: backendEnabled && !isCheckingAuthentication && isAuthenticated,
     },
     {
       id: "sign-in", kind: "link", label: "Sign in with GitHub", icon: faGithub,
       href: `${BACKEND_API_URL}/auth/github/login`,
-      visible: IS_BACKEND_AVAILABLE && !isCheckingAuthentication && !isAuthenticated,
+      visible: backendEnabled && !isCheckingAuthentication && !isAuthenticated,
     },
-  ], [theme, isAuthenticated, isCheckingAuthentication, changeThemeMod, syncUserSubmissions, userList.handles, submitUser, logout]);
+  ], [theme, backendEnabled, isAuthenticated, isCheckingAuthentication, changeThemeMod, syncUserSubmissions, userList.handles, submitUser, logout]);
 
   return (
     <Navbar className={"navbar navbar-expand-lg p-2 ps-4 pe-4 " + theme.navbar} expand="md">

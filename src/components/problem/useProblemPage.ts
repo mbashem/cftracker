@@ -25,6 +25,7 @@ import { Path } from "../../util/route/path";
 import useProblemState from "./useProblemState";
 import useAppNavigation from "../../hooks/useAppNavigation";
 import useUserStore from "../../data/hooks/useUserStore";
+import { isBackendAccessEnabled } from "../../util/backendAccess";
 
 export interface ProblemFilterState {
 	tags: Set<string>;
@@ -62,7 +63,7 @@ function getRatingRange(minRating: number, maxRating: number): ProblemRatingRang
 
 function useProblemPage() {
 	const { userList } = useUserStore();
-	const user = userList.authenticationStatus === 'authenticated' ? userList.user : undefined;
+	const user = isBackendAccessEnabled() && userList.authenticationStatus === 'authenticated' ? userList.user : undefined;
 	const session = user === undefined ? undefined : `${user.id}:${user.jwtToken}`;
 	const [loadedSession, setLoadedSession] = useState<string>();
 	const { navigateTo } = useAppNavigation();

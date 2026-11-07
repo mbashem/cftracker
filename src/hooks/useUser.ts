@@ -4,14 +4,17 @@ import useUserStore from "../data/hooks/useUserStore";
 import { useAppDispatch } from "../data/store";
 import { validateSession } from "../data/actions/authentication";
 import { useCallback } from "react";
+import { isBackendAccessEnabled } from "../util/backendAccess";
 
 function useUser() {
 	const dispatch = useAppDispatch();
 	const { userList } = useUserStore();
-	const user = userList.authenticationStatus === 'authenticated' ? userList.user : undefined;
+	const backendEnabled = isBackendAccessEnabled();
+	const user = backendEnabled && userList.authenticationStatus === 'authenticated' ? userList.user : undefined;
 	const [authenticate] = useLazyAuthenticateQuery();
 
 	async function handleGithubCallback(code: string, state: string) {
+		if (!isBackendAccessEnabled()) throw new Error("Backend features are not enabled in this browser.");
 		dispatch(beginAuthentication());
 		const version = dispatch((_dispatch, getState) => getState().userList.authenticationVersion);
 		const isCurrentRequest = () => dispatch((_dispatch, getState) => getState().userList.authenticationVersion) === version;
@@ -36,7 +39,7 @@ function useUser() {
 		dispatch(removeUser());
 	}, [dispatch]);
 
-	return { handleGithubCallback, logout, user, isAuthenticated: user !== undefined, isCheckingAuthentication: userList.authenticationStatus === 'checking' };
+	return { handleGithubCallback, logout, user, isAuthenticated: user !== undefined, isCheckingAuthentication: backendEnabled && userList.authenticationStatus === 'checking' };
 }
 
 export default useUser;
