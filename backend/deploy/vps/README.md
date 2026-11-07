@@ -228,20 +228,94 @@ logs/chat or run Compose config without `--quiet` (it can print environment data
 
 ## 6. Deploy or update
 
-Inside the installed release directory:
+To have a coding agent guide you through the update workflow, ask:
+
+> Use $deploy-backend to guide me through deploying my backend changes. I will run the commands.
+
+The repository's [deployment skill](../../../.agents/skills/deploy-backend/SKILL.md)
+explains each stage, gives commands for your local or VPS terminal, and waits for
+your results before proceeding. You perform the builds, transfers, deployment,
+and verification; the agent does not execute those operations or connect to the
+VPS. It may read repository files locally to tailor the guidance. Keep real
+connection details outside this repository. Initial VPS setup and
+database-incompatible migrations need a separate plan. The standard build script
+may download dependencies; do not treat it as a cached-only/offline build.
+All direct remote-server work is user-executed, including read-only inspections,
+backup streaming to your computer, transfers, restores, and health checks. The
+agent explains the commands and interprets the results you share.
+
+### Save the database backup on your computer
+
+Do this **before deploying**. Run `pg_dump` directly in the existing PostgreSQL
+container over SSH, with the output redirected **on your computer**, as below.
+No server backup script or server-side dump file is needed. Do not run the
+streaming command alone without redirecting its binary output.
+
+No PostgreSQL installation is needed on your computer. The existing PostgreSQL
+container exports and inspects the archive; inspection streams your local file
+back over SSH without saving it on the VPS. Choose a backup folder outside the
+repository and any iCloud, Dropbox, OneDrive, or other cloud-synced directory.
+Replace the release name and SSH placeholders consistently.
+
+**Mac/local terminal:**
 
 ```sh
-sudo bash server.sh deploy
+(
+  set -e
+  set -C
+  umask 077
+  mkdir -p "$HOME/Backups/cftracker"
+  chmod 700 "$HOME/Backups/cftracker"
+  backup="$HOME/Backups/cftracker/release-001.dump"
+  test ! -e "$backup"
+  ssh -T -o BatchMode=yes DEPLOY_USER@VPS_HOST \
+    'sudo -n docker exec cftracker-postgres-1 pg_dump -U postgres -d cftracker -Fc' \
+    > "$backup.partial"
+  test -s "$backup.partial"
+  ssh -T -o BatchMode=yes DEPLOY_USER@VPS_HOST \
+    'sudo -n docker exec -i cftracker-postgres-1 pg_restore --list >/dev/null' \
+    < "$backup.partial"
+  ln "$backup.partial" "$backup"
+  rm "$backup.partial"
+  printf 'Verified local archive: %s\n' "$backup"
+)
+```
+
+This refuses existing output files and keeps a failed dump named `.partial`.
+The completed name is created only after dump success and archive validation.
+If any command fails, stop: do not deploy or treat a partial archive as a backup.
+Archive listing checks format/readability; periodically test an actual restore
+into a separate disposable database too. Dumps contain sensitive data and are
+not encrypted by `pg_dump`; protect the computer and its backup storage.
+
+For a first installation only, PostgreSQL must already be initialized/running
+before dumping. After creating configuration, install `init-app-role.sql` at
+`/etc/cftracker/init-app-role.sql` with mode `644`, then start/wait for only
+PostgreSQL with `sudo docker compose up -d --wait postgres`. Do not recreate or
+reinitialize a database containing retained data. Existing installations skip this
+bootstrap step.
+
+### Deploy using the verified local backup
+
+Only after the local backup succeeds, run **on the VPS**, inside the new release:
+
+```sh
+sudo bash server.sh deploy --local-backup-confirmed
 ```
 
 This verifies checksums/configuration, loads the local images, checks amd64 image
 platforms, pulls the PostgreSQL 14 image only if missing locally, checks secret
 readability, starts/waits for PostgreSQL without recreating an existing database
-container, backs up the database, runs migrations without reconciling dependency
+container, runs migrations without reconciling dependency
 containers, and starts/waits for the backend. It never deletes volumes, prunes images, rotates
 secrets, or automatically rolls back a failed migration. Use only one operator at
-a time. The script locks deployment, backup, and initialization against each
+a time. The script locks deployment and initialization against each
 other. A failed deployment is not automatically undone; inspect before retrying.
+
+The command requires `--local-backup-confirmed` and refuses to deploy without it.
+This is your confirmation, not proof checked by the server: the VPS cannot inspect
+your local file. It no longer creates backups on the VPS. Keep the local backup
+step immediately before deployment; later writes are outside that recovery point.
 
 Existing database containers are preserved even if their original configuration
 differs from the new manifest. Database configuration/image changes therefore
@@ -250,11 +324,11 @@ SQL copy is created if absent; differing SQL is rejected for separate review.
 Its `644` mode is safe only while `/etc/cftracker` remains `700`; it contains
 initialization statements, not embedded passwords.
 
-Backups use `pg_dump -Fc` into root-protected `/var/backups/cftracker`; partial
-dump failures stop deployment, and archives are listed with `pg_restore --list`
-before completion. Even first deployment backs up the newly initialized database
-before migrations. Backups are initially **on the same VPS**, and need off-server
-copies and real restore tests. Disk use grows: plan retention and check `df -h /`.
+Backups use `pg_dump -Fc` streamed over SSH to your computer. They do not include
+cluster roles; retain the initialization SQL and credential recovery plan
+separately and securely. Old dumps made by earlier script versions are not deleted
+from the VPS automatically; decide separately whether to remove them after
+confirming local copies. Plan local retention and restore testing.
 
 **Update risks:** existing backend traffic continues during migrations. Only use
 this command for migrations compatible with the running version. For incompatible
@@ -403,12 +477,16 @@ GitHub login, profile, lists, and Codeforces verification through HTTPS.
 ```sh
 # Run in the active release directory:
 sudo bash server.sh check api.example.com
-sudo bash server.sh backup
 sudo docker compose exec postgres psql -U postgres -d cftracker
 ```
 
-Schedule backups with an operator-managed timer/cron job using an absolute release
-path, and schedule off-server transfer separately. Protect dumps as secrets.
+The `check` command requires HTTP to return a permanent redirect (301 or 308) to
+`https://api.example.com/health/ready`, using the hostname supplied to the command.
+It checks HTTPS readiness separately. Run it after HTTPS has been configured.
+
+Create backups from your computer using the streaming procedure above; do not
+schedule server-side dump files. Any scheduled backup should run on your computer
+and needs SSH access, protected local storage, and failure reporting. Protect dumps as secrets.
 Restore tests need a separate disposable database: use `pg_restore --no-owner
 --no-privileges` into an empty destination and restore application grants before
 starting the API. Keep initialization SQL and credentials with your recovery plan;

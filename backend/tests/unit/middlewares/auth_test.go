@@ -107,7 +107,7 @@ func TestAuthenticate(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			gin.SetMode(gin.TestMode)
-			utils.Init(testAuthenticationSecret)
+			utils.Init(testAuthenticationSecret, time.Hour, []string{"current"}, map[string]string{"current": testAuthenticationSecret})
 
 			endpointCalled := false
 			router := newAuthenticationTestRouter(&endpointCalled)

@@ -120,7 +120,7 @@
           <li>The frontend forwards the returned <code>code</code> and <code>state</code> to the backend callback, including cookies.</li>
           <li>Use the returned <code>token</code> in <code>Authorization: Bearer &lt;token&gt;</code> for protected requests.</li>
         </ol>
-        <p>Session JWTs expire two hours after issuance. The API has no refresh, logout, or token-revocation endpoint. Client logout clears local credentials and private state; it does not revoke an issued JWT.</p>
+        <p>Session JWT lifetime is configured through <code>JWT_TTL</code>, defaulting to <code>168h</code> (seven days). New tokens include a key ID; operators can rotate signing keys while retaining previous verification keys. See <a href="README.md#jwt-signing-key-rotation">key rotation</a>. The API has no refresh, logout, or per-session revocation endpoint. Client logout clears local credentials and private state; it does not revoke an issued JWT. Existing tokens retain their original expiry but stop working if their verification key is removed.</p>
         <p>The OAuth state cookie is named <code>cftracker_github_oauth_state</code>, has a ten-minute maximum age, and is consumed before the code exchange. It is HTTP-only, scoped to <code>/</code>, and uses <code>Secure; SameSite=None</code> for HTTPS, otherwise <code>SameSite=Lax</code>. A new login replaces the pending challenge.</p>
         <p>Browser clients must include credentials on the callback, for example <code>credentials: "include"</code>. Their origin must be listed in <code>CORS_ALLOWED_ORIGINS</code>. Behind HTTPS termination, forward <code>X-Forwarded-Proto: https</code> so the backend sets the secure cookie correctly.</p>
         <h3>Example protected request</h3>

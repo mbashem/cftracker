@@ -2,6 +2,20 @@
 
 Keep at most one consecutive blank line in code files, including tests and scripts. Lines containing only spaces or tabs count as blank. This rule does not apply to documentation, prose, or skill instruction files.
 
+# Remote server work is guided only
+
+For remote VPS/backend server work, provide instructions for the user to execute
+and interpret the results they share. Do not directly connect to, inspect, modify,
+or verify the server. This includes read-only SSH commands, SCP/transfers,
+database backup or restore, deployments, service/configuration changes, and remote
+health checks. Streaming a backup to the user's computer is also user-executed.
+
+Give one manageable stage at a time, explain risks and expected results, and wait
+for the user's output before dependent steps. Local repository inspection and
+authoring scripts/documentation remain allowed. Network permission alone does
+not change this guidance-only boundary. Apply this rule to every agent and
+subagent, including workflows outside the deployment skill.
+
 # Show diffs after edits
 
 After every task that edits files, provide an explicit way to review the diff.

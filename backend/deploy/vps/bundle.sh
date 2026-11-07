@@ -28,7 +28,6 @@ esac
 for dependency in docker python3; do command -v "$dependency" >/dev/null; done
 # Keep the bundle directory accessible only to its owner on the build machine.
 mkdir -m 700 "$output"
-output=$(cd "$output" && pwd)
 # Derive the image-only manifest from the authoritative production manifest.
 # The server will use prebuilt images rather than compiling application source.
 python3 "$root/backend/deploy/vps/bundle_helpers.py" render-compose "$root" "$output" "$release"

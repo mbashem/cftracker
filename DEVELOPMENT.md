@@ -147,7 +147,24 @@ VITE_BACKEND_API_URL=http://localhost:8080/api
 VITE_IS_BACKEND_AVAILABLE=true
 ```
 
-Leave `VITE_DEBUG_MODE` unset to use live Codeforces problem data. Leave `VITE_IS_BACKEND_AVAILABLE` unset for frontend-only mode. Backend UI is enabled only when it is set to the literal value `true`.
+Leave `VITE_DEBUG_MODE` unset to use live Codeforces problem data. Leave `VITE_IS_BACKEND_AVAILABLE` unset for frontend-only mode. Backend features require that setting to be the literal value `true`, a configured API URL, and a persistent browser opt-in:
+
+```js
+localStorage.setItem("cftracker.backendEnabled", "true");
+location.reload();
+```
+
+Run this in the frontend's browser console. Without opt-in, login/list controls
+are hidden, saved sessions are not validated, and frontend backend requests are
+blocked. Codeforces browsing remains available. This is an intentional soft
+rollout barrier, not authorization: users may manually opt in and use the
+experimental backend at their own risk; direct API access is still possible.
+
+The grant persists across reloads and logout. It is specific to the browser and
+frontend origin; clearing site data removes it. Storage failures leave access
+disabled. After changing the flag manually, reload the page. A future rollout
+selector can save the same boolean once; access checks never reset it, and no
+random rollout is currently enabled.
 
 Root frontend envs currently read by the app:
 
@@ -155,7 +172,7 @@ Root frontend envs currently read by the app:
 | --- | --- | --- |
 | `VITE_DEBUG_MODE` | Optional | Uses the checked-in problem snapshot and enables 30-minute local Codeforces API caching only when set to `true`. |
 | `VITE_BACKEND_API_URL` | Only with backend features | RTK Query base URL. Use `http://localhost:8080/api` locally. |
-| `VITE_IS_BACKEND_AVAILABLE` | Only with backend features | Shows backend-only nav/auth/list UI only when set to `true`. |
+| `VITE_IS_BACKEND_AVAILABLE` | Only with backend features | Enables backend availability when `true`; each browser must also opt in through localStorage. |
 | `VITE_BACKEND_NOT_AVAILBLE_MESSAGE` | Optional | Currently exported from `src/util/env.ts`; not central to the main flow. |
 
 ### Backend `.env`

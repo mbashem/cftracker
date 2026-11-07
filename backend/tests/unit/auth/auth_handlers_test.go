@@ -13,6 +13,7 @@ import (
 	"net/url"
 	"slices"
 	"testing"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/mbashem/cftracker/backend/internal/auth"
@@ -283,7 +284,7 @@ func TestGitHubCallback(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			utils.Init(testJWTSecret)
+			utils.Init(testJWTSecret, time.Hour, []string{"current"}, map[string]string{"current": testJWTSecret})
 			state := newMockAuthState()
 			if testCase.setup != nil {
 				testCase.setup(state)

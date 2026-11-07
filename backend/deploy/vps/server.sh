@@ -2,7 +2,7 @@
 # Run a reviewed, trusted bundle on Ubuntu using sudo bash server.sh COMMAND.
 # Stop if a required step fails rather than continuing a partial deployment.
 set -euo pipefail
-# Protect newly created secrets and backups from other unprivileged host users.
+# Protect newly created secrets from other unprivileged host users.
 umask 077
 # Find this bundle's directory, regardless of where the operator runs the script.
 directory=$(cd "$(dirname "$0")" && pwd)
@@ -15,6 +15,16 @@ compose() { docker compose -f "$directory/compose.yml" "$@"; }
 hostname_valid() {
   # Reject URLs and configuration punctuation before using a hostname in NGINX.
   [[ ${1:-} =~ ^[a-zA-Z0-9]([a-zA-Z0-9.-]*[a-zA-Z0-9])?$ && $1 == *.* ]] || fail 'Supply a DNS hostname, without URL, port, or path.'
+}
+check_http_redirect() {
+  local response
+  # Inspect the first response without following it: serving HTTP directly or
+  # redirecting to a different hostname must not pass the HTTPS routing check.
+  response=$(curl --fail --silent --show-error --output /dev/null \
+    --write-out '%{http_code} %{redirect_url}' \
+    -H "Host: $1" http://127.0.0.1/health/ready)
+  [[ $response == "301 https://$1/health/ready" || $response == "308 https://$1/health/ready" ]] || \
+    fail 'HTTP must permanently redirect to the configured HTTPS readiness URL.'
 }
 nginx_config() {
   hostname_valid "${1:-}"
@@ -38,26 +48,10 @@ server {
 }
 EOF
 }
-backup() {
-  # Store database backups in a protected directory outside release bundles.
-  local destination temporary
-  install -d -m 700 /var/backups/cftracker
-  # Give each dump a distinct name so earlier recovery points are preserved.
-  destination="/var/backups/cftracker/$(date -u +%Y%m%dT%H%M%SZ)-$$.dump"
-  temporary="$destination.partial"
-  # Export the running database into a custom-format archive on the VPS host.
-  # Remove failed dumps so incomplete data cannot be mistaken for a usable backup.
-  if ! compose exec -T postgres pg_dump -U postgres -d cftracker -Fc > "$temporary"; then
-    rm -f "$temporary"
-    fail 'Backup failed; deployment stopped.'
-  fi
-  # Check the archive's table of contents before marking the backup complete.
-  # This detects some archive problems but does not replace a real restore test.
-  compose exec -T postgres pg_restore --list < "$temporary" >/dev/null
-  mv "$temporary" "$destination"
-  echo "Backup: $destination (copy off-server; archive listing is not a restore test)."
-}
 deploy() {
+  # The VPS cannot inspect a file on the operator's computer. Require their
+  # explicit confirmation that a fresh local backup was successfully verified.
+  [[ $# == 1 && $1 == --local-backup-confirmed ]] || fail 'Create and verify a local database backup first, then use deploy --local-backup-confirmed.'
   cd "$directory"
   # Compare bundle files with recorded checksums before trusting/loading them.
   sha256sum --check SHA256SUMS
@@ -92,10 +86,9 @@ deploy() {
     'gosu postgres test -r /run/secrets/app_password' || fail 'Postgres cannot read app-password; see the runbook.'
   # Create PostgreSQL on first deployment, or retain the existing container on
   # updates, including older installations with a different SQL mount. Wait for
-  # readiness before backing up; application updates must not restart the database.
+  # readiness before migrations; application updates must not restart the database.
   compose up -d --no-recreate --wait --wait-timeout 90 postgres
-  # Take a backup before schema changes. Any backup failure stops this function.
-  backup
+  echo 'Using the operator-confirmed local backup; no backup file will be saved on this VPS.'
   echo 'Applying migrations. On failure the old backend is left running; inspect before retrying.'
   # PostgreSQL has already passed readiness. Dependency reconciliation here
   # could otherwise recreate a database container from an older configuration.
@@ -115,20 +108,20 @@ shift || true
 # Allow help and NGINX configuration preview without administrative privileges.
 case "$command" in
   help|--help|-h)
-    echo 'Commands: init | deploy | backup | check HOST | nginx-config HOST | nginx HOST | https HOST'
+    echo 'Commands: init | deploy --local-backup-confirmed | check HOST | nginx-config HOST | nginx HOST | https HOST'
     echo 'init prompts for OAuth settings; never use it to rotate existing credentials.'
     exit 0 ;;
   nginx-config) nginx_config "${1:-}"; exit 0 ;;
-  init|deploy|backup|check|nginx|https) ;;
+  init|deploy|check|nginx|https) ;;
   *) fail 'Unknown command; run help.' ;;
 esac
 # Require administrative privileges for protected files, Docker, and host services.
 [[ $EUID == 0 ]] || fail 'Run on the VPS with sudo bash server.sh COMMAND.'
-if [[ $command == deploy || $command == backup || $command == init ]]; then
-  # Refuse concurrent initialization, deployment, or backup operations. The shared
+if [[ $command == deploy || $command == init ]]; then
+  # Refuse concurrent initialization or deployment operations. The shared
   # lock is released when this process exits, including after a deployment failure.
   exec 9>/run/lock/cftracker-deploy.lock
-  flock -n 9 || fail 'Another CFTracker deployment, backup, or initialization is running.'
+  flock -n 9 || fail 'Another CFTracker deployment or initialization is running.'
 fi
 case "$command" in
   init)
@@ -145,16 +138,15 @@ case "$command" in
     python3 "$directory/server_helpers.py" init "$config"
     # Remove credentials from the shell's environment after initialization.
     unset origins client_id client_secret ;;
-  deploy) deploy ;;
-  backup) backup ;;
+  deploy) deploy "$@" ;;
   check)
-    # Check container status, NGINX syntax, direct API readiness, hostname routing,
+    # Check container status, NGINX syntax, direct API readiness, HTTP redirect,
     # and public IPv4 HTTPS. These commands inspect services but do not reconfigure them.
     hostname_valid "${1:-}"
     compose ps
     nginx -t
     curl --fail --show-error http://127.0.0.1:8080/health/ready
-    curl --fail --show-error -H "Host: $1" http://127.0.0.1/health/ready
+    check_http_redirect "$1"
     curl -4 --fail --show-error "https://$1/health/ready"
     echo 'If an AAAA record exists, also test curl -6 externally. Run certbot renew --dry-run separately.' ;;
   nginx)

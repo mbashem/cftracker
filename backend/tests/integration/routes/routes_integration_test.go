@@ -62,7 +62,7 @@ func TestCompleteAPIWorkflow(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	database := testutil.OpenTestDB(t)
 	testutil.ResetTestDB(t, database)
-	utils.Init(workflowJWTSecret)
+	utils.Init(workflowJWTSecret, time.Hour, []string{"current"}, map[string]string{"current": workflowJWTSecret})
 
 	ownerGitHubUser := auth.GitHubUser{
 		ID: 11001, Login: "workflow-owner", Email: "owner@example.com", AvatarURL: "https://example.com/owner.png",
