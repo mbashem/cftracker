@@ -9,12 +9,15 @@ import { createRouterWrapper } from "../support/router";
 import { createDeferred } from "../support/deferred";
 import type { ListWithItem } from "../../src/types/list";
 import { createList, createListItem } from "../support/listFixtures";
+import { StorageService } from "../../src/util/StorageService";
 
 let list: ListWithItem;
 setupFrontendTests(() => {
   seedProblemFixtures();
   list = createList({ items: [createListItem({ position: 4 })] });
   frontend.authenticated = true;
+  frontend.backendAvailable = true;
+  StorageService.saveValue(StorageService.Keys.BackendEnabled, true);
   frontend.getListWithItems.mockResolvedValue(list);
 });
 function setup(entry = "/problems?listId=5&useFilterStorage=false") {

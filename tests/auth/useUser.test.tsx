@@ -73,6 +73,7 @@ test("logout clears identity and cached private data and blocks subsequent list 
   expect(hook.result.current.isAuthenticated).toBe(false);
   expect(StorageService.getJWTToken()).toBeNull();
   expect(backend.store.getState().listApi.queries).toEqual({});
+  expect(localStorage.getItem(StorageService.Keys.BackendEnabled)).toBe("true");
   expect(backend.store.getState().userApi.queries).toEqual({});
   const requestCount = backend.requests.length;
   await act(async () => {

@@ -3,6 +3,7 @@ import { configureStore } from "@reduxjs/toolkit";
 import { Provider } from "react-redux";
 import type { PropsWithChildren } from "react";
 import { createDeferred } from "./deferred";
+import { StorageService } from "../../src/util/StorageService";
 
 // Set the endpoint before importing the real query modules; no hook mocks here.
 vi.stubEnv("VITE_BACKEND_API_URL", "https://backend.example.test/api");
@@ -31,6 +32,8 @@ export const authenticatedUser = {
 };
 
 export function setupBackendMock(catalogApi = codeforcesApi) {
+  // Backend scenarios represent a browser that has opted into the rollout.
+  StorageService.saveValue(StorageService.Keys.BackendEnabled, true);
   const requests: Request[] = [];
   type ResponseHandler = (request: Request) => Response | Promise<Response>;
   function recordRequest(handler: ResponseHandler) {

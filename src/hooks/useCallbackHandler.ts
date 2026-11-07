@@ -5,6 +5,7 @@ import useToast from "./useToast";
 import { Path } from "../util/route/path";
 import useUser from "./useUser";
 import useAppNavigation from "./useAppNavigation";
+import { isBackendAccessEnabled } from "../util/backendAccess";
 
 function useCallbackHandler() {
 	const { handleGithubCallback } = useUser();
@@ -18,6 +19,10 @@ function useCallbackHandler() {
 		const state = query.get('state');
 
 		if (matchPath(location.pathname, "/callback/auth-gh") && code !== null) {
+			if (!isBackendAccessEnabled()) {
+				navigateTo(Path.CONTESTS);
+				return;
+			}
 			if (state === null) {
 				showErrorToast("Authentication failed!");
 				navigateTo(Path.CONTESTS);

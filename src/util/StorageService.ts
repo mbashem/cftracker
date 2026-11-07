@@ -1,4 +1,5 @@
 const Keys = {
+  BackendEnabled: "cftracker.backendEnabled",
   JwtToken: "jwtToken",
   StateV2: "statev2",
   Problem: {
