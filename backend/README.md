@@ -43,8 +43,16 @@ JWT_KEYS='{"default":"REPLACE_WITH_EXISTING_SECRET","rotation-2":"REPLACE_WITH_N
 Replace both placeholders before use. Each secret needs at least 32 bytes of
 unpredictable data; generate a fresh value with `openssl rand -base64 32`.
 Keep these settings in protected backend environment files, never in Git or an
-image. Single quotes around the JSON work with `.env` and Compose `env_file`;
-when injecting a process environment directly, supply the JSON without those
+image. Single quotes around the JSON work with `.env` and Compose `env_file`.
+Docker CLI `docker run --env-file` preserves those outer quotes, so its file
+must instead contain unquoted JSON:
+
+```env
+JWT_ACTIVE_KEY_IDS=["rotation-2"]
+JWT_KEYS={"default":"REPLACE_WITH_EXISTING_SECRET","rotation-2":"REPLACE_WITH_NEW_RANDOM_SECRET"}
+```
+
+When injecting a process environment directly, also supply the JSON without
 outer quotes. The active list must be nonempty, contain unique nonempty IDs, and
 reference keys in `JWT_KEYS`. Invalid configuration stops startup.
 
