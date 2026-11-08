@@ -100,85 +100,91 @@ deploy() {
   printf '\n'
   compose ps
 }
-# Allow functions to be loaded without starting administrative operations.
-if [[ ${BASH_SOURCE[0]} != "$0" ]]; then return 0; fi
-# Show help by default, or select the requested operation and its arguments.
-command=${1:-help}
-shift || true
-# Allow help and NGINX configuration preview without administrative privileges.
-case "$command" in
-  help|--help|-h)
-    echo 'Commands: init | deploy --local-backup-confirmed | check HOST | nginx-config HOST | nginx HOST | https HOST'
-    echo 'init prompts for OAuth settings; never use it to rotate existing credentials.'
-    exit 0 ;;
-  nginx-config) nginx_config "${1:-}"; exit 0 ;;
-  init|deploy|check|nginx|https) ;;
-  *) fail 'Unknown command; run help.' ;;
-esac
-# Require administrative privileges for protected files, Docker, and host services.
-[[ $EUID == 0 ]] || fail 'Run on the VPS with sudo bash server.sh COMMAND.'
-if [[ $command == deploy || $command == init ]]; then
-  # Refuse concurrent initialization or deployment operations. The shared
-  # lock is released when this process exits, including after a deployment failure.
-  exec 9>/run/lock/cftracker-deploy.lock
-  flock -n 9 || fail 'Another CFTracker deployment or initialization is running.'
-fi
-case "$command" in
-  init)
-    # Collect first-installation settings interactively, with the client secret
-    # hidden while typing. Do not accept unattended input for secret initialization.
-    [[ -t 0 ]] || fail 'init requires an interactive terminal.'
-    read -r -p 'Allowed origins, comma-separated (include localhost if needed): ' origins
-    read -r -p 'GitHub OAuth client ID: ' client_id
-    read -r -s -p 'GitHub OAuth client secret: ' client_secret
-    # Pass settings to the configuration writer without exposing the client secret
-    # in command-line arguments.
-    printf '\n'
-    export origins client_id client_secret
-    python3 "$directory/server_helpers.py" init "$config"
-    # Remove credentials from the shell's environment after initialization.
-    unset origins client_id client_secret ;;
-  deploy) deploy "$@" ;;
-  check)
-    # Check container status, NGINX syntax, direct API readiness, HTTP redirect,
-    # and public IPv4 HTTPS. These commands inspect services but do not reconfigure them.
-    hostname_valid "${1:-}"
-    compose ps
-    nginx -t
-    curl --fail --show-error http://127.0.0.1:8080/health/ready
-    check_http_redirect "$1"
-    curl -4 --fail --show-error "https://$1/health/ready"
-    echo 'If an AAAA record exists, also test curl -6 externally. Run certbot renew --dry-run separately.' ;;
-  nginx)
-    # This creates a NEW HTTP site only. Refusing existing files/symlinks prevents
-    # accidentally replacing a working site or Certbot's HTTPS configuration.
-    hostname_valid "${1:-}"
-    site=/etc/nginx/sites-available/cftracker
-    [[ ! -e $site && ! -L $site && ! -e /etc/nginx/sites-enabled/cftracker && ! -L /etc/nginx/sites-enabled/cftracker ]] || fail 'Site exists; edit manually to preserve existing HTTPS configuration.'
-    nginx_config "$1" > "$site"
-    # NGINX configuration contains no secrets and needs to be readable by the service.
-    chmod 644 "$site"
-    ln -s "$site" /etc/nginx/sites-enabled/cftracker
-    if ! nginx -t; then
-      # If validation fails, remove only what this command just created. No reload has
-      # happened yet, so NGINX continues using its previously loaded configuration.
-      rm /etc/nginx/sites-enabled/cftracker "$site"
-      fail 'Validation failed; new site removed and active config left unchanged.'
-    fi
-    systemctl enable --now nginx
-    # Apply the validated site while allowing existing connections to finish.
-    systemctl reload nginx ;;
-  https)
-    # Back up NGINX before Certbot edits it. Both DNS address families must reach
-    # this host and its HTTP challenge listener. Certificate issuance needs internet.
-    hostname_valid "${1:-}"
-    nginx -t
-    destination="/etc/nginx.before-certbot-$(date -u +%Y%m%dT%H%M%SZ)-$$"
-    cp -a /etc/nginx "$destination"
-    echo "NGINX backup: $destination. DNS A/AAAA must reach this server; ports 80/443 must be open."
-    certbot --nginx -d "$1" --redirect
-    # Certbot installs TLS and an HTTP redirect. Validate again and simulate renewal;
-    # a dry run tests the renewal procedure without replacing the production certificate.
-    nginx -t
-    certbot renew --dry-run ;;
-esac
+prepare_administrative_command() {
+  local command=$1
+  # Require administrative privileges for protected files, Docker, and host services.
+  [[ $EUID == 0 ]] || fail 'Run on the VPS with sudo bash server.sh COMMAND.'
+  if [[ $command == deploy || $command == init ]]; then
+    # Refuse concurrent initialization or deployment operations. The shared
+    # lock is released when this process exits, including after a deployment failure.
+    exec 9>/run/lock/cftracker-deploy.lock
+    flock -n 9 || fail 'Another CFTracker deployment or initialization is running.'
+  fi
+}
+main() {
+  # Show help by default, or select the requested operation and its arguments.
+  local command=${1:-help}
+  shift || true
+  # Allow help and NGINX configuration preview without administrative privileges.
+  case "$command" in
+    help|--help|-h)
+      echo 'Commands: init | deploy --local-backup-confirmed | check HOST | nginx-config HOST | nginx HOST | https HOST'
+      echo 'init prompts for OAuth settings; never use it to rotate existing credentials.'
+      exit 0 ;;
+    nginx-config) nginx_config "${1:-}"; exit 0 ;;
+    init|deploy|check|nginx|https) ;;
+    *) fail 'Unknown command; run help.' ;;
+  esac
+  prepare_administrative_command "$command"
+  case "$command" in
+    init)
+      # Collect first-installation settings interactively, with the client secret
+      # hidden while typing. Do not accept unattended input for secret initialization.
+      [[ -t 0 ]] || fail 'init requires an interactive terminal.'
+      read -r -p 'Allowed origins, comma-separated (include localhost if needed): ' origins
+      read -r -p 'GitHub OAuth client ID: ' client_id
+      read -r -s -p 'GitHub OAuth client secret: ' client_secret
+      # Pass settings to the configuration writer without exposing the client secret
+      # in command-line arguments.
+      printf '\n'
+      export origins client_id client_secret
+      python3 "$directory/server_helpers.py" init "$config"
+      # Remove credentials from the shell's environment after initialization.
+      unset origins client_id client_secret ;;
+    deploy) deploy "$@" ;;
+    check)
+      # Check container status, NGINX syntax, direct API readiness, HTTP redirect,
+      # and public IPv4 HTTPS. These commands inspect services but do not reconfigure them.
+      hostname_valid "${1:-}"
+      compose ps
+      nginx -t
+      curl --fail --show-error http://127.0.0.1:8080/health/ready
+      check_http_redirect "$1"
+      curl -4 --fail --show-error "https://$1/health/ready"
+      echo 'If an AAAA record exists, also test curl -6 externally. Run certbot renew --dry-run separately.' ;;
+    nginx)
+      # This creates a NEW HTTP site only. Refusing existing files/symlinks prevents
+      # accidentally replacing a working site or Certbot's HTTPS configuration.
+      hostname_valid "${1:-}"
+      site=/etc/nginx/sites-available/cftracker
+      [[ ! -e $site && ! -L $site && ! -e /etc/nginx/sites-enabled/cftracker && ! -L /etc/nginx/sites-enabled/cftracker ]] || fail 'Site exists; edit manually to preserve existing HTTPS configuration.'
+      nginx_config "$1" > "$site"
+      # NGINX configuration contains no secrets and needs to be readable by the service.
+      chmod 644 "$site"
+      ln -s "$site" /etc/nginx/sites-enabled/cftracker
+      if ! nginx -t; then
+        # If validation fails, remove only what this command just created. No reload has
+        # happened yet, so NGINX continues using its previously loaded configuration.
+        rm /etc/nginx/sites-enabled/cftracker "$site"
+        fail 'Validation failed; new site removed and active config left unchanged.'
+      fi
+      systemctl enable --now nginx
+      # Apply the validated site while allowing existing connections to finish.
+      systemctl reload nginx ;;
+    https)
+      # Back up NGINX before Certbot edits it. Both DNS address families must reach
+      # this host and its HTTP challenge listener. Certificate issuance needs internet.
+      hostname_valid "${1:-}"
+      nginx -t
+      destination="/etc/nginx.before-certbot-$(date -u +%Y%m%dT%H%M%SZ)-$$"
+      cp -a /etc/nginx "$destination"
+      echo "NGINX backup: $destination. DNS A/AAAA must reach this server; ports 80/443 must be open."
+      certbot --nginx -d "$1" --redirect
+      # Certbot installs TLS and an HTTP redirect. Validate again and simulate renewal;
+      # a dry run tests the renewal procedure without replacing the production certificate.
+      nginx -t
+      certbot renew --dry-run ;;
+  esac
+}
+# Loading functions for offline checks must not start administrative operations.
+if [[ ${BASH_SOURCE[0]} == "$0" ]]; then main "$@"; fi
