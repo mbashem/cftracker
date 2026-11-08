@@ -35,6 +35,7 @@
   },
   "scripts": {
     "dev": "vite",
+    "manage-contests": "npm --prefix manage-contests run",
     "build": "vite build",
     "lint": "node --experimental-strip-types node_modules/eslint/bin/eslint.js --flag unstable_native_nodejs_ts_config . --max-warnings 0",
     "typecheck": "tsc -b",
