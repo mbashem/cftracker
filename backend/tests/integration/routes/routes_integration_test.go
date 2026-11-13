@@ -10,6 +10,7 @@ import (
 	"net/http/cookiejar"
 	"net/http/httptest"
 	"net/url"
+	"reflect"
 	"slices"
 	"strings"
 	"testing"
@@ -121,6 +122,23 @@ func TestCompleteAPIWorkflow(t *testing.T) {
 	secondItem := addWorkflowItem(
 		t, ownerClient, server.URL, ownerSession.Token, createdList.List.Id, workflowSecondProblemID, 1,
 	)
+	practiceResponse := decodeWorkflowJSON[workflowResponseBody](t, performWorkflowRequest(
+		t, ownerClient, http.MethodPatch, server.URL+listPath+"/item/"+url.PathEscape(firstItem.ProblemId), ownerSession.Token,
+		`{"status":"in_progress","help_used":"hint","notes":"Keep the invariant"}`,
+	), http.StatusOK)
+	if practiceResponse.Message != "Item updated" || practiceResponse.Item.Status == nil || *practiceResponse.Item.Status != listitems.StatusInProgress ||
+		practiceResponse.Item.HelpUsed == nil || *practiceResponse.Item.HelpUsed != listitems.HelpHint || practiceResponse.Item.Notes == nil || *practiceResponse.Item.Notes != "Keep the invariant" ||
+		!practiceResponse.Item.CreatedAt.Equal(firstItem.CreatedAt) || practiceResponse.Item.SolvedOn != nil || practiceResponse.Item.TimeSpent != nil {
+		t.Fatalf("practice response = %+v", practiceResponse)
+	}
+	firstItem = practiceResponse.Item
+	duplicateResponse := decodeWorkflowJSON[workflowErrorResponse](t, performWorkflowRequest(
+		t, ownerClient, http.MethodPut, server.URL+listPath+"/item", ownerSession.Token,
+		fmt.Sprintf(`{"problem_id":%q,"position":99,"status":"solved"}`, firstItem.ProblemId),
+	), http.StatusConflict)
+	if duplicateResponse.Error != "Item already in list" {
+		t.Fatalf("duplicate response = %+v", duplicateResponse)
+	}
 	assertWorkflowListResponse(
 		t,
 		performWorkflowRequest(t, ownerClient, http.MethodGet, server.URL+listPath, ownerSession.Token, ""),
@@ -188,6 +206,15 @@ func TestCompleteAPIWorkflow(t *testing.T) {
 			)
 			assertEquivalentWorkflowNotFound(t, foreignResponse, missingResponse)
 		})
+	}
+	for _, inaccessiblePath := range []string{listPath, missingListPath} {
+		response := decodeWorkflowJSON[workflowErrorResponse](t, performWorkflowRequest(
+			t, otherClient, http.MethodPatch, server.URL+inaccessiblePath+"/item/"+url.PathEscape(firstItem.ProblemId),
+			otherSession.Token, `{"status":"solved"}`,
+		), http.StatusNotFound)
+		if response.Error != "Item does not exist" {
+			t.Fatalf("inaccessible practice response = %+v", response)
+		}
 	}
 
 	assertWorkflowListResponse(
@@ -299,7 +326,7 @@ func addWorkflowItem(
 		token,
 		fmt.Sprintf(`{"problem_id":%q,"position":%d}`, problemID, position),
 	), http.StatusCreated)
-	expectedItem := listitems.ListItem{ListId: listID, ProblemId: problemID, Position: position, CreatedAt: response.Item.CreatedAt}
+	expectedItem := listitems.ListItem{ListId: listID, ProblemId: problemID, Position: position, CreatedAt: response.Item.CreatedAt, UpdatedAt: response.Item.UpdatedAt}
 	if response.Message != "Successfully added item to list" || response.Item != expectedItem || response.Item.CreatedAt.IsZero() {
 		t.Fatalf("add-item response = %+v, want item %+v", response, expectedItem)
 	}
@@ -326,7 +353,7 @@ func assertWorkflowListResponse(
 	}
 	sortItems(actualItems)
 	sortItems(expectedItems)
-	if !slices.Equal(actualItems, expectedItems) {
+	if !reflect.DeepEqual(actualItems, expectedItems) {
 		t.Fatalf("list items = %+v, want %+v", actualItems, expectedItems)
 	}
 }

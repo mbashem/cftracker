@@ -105,6 +105,7 @@
             <tr><td>PUT</td><td><a href="#list-rename"><code>/api/v1/lists/:listId</code></a></td><td>Bearer</td><td>Rename list</td></tr>
             <tr><td>DELETE</td><td><a href="#list-delete"><code>/api/v1/lists/:listId</code></a></td><td>Bearer</td><td>Delete list</td></tr>
             <tr><td>PUT</td><td><a href="#item-add"><code>/api/v1/lists/:listId/item</code></a></td><td>Bearer</td><td>Insert problem</td></tr>
+            <tr><td>PATCH</td><td><a href="#item-practice"><code>/api/v1/lists/:listId/item/:itemId</code></a></td><td>Bearer</td><td>Update item</td></tr>
             <tr><td>DELETE</td><td><a href="#item-delete"><code>/api/v1/lists/:listId/item/:itemId</code></a></td><td>Bearer</td><td>Remove problem</td></tr>
           </tbody>
         </table></div>
@@ -167,7 +168,13 @@ curl "$API_BASE/user/profile" \
   "list_id": 5,
   "problem_id": "1900A",
   "position": 0,
-  "created_at": "2026-10-26T12:01:00Z"
+  "created_at": "2026-10-26T12:01:00Z",
+  "updated_at": "2026-10-26T12:01:00Z",
+  "status": null,
+  "help_used": null,
+  "solved_on": null,
+  "time_spent": null,
+  "notes": null
 }</code></pre></div>
         </div>
         <p>Codeforces ownership is verified when <code>cf_handle</code> is nonempty and equals <code>cf_verified_handle</code>, ignoring case. There is no separate verification boolean. A stored verified handle can differ from the selected handle.</p>
@@ -304,7 +311,7 @@ Set-Cookie: cftracker_github_oauth_state=[challenge]; ...</code></pre>
 {
   "message":"List fetched successfully",
   "list":{"id":5,"user_id":7,"name":"Practice","created_at":"2026-10-26T12:00:00Z"},
-  "items":[{"list_id":5,"problem_id":"1900A","position":0,"created_at":"2026-10-26T12:01:00Z"}]
+  "items":[{"list_id":5,"problem_id":"1900A","position":0,"created_at":"2026-10-26T12:01:00Z","updated_at":"2026-10-26T12:01:00Z","status":null,"help_used":null,"solved_on":null,"time_spent":null,"notes":null}]
 }</code></pre>
           <p><strong>Database failures:</strong> <code>500</code> — <code>Failed to find the list</code> or <code>Failed to get list items</code>.</p>
         </article>
@@ -329,15 +336,32 @@ Set-Cookie: cftracker_github_oauth_state=[challenge]; ...</code></pre>
           <pre><code>HTTP 201
 {
   "message":"Successfully added item to list",
-  "item":{"list_id":5,"problem_id":"1900A","position":0,"created_at":"2026-10-26T12:01:00Z"}
+  "item":{"list_id":5,"problem_id":"1900A","position":0,"created_at":"2026-10-26T12:01:00Z","updated_at":"2026-10-26T12:01:00Z","status":null,"help_used":null,"solved_on":null,"time_spent":null,"notes":null}
 }</code></pre>
-          <div class="note">Despite the PUT method, this endpoint inserts an item; it does not update or upsert an existing item. Duplicate problem IDs in the same list currently produce a database error mapped to <code>500</code>. Do not blindly retry an uncertain insertion: read the list first.</div>
-          <p><strong>Errors:</strong> <code>400</code> — <code>Invalid format</code>; <code>409</code> — <code>maximum of 1000 items per list reached</code>; <code>500</code> — <code>Failed to add item to list</code>. At quota, even an attempted duplicate may return <code>409</code> because the count is checked first.</p>
+          <div class="note">A valid duplicate add returns <code>409 {"error":"Item already in list"}</code> and leaves the saved item unchanged, including at quota. Supplied position and practice fields never overwrite an existing item.</div>
+          <p>Optional practice fields follow the <a href="#item-practice">practice contract below</a>. Omitted fields start as null; the current frontend payload remains valid. The backend does not fetch Codeforces submissions or infer practice values.</p>
+          <p><strong>Errors:</strong> <code>400</code> — <code>Invalid format</code> or <code>invalid practice fields</code>; <code>409</code> — <code>Item already in list</code> or <code>maximum of 1000 items per list reached</code> for new memberships; <code>500</code> — <code>Failed to add item to list</code>.</p>
           <h4>Example request</h4>
           <pre><code>curl -X PUT "$API_BASE/lists/5/item" \
   -H "Authorization: Bearer $JWT" \
   -H 'Content-Type: application/json' \
   --data '{"problem_id":"1900A","position":0}'</code></pre>
+        </article>
+        <article class="endpoint" id="item-practice" data-method="PATCH" data-path="/api/v1/lists/:listId/item/:itemId">
+          <h3>PATCH /api/v1/lists/:listId/item/:itemId</h3><span class="auth">Bearer token · JSON body</span>
+          <p>This general item-update endpoint currently accepts the five practice fields below. Future editable fields can extend the same endpoint. Supply only changed fields. Omitted fields stay unchanged; explicit null clears any practice field. Empty notes also clear notes. Reopening a solved item preserves omitted details. Unknown fields, empty patches, and trailing JSON are rejected.</p>
+          <pre><code>{"status":"in_progress","notes":null}</code></pre>
+          <pre><code>HTTP 200
+{"message":"Item updated","item":{"list_id":5,"problem_id":"1900A","position":0,"created_at":"2026-10-26T12:01:00Z","updated_at":"2026-11-10T12:00:00Z","status":"in_progress","help_used":null,"solved_on":null,"time_spent":null,"notes":null}}</code></pre>
+          <ul>
+            <li><code>status</code>: <code>not_started</code>, <code>attempted</code>, <code>in_progress</code>, <code>solved</code>, or null (uninitialized).</li>
+            <li><code>help_used</code>: <code>none</code>, <code>test_case</code>, <code>hint</code>, <code>editorial</code>, <code>solution</code>, or null (not recorded). Record the highest level used; explicit corrections may lower it.</li>
+            <li><code>solved_on</code>: valid calendar date exactly <code>YYYY-MM-DD</code> within years 0001–9999, or null. Future dates are accepted.</li>
+            <li><code>time_spent</code>: integer active seconds from 0 through 2,147,483,647, or null.</li>
+            <li><code>notes</code>: plain text, at most 512 Unicode code points, or null. Whitespace/line breaks are preserved; invalid UTF-8 and NUL are rejected.</li>
+          </ul>
+          <p>No details are required by a solved status or inferred from it. Notes and help can be saved before solving. Practice updates explicitly maintain <code>updated_at</code> in SQL; even unchanged supplied values refresh it. Membership, order, and timestamps cannot be supplied in PATCH.</p>
+          <p><strong>Errors:</strong> <code>400</code> — <code>Invalid format</code> or <code>invalid practice fields</code>; <code>404 {"error":"Item does not exist"}</code> for missing/inaccessible items or lists; <code>500</code> — <code>Failed to update item</code>. Existing body and write-rate limits apply. See <a href="PRACTICE_RECORDS.md">practice records</a> for migration and storage details.</p>
         </article>
         <article class="endpoint" id="item-delete" data-method="DELETE" data-path="/api/v1/lists/:listId/item/:itemId">
           <h3><span class="method delete">DELETE</span> /api/v1/lists/:listId/item/:itemId</h3><span class="auth">Bearer token · no request body</span>
@@ -362,7 +386,7 @@ Set-Cookie: cftracker_github_oauth_state=[challenge]; ...</code></pre>
             <tr><td>401</td><td>Missing, malformed, invalid, or expired bearer token: <code>Unauthorized</code></td><td>Clear the invalid session and private state; sign in again.</td></tr>
             <tr><td>403</td><td>A browser origin may be rejected by CORS middleware.</td><td>Check deployment origin configuration; this need not be JSON.</td></tr>
             <tr><td>404</td><td>User/list missing, list not owned, or route unregistered</td><td>Stop using stale resources; verify the versioned path.</td></tr>
-            <tr><td>409</td><td>List/item quota or concurrent Codeforces handle change</td><td>Free capacity or refresh the profile before retrying.</td></tr>
+            <tr><td>409</td><td>Duplicate item, list/item quota, or concurrent Codeforces handle change</td><td>Use the existing item, free capacity, or refresh the profile as appropriate.</td></tr>
             <tr><td>413</td><td><code>Request body exceeds 16 KiB</code></td><td>Reduce the full body size, including trailing whitespace.</td></tr>
             <tr><td>429</td><td><code>Too many requests. Try again later.</code></td><td>Respect the integer seconds in <code>Retry-After</code>.</td></tr>
             <tr><td>500</td><td>Database, token-generation, or some provider failures</td><td>Show the failure; check current state before retrying a write.</td></tr>
