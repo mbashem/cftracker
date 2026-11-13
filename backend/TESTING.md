@@ -185,7 +185,7 @@ make migrate-up MIGRATION_DATABASE_URL="$TEST_DATABASE_URL"
 make test-integration
 ```
 
-The integration helper requires migration version `4` with `dirty=false`. If migrations change, update the helper after the new migration is committed and applied to the test database.
+The integration helper requires migration version `5` with `dirty=false`. If migrations change, update the helper after the new migration is committed and applied to the test database. Practice unit tests live in `tests/unit/items` and `tests/unit/lists`; persistence and constraint tests live in `tests/integration/items`. The migration lifecycle script also checks the seeded version-4 practice upgrade and version-5 rollback/reapplication.
 
 ## Reset Behavior
 

@@ -1,7 +1,9 @@
 package lists
 
 import (
+	"encoding/json"
 	"errors"
+	"io"
 	"log"
 	"net/http"
 	"strconv"
@@ -25,6 +27,7 @@ type listNameRequest struct {
 }
 
 type addListItemRequest struct {
+	items.ItemPatch
 	ProblemId string `json:"problem_id" binding:"required,max=100"`
 	Position  *int   `json:"position" binding:"required,gte=0"`
 }
@@ -35,6 +38,7 @@ const (
 	failedToFindList      API_MESSAGE = "Failed to find the list"
 	failedToDeleteList    API_MESSAGE = "Failed to delete list"
 	failedToAddItemToList API_MESSAGE = "Failed to add item to list"
+	failedToUpdateItem    API_MESSAGE = "Failed to update item"
 	failedToDeleteItem    API_MESSAGE = "Failed to delete item from list"
 	failedToGetListItems  API_MESSAGE = "Failed to get list items"
 
@@ -43,15 +47,18 @@ const (
 	invalidFormat   API_MESSAGE = "Invalid format"
 
 	listDoesNotExist API_MESSAGE = "List does not exist"
+	itemDoesNotExist API_MESSAGE = "Item does not exist"
 
-	listDeleted     API_MESSAGE = "List deleted"
-	itemDeleted     API_MESSAGE = "Item deleted from list"
-	listReordered   API_MESSAGE = "List reordered"
-	listCreated     API_MESSAGE = "List created"
-	listFound       API_MESSAGE = "List fetched successfully"
-	listsFound      API_MESSAGE = "Lists fetched successfully"
-	listNameUpdated API_MESSAGE = "List name updated"
-	itemAdded       API_MESSAGE = "Successfully added item to list"
+	listDeleted       API_MESSAGE = "List deleted"
+	itemDeleted       API_MESSAGE = "Item deleted from list"
+	listReordered     API_MESSAGE = "List reordered"
+	listCreated       API_MESSAGE = "List created"
+	listFound         API_MESSAGE = "List fetched successfully"
+	listsFound        API_MESSAGE = "Lists fetched successfully"
+	listNameUpdated   API_MESSAGE = "List name updated"
+	itemAdded         API_MESSAGE = "Successfully added item to list"
+	itemUpdated       API_MESSAGE = "Item updated"
+	itemAlreadyExists API_MESSAGE = "Item already in list"
 )
 
 func NewAPI(listRepository ListRepository, listItemsRepository items.ListItemRepository) *API {
@@ -159,16 +166,60 @@ func (api *API) AddToListHandler(context *gin.Context) {
 	}
 
 	item := items.ListItem{
+		Practice:  request.Values(),
 		ListId:    listId,
 		ProblemId: request.ProblemId,
 		Position:  *request.Position,
 	}
+	if err := item.Practice.Normalize(); err != nil {
+		writeListRepositoryError(context, err, failedToAddItemToList)
+		return
+	}
 	if err := api.listItemsRepository.Create(context.Request.Context(), userId, &item); err != nil {
+		if errors.Is(err, items.ErrItemExists) {
+			context.JSON(http.StatusConflict, gin.H{"error": itemAlreadyExists})
+			return
+		}
 		writeListRepositoryError(context, err, failedToAddItemToList)
 		return
 	}
 
 	context.JSON(http.StatusCreated, gin.H{"message": itemAdded, "item": item})
+}
+
+func (api *API) UpdateItemHandler(context *gin.Context) {
+	listId, valid := parseListId(context)
+	if !valid {
+		return
+	}
+	var patch items.ItemPatch
+	decoder := json.NewDecoder(context.Request.Body)
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(&patch); err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"error": invalidFormat})
+		return
+	}
+	// Exactly one JSON object is allowed; reject extra values or malformed trailing content.
+	var extraJSON any
+	if err := decoder.Decode(&extraJSON); err != io.EOF {
+		context.JSON(http.StatusBadRequest, gin.H{"error": invalidFormat})
+		return
+	}
+	if patch.Empty() {
+		context.JSON(http.StatusBadRequest, gin.H{"error": invalidFormat})
+		return
+	}
+	if err := patch.Normalize(); err != nil {
+		writeListRepositoryError(context, err, failedToUpdateItem)
+		return
+	}
+	item, err := api.listItemsRepository.Update(context.Request.Context(),
+		context.GetInt64(middlewares.UserIdKey), listId, context.Param("itemId"), patch)
+	if err != nil {
+		writeListRepositoryError(context, err, failedToUpdateItem)
+		return
+	}
+	context.JSON(http.StatusOK, gin.H{"message": itemUpdated, "item": item})
 }
 
 // Delete a problem from a list
@@ -227,6 +278,14 @@ func parseListId(context *gin.Context) (int64, bool) {
 }
 
 func writeListRepositoryError(context *gin.Context, err error, clientMessage API_MESSAGE) {
+	if errors.Is(err, items.ErrInvalidPractice) {
+		context.JSON(http.StatusBadRequest, gin.H{"error": items.ErrInvalidPractice.Error()})
+		return
+	}
+	if errors.Is(err, items.ErrItemNotFound) {
+		context.JSON(http.StatusNotFound, gin.H{"error": itemDoesNotExist})
+		return
+	}
 	if errors.Is(err, limits.ErrInvalidListName) {
 		context.JSON(http.StatusBadRequest, gin.H{"error": limits.ErrInvalidListName.Error()})
 		return
