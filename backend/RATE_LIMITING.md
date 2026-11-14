@@ -103,6 +103,7 @@ User routes add `/user` to the protected group; list routes add `/lists`. Featur
 | `PUT /api/v1/lists/:listId` | General + write |
 | `DELETE /api/v1/lists/:listId` | General + write |
 | `PUT /api/v1/lists/:listId/item` | General + write |
+| `PATCH /api/v1/lists/:listId/item/:itemId` | General + write |
 | `DELETE /api/v1/lists/:listId/item/:itemId` | General + write |
 | `GET /health/live`, `GET /health/ready` | Exempt |
 

@@ -351,6 +351,7 @@ func newListHandlerTestRouter(repository *mockRepository) *gin.Engine {
 	listRoutes.PUT("/:listId", api.UpdateListNameHandler)
 	listRoutes.DELETE("/:listId", api.DeleteListHandler)
 	listRoutes.PUT("/:listId/item", api.AddToListHandler)
+	listRoutes.PATCH("/:listId/item/:itemId", api.UpdateItemHandler)
 	listRoutes.DELETE("/:listId/item/:itemId", api.DeleteFromListHandler)
 	return router
 }
@@ -441,6 +442,7 @@ const (
 	getListOperation        repositoryOperation = "get list"
 	getAllListsOperation    repositoryOperation = "get all lists"
 	createListItemOperation repositoryOperation = "create list item"
+	updateListItemOperation repositoryOperation = "update list item"
 	deleteListItemOperation repositoryOperation = "delete list item"
 	getListItemsOperation   repositoryOperation = "get list items"
 )
@@ -573,6 +575,10 @@ func (repository *mockRepository) createItem(ctx context.Context, userID int64, 
 	if _, found := repository.ownedList(userID, item.ListId); !found {
 		return listitems.ErrListNotFound
 	}
+	if stored, found := repository.items[item.ListId][item.ProblemId]; found {
+		*item = stored
+		return listitems.ErrItemExists
+	}
 
 	createdItem := *item
 	createdItem.CreatedAt = testItemCreatedAt()
@@ -628,6 +634,43 @@ func (repository mockListItemRepository) Create(ctx context.Context, userID int6
 
 func (repository mockListItemRepository) Delete(ctx context.Context, userID int64, item *listitems.ListItem) error {
 	return repository.deleteItem(ctx, userID, item)
+}
+
+func (repository mockListItemRepository) Update(ctx context.Context, userID int64, listID int64, problemID string, patch listitems.ItemPatch) (*listitems.ListItem, error) {
+	repository.contextMismatch = repository.contextMismatch || ctx != repository.expectedContext
+	repository.record(repositoryCall{operation: updateListItemOperation, userID: userID, listID: listID, problemID: problemID})
+	if err := repository.operationErrors[updateListItemOperation]; err != nil {
+		return nil, err
+	}
+	if _, found := repository.ownedList(userID, listID); !found {
+		return nil, listitems.ErrItemNotFound
+	}
+	item, found := repository.items[listID][problemID]
+	if !found {
+		return nil, listitems.ErrItemNotFound
+	}
+	practice := patch.Values()
+	if err := practice.Normalize(); err != nil {
+		return nil, err
+	}
+	if patch.Status.Set {
+		item.Status = practice.Status
+	}
+	if patch.HelpUsed.Set {
+		item.HelpUsed = practice.HelpUsed
+	}
+	if patch.SolvedOn.Set {
+		item.SolvedOn = practice.SolvedOn
+	}
+	if patch.TimeSpent.Set {
+		item.TimeSpent = practice.TimeSpent
+	}
+	if patch.Notes.Set {
+		item.Notes = practice.Notes
+	}
+	item.UpdatedAt = testItemCreatedAt().Add(time.Hour)
+	repository.storeItem(item)
+	return &item, nil
 }
 
 func (repository *mockRepository) record(call repositoryCall) {

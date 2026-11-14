@@ -264,14 +264,14 @@ docker compose -f internal/db/docker-compose.yml exec -T postgres \
 
 The database should contain `users`, `lists`, `list_items`, and `schema_migrations`.
 
-Roll back one migration and confirm that the version changes from `4` to `3`:
+Roll back one migration and confirm that the version changes from `5` to `4`:
 
 ```sh
 make migrate direction=down steps=1
 make migrate-version
 ```
 
-Only `list_items` should now be absent; `lists` and `users` should remain. Restore it before starting the API:
+All application tables remain, but the practice columns and enum types are removed. This rollback permanently discards practice data. Restore the schema before starting the new API:
 
 ```sh
 make migrate-up
@@ -344,6 +344,8 @@ The Docker image declares a [Docker `HEALTHCHECK`](https://docs.docker.com/refer
 Readiness checks database connectivity, not migration state or GitHub/Codeforces availability. Continue applying migrations before starting the API. Health responses do not expose connection strings or database errors.
 
 ## API
+
+List items support an optional practice summary and a partial-update PATCH endpoint. The backend stores supplied practice data without fetching Codeforces submissions. See [practice records](PRACTICE_RECORDS.md) for enum values, clearing semantics, duplicate-add behavior, migration compatibility, and examples.
 
 The canonical API prefix is `/api/v1`. GitHub login and callback are public; `/api/v1/user` and `/api/v1/lists` require `Authorization: Bearer <token>`. GitHub routes also have aliases under `/v1/auth/github`. Unversioned application routes are not registered. The frontend appends `/v1` to `VITE_BACKEND_API_URL`, so keep that setting pointed at the `/api` base.
 

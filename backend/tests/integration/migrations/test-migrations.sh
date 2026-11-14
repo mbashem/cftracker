@@ -74,7 +74,7 @@ assert_tables() {
 
 restore_latest() {
 	make --no-print-directory migrate-up
-	assert_version 4
+	assert_version 5
 	assert_tables t t t
 }
 
@@ -148,6 +148,54 @@ make --no-print-directory migrate-down
 assert_tables f f f
 expect_failure "Full rollback version check" "no migration" make --no-print-directory migrate-version
 restore_latest
+
+# Verify upgrading existing items leaves practice uninitialized and preserves timestamps.
+make --no-print-directory migrate direction=down steps=1
+assert_version 4
+psql "$MIGRATION_DATABASE_URL" -X -v ON_ERROR_STOP=1 <<'SQL'
+WITH owner AS (
+    INSERT INTO users (github_id, github_username) VALUES (99001, 'practice-migration') RETURNING id
+), owned_list AS (
+    INSERT INTO lists (user_id, name) SELECT id, 'Practice migration' FROM owner RETURNING id
+)
+INSERT INTO list_items (list_id, problem_id, position, created_at, updated_at)
+SELECT id, '1900A', 7, '2000-01-01', '2001-01-01' FROM owned_list;
+SQL
+restore_latest
+psql "$MIGRATION_DATABASE_URL" -X -v ON_ERROR_STOP=1 <<'SQL'
+DO $$ BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM list_items WHERE problem_id = '1900A' AND position = 7
+        AND created_at = TIMESTAMP '2000-01-01' AND updated_at = TIMESTAMP '2001-01-01'
+        AND status IS NULL AND help_used IS NULL AND solved_on IS NULL
+        AND time_spent IS NULL AND notes IS NULL
+    ) THEN RAISE EXCEPTION 'Practice migration changed existing item data'; END IF;
+END $$;
+UPDATE list_items SET status = 'solved', help_used = 'hint', notes = 'Rollback probe';
+SQL
+make --no-print-directory migrate direction=down steps=1
+assert_version 4
+assert_tables t t t
+psql "$MIGRATION_DATABASE_URL" -X -v ON_ERROR_STOP=1 <<'SQL'
+DO $$ BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public'
+        AND table_name = 'list_items' AND column_name IN ('status', 'help_used', 'solved_on', 'time_spent', 'notes'))
+    OR to_regtype('public.practice_status') IS NOT NULL OR to_regtype('public.practice_help') IS NOT NULL
+    THEN RAISE EXCEPTION 'Practice rollback retained schema additions'; END IF;
+    IF NOT EXISTS (SELECT 1 FROM list_items WHERE problem_id = '1900A' AND position = 7
+        AND created_at = TIMESTAMP '2000-01-01' AND updated_at = TIMESTAMP '2001-01-01')
+    THEN RAISE EXCEPTION 'Practice rollback changed membership or timestamps'; END IF;
+END $$;
+SQL
+restore_latest
+psql "$MIGRATION_DATABASE_URL" -X -v ON_ERROR_STOP=1 <<'SQL'
+DO $$ BEGIN
+    IF EXISTS (SELECT 1 FROM list_items WHERE status IS NOT NULL OR help_used IS NOT NULL
+        OR solved_on IS NOT NULL OR time_spent IS NOT NULL OR notes IS NOT NULL)
+    THEN RAISE EXCEPTION 'Reapplied practice migration populated defaults'; END IF;
+END $$;
+DELETE FROM users WHERE github_id = 99001;
+SQL
 
 # Verify every registered named rollback from the latest migration.
 while read -r table version users_exist lists_exist items_exist; do

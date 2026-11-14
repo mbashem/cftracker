@@ -47,6 +47,8 @@ sequenceDiagram
 
 Only creation is blocked by an exhausted quota. Deletion remains available and restores capacity. Renaming an existing list does not consume a slot. Another account has an independent list quota; each list has an independent item quota. Item ownership is checked before its quota, so another user's full list still appears as `404`.
 
+A duplicate item add returns `409 {"error":"Item already in list"}` before counting, including at quota, and leaves the existing item unchanged. Practice PATCH updates consume no membership capacity and remain available on full lists. See [practice records](PRACTICE_RECORDS.md).
+
 These invariants cover application repository writes. Direct SQL/imports must respect the same rules or can create oversized data. No existing migration is edited, and no existing data is deleted automatically.
 
 ## Complete collection reads
