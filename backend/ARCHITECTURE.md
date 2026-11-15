@@ -210,10 +210,16 @@ Neither route requires authentication. Both disable caching with `Cache-Control:
 
 | Method and path | Input | Success | Failure |
 | --- | --- | --- | --- |
-| `GET /api/v1/auth/github/login` | Origin/Referer supplies the frontend origin; exact origin must be allowlisted. | `307` redirect to GitHub; sets the OAuth state cookie. | `400` invalid/missing frontend origin; `500` if state generation fails. |
+| `GET /api/v1/auth/github/login` | Origin/Referer supplies the frontend origin; exact origin must be allowlisted. Optional `validate_only=true` checks it without starting OAuth. | Validation: `200 {"status":"ready"}`, no cookie/redirect. Normal navigation: `307` to GitHub and sets the OAuth state cookie. | `400` invalid/missing frontend origin; `500` if state generation fails on normal navigation. |
 | `GET /api/v1/auth/github/callback` | Query `code` and `state`; matching state cookie. | `200 {"user": User, "token": "JWT"}` | `400` invalid/missing state; `500` token exchange, user fetch/decode, persistence, or JWT generation failure; `502` rejected GitHub user response. |
 
 Aliases: `GET /v1/auth/github/login` and `GET /v1/auth/github/callback` have identical behavior.
+
+The frontend validates login before leaving the page, surfacing API failures or
+a fallback for unreadable CORS/network failures. It then navigates to the normal
+login URL so cookie creation remains a top-level browser operation. Both requests
+use the login rate-limit budget. Login responses disable caching. See the
+[login configuration](README.md#configuration) for deployment ordering.
 
 ### Protected user routes
 

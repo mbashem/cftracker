@@ -28,6 +28,7 @@ interface FrontendMocks {
   individualListLoading: boolean;
   individualListError: unknown;
   handleGithubCallback: Mock<(code: string, state: string) => Promise<void>>;
+  prepareGitHubLogin: Mock<() => Promise<string>>;
   createList: Mock<(name: string) => Promise<List>>;
   updateListName: Mock<(id: number, name: string) => Promise<void>>;
   deleteList: Mock<(id: number) => Promise<void>>;
@@ -70,6 +71,7 @@ const createFrontendState = vi.hoisted(() => () => ({
 const frontend: FrontendMocks = vi.hoisted(() => ({
   ...createFrontendState(),
   handleGithubCallback: vi.fn(),
+  prepareGitHubLogin: vi.fn(),
   createList: vi.fn(), updateListName: vi.fn(), deleteList: vi.fn(),
   addProblemToList: vi.fn(), deleteProblemFromList: vi.fn(),
   changeThemeMod: vi.fn(),
@@ -135,7 +137,7 @@ vi.mock("../../src/data/hooks/useUserStore", () => ({
   }),
 }));
 vi.mock("../../src/hooks/useUser", () => ({
-  default: () => ({ isAuthenticated: frontend.authenticated, logout: frontend.logout, handleGithubCallback: frontend.handleGithubCallback }),
+  default: () => ({ isAuthenticated: frontend.authenticated, logout: frontend.logout, handleGithubCallback: frontend.handleGithubCallback, prepareGitHubLogin: frontend.prepareGitHubLogin }),
 }));
 vi.mock("../../src/util/env", () => ({
   get IS_BACKEND_AVAILABLE() { return frontend.backendAvailable; },
@@ -147,6 +149,7 @@ export function resetFrontendMocks() {
   Object.assign(frontend, createFrontendState());
   frontend.theme = new Theme(ThemesType.LIGHT);
   frontend.handleGithubCallback.mockReset().mockResolvedValue(undefined);
+  frontend.prepareGitHubLogin.mockReset().mockResolvedValue("https://backend.example.test/api/v1/auth/github/login");
   frontend.createList.mockReset().mockImplementation(async name => createList({ name }));
   frontend.updateListName.mockReset().mockResolvedValue(undefined);
   frontend.deleteList.mockReset().mockResolvedValue(undefined);

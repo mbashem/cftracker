@@ -108,6 +108,16 @@ CODEFORCES_COOLDOWN=1m
 
 GitHub sign-in starts at `/api/v1/auth/github/login`. The handler selects the request's `Origin`, or the `Referer` origin for browser navigation when `Origin` is absent, and requires an exact match in `CORS_ALLOWED_ORIGINS`. Missing or unlisted origins receive `400`. GitHub returns directly to that origin plus `/callback/auth-gh`; the frontend forwards code and state to `/api/v1/auth/github/callback` with cookies included. The same derived callback URL is used during code exchange, without mutating shared OAuth configuration. No redirect environment variable or alternate-domain parameter is supported. Register each frontend callback URL in the GitHub OAuth app as well: the backend allowlist does not override GitHub callback restrictions. A new login replaces the pending state cookie. HTTPS proxies must set `X-Forwarded-Proto: https` so the state cookie is marked `Secure`.
 
+The frontend first requests the login endpoint with `?validate_only=true`.
+An allowed origin receives `200 {"status":"ready"}` without a redirect, state
+generation, or cookie change. Failures stay on the frontend and show a message;
+CORS-blocked responses use a fallback because browsers hide their bodies. Only
+after validation succeeds does the browser navigate to the normal login URL,
+preserving top-level state-cookie creation. Login responses use `Cache-Control:
+no-store`; the check is uncached and uses the login rate-limit budget. Deploy the
+backend support before the frontend update. This check does not predict later
+GitHub/provider failures or replace the allowlist checks on login and callback.
+
 `DATABASE_TIMEOUT` is a positive Go duration, defaulting to `5s`. Every application repository operation derives a timeout from the HTTP request context. Its budget includes waiting for a pooled connection, executing SQL, reading rows, and all queries in a multi-step operation or transaction. A client cancellation or earlier parent deadline takes effect first. Provider calls keep their separate `EXTERNAL_API_TIMEOUT` budget; `DATABASE_TIMEOUT` is not an overall HTTP request timeout or a migration-command timeout. Database failures, including timeouts, retain the existing operation-specific HTTP `500` responses.
 
 Five seconds is a conservative starting value for this API's small CRUD operations, not a universal standard or a normal latency target. Healthy queries should finish well below it. Measure database latency and pool waits in production; shorten the budget when those measurements support it, and investigate slow queries or locks before increasing it. The request-context/derived-timeout pattern follows [Go's database cancellation guidance](https://go.dev/doc/database/cancel-operations), whose example also uses five seconds. Keep proxy request budgets large enough for endpoints that perform sequential provider and database operations.

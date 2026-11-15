@@ -138,3 +138,8 @@ export function mergeValue<T>(baseValue: T, value: unknown): T {
     ? { ...baseValue, ...value } as T
     : value as T;
 }
+
+/** Leave the frontend only after an external navigation has been approved. */
+export function navigateToExternalURL(url: string, destination: Pick<Location, "assign">): void {
+  destination.assign(url);
+}
