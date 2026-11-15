@@ -14,6 +14,7 @@ func RegisterRoutes(server gin.IRouter, api *API) {
 	listServer.PUT("/:listId/item", api.AddToListHandler) // add to list
 	listServer.PATCH("/:listId/item/:itemId", api.UpdateItemHandler)
 	listServer.DELETE("/:listId/item/:itemId", api.DeleteFromListHandler) // remove from list
-	// reorder problems
-	// listServer.GET("/:listID/item/reorder-problems")
+	listServer.POST("/:listId/items/bulk", api.BulkAddHandler)
+	listServer.POST("/:listId/items/move", api.MoveItemsHandler)
+	listServer.POST("/:listId/items/remove", api.BulkRemoveHandler)
 }

@@ -22,12 +22,12 @@ All details are independent of status: notes and help can be recorded before sol
 
 ## Add an item
 
-`PUT /api/v1/lists/:listId/item` requires authentication and the existing `problem_id` and `position` fields. Practice fields are optional, so current frontend payloads remain valid and leave the summary uninitialized.
+`PUT /api/v1/lists/:listId/item` requires authentication and `problem_id`. The backend appends; legacy `position` is optional and ignored. See [list operations](LIST_OPERATIONS.md). Practice fields are optional, so current frontend payloads remain valid and leave the summary uninitialized.
 
 ```json
 {
   "problem_id": "1900A",
-  "position": 0,
+  "position": 1073741824,
   "status": "solved",
   "help_used": "hint",
   "solved_on": "2026-11-09",
@@ -44,7 +44,7 @@ A new membership returns `201`:
   "item": {
     "list_id": 12,
     "problem_id": "1900A",
-    "position": 0,
+    "position": 1073741824,
     "created_at": "2026-11-09T10:00:00Z",
     "updated_at": "2026-11-09T10:00:00Z",
     "status": "solved",
@@ -69,7 +69,7 @@ A valid duplicate request returns `409 {"error":"Item already in list"}`. It cha
 }
 ```
 
-This reopens the item and clears notes while retaining its help, solve date, and active time. Success returns `200 {"message":"Item updated","item":...}` with the complete saved item. The update sets `updated_at = CURRENT_TIMESTAMP` in the same SQL statement; even unchanged supplied values refresh the timestamp. `created_at` is preserved. No item timestamp trigger is installed. Existing ordering behavior is unchanged; the internal reorder operation does not update this timestamp.
+This reopens the item and clears notes while retaining its help, solve date, and active time. Success returns `200 {"message":"Item updated","item":...}` with the complete saved item. The update sets `updated_at = CURRENT_TIMESTAMP` in the same SQL statement; even unchanged supplied values refresh the timestamp. `created_at` is preserved. No item timestamp trigger is installed. Position changes also update this timestamp; unchanged positions and deleted neighbors do not. See [list operations](LIST_OPERATIONS.md).
 
 Empty patches, unknown properties, membership/order/timestamp fields, and trailing JSON are rejected. Validation considers only fields marked as supplied. A successful update uses one ownership-scoped SQL statement built from a fixed allowlist: omitted fields have no assignment or value parameter. Values are bound through positional PostgreSQL parameters. There is no revision token or optimistic concurrency contract.
 
@@ -84,7 +84,7 @@ Empty patches, unknown properties, membership/order/timestamp fields, and traili
 - `409`: duplicate item or existing quota responses for new memberships.
 - `500 {"error":"Failed to update item"}`: unexpected update failure; SQL details stay in server logs.
 
-Existing list-name, account/list quotas, 16 KiB body cap, authentication, and write-rate limits remain in force. No Codeforces ownership verification is needed to use lists.
+Existing list-name, account/list quotas, 16 KiB single-item body cap, authentication, and write-rate limits remain in force. No Codeforces ownership verification is needed to use lists.
 
 ## Migration and verification
 

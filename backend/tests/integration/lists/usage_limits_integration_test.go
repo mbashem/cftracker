@@ -46,7 +46,7 @@ func TestUsageLimitsIntegration(t *testing.T) {
 		list := createIntegrationList(t, listRepository, ownerID, "owned")
 		seedQuotaItems(t, database, list.Id, limits.ItemsPerList-1)
 		assertConcurrentQuota(t, limits.ErrItemQuota, func(index int) error {
-			return itemRepository.Create(t.Context(), ownerID, &items.ListItem{ListId: list.Id, ProblemId: fmt.Sprintf("candidate-%d", index), Position: index})
+			return itemRepository.Create(t.Context(), ownerID, &items.ListItem{ListId: list.Id, ProblemId: fmt.Sprintf("candidate-%d", index), Position: int64(index)})
 		})
 		stored, err := itemRepository.GetItems(t.Context(), ownerID, list.Id)
 		if err != nil || len(stored) != limits.ItemsPerList {

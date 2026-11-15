@@ -10,6 +10,7 @@ This document explains CFTracker's migration ordering, checksum protection, roll
 | `000002` | `create_users` | Creates `users`, its timestamp function, and its update trigger. |
 | `000003` | `create_lists` | Creates `lists`, including its user foreign key and uniqueness constraint. |
 | `000004` | `create_list_items` | Creates `list_items`, including its list foreign key and composite primary key. |
+| `000006` | `sparse_list_order` | BIGINT sparse positions, deterministic redistribution, and deferred uniqueness/range constraints. |
 | `000005` | `add_list_item_practice` | Adds nullable practice fields, status/help enum types, and date/time/text constraints. |
 
 Migration metadata comes first so every application-table migration can be registered and checksummed. Its down migration intentionally retains this metadata so integrity checks continue to work after a full rollback.
@@ -183,7 +184,7 @@ The names `cftracker_test` and `cftracker_test_reference` are reserved as dispos
 
 The test verifies:
 
-1. A fresh migration reaches version `5` with all application tables.
+1. A fresh migration reaches version `6` with all application tables.
 2. A full rollback removes every application table and can be reapplied.
 3. Named rollbacks stop at the registered `list_items`, `lists`, and `users` boundaries.
 4. Changing a copied applied migration fails with the expected checksum error.
@@ -210,3 +211,5 @@ Review these invariants when changing migration code:
 - Checksum metadata survives rollback.
 - Schema checks use a clean disposable reference database.
 - Local migration tests create and remove only their fixed disposable databases.
+
+Version 6 preserves practice and timestamps while redistributing positions; rollback renumbers to zero-based INTEGER positions. Coordinate deployment because the previous binary still accepts arbitrary positions. See [list operations](LIST_OPERATIONS.md).

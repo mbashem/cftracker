@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"strings"
 	"time"
-
-	"github.com/mbashem/cftracker/backend/internal/limits"
 )
 
 var ErrListNotFound = errors.New("list not found")
@@ -22,6 +20,7 @@ const listItemColumns = `list_items.problem_id, list_items.position, list_items.
 	to_char(list_items.solved_on, 'YYYY-MM-DD'), list_items.time_spent, list_items.notes`
 
 type ListItemRepository interface {
+	CollectionRepository
 	Create(ctx context.Context, userId int64, item *ListItem) error
 	Delete(ctx context.Context, userId int64, item *ListItem) error
 	GetItems(ctx context.Context, userId int64, listId int64) ([]ListItem, error)
@@ -47,60 +46,15 @@ func (repository *Repository) GetItems(ctx context.Context, userId int64, listId
 
 // Add a problem to a list
 func (repository *Repository) Create(ctx context.Context, userId int64, item *ListItem) error {
-	if err := item.Practice.Normalize(); err != nil {
-		return err
-	}
-	ctx, cancel := context.WithTimeout(ctx, repository.timeout)
-	defer cancel()
-	transaction, err := repository.db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
+	result, err := repository.BulkAdd(ctx, userId, item.ListId, []ListItem{*item})
 	if err != nil {
 		return err
 	}
-	defer transaction.Rollback()
-	// Lock the owned parent before counting to serialize concurrent item inserts.
-	var ownedListID int64
-	if err := transaction.QueryRowContext(ctx, `SELECT id FROM lists WHERE id = $1 AND user_id = $2 FOR UPDATE`, item.ListId, userId).Scan(&ownedListID); err != nil {
-		return listQueryError(err)
-	}
-	stored, _, err := scanListItem(transaction.QueryRowContext(ctx,
-		`SELECT list_id, `+listItemColumns+` FROM list_items WHERE list_id = $1 AND problem_id = $2`, ownedListID, item.ProblemId))
-	if err == nil {
-		*item = stored
+	if len(result.Added) == 0 {
+		*item = *result.existing
 		return ErrItemExists
 	}
-	if !errors.Is(err, sql.ErrNoRows) {
-		return err
-	}
-	var count int
-	if err := transaction.QueryRowContext(ctx, `SELECT COUNT(*) FROM (
-		SELECT 1 FROM list_items WHERE list_id = $1 LIMIT $2
-	) AS stored_items`, ownedListID, limits.ItemsPerList).Scan(&count); err != nil {
-		return err
-	}
-	if count >= limits.ItemsPerList {
-		return limits.ErrItemQuota
-	}
-	query := `
-		INSERT INTO list_items (list_id, problem_id, position, status, help_used, solved_on, time_spent, notes)
-		SELECT id, $2, $3, $5::practice_status, $6::practice_help, $7::date, $8::integer, $9::text
-		FROM lists
-		WHERE id = $1 AND user_id = $4
-		RETURNING list_id, ` + listItemColumns
-	created, _, err := scanListItem(transaction.QueryRowContext(ctx,
-		query,
-		item.ListId,
-		item.ProblemId,
-		item.Position,
-		userId,
-		item.Status, item.HelpUsed, item.SolvedOn, item.TimeSpent, item.Notes,
-	))
-	if err != nil {
-		return listQueryError(err)
-	}
-	if err := transaction.Commit(); err != nil {
-		return err
-	}
-	*item = created
+	*item = result.Added[0]
 	return nil
 }
 
@@ -150,64 +104,8 @@ func (repository *Repository) Update(ctx context.Context, userId int64, listId i
 
 // Delete a problem from a list
 func (repository *Repository) Delete(ctx context.Context, userId int64, item *ListItem) error {
-	ctx, cancel := context.WithTimeout(ctx, repository.timeout)
-	defer cancel()
-	query := `
-		DELETE FROM list_items
-		USING lists
-		WHERE list_items.list_id = lists.id
-			AND lists.id = $1
-			AND lists.user_id = $2
-			AND list_items.problem_id = $3
-	`
-
-	result, err := repository.db.ExecContext(ctx, query, item.ListId, userId, item.ProblemId)
-	if err != nil {
-		return err
-	}
-	rowsDeleted, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if rowsDeleted > 0 {
-		return nil
-	}
-
-	var listId int64
-	query = `SELECT id FROM lists WHERE id = $1 AND user_id = $2`
-	if err := repository.db.QueryRowContext(ctx, query, item.ListId, userId).Scan(&listId); err != nil {
-		return listQueryError(err)
-	}
-	if listId != item.ListId {
-		return ErrListNotFound
-	}
-	return nil
-}
-
-// Reorder problems in a list
-func (repository *Repository) ReorderListItems(ctx context.Context, userId int64, listId int64, newOrder []string) error {
-	ctx, cancel := context.WithTimeout(ctx, repository.timeout)
-	defer cancel()
-	transaction, err := repository.db.BeginTx(ctx, nil)
-	if err != nil {
-		return err
-	}
-	defer transaction.Rollback()
-
-	var ownedListId int64
-	ownershipQuery := `SELECT id FROM lists WHERE id = $1 AND user_id = $2 FOR UPDATE`
-	if err := transaction.QueryRowContext(ctx, ownershipQuery, listId, userId).Scan(&ownedListId); err != nil {
-		return listQueryError(err)
-	}
-
-	for pos, itemId := range newOrder {
-		query := `UPDATE list_items SET position = $1 WHERE problem_id = $2 AND list_id = $3`
-		_, err := transaction.ExecContext(ctx, query, pos, itemId, ownedListId)
-		if err != nil {
-			return err
-		}
-	}
-	return transaction.Commit()
+	_, err := repository.BulkRemove(ctx, userId, item.ListId, []string{item.ProblemId})
+	return err
 }
 
 // Get all problems in a list
@@ -258,7 +156,7 @@ func scanListItem(scanner interface{ Scan(...any) error }) (ListItem, bool, erro
 	err := scanner.Scan(&item.ListId, &problemId, &position, &createdAt, &updatedAt,
 		&item.Status, &item.HelpUsed, &item.SolvedOn, &item.TimeSpent, &item.Notes)
 	item.ProblemId = problemId.String
-	item.Position = int(position.Int64)
+	item.Position = position.Int64
 	item.CreatedAt = createdAt.Time
 	item.UpdatedAt = updatedAt.Time
 	return item, problemId.Valid, err

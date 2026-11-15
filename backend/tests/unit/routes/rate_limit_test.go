@@ -69,6 +69,9 @@ func TestRegisteredRoutesEnforceSharedBudgetsAndExemptHealth(t *testing.T) {
 		{http.MethodPut, "/api/v1/lists/1"},
 		{http.MethodDelete, "/api/v1/lists/1"},
 		{http.MethodPut, "/api/v1/lists/1/item"},
+		{http.MethodPost, "/api/v1/lists/1/items/bulk"},
+		{http.MethodPost, "/api/v1/lists/1/items/move"},
+		{http.MethodPost, "/api/v1/lists/1/items/remove"},
 		{http.MethodPatch, "/api/v1/lists/1/item/1900A"},
 		{http.MethodDelete, "/api/v1/lists/1/item/1900A"},
 	} {

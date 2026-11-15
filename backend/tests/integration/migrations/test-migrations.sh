@@ -74,7 +74,7 @@ assert_tables() {
 
 restore_latest() {
 	make --no-print-directory migrate-up
-	assert_version 5
+	assert_version 6
 	assert_tables t t t
 }
 
@@ -150,7 +150,7 @@ expect_failure "Full rollback version check" "no migration" make --no-print-dire
 restore_latest
 
 # Verify upgrading existing items leaves practice uninitialized and preserves timestamps.
-make --no-print-directory migrate direction=down steps=1
+make --no-print-directory migrate direction=down steps=2
 assert_version 4
 psql "$MIGRATION_DATABASE_URL" -X -v ON_ERROR_STOP=1 <<'SQL'
 WITH owner AS (
@@ -161,7 +161,8 @@ WITH owner AS (
 INSERT INTO list_items (list_id, problem_id, position, created_at, updated_at)
 SELECT id, '1900A', 7, '2000-01-01', '2001-01-01' FROM owned_list;
 SQL
-restore_latest
+make --no-print-directory migrate direction=up steps=1
+assert_version 5
 psql "$MIGRATION_DATABASE_URL" -X -v ON_ERROR_STOP=1 <<'SQL'
 DO $$ BEGIN
     IF NOT EXISTS (
@@ -187,7 +188,8 @@ DO $$ BEGIN
     THEN RAISE EXCEPTION 'Practice rollback changed membership or timestamps'; END IF;
 END $$;
 SQL
-restore_latest
+make --no-print-directory migrate direction=up steps=1
+assert_version 5
 psql "$MIGRATION_DATABASE_URL" -X -v ON_ERROR_STOP=1 <<'SQL'
 DO $$ BEGIN
     IF EXISTS (SELECT 1 FROM list_items WHERE status IS NOT NULL OR help_used IS NOT NULL
@@ -196,6 +198,44 @@ DO $$ BEGIN
 END $$;
 DELETE FROM users WHERE github_id = 99001;
 SQL
+
+restore_latest
+
+# Verify legacy position ties normalize deterministically, preserve practice/timestamps,
+# and survive sparse rollback/reapplication without deleting memberships.
+make --no-print-directory migrate direction=down steps=1
+assert_version 5
+psql "$MIGRATION_DATABASE_URL" -X -v ON_ERROR_STOP=1 <<'SQL'
+WITH owner AS (
+    INSERT INTO users (github_id, github_username) VALUES (99002, 'order-migration') RETURNING id
+), owned_list AS (
+    INSERT INTO lists (user_id, name) SELECT id, 'Order migration' FROM owner RETURNING id
+)
+INSERT INTO list_items (list_id, problem_id, position, created_at, updated_at, status, notes)
+SELECT id, problem_id, 7, '2000-01-01', '2001-01-01', 'solved', 'Preserve me'
+FROM owned_list CROSS JOIN (VALUES ('B'), ('A')) AS input(problem_id);
+SQL
+restore_latest
+psql "$MIGRATION_DATABASE_URL" -X -v ON_ERROR_STOP=1 <<'SQL'
+DO $$ BEGIN
+    IF (SELECT count(*) FROM list_items WHERE notes='Preserve me'
+        AND status='solved' AND created_at=TIMESTAMP '2000-01-01'
+        AND updated_at=TIMESTAMP '2001-01-01'
+        AND position=CASE problem_id WHEN 'A' THEN 1073741824::bigint ELSE 2147483648::bigint END) <> 2
+    THEN RAISE EXCEPTION 'Sparse migration changed order or practice data'; END IF;
+END $$;
+SQL
+make --no-print-directory migrate direction=down steps=1
+assert_version 5
+psql "$MIGRATION_DATABASE_URL" -X -v ON_ERROR_STOP=1 <<'SQL'
+DO $$ BEGIN
+    IF (SELECT count(*) FROM list_items WHERE notes='Preserve me'
+        AND position=CASE problem_id WHEN 'A' THEN 0 ELSE 1 END) <> 2
+    THEN RAISE EXCEPTION 'Sparse rollback lost membership or order'; END IF;
+END $$;
+SQL
+restore_latest
+psql "$MIGRATION_DATABASE_URL" -X -v ON_ERROR_STOP=1 -c "DELETE FROM users WHERE github_id=99002"
 
 # Verify every registered named rollback from the latest migration.
 while read -r table version users_exist lists_exist items_exist; do

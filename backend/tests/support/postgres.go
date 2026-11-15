@@ -17,7 +17,7 @@ import (
 const (
 	testDatabaseURLKey = "TEST_DATABASE_URL"
 	databaseURLKey     = "DATABASE_URL"
-	expectedVersion    = 5
+	expectedVersion    = 6
 	queryTimeout       = 5 * time.Second
 )
 

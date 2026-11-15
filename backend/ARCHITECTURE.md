@@ -261,7 +261,7 @@ Every route requires a JWT. For list-specific operations, a missing list and a l
 | `PATCH /api/v1/lists/:listId/item/:itemId` | Supplied practice fields; `null` clears | `200 {"message":"Item updated", "item": ListItem}` |
 | `DELETE /api/v1/lists/:listId/item/:itemId` | `itemId` is the problem ID string, **not** a numeric row ID. | `200 {"message":"Item deleted from list"}` |
 
-Names are required and trimmed; empty names and names longer than 100 Unicode characters return `400 {"error":"Invalid format"}`. Adding an item requires a nonempty trimmed `problem_id` (binding maximum 100 characters) and an explicitly supplied integer `position >= 0`; invalid bodies return the same `400`. All request bodies are capped at 16 KiB before JSON decoding; oversized bodies return `413`. URL-encode problem IDs when constructing item paths.
+Names are required and trimmed; empty names and names longer than 100 Unicode characters return `400 {"error":"Invalid format"}`. Adding an item requires a nonempty trimmed `problem_id` (binding maximum 100 characters) ; legacy `position` is optional and ignored because the backend appends; invalid bodies return the same `400`. Request bodies are capped at 16 KiB (8 MiB on the three collection-write routes) before JSON decoding; oversized bodies return `413`. URL-encode problem IDs when constructing item paths.
 
 An item PUT inserts a new membership or returns `409 {"error":"Item already in list"}` without changing the existing item, including at quota. Duplicate list names still produce generic `500` failures below quota. New memberships exceeding quota return `409`. Removing an absent item from an existing owned list succeeds. Accounts can hold at most 20 lists, each with at most 1,000 items, enforced by transactional parent-row locks and bounded counts. Names contain 1–100 Unicode characters after trimming. Reads return full names and complete collections without read-time limits. Collection sizes rely on write-time quotas; existing data and direct SQL/imports must satisfy those invariants. See [usage limits](USAGE_LIMITS.md). There is no registered reorder route, pagination, problem metadata lookup, or Codeforces ownership requirement for using lists. List IDs are parsed as signed 64-bit integers; zero/negative IDs normally reach the repository and produce `404`.
 
@@ -534,7 +534,7 @@ sequenceDiagram
 
 List rename/delete/read predicates include both `id` and `user_id`; fetching all lists filters by `user_id`. Item insertion selects from an owned list; item deletion and practice updates join the owning list; item reads use an owner-scoped left join so an empty owned list returns `[]` while an inaccessible list returns `404`. Deleting a list cascades to its items and practice summaries in PostgreSQL.
 
-The list-with-items response uses two separate reads, not a transaction or a guaranteed consistent snapshot. Item positions are supplied by the client and are not unique. Inserting/deleting an item does not shift other positions. The internal `ReorderListItems` method uses a transaction and locks the owned list, but no HTTP handler exposes it. Frontend mutations invalidate the relevant RTK Query cache tags, causing active queries to refresh.
+The list-with-items response uses two separate reads, not a transaction or a guaranteed consistent snapshot. Item positions are backend-assigned sparse BIGINT values with a deferred per-list unique constraint. Membership/order mutations lock the owned list and execute atomically. Relative move batches and bulk add/removal are exposed through collection routes; see [list operations](LIST_OPERATIONS.md). Frontend mutations invalidate the relevant RTK Query cache tags, causing active queries to refresh.
 
 ## Database model
 
@@ -566,7 +566,7 @@ classDiagram
     class ListItems {
         int list_id PK_FK
         varchar problem_id PK
-        int position
+        bigint position
         timestamp created_at
         timestamp updated_at
         practice_status status
@@ -617,3 +617,5 @@ The service currently has no refresh/revocation API or background worker. This g
 To trace a route, start in its `*_routes.go`, follow the handler, then its injected repository/provider interface. Repository implementations contain the SQL and domain errors; handler helpers map those errors to HTTP responses. Providers contain external URLs, response decoding, and timeout handling. `cmd/api/main.go` shows which concrete implementations are wired together.
 
 For changes, update the route contract and relevant sequence here, implementation tests alongside the affected package, and integration tests when SQL or ownership behavior changes. Unit suites mock repository/provider boundaries; integration suites exercise real PostgreSQL and complete routed workflows with controlled providers. Use [TESTING.md](TESTING.md) for commands and safety requirements. Documentation changes alone do not require starting the API, contacting external providers, or modifying any database.
+
+See [list operations](LIST_OPERATIONS.md) for sparse ordering, relative move batches, bulk addition/removal, response reconciliation, limits, and migration 6.

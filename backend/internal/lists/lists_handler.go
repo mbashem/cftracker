@@ -29,7 +29,7 @@ type listNameRequest struct {
 type addListItemRequest struct {
 	items.ItemPatch
 	ProblemId string `json:"problem_id" binding:"required,max=100"`
-	Position  *int   `json:"position" binding:"required,gte=0"`
+	Position  *int   `json:"position" binding:"omitempty,gte=0"`
 }
 
 const (
@@ -169,22 +169,22 @@ func (api *API) AddToListHandler(context *gin.Context) {
 		Practice:  request.Values(),
 		ListId:    listId,
 		ProblemId: request.ProblemId,
-		Position:  *request.Position,
+		Position:  0,
 	}
 	if err := item.Practice.Normalize(); err != nil {
 		writeListRepositoryError(context, err, failedToAddItemToList)
 		return
 	}
-	if err := api.listItemsRepository.Create(context.Request.Context(), userId, &item); err != nil {
-		if errors.Is(err, items.ErrItemExists) {
-			context.JSON(http.StatusConflict, gin.H{"error": itemAlreadyExists})
-			return
-		}
+	result, err := api.listItemsRepository.BulkAdd(context.Request.Context(), userId, listId, []items.ListItem{item})
+	if err != nil {
 		writeListRepositoryError(context, err, failedToAddItemToList)
 		return
 	}
-
-	context.JSON(http.StatusCreated, gin.H{"message": itemAdded, "item": item})
+	if len(result.Added) == 0 {
+		context.JSON(http.StatusConflict, gin.H{"error": itemAlreadyExists})
+		return
+	}
+	context.JSON(http.StatusCreated, gin.H{"message": itemAdded, "item": result.Added[0], "rebalanced": result.Rebalanced, "order": result.Order})
 }
 
 func (api *API) UpdateItemHandler(context *gin.Context) {
@@ -278,6 +278,14 @@ func parseListId(context *gin.Context) (int64, bool) {
 }
 
 func writeListRepositoryError(context *gin.Context, err error, clientMessage API_MESSAGE) {
+	if errors.Is(err, items.ErrInvalidOperation) {
+		context.JSON(http.StatusBadRequest, gin.H{"error": items.ErrInvalidOperation.Error()})
+		return
+	}
+	if errors.Is(err, items.ErrOrderConflict) {
+		context.JSON(http.StatusConflict, gin.H{"error": items.ErrOrderConflict.Error()})
+		return
+	}
 	if errors.Is(err, items.ErrInvalidPractice) {
 		context.JSON(http.StatusBadRequest, gin.H{"error": items.ErrInvalidPractice.Error()})
 		return
@@ -310,18 +318,3 @@ func writeListRepositoryError(context *gin.Context, err error, clientMessage API
 	)
 	context.JSON(http.StatusInternalServerError, gin.H{"error": clientMessage})
 }
-
-// Reorder problems in a list
-// func reorderListItemsHandler(c *gin.Context) {
-// 	listId, _ := strconv.ParseInt(c.Param("id"), 10, 64)
-// 	var newOrder []string
-// 	if err := c.ShouldBindJSON(&newOrder); err != nil {
-// 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-// 		return
-// 	}
-// 	if err := reorderListItems(listId, newOrder); err != nil {
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to reorder items"})
-// 		return
-// 	}
-// 	c.JSON(http.StatusOK, gin.H{"message": "List items reordered"})
-// }

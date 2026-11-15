@@ -190,10 +190,6 @@ func TestListHandlers(t *testing.T) {
 		validationCase("add rejects malformed list ID", http.MethodPut, itemCollectionPath("invalid"),
 			fmt.Sprintf(`{"problem_id":"%s","position":0}`, testProblemID), testInvalidListIDMessage),
 		validationCase("add rejects malformed JSON", http.MethodPut, itemCollectionPath(testListID), `{"problem_id":`, testInvalidFormatMessage),
-		validationCase("add rejects a missing position", http.MethodPut, itemCollectionPath(testListID),
-			fmt.Sprintf(`{"problem_id":"%s"}`, testProblemID), testInvalidFormatMessage),
-		validationCase("add rejects a null position", http.MethodPut, itemCollectionPath(testListID),
-			fmt.Sprintf(`{"problem_id":"%s","position":null}`, testProblemID), testInvalidFormatMessage),
 		validationCase("add rejects a negative position", http.MethodPut, itemCollectionPath(testListID),
 			fmt.Sprintf(`{"problem_id":"%s","position":-1}`, testProblemID), testInvalidFormatMessage),
 		validationCase("add rejects a blank problem ID", http.MethodPut, itemCollectionPath(testListID),
@@ -206,14 +202,14 @@ func TestListHandlers(t *testing.T) {
 			expectedStatus: http.StatusNotFound, expectedBody: errorBody(testListDoesNotExistMessage),
 			expectedCalls: []repositoryCall{{
 				operation: createListItemOperation, userID: testAuthenticatedUserID, listID: testListID,
-				problemID: testProblemID, position: 3,
+				problemID: testProblemID, position: 0,
 			}},
 		},
 		repositoryErrorCase("add handles repository failure", http.MethodPut, itemCollectionPath(testListID),
 			fmt.Sprintf(`{"problem_id":"%s","position":3}`, testProblemID), createListItemOperation,
 			testFailedToAddItemMessage, repositoryCall{
 				operation: createListItemOperation, userID: testAuthenticatedUserID, listID: testListID,
-				problemID: testProblemID, position: 3,
+				problemID: testProblemID, position: 0,
 			}),
 
 		{
@@ -353,6 +349,9 @@ func newListHandlerTestRouter(repository *mockRepository) *gin.Engine {
 	listRoutes.PUT("/:listId/item", api.AddToListHandler)
 	listRoutes.PATCH("/:listId/item/:itemId", api.UpdateItemHandler)
 	listRoutes.DELETE("/:listId/item/:itemId", api.DeleteFromListHandler)
+	listRoutes.POST("/:listId/items/bulk", api.BulkAddHandler)
+	listRoutes.POST("/:listId/items/move", api.MoveItemsHandler)
+	listRoutes.POST("/:listId/items/remove", api.BulkRemoveHandler)
 	return router
 }
 
@@ -379,6 +378,19 @@ func assertJSONBody(t *testing.T, response *httptest.ResponseRecorder, expectedB
 		t.Fatalf("encode expected response: %v", err)
 	}
 	expectedJSON := decodeJSON(t, expectedBytes)
+	if response.Code == http.StatusCreated {
+		actualMap := actualJSON.(map[string]any)
+		if _, ok := actualMap["item"]; ok {
+			if actualMap["rebalanced"] != false {
+				t.Fatal("unexpected rebalance")
+			}
+			if _, ok := actualMap["order"].([]any); !ok {
+				t.Fatal("missing order")
+			}
+			delete(actualMap, "order")
+			delete(actualMap, "rebalanced")
+		}
+	}
 	if !reflect.DeepEqual(actualJSON, expectedJSON) {
 		t.Fatalf("response JSON = %#v, want %#v", actualJSON, expectedJSON)
 	}
@@ -421,7 +433,7 @@ func newListFixture() lists.List {
 
 func newListItemFixture() listitems.ListItem {
 	return listitems.ListItem{
-		ListId: testListID, ProblemId: testProblemID, Position: 0, CreatedAt: testItemCreatedAt(),
+		ListId: testListID, ProblemId: testProblemID, Position: listitems.PositionGap, CreatedAt: testItemCreatedAt(),
 	}
 }
 
@@ -453,7 +465,7 @@ type repositoryCall struct {
 	listID    int64
 	listName  string
 	problemID string
-	position  int
+	position  int64
 }
 
 type mockRepository struct {
@@ -581,6 +593,12 @@ func (repository *mockRepository) createItem(ctx context.Context, userID int64, 
 	}
 
 	createdItem := *item
+	createdItem.Position = listitems.PositionGap
+	for _, stored := range repository.items[item.ListId] {
+		if stored.Position >= createdItem.Position {
+			createdItem.Position = stored.Position + listitems.PositionGap
+		}
+	}
 	createdItem.CreatedAt = testItemCreatedAt()
 	repository.storeItem(createdItem)
 	*item = createdItem

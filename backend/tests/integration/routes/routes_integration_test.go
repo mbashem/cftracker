@@ -326,7 +326,7 @@ func addWorkflowItem(
 		token,
 		fmt.Sprintf(`{"problem_id":%q,"position":%d}`, problemID, position),
 	), http.StatusCreated)
-	expectedItem := listitems.ListItem{ListId: listID, ProblemId: problemID, Position: position, CreatedAt: response.Item.CreatedAt, UpdatedAt: response.Item.UpdatedAt}
+	expectedItem := listitems.ListItem{ListId: listID, ProblemId: problemID, Position: response.Item.Position, CreatedAt: response.Item.CreatedAt, UpdatedAt: response.Item.UpdatedAt}
 	if response.Message != "Successfully added item to list" || response.Item != expectedItem || response.Item.CreatedAt.IsZero() {
 		t.Fatalf("add-item response = %+v, want item %+v", response, expectedItem)
 	}

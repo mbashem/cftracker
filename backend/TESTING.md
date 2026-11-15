@@ -185,7 +185,7 @@ make migrate-up MIGRATION_DATABASE_URL="$TEST_DATABASE_URL"
 make test-integration
 ```
 
-The integration helper requires migration version `5` with `dirty=false`. If migrations change, update the helper after the new migration is committed and applied to the test database. Practice unit tests live in `tests/unit/items` and `tests/unit/lists`; persistence and constraint tests live in `tests/integration/items`. The migration lifecycle script also checks the seeded version-4 practice upgrade and version-5 rollback/reapplication.
+The integration helper requires migration version `6` with `dirty=false`. If migrations change, update the helper after the new migration is committed and applied to the test database. Practice unit tests live in `tests/unit/items` and `tests/unit/lists`; persistence and constraint tests live in `tests/integration/items`. The migration lifecycle script also checks the seeded version-4 practice upgrade and version-5 rollback/reapplication.
 
 ## Reset Behavior
 
@@ -209,3 +209,5 @@ This keeps tests deterministic while protecting `cftracker` and production-like 
 Use unit tests for HTTP behavior, validation, auth branching, provider response handling, and repository-interface consumers.
 
 Use integration tests for concrete repository methods, schema constraints, migration behavior, transaction behavior, and complete workflows where PostgreSQL is part of the behavior being verified.
+
+Sparse ordering and collection tests cover midpoint moves, early rebalance, response order, duplicate preservation, failed batches, and ownership. PostgreSQL tests reside in the existing items repository suite. Compile them with `go test -tags=integration -run '^$' ./tests/integration/...`; real execution requires separately authorized disposable databases.

@@ -4,7 +4,7 @@ These controls complement the [rate limiter](RATE_LIMITING.md). Rate limits boun
 
 | Resource | Limit | Enforcement | Failure response |
 | --- | --- | --- | --- |
-| Incoming request body | 16 KiB (16,384 bytes) | Central middleware before route handlers | `413` with `Request body exceeds 16 KiB` |
+| Incoming request body | 16 KiB; 8 MiB for the three collection-write routes | Central middleware before route handlers | `413` with `Request body exceeds 16 KiB` |
 | List name | 1–100 Unicode characters after trimming whitespace | Creation/rename handlers and repository writes | `400`; HTTP input validation uses `Invalid format` |
 | Lists per account | 20 | Transactional repository creation | `409` with `maximum of 20 lists per account reached` |
 | Items per list | 1,000 | Transactional repository creation | `409` with `maximum of 1000 items per list reached` |
@@ -13,9 +13,9 @@ The constants and domain errors live in [`internal/limits/limits.go`](internal/l
 
 ## Request bodies
 
-[`LimitRequestBody`](internal/middlewares/body_limit.go) is installed once by the central route registrar, before registering health, authentication, or protected API routes. It applies regardless of whether rate limiting is supplied. Ordinary health requests have no body and pass normally.
+[`LimitRequestBody`](internal/middlewares/body_limit.go) is installed once by the central route registrar, before registering health, authentication, or protected API routes. It applies regardless of whether rate limiting is supplied. The matched collection bulk/move/remove POST routes select an 8 MiB cap before reading the body. Ordinary health requests have no body and pass normally.
 
-The middleware reads the bounded body through `http.MaxBytesReader` before any JSON decoder runs, then supplies the buffered bytes to the handler. It does not rely on `Content-Length`: oversized chunked bodies and excessive whitespace after an otherwise valid JSON value also receive `413`. Exactly 16,384 bytes is allowed. Other body-read failures return `400` without exposing transport details.
+The middleware reads the bounded body through `http.MaxBytesReader` before any JSON decoder runs, then supplies the buffered bytes to the handler. It does not rely on `Content-Length`: oversized chunked bodies and excessive whitespace after an otherwise valid JSON value also receive `413`. Exactly 16,384 bytes is allowed on ordinary routes; the three collection-write routes allow exactly 8 MiB. Other body-read failures return `400` without exposing transport details.
 
 The cap limits bytes, not request duration or concurrent connections. The [HTTP server's read deadlines](README.md#http-server-lifecycle) separately bound slow headers and bodies; hosting proxy protections remain a deployment concern.
 
@@ -61,7 +61,7 @@ Quota errors use `409` because the stored collection is at capacity. They do not
 
 ## Existing data and deployment
 
-No schema migration is required. Deploy the application changes after inspecting existing data. The following read-only checks identify records requiring review:
+List organization requires migration 6; see [list operations](LIST_OPERATIONS.md). Inspect existing data before deployment. The following read-only checks identify records requiring review:
 
 ```sql
 SELECT user_id, COUNT(*) AS list_count
@@ -85,3 +85,5 @@ If existing records exceed these bounds, reads still return them in full. New in
 - [PostgreSQL tests](tests/integration/lists/usage_limits_integration_test.go) cover concurrent final-slot inserts, independent quotas, ownership, deletion restoring capacity, and complete reads of existing collections and names.
 
 Follow [TESTING.md](TESTING.md) for commands and disposable test-database requirements. The integration tests seed oversized records deliberately using SQL to verify that reads return stored data without enforcing write-time limits again. Application creation and rename paths enforce their respective invariants.
+
+Collection additions count only new memberships; duplicate-only batches succeed at quota. Collection writes support at most 1,000 entries, receive an 8 MiB body cap, and use the existing authenticated write-rate budget. See [list operations](LIST_OPERATIONS.md).

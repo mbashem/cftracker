@@ -415,3 +415,5 @@ When PostgreSQL runs on the host during local Docker development, use `host.dock
 ```env
 DATABASE_URL=postgres://postgres:postgrespw@host.docker.internal:5432/cftracker?sslmode=disable
 ```
+
+List ordering and atomic bulk operations are documented in [LIST_OPERATIONS.md](LIST_OPERATIONS.md). Apply migration 6 during a coordinated backend update. Collection-write routes have an 8 MiB body cap; other routes retain 16 KiB.

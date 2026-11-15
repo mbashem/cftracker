@@ -121,7 +121,7 @@ func TestItemPatchIgnoresUnsetValues(t *testing.T) {
 func TestPracticeValidationRunsBeforeDatabaseAccess(t *testing.T) {
 	repository := items.NewRepository(nil, time.Second)
 	invalidStatus := items.PracticeStatus("skipped")
-	if err := repository.Create(t.Context(), 1, &items.ListItem{Practice: items.Practice{Status: &invalidStatus}}); !errors.Is(err, items.ErrInvalidPractice) {
+	if err := repository.Create(t.Context(), 1, &items.ListItem{ProblemId: "1900A", Practice: items.Practice{Status: &invalidStatus}}); !errors.Is(err, items.ErrInvalidPractice) {
 		t.Fatal(err)
 	}
 	if _, err := repository.Update(t.Context(), 1, 1, "1900A", items.ItemPatch{}); !errors.Is(err, items.ErrInvalidPractice) {

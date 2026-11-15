@@ -438,5 +438,6 @@ Set-Cookie: cftracker_github_oauth_state=[challenge]; ...</code></pre>
       <footer>CFTracker backend · REST API v1 · documented from local source on 26 October 2026.</footer>
     </main>
   </div>
+<section><h2>List organization</h2><p>POST /api/v1/lists/:listId/items/bulk accepts items; /items/move accepts sequential moves with problem_id and before_problem_id or after_problem_id; /items/remove accepts problem_ids. Each operation is atomic and returns rebalanced and the complete lightweight order. Positions are assigned by the backend. See <a href="LIST_OPERATIONS.md">List operations</a> for contracts, examples, errors, and limits.</p></section>
 </body>
 </html>

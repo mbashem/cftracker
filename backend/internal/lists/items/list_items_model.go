@@ -10,7 +10,7 @@ type ListItem struct {
 	Practice
 	ListId    int64     `json:"list_id"`
 	ProblemId string    `json:"problem_id"`
-	Position  int       `json:"position"`
+	Position  int64     `json:"position"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
