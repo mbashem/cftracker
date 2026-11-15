@@ -41,6 +41,27 @@ without output. Distinguish local checks from live database/service integration.
 
 ## 2. Build locally
 
+When the user chooses a one-command update, use the operator-run option below
+instead of the manual build/upload/backup/deploy stages. Otherwise follow these
+manual stages one at a time.
+
+### Operator-run one-command option
+
+Guide the user to run `bash backend/deploy/vps/update.sh SSH_TARGET API_HOSTNAME
+RELEASE` from their local repository root. Read the runbook's one-command section
+and the script first. Explain the source, build downloads, local backup
+destination, requirement for noninteractive sudo, API interruption, and lack of
+automatic rollback before giving the command. Use a fresh release tag and wait
+for the user's output.
+
+The script coordinates building, transfer, local backup validation, deployment,
+and verification. This does not authorize the agent to execute the script,
+individual remote stages, or live verification. Guide failures from the reported
+stage and preserve existing backups/artifacts. Do not rerun automatically.
+Browser smoke tests and restore testing remain separate user-run steps.
+
+### Manual build
+
 Have the user start Docker Desktop and choose a fresh release tag and output
 directory outside `backend/`. Use a specific Docker-compatible tag, never `latest`.
 Give the current runbook's `bundle.sh` command from the repository root, filling

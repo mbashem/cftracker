@@ -228,6 +228,63 @@ logs/chat or run Compose config without `--quiet` (it can print environment data
 
 ## 6. Deploy or update
 
+### One-command updates from the build machine
+
+For an existing installation, the operator can run the entire update from the
+repository root on the **Mac/local terminal**:
+
+```sh
+bash backend/deploy/vps/update.sh \
+  DEPLOY_USER@VPS_HOST api.example.com release-NEW
+```
+
+Use a fresh release tag every time. Review the working tree and migrations first:
+the builder packages uncommitted code too, and migrations must remain compatible
+with the old API until its replacement. Run only one update at a time. This is
+not first-time setup or a maintenance plan for incompatible database changes.
+
+Start Docker Desktop before running it. The script requires Bash, Python 3,
+Git, `shasum`, Docker, SSH, and SCP on the build machine. It may download build
+dependencies and consume substantial disk space. Configure SSH key access and
+verify the host key beforehand. `sudo -n true` must succeed through a fresh
+noninteractive SSH connection: a password cached in an interactive VPS terminal
+does not establish that prerequisite. If sudo requires a password, this automatic
+path stops; arrange the appropriate administrative access before using it. The
+script never prompts for, sends, or stores a sudo password or disables host-key
+verification. Use an SSH alias for custom ports or IPv6 connection addresses.
+
+The script performs the following sequence:
+
+1. Check the existing installation, PostgreSQL health/identity, and unused remote
+   destinations without printing environment or secret contents.
+2. Build both images with `bundle.sh`, verify bundle checksums, and print `BUILD.txt`.
+3. Upload to a fresh home-directory folder and verify/install the new release at
+   `/srv/cftracker/releases/<release>` without replacing an older release.
+4. Export PostgreSQL directly into a protected local `.partial` archive and stream
+   it back into the container for `pg_restore --list` inspection. Complete the
+   local filename only after both operations succeed; no database dump is saved
+   on the VPS and local PostgreSQL tools are unnecessary.
+5. Invoke `server.sh deploy --local-backup-confirmed` only after local archive
+   validation, then verify the expected image, unchanged PostgreSQL identity,
+   NGINX configuration, HTTP redirect, and public IPv4 HTTPS readiness.
+
+Defaults are `$HOME/Builds/cftracker/<release>` for the bundle and
+`$HOME/Backups/cftracker/<release>.dump` for the backup. Override the parent
+directories with `CFTRACKER_BUILD_ROOT` and `CFTRACKER_BACKUP_DIR`. Keep backups
+outside the repository and cloud-synced folders; the script rejects a backup
+directory inside this repository. It refuses existing bundle, archive, partial,
+upload, and release destinations. Failed artifacts are retained for diagnosis;
+inspect the error rather than blindly retrying or deleting earlier backups.
+
+Launching this command authorizes the complete update. API replacement can briefly
+interrupt requests. It does not run `init`, rotate credentials, change DNS/TLS,
+delete previous images/releases, restore data, or roll back automatically. Archive
+listing is not a restore test. Browser login/list smoke tests, published IPv6,
+and renewal checks remain separate. Frontend/Netlify deployment and browser opt-in
+are not part of this backend command.
+
+### Guided or manual updates
+
 To have a coding agent guide you through the update workflow, ask:
 
 > Use $deploy-backend to guide me through deploying my backend changes. I will run the commands.
