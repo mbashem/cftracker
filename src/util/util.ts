@@ -139,7 +139,7 @@ export function mergeValue<T>(baseValue: T, value: unknown): T {
     : value as T;
 }
 
-/** Leave the frontend only after an external navigation has been approved. */
+/** Delegate external navigation to the supplied location object, allowing callers to validate first. */
 export function navigateToExternalURL(url: string, destination: Pick<Location, "assign">): void {
   destination.assign(url);
 }

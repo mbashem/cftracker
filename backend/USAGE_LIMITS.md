@@ -27,7 +27,7 @@ The wrappers preserve the request body's `io.ReadCloser` interface: `http.MaxByt
 
 Names are trimmed before checking length. Unicode characters are counted as code points, not bytes or visual grapheme clusters. Both creation and renaming use the same normalization. Repository writes repeat validation so internal callers cannot bypass it.
 
-List creation locks the account's `users` row with `FOR UPDATE`. Item creation locks the owned `lists` row. In each case, a separate bounded count query runs after the lock, followed by the insert and commit in the same transaction. Transactions explicitly use `READ COMMITTED`: the count sees inserts committed by requests that held the lock previously. All steps share the repository operation's existing request context and database timeout.
+List creation locks the account's `users` row with `FOR UPDATE` and runs a separate bounded count before inserting. Bulk addition locks the owned `lists` row, reads existing items, and checks capacity using only new IDs. Both commit atomically under `READ COMMITTED`, so requests see inserts committed by earlier lock holders. All steps share the repository operation's existing request context and database timeout.
 
 ```mermaid
 sequenceDiagram
@@ -47,7 +47,7 @@ sequenceDiagram
 
 Only creation is blocked by an exhausted quota. Deletion remains available and restores capacity. Renaming an existing list does not consume a slot. Another account has an independent list quota; each list has an independent item quota. Item ownership is checked before its quota, so another user's full list still appears as `404`.
 
-A duplicate item add returns `409 {"error":"Item already in list"}` before counting, including at quota, and leaves the existing item unchanged. Practice PATCH updates consume no membership capacity and remain available on full lists. See [practice records](PRACTICE_RECORDS.md).
+Bulk additions skip existing items with `200`, including at quota, and leave their saved data unchanged. Practice PATCH updates consume no list item capacity and remain available on full lists. See [practice records](PRACTICE_RECORDS.md).
 
 These invariants cover application repository writes. Direct SQL/imports must respect the same rules or can create oversized data. No existing migration is edited, and no existing data is deleted automatically.
 
@@ -86,4 +86,4 @@ If existing records exceed these bounds, reads still return them in full. New in
 
 Follow [TESTING.md](TESTING.md) for commands and disposable test-database requirements. The integration tests seed oversized records deliberately using SQL to verify that reads return stored data without enforcing write-time limits again. Application creation and rename paths enforce their respective invariants.
 
-Collection additions count only new memberships; duplicate-only batches succeed at quota. Collection writes support at most 1,000 entries, receive an 8 MiB body cap, and use the existing authenticated write-rate budget. See [list operations](LIST_OPERATIONS.md).
+Collection additions count only new list items; duplicate-only batches succeed at quota. Collection writes support at most 1,000 entries, receive an 8 MiB body cap, and use the existing authenticated write-rate budget. See [list operations](LIST_OPERATIONS.md).

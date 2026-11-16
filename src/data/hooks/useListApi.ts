@@ -32,9 +32,10 @@ function useListApi() {
 		}
 	}
 
-	async function addProblemToList(listId: number, problemId: string, position: number) {
+	/** Append one or more problems through the sole bulk-add contract. */
+ async function addProblemsToList(listId: number, problemIds: string[]) {
 		try {
-			return await addProblemToListMutation({ listId, problemId, position }).unwrap();
+			return await addProblemToListMutation({ listId, problemIds }).unwrap();
 		} catch (err: any) {
 			console.log(err);
 			let errorMessage = err?.data?.error ?? "Failed to add to list!";
@@ -85,7 +86,7 @@ function useListApi() {
 		return { ...query, data: user === undefined ? undefined : query.currentData };
 	}
 
-	return { getListWithItems, createList, addProblemToList, deleteProblemFromList, deleteList, updateListName, useGetAllListsQuery, useGetListQuery };
+	return { getListWithItems, createList, addProblemsToList, deleteProblemFromList, deleteList, updateListName, useGetAllListsQuery, useGetListQuery };
 }
 
 export default useListApi;

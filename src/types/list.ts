@@ -39,3 +39,11 @@ export function jsonToListItem(json: any): ListItem {
 		createdAt: json.created_at
 	};
 }
+
+/** Committed bulk append outcome; skipped IDs keep their existing practice data. */
+export interface ListAddResult {
+ added: ListItem[];
+ skippedProblemIds: string[];
+ order: { problemId: string; position: number }[];
+ rebalanced: boolean;
+}

@@ -34,7 +34,8 @@ type Practice struct {
 	Notes     *string         `json:"notes"`
 }
 
-// Normalize validates supplied values without deriving anything from status.
+// Normalize enforces nullable practice-field constraints and converts empty notes to null.
+// Status changes never derive or clear other fields; whitespace in nonempty notes is preserved.
 func (practice *Practice) Normalize() error {
 	if practice.Status != nil {
 		switch *practice.Status {

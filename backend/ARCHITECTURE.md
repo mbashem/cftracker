@@ -257,15 +257,15 @@ Every route requires a JWT. For list-specific operations, a missing list and a l
 | `GET /api/v1/lists/:listId` | List ID | `200 {"message":"List fetched successfully", "list": List, "items": ListItem[]}` |
 | `PUT /api/v1/lists/:listId` | `{"name":"Updated name"}` | `200 {"message":"List name updated"}` |
 | `DELETE /api/v1/lists/:listId` | List ID | `200 {"message":"List deleted"}` |
-| `PUT /api/v1/lists/:listId/item` | `{"problem_id":"1900A", "position":0}` | `201 {"message":"Successfully added item to list", "item": ListItem}` |
+| `POST /api/v1/lists/:listId/items/bulk` | `{"items":[{"problem_id":"1900A"}]}` | `200` with added records, skipped IDs, complete order, and rebalance flag |
 | `PATCH /api/v1/lists/:listId/item/:itemId` | Supplied practice fields; `null` clears | `200 {"message":"Item updated", "item": ListItem}` |
 | `DELETE /api/v1/lists/:listId/item/:itemId` | `itemId` is the problem ID string, **not** a numeric row ID. | `200 {"message":"Item deleted from list"}` |
 
-Names are required and trimmed; empty names and names longer than 100 Unicode characters return `400 {"error":"Invalid format"}`. Adding an item requires a nonempty trimmed `problem_id` (binding maximum 100 characters) ; legacy `position` is optional and ignored because the backend appends; invalid bodies return the same `400`. Request bodies are capped at 16 KiB (8 MiB on the three collection-write routes) before JSON decoding; oversized bodies return `413`. URL-encode problem IDs when constructing item paths.
+Names are required and trimmed; empty names and names longer than 100 Unicode characters return `400 {"error":"Invalid format"}`. Adding items requires an array of 1–1,000 records with nonempty trimmed problem IDs (maximum 100 Unicode code points). The backend assigns positions; supplied position properties are rejected. Request bodies are capped at 16 KiB (8 MiB on the three collection-write routes) before JSON decoding; oversized bodies return `413`. URL-encode problem IDs when constructing item paths.
 
-An item PUT inserts a new membership or returns `409 {"error":"Item already in list"}` without changing the existing item, including at quota. Duplicate list names still produce generic `500` failures below quota. New memberships exceeding quota return `409`. Removing an absent item from an existing owned list succeeds. Accounts can hold at most 20 lists, each with at most 1,000 items, enforced by transactional parent-row locks and bounded counts. Names contain 1–100 Unicode characters after trimming. Reads return full names and complete collections without read-time limits. Collection sizes rely on write-time quotas; existing data and direct SQL/imports must satisfy those invariants. See [usage limits](USAGE_LIMITS.md). There is no registered reorder route, pagination, problem metadata lookup, or Codeforces ownership requirement for using lists. List IDs are parsed as signed 64-bit integers; zero/negative IDs normally reach the repository and produce `404`.
+Bulk addition inserts new items and skips existing items without changing them, including at quota. Duplicate list names still produce generic `500` failures below quota. New list items exceeding quota return `409`. Removing an absent item from an existing owned list succeeds. Accounts can hold at most 20 lists, each with at most 1,000 items, enforced by transactional parent-row locks and bounded counts. Names contain 1–100 Unicode characters after trimming. Reads return full names and complete collections without read-time limits. Collection sizes rely on write-time quotas; existing data and direct SQL/imports must satisfy those invariants. See [usage limits](USAGE_LIMITS.md). Relative move batches are supported; there is no pagination, problem metadata lookup, or Codeforces ownership requirement for using lists. List IDs are parsed as signed 64-bit integers; zero/negative IDs normally reach the repository and produce `404`.
 
-Add-item accepts nullable `status`, `help_used`, `solved_on`, `time_spent` (active seconds), and `notes`. The general item PATCH currently accepts these practice fields; future editable fields can extend the same endpoint and repository `Update` method. It builds assignments and parameters only for supplied fields and explicitly sets `updated_at = CURRENT_TIMESTAMP`. Membership and ordering changes remain outside this part. The backend performs no CF initialization or submission fetching. See [practice records](PRACTICE_RECORDS.md) for enum values, validation, clearing semantics, examples, and repository boundaries.
+Add-item accepts nullable `status`, `help_used`, `solved_on`, `time_spent` (active seconds), and `notes`. The general item PATCH currently accepts these practice fields; future editable fields can extend the same endpoint and repository `Update` method. It builds assignments and parameters only for supplied fields and explicitly sets `updated_at = CURRENT_TIMESTAMP`. List item and ordering changes remain outside this part. The backend performs no CF initialization or submission fetching. See [practice records](PRACTICE_RECORDS.md) for enum values, validation, clearing semantics, examples, and repository boundaries.
 
 ### JSON models
 
@@ -497,28 +497,15 @@ sequenceDiagram
     participant Lists as Lists repository
     participant Items as Items repository
     participant DB as PostgreSQL
-    Client->>Auth: PUT /api/v1/lists/12/item with problem_id and position
+    Client->>Auth: POST /api/v1/lists/12/items/bulk with items array
     Auth->>API: Authenticated userId
-    API->>API: Parse listId; validate item JSON
-    API->>Items: Create(userId, item)
-    Items->>DB: Begin transaction; lock list WHERE id=12 AND user_id=userId
-    alt List absent or belongs to someone else
-        DB-->>Items: No owned list
-        Items-->>API: ErrListNotFound
-        API-->>Client: 404 List does not exist
-    else Owned list
-        Items->>DB: Read existing membership
-        alt Item already present
-            DB-->>Items: Existing item, unchanged
-            Items-->>API: Saved item; ErrItemExists
-            API-->>Client: 409 Item already in list
-        else New membership
-            Items->>DB: Check quota; insert supplied fields; commit
-            DB-->>Items: Complete item and timestamps
-            Items-->>API: Item
-            API-->>Client: 201 item and message
-        end
-    end
+    API->>API: Parse listId; validate records
+    API->>Items: BulkAdd(userId, listId, items)
+    Items->>DB: Begin transaction; lock owned list
+    Items->>DB: Skip existing items; check quota; append new records
+    Items->>DB: Read resulting order; commit
+    Items-->>API: Added records, skipped IDs, order, rebalance flag
+    API-->>Client: 200 bulk result
     Client->>Auth: GET /api/v1/lists/12
     Auth->>API: Authenticated userId
     API->>Lists: GetById(userId, 12)
@@ -532,9 +519,9 @@ sequenceDiagram
     API-->>Client: 200 list, items, and message
 ```
 
-List rename/delete/read predicates include both `id` and `user_id`; fetching all lists filters by `user_id`. Item insertion selects from an owned list; item deletion and practice updates join the owning list; item reads use an owner-scoped left join so an empty owned list returns `[]` while an inaccessible list returns `404`. Deleting a list cascades to its items and practice summaries in PostgreSQL.
+List rename/delete/read predicates include both `id` and `user_id`; fetching all lists filters by `user_id`. Item insertion/deletion locks the owned list; practice updates join the owning list; item reads use an owner-scoped left join so an empty owned list returns `[]` while an inaccessible list returns `404`. Deleting a list cascades to its items and practice summaries in PostgreSQL.
 
-The list-with-items response uses two separate reads, not a transaction or a guaranteed consistent snapshot. Item positions are backend-assigned sparse BIGINT values with a deferred per-list unique constraint. Membership/order mutations lock the owned list and execute atomically. Relative move batches and bulk add/removal are exposed through collection routes; see [list operations](LIST_OPERATIONS.md). Frontend mutations invalidate the relevant RTK Query cache tags, causing active queries to refresh.
+The list-with-items response uses two separate reads, not a transaction or a guaranteed consistent snapshot. Item positions are backend-assigned sparse BIGINT values with a deferred per-list unique constraint. List item/order mutations lock the owned list and execute atomically. Relative move batches and bulk add/removal are exposed through collection routes; see [list operations](LIST_OPERATIONS.md). Frontend mutations invalidate the relevant RTK Query cache tags, causing active queries to refresh.
 
 ## Database model
 

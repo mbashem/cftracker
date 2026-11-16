@@ -104,7 +104,7 @@
             <tr><td>GET</td><td><a href="#list-get"><code>/api/v1/lists/:listId</code></a></td><td>Bearer</td><td>Read list and items</td></tr>
             <tr><td>PUT</td><td><a href="#list-rename"><code>/api/v1/lists/:listId</code></a></td><td>Bearer</td><td>Rename list</td></tr>
             <tr><td>DELETE</td><td><a href="#list-delete"><code>/api/v1/lists/:listId</code></a></td><td>Bearer</td><td>Delete list</td></tr>
-            <tr><td>PUT</td><td><a href="#item-add"><code>/api/v1/lists/:listId/item</code></a></td><td>Bearer</td><td>Insert problem</td></tr>
+            <tr><td>POST</td><td><a href="#item-add"><code>/api/v1/lists/:listId/items/bulk</code></a></td><td>Bearer</td><td>Insert problem</td></tr>
             <tr><td>PATCH</td><td><a href="#item-practice"><code>/api/v1/lists/:listId/item/:itemId</code></a></td><td>Bearer</td><td>Update item</td></tr>
             <tr><td>DELETE</td><td><a href="#item-delete"><code>/api/v1/lists/:listId/item/:itemId</code></a></td><td>Bearer</td><td>Remove problem</td></tr>
           </tbody>
@@ -330,23 +330,13 @@ Set-Cookie: cftracker_github_oauth_state=[challenge]; ...</code></pre>
 {"message":"List deleted"}</code></pre>
           <p><strong>Database failure:</strong> <code>500</code> — <code>Failed to delete list</code>.</p>
         </article>
-        <article class="endpoint" id="item-add" data-method="PUT" data-path="/api/v1/lists/:listId/item">
-          <h3><span class="method put">PUT</span> /api/v1/lists/:listId/item</h3><span class="auth">Bearer token · JSON body</span>
-          <pre><code>{"problem_id":"1900A","position":0}</code></pre>
-          <p><code>problem_id</code> is required, trimmed, and limited to 100 characters before trimming. <code>position</code> must be explicitly supplied as an integer greater than or equal to zero; zero is valid. The API does not validate the problem against Codeforces. Positions need not be consecutive or unique.</p>
-          <pre><code>HTTP 201
-{
-  "message":"Successfully added item to list",
-  "item":{"list_id":5,"problem_id":"1900A","position":0,"created_at":"2026-10-26T12:01:00Z","updated_at":"2026-10-26T12:01:00Z","status":null,"help_used":null,"solved_on":null,"time_spent":null,"notes":null}
-}</code></pre>
-          <div class="note">A valid duplicate add returns <code>409 {"error":"Item already in list"}</code> and leaves the saved item unchanged, including at quota. Supplied position and practice fields never overwrite an existing item.</div>
-          <p>Optional practice fields follow the <a href="#item-practice">practice contract below</a>. Omitted fields start as null; the current frontend payload remains valid. The backend does not fetch Codeforces submissions or infer practice values.</p>
-          <p><strong>Errors:</strong> <code>400</code> — <code>Invalid format</code> or <code>invalid practice fields</code>; <code>409</code> — <code>Item already in list</code> or <code>maximum of 1000 items per list reached</code> for new memberships; <code>500</code> — <code>Failed to add item to list</code>.</p>
-          <h4>Example request</h4>
-          <pre><code>curl -X PUT "$API_BASE/lists/5/item" \
-  -H "Authorization: Bearer $JWT" \
-  -H 'Content-Type: application/json' \
-  --data '{"problem_id":"1900A","position":0}'</code></pre>
+        <article class="endpoint" id="item-add" data-method="POST" data-path="/api/v1/lists/:listId/items/bulk">
+          <h3>POST /api/v1/lists/:listId/items/bulk</h3><span class="auth">Bearer token · JSON body</span>
+          <pre><code>{"items":[{"problem_id":"1900A","status":"attempted"}]}</code></pre>
+          <p>The sole add API accepts 1–1,000 records. Existing items are skipped without overwriting practice or positions. Positions are backend-assigned; unknown fields are rejected. Optional fields follow the practice contract below. The frontend sends a one-item array for a single addition.</p>
+          <pre><code>HTTP 200
+{"added":[{"list_id":5,"problem_id":"1900A","position":1073741824,"status":"attempted"}],"order":[{"problem_id":"1900A","position":1073741824}],"rebalanced":false}</code></pre>
+          <p>The example abbreviates the saved item; all practice fields and timestamps are returned. Errors: 400 invalid input, 404 inaccessible list, 409 quota exceeded, 413 body over 8 MiB, 500 unexpected failure. The old single-add PUT endpoint is removed. See <a href="LIST_OPERATIONS.md">List operations</a> for full contracts.</p>
         </article>
         <article class="endpoint" id="item-practice" data-method="PATCH" data-path="/api/v1/lists/:listId/item/:itemId">
           <h3>PATCH /api/v1/lists/:listId/item/:itemId</h3><span class="auth">Bearer token · JSON body</span>

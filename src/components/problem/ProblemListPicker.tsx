@@ -46,10 +46,10 @@ export default function ProblemListPicker({ problemId }: { problemId?: string })
     try {
       const list = await api.getListWithItems(listId);
       if (generation.current !== currentGeneration) return;
-      const exists = list.items.some(item => item.problemId === problemId);
+      let exists = list.items.some(item => item.problemId === problemId);
       if (!exists) {
-        const position = list.items.reduce((max, item) => Math.max(max, item.position), -1) + 1;
-        await api.addProblemToList(listId, problemId, position);
+        const result = await api.addProblemsToList(listId, [problemId]);
+        exists = result.skippedProblemIds.includes(problemId);
       }
       if (generation.current !== currentGeneration) return;
       setAdded(current => new Set(current).add(listId));

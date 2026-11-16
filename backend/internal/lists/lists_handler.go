@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/mbashem/cftracker/backend/internal/limits"
@@ -24,12 +23,6 @@ type API_MESSAGE string
 
 type listNameRequest struct {
 	Name string `json:"name" binding:"required"`
-}
-
-type addListItemRequest struct {
-	items.ItemPatch
-	ProblemId string `json:"problem_id" binding:"required,max=100"`
-	Position  *int   `json:"position" binding:"omitempty,gte=0"`
 }
 
 const (
@@ -49,16 +42,14 @@ const (
 	listDoesNotExist API_MESSAGE = "List does not exist"
 	itemDoesNotExist API_MESSAGE = "Item does not exist"
 
-	listDeleted       API_MESSAGE = "List deleted"
-	itemDeleted       API_MESSAGE = "Item deleted from list"
-	listReordered     API_MESSAGE = "List reordered"
-	listCreated       API_MESSAGE = "List created"
-	listFound         API_MESSAGE = "List fetched successfully"
-	listsFound        API_MESSAGE = "Lists fetched successfully"
-	listNameUpdated   API_MESSAGE = "List name updated"
-	itemAdded         API_MESSAGE = "Successfully added item to list"
-	itemUpdated       API_MESSAGE = "Item updated"
-	itemAlreadyExists API_MESSAGE = "Item already in list"
+	listDeleted     API_MESSAGE = "List deleted"
+	itemDeleted     API_MESSAGE = "Item deleted from list"
+	listReordered   API_MESSAGE = "List reordered"
+	listCreated     API_MESSAGE = "List created"
+	listFound       API_MESSAGE = "List fetched successfully"
+	listsFound      API_MESSAGE = "Lists fetched successfully"
+	listNameUpdated API_MESSAGE = "List name updated"
+	itemUpdated     API_MESSAGE = "Item updated"
 )
 
 func NewAPI(listRepository ListRepository, listItemsRepository items.ListItemRepository) *API {
@@ -145,48 +136,7 @@ func (api *API) GetAllLists(context *gin.Context) {
 	context.JSON(http.StatusOK, gin.H{"message": listsFound, "lists": lists})
 }
 
-// Add a problem to a list
-func (api *API) AddToListHandler(context *gin.Context) {
-	userId := context.GetInt64(middlewares.UserIdKey)
-
-	listId, valid := parseListId(context)
-	if !valid {
-		return
-	}
-
-	var request addListItemRequest
-	if err := context.ShouldBindJSON(&request); err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{"error": invalidFormat})
-		return
-	}
-	request.ProblemId = strings.TrimSpace(request.ProblemId)
-	if request.ProblemId == "" {
-		context.JSON(http.StatusBadRequest, gin.H{"error": invalidFormat})
-		return
-	}
-
-	item := items.ListItem{
-		Practice:  request.Values(),
-		ListId:    listId,
-		ProblemId: request.ProblemId,
-		Position:  0,
-	}
-	if err := item.Practice.Normalize(); err != nil {
-		writeListRepositoryError(context, err, failedToAddItemToList)
-		return
-	}
-	result, err := api.listItemsRepository.BulkAdd(context.Request.Context(), userId, listId, []items.ListItem{item})
-	if err != nil {
-		writeListRepositoryError(context, err, failedToAddItemToList)
-		return
-	}
-	if len(result.Added) == 0 {
-		context.JSON(http.StatusConflict, gin.H{"error": itemAlreadyExists})
-		return
-	}
-	context.JSON(http.StatusCreated, gin.H{"message": itemAdded, "item": result.Added[0], "rebalanced": result.Rebalanced, "order": result.Order})
-}
-
+// UpdateItemHandler accepts a nonempty strict PATCH, preserving omitted fields and clearing explicit nulls.
 func (api *API) UpdateItemHandler(context *gin.Context) {
 	listId, valid := parseListId(context)
 	if !valid {

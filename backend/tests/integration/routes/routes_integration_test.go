@@ -51,6 +51,8 @@ type workflowResponseBody struct {
 	List    lists.List           `json:"list"`
 	Lists   []lists.List         `json:"lists"`
 	Item    listitems.ListItem   `json:"item"`
+	Added   []listitems.ListItem `json:"added"`
+	Skipped []string             `json:"skipped_problem_ids"`
 	Items   []listitems.ListItem `json:"items"`
 }
 
@@ -132,12 +134,9 @@ func TestCompleteAPIWorkflow(t *testing.T) {
 		t.Fatalf("practice response = %+v", practiceResponse)
 	}
 	firstItem = practiceResponse.Item
-	duplicateResponse := decodeWorkflowJSON[workflowErrorResponse](t, performWorkflowRequest(
-		t, ownerClient, http.MethodPut, server.URL+listPath+"/item", ownerSession.Token,
-		fmt.Sprintf(`{"problem_id":%q,"position":99,"status":"solved"}`, firstItem.ProblemId),
-	), http.StatusConflict)
-	if duplicateResponse.Error != "Item already in list" {
-		t.Fatalf("duplicate response = %+v", duplicateResponse)
+	duplicateResponse := decodeWorkflowJSON[workflowResponseBody](t, performWorkflowRequest(t, ownerClient, http.MethodPost, server.URL+listPath+"/items/bulk", ownerSession.Token, fmt.Sprintf(`{"items":[{"problem_id":%q,"status":"solved"}]}`, firstItem.ProblemId)), http.StatusOK)
+	if len(duplicateResponse.Added) != 0 || len(duplicateResponse.Skipped) != 1 {
+		t.Fatalf("duplicate=%+v", duplicateResponse)
 	}
 	assertWorkflowListResponse(
 		t,
@@ -186,8 +185,8 @@ func TestCompleteAPIWorkflow(t *testing.T) {
 			body: `{"name":"Foreign rename"}`,
 		},
 		{
-			name: "add item", method: http.MethodPut, foreignPath: listPath + "/item", missingPath: missingListPath + "/item",
-			body: `{"problem_id":"9999A","position":2}`,
+			name: "add item", method: http.MethodPost, foreignPath: listPath + "/items/bulk", missingPath: missingListPath + "/items/bulk",
+			body: `{"items":[{"problem_id":"9999A"}]}`,
 		},
 		{
 			name: "delete item", method: http.MethodDelete,
@@ -318,19 +317,11 @@ func addWorkflowItem(
 	position int,
 ) listitems.ListItem {
 	t.Helper()
-	response := decodeWorkflowJSON[workflowResponseBody](t, performWorkflowRequest(
-		t,
-		client,
-		http.MethodPut,
-		fmt.Sprintf("%s/api/v1/lists/%d/item", serverURL, listID),
-		token,
-		fmt.Sprintf(`{"problem_id":%q,"position":%d}`, problemID, position),
-	), http.StatusCreated)
-	expectedItem := listitems.ListItem{ListId: listID, ProblemId: problemID, Position: response.Item.Position, CreatedAt: response.Item.CreatedAt, UpdatedAt: response.Item.UpdatedAt}
-	if response.Message != "Successfully added item to list" || response.Item != expectedItem || response.Item.CreatedAt.IsZero() {
-		t.Fatalf("add-item response = %+v, want item %+v", response, expectedItem)
+	response := decodeWorkflowJSON[workflowResponseBody](t, performWorkflowRequest(t, client, http.MethodPost, fmt.Sprintf("%s/api/v1/lists/%d/items/bulk", serverURL, listID), token, fmt.Sprintf(`{"items":[{"problem_id":%q}]}`, problemID)), http.StatusOK)
+	if len(response.Added) != 1 || response.Added[0].CreatedAt.IsZero() {
+		t.Fatalf("add response=%+v", response)
 	}
-	return response.Item
+	return response.Added[0]
 }
 
 func assertWorkflowListResponse(

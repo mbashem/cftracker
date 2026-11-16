@@ -17,6 +17,7 @@ function useUser() {
 	const [authenticate] = useLazyAuthenticateQuery();
 	const [prepareLogin, { isFetching: isPreparingLogin }] = useLazyPrepareGitHubLoginQuery();
 
+	/** Validate origin access before returning the URL that starts top-level OAuth navigation. */
 	const prepareGitHubLogin = useCallback(async () => {
 		if (!isBackendAccessEnabled()) throw new Error("Backend features are not enabled in this browser.");
 		try {

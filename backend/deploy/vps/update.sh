@@ -5,8 +5,10 @@ set -Eeuo pipefail
 umask 077
 root=$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)
 
+# Emit the operator-facing failure and terminate before any later deployment stage.
 fail() { echo "$*" >&2; exit 1; }
 
+# Execute one named VPS stage with validated arguments; preflight emits the PostgreSQL container ID.
 remote_stage() {
   # Arguments have been validated before being placed in SSH's remote command.
   # The quoted script runs on the VPS; archives never pass through a terminal.
@@ -19,9 +21,11 @@ hostname=$3
 expected_postgres=$4
 upload="$HOME/cftracker-upload-$release"
 destination="/srv/cftracker/releases/$release"
+# Reject existing paths, including dangling symlinks, before reserving deployment destinations.
 new_path() {
   [[ ! -e $1 && ! -L $1 ]] || { echo "Destination already exists: $1" >&2; exit 1; }
 }
+# Identify the existing database container so later stages can reject unexpected replacement.
 postgres_id() {
   sudo -n docker inspect --format '{{.Id}}' cftracker-postgres-1
 }
@@ -65,11 +69,13 @@ esac
 REMOTE
 }
 
+# Build the selected release through the maintained bundle entry point.
 build_bundle() {
   # Reuse the maintained image builder rather than maintaining a second build path.
   bash "$root/backend/deploy/vps/bundle.sh" "$release" "$bundle"
 }
 
+# Exclusively stream a local dump, validate its archive index, then publish the retained backup.
 save_local_backup() {
   # Exclusive creation preserves earlier successful dumps and failed partial files.
   set -C
@@ -86,6 +92,7 @@ save_local_backup() {
   echo "Verified local backup: $backup"
 }
 
+# Validate operator input and coordinate preflight, build, upload, backup, deployment, and verification.
 main() {
   if [[ ${1:-} == --help || ${1:-} == -h ]]; then
     echo 'Usage: bash backend/deploy/vps/update.sh SSH_TARGET API_HOSTNAME RELEASE'

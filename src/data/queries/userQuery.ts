@@ -20,6 +20,7 @@ export const userApi = createApi({
 	reducerPath: 'userApi',
 	baseQuery: createBaseQuery(),
 	endpoints: (builder) => ({
+		/** Check frontend eligibility without creating OAuth state or following provider redirects. */
 		prepareGitHubLogin: builder.query<{ status: "ready" }, void>({
 			query: () => ({
 				url: "/auth/github/login", params: { validate_only: "true" }, method: "GET",

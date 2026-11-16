@@ -179,40 +179,6 @@ func TestListHandlers(t *testing.T) {
 		},
 
 		{
-			name: "add accepts position zero and trims the problem ID", method: http.MethodPut, path: itemCollectionPath(testListID),
-			body:           fmt.Sprintf(`{"problem_id":"  %s  ","position":0}`, testProblemID),
-			expectedStatus: http.StatusCreated, expectedBody: testutil.APIResponse{Message: testItemAddedMessage, Item: createdItem},
-			expectedCalls: []repositoryCall{{
-				operation: createListItemOperation, userID: testAuthenticatedUserID, listID: testListID,
-				problemID: testProblemID, position: 0,
-			}},
-		},
-		validationCase("add rejects malformed list ID", http.MethodPut, itemCollectionPath("invalid"),
-			fmt.Sprintf(`{"problem_id":"%s","position":0}`, testProblemID), testInvalidListIDMessage),
-		validationCase("add rejects malformed JSON", http.MethodPut, itemCollectionPath(testListID), `{"problem_id":`, testInvalidFormatMessage),
-		validationCase("add rejects a negative position", http.MethodPut, itemCollectionPath(testListID),
-			fmt.Sprintf(`{"problem_id":"%s","position":-1}`, testProblemID), testInvalidFormatMessage),
-		validationCase("add rejects a blank problem ID", http.MethodPut, itemCollectionPath(testListID),
-			`{"problem_id":"   ","position":0}`, testInvalidFormatMessage),
-		validationCase("add rejects an overlong problem ID", http.MethodPut, itemCollectionPath(testListID),
-			fmt.Sprintf(`{"problem_id":"%s","position":0}`, strings.Repeat("A", 101)), testInvalidFormatMessage),
-		{
-			name: "add hides a foreign list", method: http.MethodPut, path: itemCollectionPath(testListID),
-			body: fmt.Sprintf(`{"problem_id":"%s","position":3}`, testProblemID), setup: clearLists,
-			expectedStatus: http.StatusNotFound, expectedBody: errorBody(testListDoesNotExistMessage),
-			expectedCalls: []repositoryCall{{
-				operation: createListItemOperation, userID: testAuthenticatedUserID, listID: testListID,
-				problemID: testProblemID, position: 0,
-			}},
-		},
-		repositoryErrorCase("add handles repository failure", http.MethodPut, itemCollectionPath(testListID),
-			fmt.Sprintf(`{"problem_id":"%s","position":3}`, testProblemID), createListItemOperation,
-			testFailedToAddItemMessage, repositoryCall{
-				operation: createListItemOperation, userID: testAuthenticatedUserID, listID: testListID,
-				problemID: testProblemID, position: 0,
-			}),
-
-		{
 			name: "remove deletes an existing item", method: http.MethodDelete, path: itemPath(testListID, testProblemID),
 			setup:          func(repository *mockRepository) { repository.storeItem(validItem) },
 			expectedStatus: http.StatusOK, expectedBody: messageBody(testItemDeletedMessage),
@@ -274,7 +240,6 @@ func TestListLimitErrorsReturnStableClientResponses(t *testing.T) {
 		status                   int
 	}{
 		{"list quota", http.MethodPost, testListsPath, `{"name":"valid"}`, createListOperation, limits.ErrListQuota, http.StatusConflict},
-		{"item quota", http.MethodPut, itemCollectionPath(testListID), `{"problem_id":"1900A","position":0}`, createListItemOperation, limits.ErrItemQuota, http.StatusConflict},
 		{"repository name validation", http.MethodPut, listPath(testListID), `{"name":"valid"}`, updateListOperation, limits.ErrInvalidListName, http.StatusBadRequest},
 	} {
 		t.Run(testCase.name, func(t *testing.T) {
@@ -346,7 +311,6 @@ func newListHandlerTestRouter(repository *mockRepository) *gin.Engine {
 	listRoutes.GET("/:listId", api.GetListHandler)
 	listRoutes.PUT("/:listId", api.UpdateListNameHandler)
 	listRoutes.DELETE("/:listId", api.DeleteListHandler)
-	listRoutes.PUT("/:listId/item", api.AddToListHandler)
 	listRoutes.PATCH("/:listId/item/:itemId", api.UpdateItemHandler)
 	listRoutes.DELETE("/:listId/item/:itemId", api.DeleteFromListHandler)
 	listRoutes.POST("/:listId/items/bulk", api.BulkAddHandler)
@@ -418,7 +382,7 @@ func listPath(listID any) string {
 }
 
 func itemCollectionPath(listID any) string {
-	return fmt.Sprintf("%s/%v/item", testListsPath, listID)
+	return fmt.Sprintf("%s/%v/items/bulk", testListsPath, listID)
 }
 
 func itemPath(listID any, problemID string) string {
@@ -572,39 +536,6 @@ func (repository *mockRepository) GetAllListByUserId(ctx context.Context, userID
 	return userLists, nil
 }
 
-func (repository *mockRepository) createItem(ctx context.Context, userID int64, item *listitems.ListItem) error {
-	repository.contextMismatch = repository.contextMismatch || ctx != repository.expectedContext
-	repository.record(repositoryCall{
-		operation: createListItemOperation,
-		userID:    userID,
-		listID:    item.ListId,
-		problemID: item.ProblemId,
-		position:  item.Position,
-	})
-	if err := repository.operationErrors[createListItemOperation]; err != nil {
-		return err
-	}
-	if _, found := repository.ownedList(userID, item.ListId); !found {
-		return listitems.ErrListNotFound
-	}
-	if stored, found := repository.items[item.ListId][item.ProblemId]; found {
-		*item = stored
-		return listitems.ErrItemExists
-	}
-
-	createdItem := *item
-	createdItem.Position = listitems.PositionGap
-	for _, stored := range repository.items[item.ListId] {
-		if stored.Position >= createdItem.Position {
-			createdItem.Position = stored.Position + listitems.PositionGap
-		}
-	}
-	createdItem.CreatedAt = testItemCreatedAt()
-	repository.storeItem(createdItem)
-	*item = createdItem
-	return nil
-}
-
 func (repository *mockRepository) deleteItem(ctx context.Context, userID int64, item *listitems.ListItem) error {
 	repository.contextMismatch = repository.contextMismatch || ctx != repository.expectedContext
 	repository.record(repositoryCall{
@@ -643,17 +574,14 @@ func (repository *mockRepository) GetItems(ctx context.Context, userID int64, li
 	return storedItems, nil
 }
 
-// Go cannot overload Create and Delete, so the item interface uses a view over the shared state.
+// List and item Delete signatures differ, so the item interface uses a view over shared state.
 type mockListItemRepository struct{ *mockRepository }
-
-func (repository mockListItemRepository) Create(ctx context.Context, userID int64, item *listitems.ListItem) error {
-	return repository.createItem(ctx, userID, item)
-}
 
 func (repository mockListItemRepository) Delete(ctx context.Context, userID int64, item *listitems.ListItem) error {
 	return repository.deleteItem(ctx, userID, item)
 }
 
+// Update apply only supplied practice fields to an owned mock item and refresh its deterministic timestamp.
 func (repository mockListItemRepository) Update(ctx context.Context, userID int64, listID int64, problemID string, patch listitems.ItemPatch) (*listitems.ListItem, error) {
 	repository.contextMismatch = repository.contextMismatch || ctx != repository.expectedContext
 	repository.record(repositoryCall{operation: updateListItemOperation, userID: userID, listID: listID, problemID: problemID})

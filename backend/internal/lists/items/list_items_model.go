@@ -21,6 +21,7 @@ type Field[T any] struct {
 	Value *T
 }
 
+// UnmarshalJSON records property presence independently of null so PATCH can distinguish clearing from omission.
 func (field *Field[T]) UnmarshalJSON(data []byte) error {
 	if !utf8.Valid(data) {
 		return ErrInvalidPractice
@@ -29,6 +30,7 @@ func (field *Field[T]) UnmarshalJSON(data []byte) error {
 	return json.Unmarshal(data, &field.Value)
 }
 
+// suppliedValue ignores unset programmatic values, matching omitted JSON properties.
 func (field Field[T]) suppliedValue() *T {
 	if !field.Set {
 		return nil
@@ -46,10 +48,12 @@ type ItemPatch struct {
 	Notes     Field[string]         `json:"notes"`
 }
 
+// Empty reports whether the request supplies any editable property, including an explicit null.
 func (patch ItemPatch) Empty() bool {
 	return !patch.Status.Set && !patch.HelpUsed.Set && !patch.SolvedOn.Set && !patch.TimeSpent.Set && !patch.Notes.Set
 }
 
+// Values extracts supplied values for validation; the patch retains presence bits needed for writes.
 func (patch ItemPatch) Values() Practice {
 	return Practice{
 		Status: patch.Status.suppliedValue(), HelpUsed: patch.HelpUsed.suppliedValue(), SolvedOn: patch.SolvedOn.suppliedValue(),
@@ -57,7 +61,7 @@ func (patch ItemPatch) Values() Practice {
 	}
 }
 
-// Normalize validates only fields marked Set, preserving explicit nulls.
+// Normalize validates supplied fields and copies normalized values back without changing presence bits.
 func (patch *ItemPatch) Normalize() error {
 	values := patch.Values()
 	if err := values.Normalize(); err != nil {

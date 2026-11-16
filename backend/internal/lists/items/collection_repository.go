@@ -3,6 +3,7 @@ package items
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"slices"
 	"strings"
@@ -17,8 +18,8 @@ type CollectionRepository interface {
 	BulkRemove(context.Context, int64, int64, []string) (*CollectionResult, error)
 }
 
-// withOrder serializes membership/order writers and publishes results only after commit.
-func (repository *Repository) withOrder(ctx context.Context, userID, listID int64, change func(context.Context, *sql.Tx, []OrderedItem) (*CollectionResult, error)) (*CollectionResult, error) {
+// withList serializes item/order changes on the owned list and returns its committed order.
+func (repository *Repository) withList(ctx context.Context, userID, listID int64, change func(context.Context, *sql.Tx) (*CollectionResult, error)) (*CollectionResult, error) {
 	ctx, cancel := context.WithTimeout(ctx, repository.timeout)
 	defer cancel()
 	tx, err := repository.db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
@@ -30,47 +31,13 @@ func (repository *Repository) withOrder(ctx context.Context, userID, listID int6
 	if err := tx.QueryRowContext(ctx, `SELECT id FROM lists WHERE id=$1 AND user_id=$2 FOR UPDATE`, listID, userID).Scan(&ownedID); err != nil {
 		return nil, listQueryError(err)
 	}
-	rows, err := tx.QueryContext(ctx, `SELECT problem_id, position FROM list_items WHERE list_id=$1 ORDER BY position`, listID)
+	result, err := change(ctx, tx)
 	if err != nil {
 		return nil, err
 	}
-	order := []OrderedItem{}
-	for rows.Next() {
-		var item OrderedItem
-		if err := rows.Scan(&item.ProblemID, &item.Position); err != nil {
-			rows.Close()
-			return nil, err
-		}
-		order = append(order, item)
-	}
-	err = rows.Err()
-	rows.Close()
+	result.Order, err = readOrder(ctx, tx, listID)
 	if err != nil {
 		return nil, err
-	}
-	result, err := change(ctx, tx, order)
-	if err != nil {
-		return nil, err
-	}
-	// Only changed positions receive an UPDATE; deferred uniqueness permits swaps.
-	old := make(map[string]int64, len(order))
-	for _, item := range order {
-		old[item.ProblemID] = item.Position
-	}
-	ids, positions := []string{}, []int64{}
-	for _, item := range result.Order {
-		if position, exists := old[item.ProblemID]; exists && position != item.Position {
-			ids = append(ids, item.ProblemID)
-			positions = append(positions, item.Position)
-		}
-	}
-	if len(ids) > 0 {
-		_, err = tx.ExecContext(ctx, `UPDATE list_items SET position=input.position, updated_at=CURRENT_TIMESTAMP
-			FROM unnest($2::text[], $3::bigint[]) AS input(problem_id, position)
-			WHERE list_items.list_id=$1 AND list_items.problem_id=input.problem_id`, listID, pq.Array(ids), pq.Array(positions))
-		if err != nil {
-			return nil, err
-		}
 	}
 	if err := tx.Commit(); err != nil {
 		return nil, err
@@ -78,13 +45,122 @@ func (repository *Repository) withOrder(ctx context.Context, userID, listID int6
 	return result, nil
 }
 
+// readOrder loads the complete lightweight order for response reconciliation or redistribution.
+func readOrder(ctx context.Context, tx *sql.Tx, listID int64) ([]OrderedItem, error) {
+	rows, err := tx.QueryContext(ctx, `SELECT problem_id,position FROM list_items WHERE list_id=$1 ORDER BY position`, listID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	order := []OrderedItem{}
+	for rows.Next() {
+		var item OrderedItem
+		if err := rows.Scan(&item.ProblemID, &item.Position); err != nil {
+			return nil, err
+		}
+		order = append(order, item)
+	}
+	return order, rows.Err()
+}
+
+// writePositions persists ranks by stable problem ID; unchanged rows retain their timestamps.
+func writePositions(ctx context.Context, tx *sql.Tx, listID int64, order []OrderedItem) error {
+	ids, positions := []string{}, []int64{}
+	for _, item := range order {
+		ids = append(ids, item.ProblemID)
+		positions = append(positions, item.Position)
+	}
+	_, err := tx.ExecContext(ctx, `UPDATE list_items SET position=input.position,updated_at=CURRENT_TIMESTAMP
+ FROM unnest($2::text[],$3::bigint[]) AS input(problem_id,position)
+ WHERE list_items.list_id=$1 AND list_items.problem_id=input.problem_id
+ AND list_items.position IS DISTINCT FROM input.position`, listID, pq.Array(ids), pq.Array(positions))
+	return err
+}
+
+// MoveItems validates first, then calculates each move from its current database neighbors.
+// Only a crowded destination rebuilds the complete order; the batch commits or rolls back together.
 func (repository *Repository) MoveItems(ctx context.Context, userID, listID int64, moves []Move) (*CollectionResult, error) {
-	return repository.withOrder(ctx, userID, listID, func(ctx context.Context, tx *sql.Tx, order []OrderedItem) (*CollectionResult, error) {
-		order, rebalanced, err := ApplyMoves(order, moves)
-		return &CollectionResult{Order: order, Rebalanced: rebalanced}, err
+	if err := ValidateMoves(moves); err != nil {
+		return nil, err
+	}
+	return repository.withList(ctx, userID, listID, func(ctx context.Context, tx *sql.Tx) (*CollectionResult, error) {
+		result := &CollectionResult{}
+		for _, move := range moves {
+			var current int64
+			if err := tx.QueryRowContext(ctx, `SELECT position FROM list_items WHERE list_id=$1 AND problem_id=$2`, listID, move.ProblemID).Scan(&current); err != nil {
+				if errors.Is(err, sql.ErrNoRows) {
+					return nil, ErrOrderConflict
+				}
+				return nil, err
+			}
+			left, right := int64(0), MaxPosition
+			anchor := move.Before
+			if move.After != nil {
+				anchor = move.After
+			}
+			if anchor != nil {
+				var rank int64
+				if err := tx.QueryRowContext(ctx, `SELECT position FROM list_items WHERE list_id=$1 AND problem_id=$2`, listID, *anchor).Scan(&rank); err != nil {
+					if errors.Is(err, sql.ErrNoRows) {
+						return nil, ErrOrderConflict
+					}
+					return nil, err
+				}
+				if move.Before != nil {
+					right = rank
+					if err := tx.QueryRowContext(ctx, `SELECT COALESCE(max(position),0) FROM list_items WHERE list_id=$1 AND problem_id<>$2 AND position<$3`, listID, move.ProblemID, rank).Scan(&left); err != nil {
+						return nil, err
+					}
+				} else {
+					left = rank
+					if err := tx.QueryRowContext(ctx, `SELECT COALESCE(min(position),$4::bigint) FROM list_items WHERE list_id=$1 AND problem_id<>$2 AND position>$3`, listID, move.ProblemID, rank, MaxPosition).Scan(&right); err != nil {
+						return nil, err
+					}
+				}
+			} else {
+				if err := tx.QueryRowContext(ctx, `SELECT COALESCE(max(position),0) FROM list_items WHERE list_id=$1 AND problem_id<>$2`, listID, move.ProblemID).Scan(&left); err != nil {
+					return nil, err
+				}
+			}
+			if current > left && current < right {
+				continue
+			}
+			position, rebalance := PositionBetween(left, right)
+			changed := []OrderedItem{{ProblemID: move.ProblemID, Position: position}}
+			if rebalance {
+				order, err := readOrder(ctx, tx, listID)
+				if err != nil {
+					return nil, err
+				}
+				changed = make([]OrderedItem, 0, len(order))
+				for _, item := range order {
+					if item.ProblemID == move.ProblemID {
+						continue
+					}
+					if move.Before != nil && item.ProblemID == *move.Before {
+						changed = append(changed, OrderedItem{ProblemID: move.ProblemID})
+					}
+					changed = append(changed, item)
+					if move.After != nil && item.ProblemID == *move.After {
+						changed = append(changed, OrderedItem{ProblemID: move.ProblemID})
+					}
+				}
+				if anchor == nil {
+					changed = append(changed, OrderedItem{ProblemID: move.ProblemID})
+				}
+				rebalanceOrder(changed)
+				result.Rebalanced = true
+			}
+			if err := writePositions(ctx, tx, listID, changed); err != nil {
+				return nil, err
+			}
+		}
+		return result, nil
 	})
 }
 
+// BulkAdd validates the batch and appends new list items in input order under the list lock.
+// Existing records are preserved; duplicate input IDs, invalid fields, or excess capacity fail atomically.
 func (repository *Repository) BulkAdd(ctx context.Context, userID, listID int64, input []ListItem) (*CollectionResult, error) {
 	if len(input) == 0 || len(input) > limits.ItemsPerList {
 		return nil, ErrInvalidOperation
@@ -92,8 +168,8 @@ func (repository *Repository) BulkAdd(ctx context.Context, userID, listID int64,
 	input = slices.Clone(input)
 	seen := make(map[string]bool, len(input))
 	for index := range input {
-		id, err := NormalizeProblemID(input[index].ProblemId)
-		if err != nil || seen[id] {
+		id := strings.TrimSpace(input[index].ProblemId)
+		if err := ValidateProblemID(id); err != nil || seen[id] {
 			return nil, ErrInvalidOperation
 		}
 		seen[id] = true
@@ -102,7 +178,11 @@ func (repository *Repository) BulkAdd(ctx context.Context, userID, listID int64,
 			return nil, err
 		}
 	}
-	return repository.withOrder(ctx, userID, listID, func(ctx context.Context, tx *sql.Tx, order []OrderedItem) (*CollectionResult, error) {
+	return repository.withList(ctx, userID, listID, func(ctx context.Context, tx *sql.Tx) (*CollectionResult, error) {
+		order, err := readOrder(ctx, tx, listID)
+		if err != nil {
+			return nil, err
+		}
 		result := &CollectionResult{Order: slices.Clone(order)}
 		existing := make(map[string]bool, len(order))
 		for _, item := range order {
@@ -118,13 +198,6 @@ func (repository *Repository) BulkAdd(ctx context.Context, userID, listID int64,
 			result.Order = append(result.Order, OrderedItem{ProblemID: item.ProblemId})
 		}
 		if len(added) == 0 {
-			if len(input) == 1 {
-				item, _, err := scanListItem(tx.QueryRowContext(ctx, `SELECT list_id, `+listItemColumns+` FROM list_items WHERE list_id=$1 AND problem_id=$2`, listID, input[0].ProblemId))
-				if err != nil {
-					return nil, err
-				}
-				result.existing = &item
-			}
 			return result, nil
 		}
 		if len(result.Order) > limits.ItemsPerList {
@@ -171,6 +244,11 @@ func (repository *Repository) BulkAdd(ctx context.Context, userID, listID int64,
 		if err != nil {
 			return nil, err
 		}
+		if result.Rebalanced {
+			if err := writePositions(ctx, tx, listID, result.Order[:len(order)]); err != nil {
+				return nil, err
+			}
+		}
 		for _, item := range added {
 			result.Added = append(result.Added, byID[item.ProblemId])
 		}
@@ -178,6 +256,8 @@ func (repository *Repository) BulkAdd(ctx context.Context, userID, listID int64,
 	})
 }
 
+// BulkRemove deletes selected list items and practice summaries atomically, reporting absent IDs.
+// Surviving positions are preserved; missing or unowned lists are indistinguishable.
 func (repository *Repository) BulkRemove(ctx context.Context, userID, listID int64, ids []string) (*CollectionResult, error) {
 	if len(ids) == 0 || len(ids) > limits.ItemsPerList {
 		return nil, ErrInvalidOperation
@@ -185,14 +265,18 @@ func (repository *Repository) BulkRemove(ctx context.Context, userID, listID int
 	ids = slices.Clone(ids)
 	selected := make(map[string]bool, len(ids))
 	for index, id := range ids {
-		id, err := NormalizeProblemID(id)
-		if err != nil || selected[id] {
+		id = strings.TrimSpace(id)
+		if err := ValidateProblemID(id); err != nil || selected[id] {
 			return nil, ErrInvalidOperation
 		}
 		ids[index] = id
 		selected[id] = true
 	}
-	return repository.withOrder(ctx, userID, listID, func(ctx context.Context, tx *sql.Tx, order []OrderedItem) (*CollectionResult, error) {
+	return repository.withList(ctx, userID, listID, func(ctx context.Context, tx *sql.Tx) (*CollectionResult, error) {
+		order, err := readOrder(ctx, tx, listID)
+		if err != nil {
+			return nil, err
+		}
 		result := &CollectionResult{Order: []OrderedItem{}}
 		present := make(map[string]bool, len(order))
 		for _, item := range order {
@@ -208,7 +292,7 @@ func (repository *Repository) BulkRemove(ctx context.Context, userID, listID int
 				result.Absent = append(result.Absent, id)
 			}
 		}
-		_, err := tx.ExecContext(ctx, `DELETE FROM list_items WHERE list_id=$1 AND problem_id=ANY($2::text[])`, listID, pq.Array(ids))
+		_, err = tx.ExecContext(ctx, `DELETE FROM list_items WHERE list_id=$1 AND problem_id=ANY($2::text[])`, listID, pq.Array(ids))
 		return result, err
 	})
 }

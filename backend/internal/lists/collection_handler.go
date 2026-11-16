@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/mbashem/cftracker/backend/internal/lists/items"
@@ -15,6 +16,7 @@ type bulkItemRequest struct {
 	ProblemID string `json:"problem_id"`
 }
 
+// decodeCollection accepts one JSON value with known fields and writes a 400 response on decoding failure.
 func decodeCollection(context *gin.Context, value any) bool {
 	decoder := json.NewDecoder(context.Request.Body)
 	decoder.DisallowUnknownFields()
@@ -29,6 +31,7 @@ func decodeCollection(context *gin.Context, value any) bool {
 	return true
 }
 
+// BulkAddHandler decodes practice records and returns an atomic append result for the authenticated owner.
 func (api *API) BulkAddHandler(context *gin.Context) {
 	listID, valid := parseListId(context)
 	if !valid {
@@ -46,7 +49,7 @@ func (api *API) BulkAddHandler(context *gin.Context) {
 			writeListRepositoryError(context, err, failedToAddItemToList)
 			return
 		}
-		input[index] = items.ListItem{ProblemId: item.ProblemID, Practice: item.Values()}
+		input[index] = items.ListItem{ProblemId: strings.TrimSpace(item.ProblemID), Practice: item.Values()}
 	}
 	result, err := api.listItemsRepository.BulkAdd(context.Request.Context(), context.GetInt64(middlewares.UserIdKey), listID, input)
 	if err != nil {
@@ -56,6 +59,7 @@ func (api *API) BulkAddHandler(context *gin.Context) {
 	context.JSON(http.StatusOK, result)
 }
 
+// MoveItemsHandler submits sequential relative moves and returns the committed order and rebalance flag.
 func (api *API) MoveItemsHandler(context *gin.Context) {
 	listID, valid := parseListId(context)
 	if !valid {
@@ -67,6 +71,10 @@ func (api *API) MoveItemsHandler(context *gin.Context) {
 	if !decodeCollection(context, &request) {
 		return
 	}
+	if err := items.ValidateMoves(request.Moves); err != nil {
+		writeListRepositoryError(context, err, failedToUpdateItem)
+		return
+	}
 	result, err := api.listItemsRepository.MoveItems(context.Request.Context(), context.GetInt64(middlewares.UserIdKey), listID, request.Moves)
 	if err != nil {
 		writeListRepositoryError(context, err, failedToUpdateItem)
@@ -75,6 +83,7 @@ func (api *API) MoveItemsHandler(context *gin.Context) {
 	context.JSON(http.StatusOK, result)
 }
 
+// BulkRemoveHandler submits selected IDs for atomic removal and returns removed/absent IDs with surviving order.
 func (api *API) BulkRemoveHandler(context *gin.Context) {
 	listID, valid := parseListId(context)
 	if !valid {

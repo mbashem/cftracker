@@ -4,7 +4,7 @@ The backend assigns sparse `BIGINT` positions. The default gap is `2^30` (1,073,
 
 Adding appends. Deletion leaves gaps. A move uses the midpoint between its current destination neighbors; append uses the default gap. Before a move would leave either neighboring gap below `2^10`, the backend redistributes the final order using the default gap. Append also rebalances before reaching the safe numeric ceiling. Rebalancing preserves practice records and creation timestamps; only changed positions refresh `updated_at`.
 
-Every membership/order writer locks the owned parent list inside a `READ COMMITTED` transaction, reads the current order after acquiring the lock, and commits the entire operation. Concurrent moves execute sequentially against current database state; there is no revision or stale-edit rejection contract. Practice PATCH retains its independent field-update behavior.
+Every list item/order writer locks the owned parent list inside a `READ COMMITTED` transaction, and commits the entire operation. Ordinary moves query the moved item, anchor, and adjacent rank using database positions. The full order is rebuilt only for redistribution and loaded after mutation for response reconciliation. Concurrent moves execute sequentially against current database state; there is no revision or stale-edit rejection contract. Practice PATCH retains its independent field-update behavior.
 
 ## Atomic move batches
 
@@ -24,7 +24,7 @@ Moves execute in request order. Each entry specifies the moved problem and at mo
 {"items":[{"problem_id":"1900A","status":"solved","time_spent":2100,"notes":"Invariant"},{"problem_id":"1900B"}]}
 ```
 
-Records use the five optional [practice fields](PRACTICE_RECORDS.md). Position and other membership/timestamp properties are rejected. New records append in input order. Existing records are skipped without changing practice, timestamps, or position, including at quota. Duplicate IDs within a request are rejected after trimming. Every supplied record is validated, including skipped records. Capacity is checked against genuinely new memberships; an over-capacity batch writes nothing. Import/export and CSV processing belong entirely to the frontend. Copy is not implemented.
+Records use the five optional [practice fields](PRACTICE_RECORDS.md). Position and other list item/timestamp properties are rejected. New records append in input order. Existing records are skipped without changing practice, timestamps, or position, including at quota. Duplicate IDs within a request are rejected after trimming. Every supplied record is validated, including skipped records. Capacity is checked against genuinely new list items; an over-capacity batch writes nothing. Import/export and CSV processing belong entirely to the frontend. Copy is not implemented.
 
 ## Bulk removal
 
@@ -34,7 +34,7 @@ Records use the five optional [practice fields](PRACTICE_RECORDS.md). Position a
 {"problem_ids":["1900A","1900B"]}
 ```
 
-Removes the selected memberships and practice records atomically. Missing IDs are reported as absent. Duplicate IDs are rejected. Surviving positions and timestamps stay unchanged.
+Removes the selected list items and practice records atomically. Missing IDs are reported as absent. Duplicate IDs are rejected. Surviving positions and timestamps stay unchanged.
 
 ## Responses and limits
 
@@ -51,9 +51,9 @@ All three endpoints return `200` after commit, including no-ops:
 
 `order` always contains the complete resulting lightweight order and positions, including when no rebalance occurred. The frontend should reconcile its local order from this result. `rebalanced` indicates whether positions were redistributed during the operation. Bulk addition additionally returns complete new records in `added` and IDs in `skipped_problem_ids`; removal returns `removed_problem_ids` and `absent_problem_ids`. Empty optional result arrays are omitted. Other tabs observe changes on refetch.
 
-The existing single-add endpoint accepts omitted/null `position` and ignores a supplied nonnegative legacy position. It returns the existing `201` item envelope plus `rebalanced` and `order`; a duplicate remains `409`. The repository `Create` adapter preserves its duplicate sentinel and populated saved-item behavior. Single deletion uses the same locked removal path.
+Bulk addition is the sole add API and repository method. Single additions send a one-item array. Existing items return `200` as skipped IDs. The old single-add PUT route and repository adapter are removed; deploy the updated frontend and backend together. Single deletion uses the same locked removal path.
 
-Each collection request must contain 1–1,000 entries and exactly one JSON object. Unknown fields and trailing JSON are rejected. IDs are trimmed, valid Unicode without NUL, and 1–100 code points. Practice validation is repeated in repository writes. The three collection endpoints allow 8 MiB bodies; other endpoints retain 16 KiB. Authentication, existing write-rate limiting, 20 lists per account, and 1,000 items per list remain unchanged.
+Each collection request must contain 1–1,000 entries and exactly one JSON object. Unknown fields and trailing JSON are rejected. Add/remove IDs are trimmed; move IDs and anchors must already have no surrounding whitespace. All IDs are valid Unicode without NUL and contain 1–100 code points. Move request validation runs before locking, while item/anchor existence is checked against current database state under the lock. Practice validation is repeated in repository writes. The three collection endpoints allow 8 MiB bodies; other endpoints retain 16 KiB. Authentication, existing write-rate limiting, 20 lists per account, and 1,000 items per list remain unchanged.
 
 - `400`: invalid JSON, fields, duplicate input IDs, or invalid move shape.
 - `401`: authentication required.

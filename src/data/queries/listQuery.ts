@@ -1,6 +1,6 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
 import { createBaseQuery } from './baseQuery';
-import { jsonToList, jsonToListItem, List, ListItem, ListWithItem } from '../../types/list';
+import { jsonToList, jsonToListItem, List, ListItem, ListWithItem, ListAddResult } from '../../types/list';
 import type { UserState } from '../reducers/userSlice';
 
 export enum ListApiTags {
@@ -83,15 +83,15 @@ export const listApi = createApi({
 			}),
 			invalidatesTags: [ListApiTags.Lists]
 		}),
-		addToList: builder.mutation<ListItem, { listId: number; problemId: string; position: number; }>({
-			query: ({ listId, problemId, position }) => ({
-				url: `/lists/${listId}/item`,
-				method: 'PUT',
-				body: { "problem_id": problemId, position },
-			}),
-			transformResponse: (response: any) => jsonToListItem(response.item),
-			invalidatesTags: (_result, _error, arg, _meta) => IndividualPostTag(arg.listId),
-		}),
+  // One append contract handles a single problem and larger batches.
+  addToList: builder.mutation<ListAddResult, { listId: number; problemIds: string[] }>({
+   query: ({listId,problemIds})=>({url:`/lists/${listId}/items/bulk`,method:'POST',body:{items:problemIds.map(problem_id=>({problem_id}))}}),
+   transformResponse:(response:any):ListAddResult=>({
+    added:(response.added??[]).map(jsonToListItem),skippedProblemIds:response.skipped_problem_ids??[],
+    order:response.order.map((item:any)=>({problemId:item.problem_id,position:item.position})),rebalanced:response.rebalanced,
+   }),
+   invalidatesTags:(_result,_error,arg)=>IndividualPostTag(arg.listId),
+  }),
 		deleteFromList: builder.mutation<void, { listId: number; problemId: string; }>({
 			query: ({ listId, problemId }) => ({
 				url: `/lists/${listId}/item/${problemId}`,

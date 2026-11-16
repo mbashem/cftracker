@@ -29,6 +29,7 @@ function Menu() {
 
   const { showGeneralToast, showErrorToast } = useToast();
 
+  /** Start OAuth after access validation; surface rejected or unavailable backends in the current page. */
   const signInWithGitHub = useCallback(async () => {
     try {
       const loginURL = await prepareGitHubLogin();

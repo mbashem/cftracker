@@ -88,7 +88,6 @@ function useProblemPage() {
 		};
 	}, [getSearchParam]);
 	const [list, setList] = useState<ListWithItem | undefined>(undefined);
-	const nextListPosition = useRef(0);
 	const pendingListAdditions = useRef(new Set<string>());
 	const listGeneration = useRef(0);
 	const { submissions } = useSubmissionsStore();
@@ -255,7 +254,6 @@ function useProblemPage() {
 		setList(undefined);
 		setProblemsAddedToList(new Set());
 		pendingListAdditions.current = new Set();
-		nextListPosition.current = 0;
 		setLoadedSession(undefined);
 		if (listId === undefined || session === undefined) return;
 
@@ -263,10 +261,7 @@ function useProblemPage() {
 			if (cancelled) return;
 			setLoadedSession(session);
 			setList(listWithItems);
-			nextListPosition.current = listWithItems.items.reduce(
-				(max, item) => Math.max(max, item.position),
-				-1
-			) + 1;
+
 			setProblemsAddedToList(new Set(listWithItems.items.map(listItem => listItem.problemId)));
 		}).catch(err => {
 			if (!cancelled) showErrorToast(err?.message ?? "Failed to find allready added problems");
@@ -319,14 +314,17 @@ function useProblemPage() {
 		pending.add(problemId);
 		const generation = listGeneration.current;
 		try {
-			const position = nextListPosition.current;
-			nextListPosition.current += 1;
-			const item = await api.addProblemToList(listId, problemId, position);
-			if (generation !== listGeneration.current) return;
-			setList((currentList) => currentList === undefined
-				? currentList
-				: { ...currentList, items: [...currentList.items, item] }
-			);
+   const result=await api.addProblemsToList(listId,[problemId]);
+   if(generation!==listGeneration.current)return;
+   if(result.skippedProblemIds.includes(problemId)) {
+    const saved=await api.getListWithItems(listId);
+    if(generation!==listGeneration.current)return;
+    setList(saved);
+    setProblemsAddedToList(new Set(saved.items.map(item=>item.problemId)));
+   }else{
+    const positions=new Map(result.order.map(item=>[item.problemId,item.position]));
+    setList(current=>current===undefined?current:{...current,items:[...current.items,...result.added].map(item=>({...item,position:positions.get(item.problemId)??item.position})).sort((a,b)=>a.position-b.position)});
+   }
 			setProblemsAddedToList(current => new Set(current).add(problemId));
 			return;
 		} catch (error) {

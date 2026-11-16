@@ -12,16 +12,12 @@ import (
 var ErrListNotFound = errors.New("list not found")
 var ErrItemNotFound = errors.New("item not found")
 
-// ErrItemExists accompanies the saved item populated by Create; no data changed.
-var ErrItemExists = errors.New("item already in list")
-
 const listItemColumns = `list_items.problem_id, list_items.position, list_items.created_at,
 	list_items.updated_at, list_items.status, list_items.help_used,
 	to_char(list_items.solved_on, 'YYYY-MM-DD'), list_items.time_spent, list_items.notes`
 
 type ListItemRepository interface {
 	CollectionRepository
-	Create(ctx context.Context, userId int64, item *ListItem) error
 	Delete(ctx context.Context, userId int64, item *ListItem) error
 	GetItems(ctx context.Context, userId int64, listId int64) ([]ListItem, error)
 	Update(ctx context.Context, userId int64, listId int64, problemId string, patch ItemPatch) (*ListItem, error)
@@ -44,21 +40,8 @@ func (repository *Repository) GetItems(ctx context.Context, userId int64, listId
 	return repository.GetListItems(ctx, userId, listId)
 }
 
-// Add a problem to a list
-func (repository *Repository) Create(ctx context.Context, userId int64, item *ListItem) error {
-	result, err := repository.BulkAdd(ctx, userId, item.ListId, []ListItem{*item})
-	if err != nil {
-		return err
-	}
-	if len(result.Added) == 0 {
-		*item = *result.existing
-		return ErrItemExists
-	}
-	*item = result.Added[0]
-	return nil
-}
-
-// Update changes only supplied item fields, including explicit nulls.
+// Update validates and writes only supplied practice fields through an ownership-scoped statement.
+// Explicit null clears a field; every successful update refreshes updated_at.
 func (repository *Repository) Update(ctx context.Context, userId int64, listId int64, problemId string, patch ItemPatch) (*ListItem, error) {
 	if err := patch.Normalize(); err != nil {
 		return nil, err
@@ -102,7 +85,7 @@ func (repository *Repository) Update(ctx context.Context, userId int64, listId i
 	return &item, nil
 }
 
-// Delete a problem from a list
+// Delete uses the locked removal path; absent items succeed without changing surviving positions.
 func (repository *Repository) Delete(ctx context.Context, userId int64, item *ListItem) error {
 	_, err := repository.BulkRemove(ctx, userId, item.ListId, []string{item.ProblemId})
 	return err
@@ -148,6 +131,7 @@ func (repository *Repository) GetListItems(ctx context.Context, userId int64, li
 	return items, nil
 }
 
+// scanListItem decodes the shared column projection; false presence denotes an empty LEFT JOIN result.
 func scanListItem(scanner interface{ Scan(...any) error }) (ListItem, bool, error) {
 	var item ListItem
 	var problemId sql.NullString

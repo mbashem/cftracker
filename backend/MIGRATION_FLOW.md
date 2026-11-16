@@ -15,7 +15,7 @@ This document explains CFTracker's migration ordering, checksum protection, roll
 
 Migration metadata comes first so every application-table migration can be registered and checksummed. Its down migration intentionally retains this metadata so integrity checks continue to work after a full rollback.
 
-Version 5 leaves existing practice fields null and preserves membership timestamps. Its down migration deletes practice data and enum types while keeping item memberships and ordering. It does not change the `list_items` table rollback target of version 3. See [practice records](PRACTICE_RECORDS.md).
+Version 5 leaves existing practice fields null and preserves list item timestamps. Its down migration deletes practice data and enum types while keeping list items and their ordering. It does not change the `list_items` table rollback target of version 3. See [practice records](PRACTICE_RECORDS.md).
 
 ## Migrate up
 
@@ -189,7 +189,7 @@ The test verifies:
 3. Named rollbacks stop at the registered `list_items`, `lists`, and `users` boundaries.
 4. Changing a copied applied migration fails with the expected checksum error.
 5. Adding a column directly to the target fails comparison with the clean reference schema.
-6. Upgrading seeded version-4 items leaves practice uninitialized and preserves timestamps; rolling version 5 back and reapplying preserves membership and removes prior practice data.
+6. Upgrading seeded version-4 items leaves practice uninitialized and preserves timestamps; rolling version 5 back and reapplying preserves list items and removes prior practice data.
 
 ## Code review map
 

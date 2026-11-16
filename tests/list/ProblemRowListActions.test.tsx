@@ -19,12 +19,12 @@ beforeEach(() => {
   backend.handleRequests(async request => {
     const path = new URL(request.url).pathname;
     if (path === "/api/v1/lists") return Response.json({ lists: [backendList] });
-    if (request.method === "PUT") {
+    if (request.method === "POST") {
       if (rejectAddition) return Response.json({ error: "Permission denied" }, { status: 403 });
       const body = await request.clone().json();
-      const item = { list_id: 5, ...body, created_at: "2026-01-02" };
+      const item = { list_id:5,...body.items[0],position:1073741824,created_at: "2026-01-02" };
       items = [...items, item];
-      return Response.json({ item }, { status: 201 });
+      return Response.json({added:[item],order:items,rebalanced:false});
     }
     return Response.json({ list: backendList, items });
   });
@@ -48,10 +48,10 @@ test("each row opens its own chooser lazily and adds that problem after the high
   fireEvent.click(screen.getByRole("button", { name: "Add 100A to a list" }));
   fireEvent.click(await screen.findByRole("button", { name: "Add 100A to Practice" }));
   await screen.findByText("Added 100A to Practice.");
-  const additions = backend.requests.filter(request => request.method === "PUT");
+  const additions = backend.requests.filter(request => request.method === "POST");
   expect(additions).toHaveLength(1);
-  expect(new URL(additions[0].url).pathname).toBe("/api/v1/lists/5/item");
-  expect(await additions[0].json()).toEqual({ problem_id: "100A", position: 5 });
+  expect(new URL(additions[0].url).pathname).toBe("/api/v1/lists/5/items/bulk");
+  expect(await additions[0].json()).toEqual({ items:[{problem_id:"100A"}] });
   expect(additions[0].headers.get("Authorization")).toBe("Bearer test-session");
   expect((screen.getByRole("button", { name: "Added 100A to Practice" }) as HTMLButtonElement).disabled).toBe(true);
   fireEvent.click(screen.getByRole("button", { name: "Close" }));
@@ -59,7 +59,7 @@ test("each row opens its own chooser lazily and adds that problem after the high
   fireEvent.click(screen.getByRole("button", { name: "Add 100B to a list" }));
   fireEvent.click(await screen.findByRole("button", { name: "Add 100B to Practice" }));
   await screen.findByText("100B is already in Practice.");
-  expect(backend.requests.filter(request => request.method === "PUT")).toHaveLength(1);
+  expect(backend.requests.filter(request => request.method === "POST")).toHaveLength(1);
   expect(backend.requests.filter(request => new URL(request.url).pathname === "/api/v1/lists")).toHaveLength(1);
 });
 
@@ -87,6 +87,6 @@ test("logout while list details load closes the chooser and prevents a subsequen
   act(() => { backend.store.dispatch(removeUser()); });
   await act(async () => { resolve(Response.json({ list: backendList, items })); });
   await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
-  expect(backend.requests.filter(request => request.method === "PUT")).toHaveLength(0);
+  expect(backend.requests.filter(request => request.method === "POST")).toHaveLength(0);
   expect(screen.queryByText("Practice")).toBeNull();
 });
