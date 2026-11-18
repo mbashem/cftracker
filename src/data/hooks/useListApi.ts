@@ -43,10 +43,10 @@ function useListApi() {
 		}
 	}
 
-	async function deleteProblemFromList(listId: number, problemId: string) {
+	/** Remove one or more problems through the sole bulk-remove contract. */
+ async function removeProblemsFromList(listId: number, problemIds: string[]) {
 		try {
-			await deleteProblemFromListMutation({ listId, problemId }).unwrap();
-			return;
+			return await deleteProblemFromListMutation({ listId, problemIds }).unwrap();
 		} catch (err: any) {
 			console.log(err);
 			let errorMessage = err?.data?.error ?? "Failed to delete from list!";
@@ -86,7 +86,7 @@ function useListApi() {
 		return { ...query, data: user === undefined ? undefined : query.currentData };
 	}
 
-	return { getListWithItems, createList, addProblemsToList, deleteProblemFromList, deleteList, updateListName, useGetAllListsQuery, useGetListQuery };
+	return { getListWithItems, createList, addProblemsToList, removeProblemsFromList, deleteList, updateListName, useGetAllListsQuery, useGetListQuery };
 }
 
 export default useListApi;

@@ -257,9 +257,9 @@ Every route requires a JWT. For list-specific operations, a missing list and a l
 | `GET /api/v1/lists/:listId` | List ID | `200 {"message":"List fetched successfully", "list": List, "items": ListItem[]}` |
 | `PUT /api/v1/lists/:listId` | `{"name":"Updated name"}` | `200 {"message":"List name updated"}` |
 | `DELETE /api/v1/lists/:listId` | List ID | `200 {"message":"List deleted"}` |
-| `POST /api/v1/lists/:listId/items/bulk` | `{"items":[{"problem_id":"1900A"}]}` | `200` with added records, skipped IDs, complete order, and rebalance flag |
+| `POST /api/v1/lists/:listId/items` | `{"items":[{"problem_id":"1900A"}]}` | `200` with added records, skipped IDs, complete order, and rebalance flag |
 | `PATCH /api/v1/lists/:listId/item/:itemId` | Supplied practice fields; `null` clears | `200 {"message":"Item updated", "item": ListItem}` |
-| `DELETE /api/v1/lists/:listId/item/:itemId` | `itemId` is the problem ID string, **not** a numeric row ID. | `200 {"message":"Item deleted from list"}` |
+| `POST /api/v1/lists/:listId/items/remove` | `{"problem_ids":["1900A"]}` | `200` with removed/absent IDs and complete resulting order |
 
 Names are required and trimmed; empty names and names longer than 100 Unicode characters return `400 {"error":"Invalid format"}`. Adding items requires an array of 1–1,000 records with nonempty trimmed problem IDs (maximum 100 Unicode code points). The backend assigns positions; supplied position properties are rejected. Request bodies are capped at 16 KiB (8 MiB on the three collection-write routes) before JSON decoding; oversized bodies return `413`. URL-encode problem IDs when constructing item paths.
 
@@ -497,7 +497,7 @@ sequenceDiagram
     participant Lists as Lists repository
     participant Items as Items repository
     participant DB as PostgreSQL
-    Client->>Auth: POST /api/v1/lists/12/items/bulk with items array
+    Client->>Auth: POST /api/v1/lists/12/items with items array
     Auth->>API: Authenticated userId
     API->>API: Parse listId; validate records
     API->>Items: BulkAdd(userId, listId, items)

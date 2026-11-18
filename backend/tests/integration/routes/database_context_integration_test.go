@@ -183,7 +183,8 @@ func databaseContextOperations(database *sql.DB, fixture databaseContextFixture,
 		}},
 		{name: "item delete", run: func(ctx context.Context) error {
 			item := fixture.item
-			return itemRepository.Delete(ctx, fixture.user.ID, &item)
+			_, err := itemRepository.BulkRemove(ctx, fixture.user.ID, item.ListId, []string{item.ProblemId})
+			return err
 		}},
 		{name: "item practice update", run: func(ctx context.Context) error {
 			status := items.StatusSolved

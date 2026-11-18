@@ -22,22 +22,25 @@ func TestCollectionHandlers(t *testing.T) {
 		suffix, body string
 		status       int
 	}{
-		{"move", `{"moves":[{"problem_id":"A","before_problem_id":"B"}]}`, 200},
-		{"move", `{"moves":[{"problem_id":"A","after_problem_id":"B"}]}`, 200},
-		{"move", `{"moves":[{"problem_id":"A","before_problem_id":"missing"}]}`, 409},
-		{"move", `{"moves":[{"problem_id":"A","before_problem_id":"A"}]}`, 400},
-		{"move", `{"moves":[{"problem_id":"A","unknown":true}]}`, 400},
-		{"bulk", `{"items":[{"problem_id":"C","notes":"hi"}]}`, 200},
-		{"bulk", `{"items":[{"problem_id":"C","position":1}]}`, 400},
-		{"bulk", `{"items":[{"problem_id":"C","status":"bad"}]}`, 400},
-		{"bulk", `{"items":[{"problem_id":"C","notes":"\u0000"}]}`, 400},
-		{"remove", `{"problem_ids":["A"]}`, 200},
-		{"remove", `{"problem_ids":5}`, 400},
-		{"move", `{"moves":5}`, 400},
-		{"bulk", `{"items":5}`, 400},
-		{"bulk", `{"items":[{"problem_id":"C","notes":"` + string([]byte{0xff}) + `"}]}`, 400},
-		{"move", `{`, 400},
-		{"bulk", `{} {}`, 400},
+		{"/move", `{"moves":[{"problem_id":"A","before_problem_id":"B"}]}`, 200},
+		{"/move", `{"moves":[{"problem_id":"A","after_problem_id":"B"}]}`, 200},
+		{"/move", `{"moves":[{"problem_id":"A","before_problem_id":"missing"}]}`, 409},
+		{"/move", `{"moves":[{"problem_id":"A","before_problem_id":"A"}]}`, 400},
+		{"/move", `{"moves":[{"problem_id":"A","unknown":true}]}`, 400},
+		{"", `{"items":[{"problem_id":"C","notes":"hi"}]}`, 200},
+		{"", `{"items":[{"problem_id":"C","position":1}]}`, 400},
+		{"", `{"items":[{"problem_id":"C","status":"bad"}]}`, 400},
+		{"", `{"items":[{"problem_id":"C","notes":"\u0000"}]}`, 400},
+		{"/remove", `{"problem_ids":["A"]}`, 200},
+		{"/remove", `{"problem_ids":["A","B","missing"]}`, 200},
+		{"/remove", `{"problem_ids":["A","A"]}`, 400},
+		{"/remove", `{"problem_ids":[]}`, 400},
+		{"/remove", `{"problem_ids":5}`, 400},
+		{"/move", `{"moves":5}`, 400},
+		{"", `{"items":5}`, 400},
+		{"", `{"items":[{"problem_id":"C","notes":"` + string([]byte{0xff}) + `"}]}`, 400},
+		{"/move", `{`, 400},
+		{"", `{} {}`, 400},
 	} {
 		t.Run(tc.suffix+tc.body, func(t *testing.T) {
 			repository := newMockRepository()
@@ -52,7 +55,7 @@ func TestCollectionHandlers(t *testing.T) {
 			for id, item := range repository.items[testListID] {
 				before[id] = item
 			}
-			response := performListRequest(t.Context(), newListHandlerTestRouter(repository), http.MethodPost, fmt.Sprintf("%s/%d/items/%s", testListsPath, testListID, tc.suffix), tc.body)
+			response := performListRequest(t.Context(), newListHandlerTestRouter(repository), http.MethodPost, fmt.Sprintf("%s/%d/items%s", testListsPath, testListID, tc.suffix), tc.body)
 			assertResponseStatus(t, response, tc.status)
 			if tc.status >= 400 && !reflect.DeepEqual(before, repository.items[testListID]) {
 				t.Fatal("failed request changed records")
@@ -75,15 +78,15 @@ func TestCollectionHandlers(t *testing.T) {
 func TestCollectionHandlersRejectInvalidOrUnownedList(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	for _, tc := range []struct{ suffix, body string }{
-		{"bulk", `{"items":[{"problem_id":"A"}]}`},
-		{"move", `{"moves":[{"problem_id":"A"}]}`},
-		{"remove", `{"problem_ids":["A"]}`},
+		{"", `{"items":[{"problem_id":"A"}]}`},
+		{"/move", `{"moves":[{"problem_id":"A"}]}`},
+		{"/remove", `{"problem_ids":["A"]}`},
 	} {
 		for _, id := range []string{"invalid", fmt.Sprint(testListID)} {
 			repository := newMockRepository()
 			repository.expectedContext = t.Context()
 			clearLists(repository)
-			response := performListRequest(t.Context(), newListHandlerTestRouter(repository), http.MethodPost, fmt.Sprintf("%s/%s/items/%s", testListsPath, id, tc.suffix), tc.body)
+			response := performListRequest(t.Context(), newListHandlerTestRouter(repository), http.MethodPost, fmt.Sprintf("%s/%s/items%s", testListsPath, id, tc.suffix), tc.body)
 			want := http.StatusNotFound
 			if id == "invalid" {
 				want = http.StatusBadRequest
@@ -212,12 +215,43 @@ func (repository mockListItemRepository) MoveItems(ctx context.Context, userID, 
 	return result, nil
 }
 
-// BulkRemove simulate selected list contents removal for handler tests; SQL rollback is outside this mock.
+// BulkRemove validates and removes selected items from shared mock state as one operation.
 func (repository mockListItemRepository) BulkRemove(ctx context.Context, userID, listID int64, ids []string) (*items.CollectionResult, error) {
+	if len(ids) == 0 {
+		return nil, items.ErrInvalidOperation
+	}
+	seen := map[string]bool{}
 	for _, id := range ids {
-		if err := repository.deleteItem(ctx, userID, &items.ListItem{ListId: listID, ProblemId: id}); err != nil {
+		if err := items.ValidateProblemID(id); err != nil {
 			return nil, err
 		}
+		if seen[id] {
+			return nil, items.ErrInvalidOperation
+		}
+		seen[id] = true
 	}
-	return &items.CollectionResult{Order: []items.OrderedItem{}}, nil
+	repository.contextMismatch = repository.contextMismatch || ctx != repository.expectedContext
+	for _, id := range ids {
+		repository.record(repositoryCall{operation: deleteListItemOperation, userID: userID, listID: listID, problemID: id})
+	}
+	if err := repository.operationErrors[deleteListItemOperation]; err != nil {
+		return nil, err
+	}
+	if _, ok := repository.ownedList(userID, listID); !ok {
+		return nil, items.ErrListNotFound
+	}
+	result := &items.CollectionResult{Order: []items.OrderedItem{}}
+	for _, id := range ids {
+		if _, exists := repository.items[listID][id]; exists {
+			delete(repository.items[listID], id)
+			result.Removed = append(result.Removed, id)
+		} else {
+			result.Absent = append(result.Absent, id)
+		}
+	}
+	for _, item := range repository.items[listID] {
+		result.Order = append(result.Order, items.OrderedItem{ProblemID: item.ProblemId, Position: item.Position})
+	}
+	sort.Slice(result.Order, func(i, j int) bool { return result.Order[i].Position < result.Order[j].Position })
+	return result, nil
 }

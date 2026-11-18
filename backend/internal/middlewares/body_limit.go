@@ -22,7 +22,7 @@ func LimitRequestBody(context *gin.Context) {
 	message := "Request body exceeds 16 KiB"
 	if context.Request.Method == http.MethodPost {
 		switch context.FullPath() {
-		case "/api/v1/lists/:listId/items/bulk", "/api/v1/lists/:listId/items/move", "/api/v1/lists/:listId/items/remove":
+		case "/api/v1/lists/:listId/items", "/api/v1/lists/:listId/items/move", "/api/v1/lists/:listId/items/remove":
 			capBytes = 8 * 1024 * 1024
 			message = "Request body exceeds 8 MiB"
 		}

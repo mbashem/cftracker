@@ -104,9 +104,9 @@
             <tr><td>GET</td><td><a href="#list-get"><code>/api/v1/lists/:listId</code></a></td><td>Bearer</td><td>Read list and items</td></tr>
             <tr><td>PUT</td><td><a href="#list-rename"><code>/api/v1/lists/:listId</code></a></td><td>Bearer</td><td>Rename list</td></tr>
             <tr><td>DELETE</td><td><a href="#list-delete"><code>/api/v1/lists/:listId</code></a></td><td>Bearer</td><td>Delete list</td></tr>
-            <tr><td>POST</td><td><a href="#item-add"><code>/api/v1/lists/:listId/items/bulk</code></a></td><td>Bearer</td><td>Insert problem</td></tr>
+            <tr><td>POST</td><td><a href="#item-add"><code>/api/v1/lists/:listId/items</code></a></td><td>Bearer</td><td>Insert problem</td></tr>
             <tr><td>PATCH</td><td><a href="#item-practice"><code>/api/v1/lists/:listId/item/:itemId</code></a></td><td>Bearer</td><td>Update item</td></tr>
-            <tr><td>DELETE</td><td><a href="#item-delete"><code>/api/v1/lists/:listId/item/:itemId</code></a></td><td>Bearer</td><td>Remove problem</td></tr>
+            <tr><td>POST</td><td><a href="#item-delete"><code>/api/v1/lists/:listId/items/remove</code></a></td><td>Bearer</td><td>Remove problem</td></tr>
           </tbody>
         </table></div>
         <p>Compatibility aliases: <code>GET /v1/auth/github/login</code> and <code>GET /v1/auth/github/callback</code>. They behave like their canonical GitHub routes and share the same respective rate-limit budgets.</p>
@@ -330,8 +330,8 @@ Set-Cookie: cftracker_github_oauth_state=[challenge]; ...</code></pre>
 {"message":"List deleted"}</code></pre>
           <p><strong>Database failure:</strong> <code>500</code> — <code>Failed to delete list</code>.</p>
         </article>
-        <article class="endpoint" id="item-add" data-method="POST" data-path="/api/v1/lists/:listId/items/bulk">
-          <h3>POST /api/v1/lists/:listId/items/bulk</h3><span class="auth">Bearer token · JSON body</span>
+        <article class="endpoint" id="item-add" data-method="POST" data-path="/api/v1/lists/:listId/items">
+          <h3>POST /api/v1/lists/:listId/items</h3><span class="auth">Bearer token · JSON body</span>
           <pre><code>{"items":[{"problem_id":"1900A","status":"attempted"}]}</code></pre>
           <p>The sole add API accepts 1–1,000 records. Existing items are skipped without overwriting practice or positions. Positions are backend-assigned; unknown fields are rejected. Optional fields follow the practice contract below. The frontend sends a one-item array for a single addition.</p>
           <pre><code>HTTP 200
@@ -354,12 +354,13 @@ Set-Cookie: cftracker_github_oauth_state=[challenge]; ...</code></pre>
           <p>No details are required by a solved status or inferred from it. Notes and help can be saved before solving. Practice updates explicitly maintain <code>updated_at</code> in SQL; even unchanged supplied values refresh it. Membership, order, and timestamps cannot be supplied in PATCH.</p>
           <p><strong>Errors:</strong> <code>400</code> — <code>Invalid format</code> or <code>invalid practice fields</code>; <code>404 {"error":"Item does not exist"}</code> for missing/inaccessible items or lists; <code>500</code> — <code>Failed to update item</code>. Existing body and write-rate limits apply. See <a href="PRACTICE_RECORDS.md">practice records</a> for migration and storage details.</p>
         </article>
-        <article class="endpoint" id="item-delete" data-method="DELETE" data-path="/api/v1/lists/:listId/item/:itemId">
-          <h3><span class="method delete">DELETE</span> /api/v1/lists/:listId/item/:itemId</h3><span class="auth">Bearer token · no request body</span>
-          <p><code>itemId</code> is the problem ID string, such as <code>1900A</code>, not a numeric row ID. URL-encode it as a path segment. Removing an absent item still succeeds when the caller owns the list.</p>
+        <article class="endpoint" id="item-delete" data-method="POST" data-path="/api/v1/lists/:listId/items/remove">
+          <h3>POST /api/v1/lists/:listId/items/remove</h3><span class="auth">Bearer token · JSON body</span>
+          <pre><code>{"problem_ids":["1900A","1900B"]}</code></pre>
+          <p>The sole remove API accepts 1–1,000 problem IDs, including a one-ID array for a single removal. Removal is atomic. Missing IDs are reported as absent; surviving positions and practice records are preserved. The old single-item DELETE route is removed.</p>
           <pre><code>HTTP 200
-{"message":"Item deleted from list"}</code></pre>
-          <p><strong>Database failure:</strong> <code>500</code> — <code>Failed to delete item from list</code>.</p>
+{"removed_problem_ids":["1900A","1900B"],"order":[],"rebalanced":false}</code></pre>
+          <p>Invalid input returns 400, inaccessible lists 404, and unexpected database failures 500. See <a href="LIST_OPERATIONS.md">list operations</a> for full contracts.</p>
         </article>
         <p>All list-specific routes reject nonnumeric or overflowing <code>listId</code> values with <code>400 {"error":"Invalid list Id"}</code>. Numeric IDs that do not identify an owned list return <code>404</code>.</p>
       </section>
@@ -428,6 +429,6 @@ Set-Cookie: cftracker_github_oauth_state=[challenge]; ...</code></pre>
       <footer>CFTracker backend · REST API v1 · documented from local source on 26 October 2026.</footer>
     </main>
   </div>
-<section><h2>List organization</h2><p>POST /api/v1/lists/:listId/items/bulk accepts items; /items/move accepts sequential moves with problem_id and before_problem_id or after_problem_id; /items/remove accepts problem_ids. Each operation is atomic and returns rebalanced and the complete lightweight order. Positions are assigned by the backend. See <a href="LIST_OPERATIONS.md">List operations</a> for contracts, examples, errors, and limits.</p></section>
+<section><h2>List organization</h2><p>POST /api/v1/lists/:listId/items accepts items; /items/move accepts sequential moves with problem_id and before_problem_id or after_problem_id; /items/remove accepts problem_ids. Each operation is atomic and returns rebalanced and the complete lightweight order. Positions are assigned by the backend. See <a href="LIST_OPERATIONS.md">List operations</a> for contracts, examples, errors, and limits.</p></section>
 </body>
 </html>

@@ -53,7 +53,7 @@ func TestListItemRepositoryIntegration(t *testing.T) {
 		}
 		assertIntegrationListItems(t, storedItems, []listitems.ListItem{firstItem, secondItem})
 
-		if err := state.repository.Delete(t.Context(), state.ownerID, &firstItem); err != nil {
+		if _, err := state.repository.BulkRemove(t.Context(), state.ownerID, firstItem.ListId, []string{firstItem.ProblemId}); err != nil {
 			t.Fatalf("Delete(): %v", err)
 		}
 		storedItems, err = state.repository.GetItems(t.Context(), state.ownerID, state.ownerListID)
@@ -97,7 +97,7 @@ func TestListItemRepositoryIntegration(t *testing.T) {
 		item := createIntegrationListItem(t, state.repository, state.ownerID, state.ownerListID, "1845A", 0)
 
 		for deletion := 1; deletion <= 2; deletion++ {
-			if err := state.repository.Delete(t.Context(), state.ownerID, &item); err != nil {
+			if _, err := state.repository.BulkRemove(t.Context(), state.ownerID, item.ListId, []string{item.ProblemId}); err != nil {
 				t.Fatalf("Delete() call %d: %v", deletion, err)
 			}
 		}
@@ -121,7 +121,7 @@ func TestListItemRepositoryIntegration(t *testing.T) {
 		if _, err := state.repository.GetItems(t.Context(), state.otherUserID, state.ownerListID); !errors.Is(err, listitems.ErrListNotFound) {
 			t.Fatalf("GetItems(foreign list) error = %v, want %v", err, listitems.ErrListNotFound)
 		}
-		if err := state.repository.Delete(t.Context(), state.otherUserID, &firstItem); !errors.Is(err, listitems.ErrListNotFound) {
+		if _, err := state.repository.BulkRemove(t.Context(), state.otherUserID, firstItem.ListId, []string{firstItem.ProblemId}); !errors.Is(err, listitems.ErrListNotFound) {
 			t.Fatalf("Delete(foreign list) error = %v, want %v", err, listitems.ErrListNotFound)
 		}
 		if _, err := state.repository.MoveItems(
@@ -157,7 +157,8 @@ func TestListItemRepositoryIntegration(t *testing.T) {
 			}},
 			{name: "delete", run: func() error {
 				item := listitems.ListItem{ListId: integrationMissingItemListID, ProblemId: "1845A"}
-				return state.repository.Delete(t.Context(), state.ownerID, &item)
+				_, err := state.repository.BulkRemove(t.Context(), state.ownerID, item.ListId, []string{item.ProblemId})
+				return err
 			}},
 			{name: "reorder", run: func() error {
 				_, err := state.repository.MoveItems(t.Context(), state.ownerID, integrationMissingItemListID, []listitems.Move{{ProblemID: "1845A"}})
@@ -300,7 +301,7 @@ func TestPracticeRepositoryPersistence(t *testing.T) {
 		t.Fatal(err)
 	}
 	assertIntegrationListItems(t, stored, []listitems.ListItem{independent})
-	if err := state.repository.Delete(t.Context(), state.ownerID, beforeSolve); err != nil {
+	if _, err := state.repository.BulkRemove(t.Context(), state.ownerID, beforeSolve.ListId, []string{beforeSolve.ProblemId}); err != nil {
 		t.Fatal(err)
 	}
 	readded := createIntegrationListItem(t, state.repository, state.ownerID, original.ListId, original.ProblemId, 0)
@@ -451,8 +452,8 @@ func TestCollectionTransactions(t *testing.T) {
 			t.Fatal(result.Order)
 		}
 	}
-	result, err = state.repository.BulkRemove(t.Context(), state.ownerID, state.ownerListID, []string{"A", "missing"})
-	if err != nil || len(result.Removed) != 1 || len(result.Absent) != 1 || result.Order[1].Position != 3*listitems.PositionGap {
+	result, err = state.repository.BulkRemove(t.Context(), state.ownerID, state.ownerListID, []string{"A", "B", "missing"})
+	if err != nil || len(result.Removed) != 2 || len(result.Absent) != 1 || result.Order[1].Position != 4*listitems.PositionGap {
 		t.Fatalf("remove=%+v %v", result, err)
 	}
 	for _, userID := range []int64{state.otherUserID, state.ownerID} {

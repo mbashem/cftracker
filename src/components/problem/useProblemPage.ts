@@ -339,7 +339,7 @@ function useProblemPage() {
 		if (listId === undefined) throw new Error("ListId is undefined");
 		const generation = listGeneration.current;
 		try {
-			let res = await api.deleteProblemFromList(listId, problemId);
+			let res = await api.removeProblemsFromList(listId, [problemId]);
 			console.log(res);
 			if (generation !== listGeneration.current) return;
 			setList(current => current === undefined ? current : {

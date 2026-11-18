@@ -47,3 +47,9 @@ export interface ListAddResult {
  order: { problemId: string; position: number }[];
  rebalanced: boolean;
 }
+
+/** Committed removal outcome; absent IDs are successful no-ops. */
+export interface ListRemoveResult extends Pick<ListAddResult,"order"|"rebalanced"> {
+ removedProblemIds: string[];
+ absentProblemIds: string[];
+}

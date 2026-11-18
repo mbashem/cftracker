@@ -18,7 +18,7 @@ Moves execute in request order. Each entry specifies the moved problem and at mo
 
 ## Bulk addition
 
-`POST /api/v1/lists/:listId/items/bulk`
+`POST /api/v1/lists/:listId/items`
 
 ```json
 {"items":[{"problem_id":"1900A","status":"solved","time_spent":2100,"notes":"Invariant"},{"problem_id":"1900B"}]}
@@ -51,7 +51,7 @@ All three endpoints return `200` after commit, including no-ops:
 
 `order` always contains the complete resulting lightweight order and positions, including when no rebalance occurred. The frontend should reconcile its local order from this result. `rebalanced` indicates whether positions were redistributed during the operation. Bulk addition additionally returns complete new records in `added` and IDs in `skipped_problem_ids`; removal returns `removed_problem_ids` and `absent_problem_ids`. Empty optional result arrays are omitted. Other tabs observe changes on refetch.
 
-Bulk addition is the sole add API and repository method. Single additions send a one-item array. Existing items return `200` as skipped IDs. The old single-add PUT route and repository adapter are removed; deploy the updated frontend and backend together. Single deletion uses the same locked removal path.
+Bulk addition is the sole add API and repository method. Single additions send a one-item array. Existing items return `200` as skipped IDs. The old single-add PUT route and repository adapter are removed; deploy the updated frontend and backend together. Bulk removal is likewise the sole remove API and repository method: single removals send a one-ID array. The old single-item DELETE route and adapter are removed.
 
 Each collection request must contain 1–1,000 entries and exactly one JSON object. Unknown fields and trailing JSON are rejected. Add/remove IDs are trimmed; move IDs and anchors must already have no surrounding whitespace. All IDs are valid Unicode without NUL and contain 1–100 code points. Move request validation runs before locking, while item/anchor existence is checked against current database state under the lock. Practice validation is repeated in repository writes. The three collection endpoints allow 8 MiB bodies; other endpoints retain 16 KiB. Authentication, existing write-rate limiting, 20 lists per account, and 1,000 items per list remain unchanged.
 

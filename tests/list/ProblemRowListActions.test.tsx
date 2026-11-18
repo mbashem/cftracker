@@ -50,7 +50,7 @@ test("each row opens its own chooser lazily and adds that problem after the high
   await screen.findByText("Added 100A to Practice.");
   const additions = backend.requests.filter(request => request.method === "POST");
   expect(additions).toHaveLength(1);
-  expect(new URL(additions[0].url).pathname).toBe("/api/v1/lists/5/items/bulk");
+  expect(new URL(additions[0].url).pathname).toBe("/api/v1/lists/5/items");
   expect(await additions[0].json()).toEqual({ items:[{problem_id:"100A"}] });
   expect(additions[0].headers.get("Authorization")).toBe("Bearer test-session");
   expect((screen.getByRole("button", { name: "Added 100A to Practice" }) as HTMLButtonElement).disabled).toBe(true);

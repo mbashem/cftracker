@@ -3,7 +3,7 @@ import Theme, { ThemesType } from "../../src/util/Theme";
 import type Problem from "../../src/types/CF/Problem";
 import type Contest from "../../src/types/CF/Contest";
 import type Submission from "../../src/types/CF/Submission";
-import type { List, ListWithItem, ListAddResult } from "../../src/types/list";
+import type { List, ListWithItem, ListAddResult, ListRemoveResult } from "../../src/types/list";
 import { createList, createListItem } from "./listFixtures";
 
 interface FrontendMocks {
@@ -33,7 +33,7 @@ interface FrontendMocks {
   updateListName: Mock<(id: number, name: string) => Promise<void>>;
   deleteList: Mock<(id: number) => Promise<void>>;
   addProblemsToList: Mock<(id: number, problemIds: string[]) => Promise<ListAddResult>>;
-  deleteProblemFromList: Mock<(id: number, problemId: string) => Promise<void>>;
+  removeProblemsFromList: Mock<(id: number, problemIds: string[]) => Promise<ListRemoveResult>>;
   changeThemeMod: Mock<(theme: ThemesType) => void>;
   updateUsers: Mock<(handles: string) => void>;
   syncUserSubmissions: Mock<(wait?: boolean) => void>;
@@ -73,7 +73,7 @@ const frontend: FrontendMocks = vi.hoisted(() => ({
   handleGithubCallback: vi.fn(),
   prepareGitHubLogin: vi.fn(),
   createList: vi.fn(), updateListName: vi.fn(), deleteList: vi.fn(),
-  addProblemsToList: vi.fn(), deleteProblemFromList: vi.fn(),
+  addProblemsToList: vi.fn(), removeProblemsFromList: vi.fn(),
   changeThemeMod: vi.fn(),
   updateUsers: vi.fn(),
   syncUserSubmissions: vi.fn(),
@@ -119,7 +119,7 @@ vi.mock("../../src/data/hooks/useListApi", () => ({
     useGetAllListsQuery: () => ({ data: frontend.lists, isLoading: frontend.listsLoading, error: frontend.listsError }),
     useGetListQuery: () => ({ data: frontend.individualList, isLoading: frontend.individualListLoading, error: frontend.individualListError }),
     createList: frontend.createList, updateListName: frontend.updateListName, deleteList: frontend.deleteList,
-    addProblemsToList: frontend.addProblemsToList, deleteProblemFromList: frontend.deleteProblemFromList,
+    addProblemsToList: frontend.addProblemsToList, removeProblemsFromList: frontend.removeProblemsFromList,
     getListWithItems: frontend.getListWithItems,
   }),
 }));
@@ -157,7 +157,7 @@ export function resetFrontendMocks() {
     const added=problemIds.map((problemId,index)=>createListItem({listId,problemId,position:(index+1)*1073741824}));
     return {added,skippedProblemIds:[],order:added.map(({problemId,position})=>({problemId,position})),rebalanced:false};
   });
-  frontend.deleteProblemFromList.mockReset().mockResolvedValue(undefined);
+  frontend.removeProblemsFromList.mockReset().mockImplementation(async (_id,problemIds)=>({removedProblemIds:problemIds,absentProblemIds:[],order:[],rebalanced:false}));
   frontend.changeThemeMod.mockReset();
   frontend.updateUsers.mockReset();
   frontend.syncUserSubmissions.mockReset();

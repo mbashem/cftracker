@@ -134,7 +134,7 @@ func TestCompleteAPIWorkflow(t *testing.T) {
 		t.Fatalf("practice response = %+v", practiceResponse)
 	}
 	firstItem = practiceResponse.Item
-	duplicateResponse := decodeWorkflowJSON[workflowResponseBody](t, performWorkflowRequest(t, ownerClient, http.MethodPost, server.URL+listPath+"/items/bulk", ownerSession.Token, fmt.Sprintf(`{"items":[{"problem_id":%q,"status":"solved"}]}`, firstItem.ProblemId)), http.StatusOK)
+	duplicateResponse := decodeWorkflowJSON[workflowResponseBody](t, performWorkflowRequest(t, ownerClient, http.MethodPost, server.URL+listPath+"/items", ownerSession.Token, fmt.Sprintf(`{"items":[{"problem_id":%q,"status":"solved"}]}`, firstItem.ProblemId)), http.StatusOK)
 	if len(duplicateResponse.Added) != 0 || len(duplicateResponse.Skipped) != 1 {
 		t.Fatalf("duplicate=%+v", duplicateResponse)
 	}
@@ -185,13 +185,13 @@ func TestCompleteAPIWorkflow(t *testing.T) {
 			body: `{"name":"Foreign rename"}`,
 		},
 		{
-			name: "add item", method: http.MethodPost, foreignPath: listPath + "/items/bulk", missingPath: missingListPath + "/items/bulk",
+			name: "add item", method: http.MethodPost, foreignPath: listPath + "/items", missingPath: missingListPath + "/items",
 			body: `{"items":[{"problem_id":"9999A"}]}`,
 		},
 		{
-			name: "delete item", method: http.MethodDelete,
-			foreignPath: listPath + "/item/" + url.PathEscape(workflowFirstProblemID),
-			missingPath: missingListPath + "/item/" + url.PathEscape(workflowFirstProblemID),
+			name: "remove items", method: http.MethodPost,
+			foreignPath: listPath + "/items/remove",
+			missingPath: missingListPath + "/items/remove", body: `{"problem_ids":["1845A"]}`,
 		},
 		{name: "delete list", method: http.MethodDelete, foreignPath: listPath, missingPath: missingListPath},
 	}
@@ -222,14 +222,10 @@ func TestCompleteAPIWorkflow(t *testing.T) {
 		renamedList,
 		[]listitems.ListItem{firstItem, secondItem},
 	)
-	assertWorkflowMessage(t, performWorkflowRequest(
-		t,
-		ownerClient,
-		http.MethodDelete,
-		server.URL+listPath+"/item/"+url.PathEscape(workflowFirstProblemID),
-		ownerSession.Token,
-		"",
-	), http.StatusOK, "Item deleted from list")
+	removed := decodeWorkflowJSON[listitems.CollectionResult](t, performWorkflowRequest(t, ownerClient, http.MethodPost, server.URL+listPath+"/items/remove", ownerSession.Token, fmt.Sprintf(`{"problem_ids":[%q]}`, workflowFirstProblemID)), http.StatusOK)
+	if len(removed.Removed) != 1 || removed.Removed[0] != workflowFirstProblemID {
+		t.Fatalf("remove=%+v", removed)
+	}
 	assertWorkflowListResponse(
 		t,
 		performWorkflowRequest(t, ownerClient, http.MethodGet, server.URL+listPath, ownerSession.Token, ""),
@@ -317,7 +313,7 @@ func addWorkflowItem(
 	position int,
 ) listitems.ListItem {
 	t.Helper()
-	response := decodeWorkflowJSON[workflowResponseBody](t, performWorkflowRequest(t, client, http.MethodPost, fmt.Sprintf("%s/api/v1/lists/%d/items/bulk", serverURL, listID), token, fmt.Sprintf(`{"items":[{"problem_id":%q}]}`, problemID)), http.StatusOK)
+	response := decodeWorkflowJSON[workflowResponseBody](t, performWorkflowRequest(t, client, http.MethodPost, fmt.Sprintf("%s/api/v1/lists/%d/items", serverURL, listID), token, fmt.Sprintf(`{"items":[{"problem_id":%q}]}`, problemID)), http.StatusOK)
 	if len(response.Added) != 1 || response.Added[0].CreatedAt.IsZero() {
 		t.Fatalf("add response=%+v", response)
 	}

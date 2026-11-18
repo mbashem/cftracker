@@ -61,7 +61,7 @@ func TestUsageLimitsIntegration(t *testing.T) {
 		if _, err := itemRepository.BulkAdd(t.Context(), ownerID, otherList.Id, []items.ListItem{{ProblemId: "independent"}}); err != nil {
 			t.Fatal(err)
 		}
-		if err := itemRepository.Delete(t.Context(), ownerID, &stored[0]); err != nil {
+		if _, err := itemRepository.BulkRemove(t.Context(), ownerID, stored[0].ListId, []string{stored[0].ProblemId}); err != nil {
 			t.Fatal(err)
 		}
 		if _, err := itemRepository.BulkAdd(t.Context(), ownerID, list.Id, []items.ListItem{{ProblemId: "after-deletion"}}); err != nil {
@@ -94,7 +94,7 @@ func TestUsageLimitsIntegration(t *testing.T) {
 		if stored, err := itemRepository.GetItems(t.Context(), ownerID, list.Id); err != nil || len(stored) != limits.ItemsPerList+1 {
 			t.Fatalf("items=%d error=%v", len(stored), err)
 		}
-		if err := itemRepository.Delete(t.Context(), ownerID, &items.ListItem{ListId: list.Id, ProblemId: "seed-1"}); err != nil {
+		if _, err := itemRepository.BulkRemove(t.Context(), ownerID, list.Id, []string{"seed-1"}); err != nil {
 			t.Fatal(err)
 		}
 		if stored, err := itemRepository.GetItems(t.Context(), ownerID, list.Id); err != nil || len(stored) != limits.ItemsPerList {

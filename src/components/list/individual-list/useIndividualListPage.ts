@@ -16,7 +16,7 @@ function useIndividualListPage({ listId }: Props) {
 
 	async function deleteButtonClicked(problemId: string) {
 		try {
-			const res = await api.deleteProblemFromList(listId, problemId);
+			const res = await api.removeProblemsFromList(listId, [problemId]);
 			console.log(res);
 			return
 		} catch (err: any) {

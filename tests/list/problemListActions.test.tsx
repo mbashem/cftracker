@@ -44,7 +44,7 @@ test("list item controls initialize from membership and append after the highest
   expect(frontend.addProblemsToList).toHaveBeenCalledExactlyOnceWith(5, ["100B"]);
   expect([...hook.result.current.page.problemsAddedToList]).toEqual(["100A", "100B"]);
   await act(async () => { await hook.result.current.page.deleteProblemFromList("100A"); });
-  expect(frontend.deleteProblemFromList).toHaveBeenCalledExactlyOnceWith(5, "100A");
+  expect(frontend.removeProblemsFromList).toHaveBeenCalledExactlyOnceWith(5, ["100A"]);
   expect([...hook.result.current.page.problemsAddedToList]).toEqual(["100B"]);
   expect(hook.result.current.page.list?.items.map(item => item.problemId)).toEqual(["100B"]);
 });
@@ -77,7 +77,7 @@ test("failed item mutations preserve membership and remain retryable", async () 
   const hook = setup();
   await waitFor(() => expect(hook.result.current.page.list?.id).toBe(5));
   frontend.addProblemsToList.mockRejectedValueOnce(new Error("Add denied"));
-  frontend.deleteProblemFromList.mockRejectedValueOnce(new Error("Remove denied"));
+  frontend.removeProblemsFromList.mockRejectedValueOnce(new Error("Remove denied"));
   await act(async () => {
     await expect(hook.result.current.page.addProblemToList("100B")).rejects.toThrow("Add denied");
     await expect(hook.result.current.page.deleteProblemFromList("100A")).rejects.toThrow("Remove denied");
@@ -126,7 +126,7 @@ test("authentication changes clear private state and sign-in reloads the same li
     await hook.result.current.page.deleteProblemFromList("100A");
   });
   expect(frontend.addProblemsToList).not.toHaveBeenCalled();
-  expect(frontend.deleteProblemFromList).not.toHaveBeenCalled();
+  expect(frontend.removeProblemsFromList).not.toHaveBeenCalled();
   expect(frontend.getListWithItems).toHaveBeenCalledTimes(1);
   const filter = hook.result.current.page.filter;
   expect(filter.search).toBe("Alpha");

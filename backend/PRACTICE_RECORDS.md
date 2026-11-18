@@ -22,7 +22,7 @@ All details are independent of status: notes and help can be recorded before sol
 
 ## Add items
 
-`POST /api/v1/lists/:listId/items/bulk` is the sole add API, for both one problem and a batch. It requires authentication. The frontend wraps a single addition in an array; it never supplies positions.
+`POST /api/v1/lists/:listId/items` is the sole add API, for both one problem and a batch. It requires authentication. The frontend wraps a single addition in an array; it never supplies positions.
 
 ```json
 {"items":[{"problem_id":"1900A","status":"solved","help_used":"hint","solved_on":"2026-11-09","time_spent":2100,"notes":"Check the invariant first."}]}

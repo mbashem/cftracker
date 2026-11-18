@@ -43,7 +43,6 @@ const (
 	itemDoesNotExist API_MESSAGE = "Item does not exist"
 
 	listDeleted     API_MESSAGE = "List deleted"
-	itemDeleted     API_MESSAGE = "Item deleted from list"
 	listReordered   API_MESSAGE = "List reordered"
 	listCreated     API_MESSAGE = "List created"
 	listFound       API_MESSAGE = "List fetched successfully"
@@ -170,29 +169,6 @@ func (api *API) UpdateItemHandler(context *gin.Context) {
 		return
 	}
 	context.JSON(http.StatusOK, gin.H{"message": itemUpdated, "item": item})
-}
-
-// Delete a problem from a list
-func (api *API) DeleteFromListHandler(context *gin.Context) {
-	userId := context.GetInt64(middlewares.UserIdKey)
-
-	listId, valid := parseListId(context)
-	if !valid {
-		return
-	}
-
-	itemId := context.Param("itemId")
-
-	var item items.ListItem
-	item.ListId = listId
-	item.ProblemId = itemId
-
-	if err := api.listItemsRepository.Delete(context.Request.Context(), userId, &item); err != nil {
-		writeListRepositoryError(context, err, failedToDeleteItem)
-		return
-	}
-
-	context.JSON(http.StatusOK, gin.H{"message": itemDeleted})
 }
 
 // Get list with items

@@ -1,6 +1,6 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
 import { createBaseQuery } from './baseQuery';
-import { jsonToList, jsonToListItem, List, ListItem, ListWithItem, ListAddResult } from '../../types/list';
+import { jsonToList, jsonToListItem, List, ListItem, ListWithItem, ListAddResult, ListRemoveResult } from '../../types/list';
 import type { UserState } from '../reducers/userSlice';
 
 export enum ListApiTags {
@@ -85,20 +85,22 @@ export const listApi = createApi({
 		}),
   // One append contract handles a single problem and larger batches.
   addToList: builder.mutation<ListAddResult, { listId: number; problemIds: string[] }>({
-   query: ({listId,problemIds})=>({url:`/lists/${listId}/items/bulk`,method:'POST',body:{items:problemIds.map(problem_id=>({problem_id}))}}),
+   query: ({listId,problemIds})=>({url:`/lists/${listId}/items`,method:'POST',body:{items:problemIds.map(problem_id=>({problem_id}))}}),
    transformResponse:(response:any):ListAddResult=>({
     added:(response.added??[]).map(jsonToListItem),skippedProblemIds:response.skipped_problem_ids??[],
     order:response.order.map((item:any)=>({problemId:item.problem_id,position:item.position})),rebalanced:response.rebalanced,
    }),
    invalidatesTags:(_result,_error,arg)=>IndividualPostTag(arg.listId),
   }),
-		deleteFromList: builder.mutation<void, { listId: number; problemId: string; }>({
-			query: ({ listId, problemId }) => ({
-				url: `/lists/${listId}/item/${problemId}`,
-				method: 'DELETE'
-			}),
-			invalidatesTags: (_result, _error, arg, _meta) => IndividualPostTag(arg.listId),
-		}),
+  // One removal contract handles single clicks and selected batches.
+  deleteFromList: builder.mutation<ListRemoveResult,{listId:number;problemIds:string[]}>({
+   query:({listId,problemIds})=>({url:`/lists/${listId}/items/remove`,method:'POST',body:{problem_ids:problemIds}}),
+   transformResponse:(response:any):ListRemoveResult=>({
+    removedProblemIds:response.removed_problem_ids??[],absentProblemIds:response.absent_problem_ids??[],
+    order:response.order.map((item:any)=>({problemId:item.problem_id,position:item.position})),rebalanced:response.rebalanced,
+   }),
+   invalidatesTags:(_result,_error,arg)=>IndividualPostTag(arg.listId),
+  }),
 	}),
 });
 

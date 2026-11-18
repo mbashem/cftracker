@@ -177,33 +177,6 @@ func TestListHandlers(t *testing.T) {
 				{operation: getListItemsOperation, userID: testAuthenticatedUserID, listID: testListID},
 			},
 		},
-
-		{
-			name: "remove deletes an existing item", method: http.MethodDelete, path: itemPath(testListID, testProblemID),
-			setup:          func(repository *mockRepository) { repository.storeItem(validItem) },
-			expectedStatus: http.StatusOK, expectedBody: messageBody(testItemDeletedMessage),
-			expectedCalls: []repositoryCall{{
-				operation: deleteListItemOperation, userID: testAuthenticatedUserID, listID: testListID, problemID: testProblemID,
-			}},
-		},
-		{
-			name: "remove is idempotent for an absent item", method: http.MethodDelete, path: itemPath(testListID, "absent"),
-			expectedStatus: http.StatusOK, expectedBody: messageBody(testItemDeletedMessage),
-			expectedCalls: []repositoryCall{{
-				operation: deleteListItemOperation, userID: testAuthenticatedUserID, listID: testListID, problemID: "absent",
-			}},
-		},
-		validationCase("remove rejects malformed list ID", http.MethodDelete, itemPath("invalid", testProblemID), "", testInvalidListIDMessage),
-		{
-			name: "remove hides a foreign list", method: http.MethodDelete, path: itemPath(testListID, testProblemID), setup: clearLists,
-			expectedStatus: http.StatusNotFound, expectedBody: errorBody(testListDoesNotExistMessage),
-			expectedCalls: []repositoryCall{{
-				operation: deleteListItemOperation, userID: testAuthenticatedUserID, listID: testListID, problemID: testProblemID,
-			}},
-		},
-		repositoryErrorCase("remove handles repository failure", http.MethodDelete, itemPath(testListID, testProblemID), "",
-			deleteListItemOperation, testFailedToDeleteItemMessage,
-			repositoryCall{operation: deleteListItemOperation, userID: testAuthenticatedUserID, listID: testListID, problemID: testProblemID}),
 	}
 
 	for _, testCase := range testCases {
@@ -312,8 +285,7 @@ func newListHandlerTestRouter(repository *mockRepository) *gin.Engine {
 	listRoutes.PUT("/:listId", api.UpdateListNameHandler)
 	listRoutes.DELETE("/:listId", api.DeleteListHandler)
 	listRoutes.PATCH("/:listId/item/:itemId", api.UpdateItemHandler)
-	listRoutes.DELETE("/:listId/item/:itemId", api.DeleteFromListHandler)
-	listRoutes.POST("/:listId/items/bulk", api.BulkAddHandler)
+	listRoutes.POST("/:listId/items", api.BulkAddHandler)
 	listRoutes.POST("/:listId/items/move", api.MoveItemsHandler)
 	listRoutes.POST("/:listId/items/remove", api.BulkRemoveHandler)
 	return router
@@ -382,7 +354,7 @@ func listPath(listID any) string {
 }
 
 func itemCollectionPath(listID any) string {
-	return fmt.Sprintf("%s/%v/items/bulk", testListsPath, listID)
+	return fmt.Sprintf("%s/%v/items", testListsPath, listID)
 }
 
 func itemPath(listID any, problemID string) string {
@@ -536,24 +508,6 @@ func (repository *mockRepository) GetAllListByUserId(ctx context.Context, userID
 	return userLists, nil
 }
 
-func (repository *mockRepository) deleteItem(ctx context.Context, userID int64, item *listitems.ListItem) error {
-	repository.contextMismatch = repository.contextMismatch || ctx != repository.expectedContext
-	repository.record(repositoryCall{
-		operation: deleteListItemOperation,
-		userID:    userID,
-		listID:    item.ListId,
-		problemID: item.ProblemId,
-	})
-	if err := repository.operationErrors[deleteListItemOperation]; err != nil {
-		return err
-	}
-	if _, found := repository.ownedList(userID, item.ListId); !found {
-		return listitems.ErrListNotFound
-	}
-	delete(repository.items[item.ListId], item.ProblemId)
-	return nil
-}
-
 func (repository *mockRepository) GetItems(ctx context.Context, userID int64, listID int64) ([]listitems.ListItem, error) {
 	repository.contextMismatch = repository.contextMismatch || ctx != repository.expectedContext
 	repository.record(repositoryCall{operation: getListItemsOperation, userID: userID, listID: listID})
@@ -574,12 +528,8 @@ func (repository *mockRepository) GetItems(ctx context.Context, userID int64, li
 	return storedItems, nil
 }
 
-// List and item Delete signatures differ, so the item interface uses a view over shared state.
+// The item repository view shares fixtures while supplying item-specific update methods.
 type mockListItemRepository struct{ *mockRepository }
-
-func (repository mockListItemRepository) Delete(ctx context.Context, userID int64, item *listitems.ListItem) error {
-	return repository.deleteItem(ctx, userID, item)
-}
 
 // Update apply only supplied practice fields to an owned mock item and refresh its deterministic timestamp.
 func (repository mockListItemRepository) Update(ctx context.Context, userID int64, listID int64, problemID string, patch listitems.ItemPatch) (*listitems.ListItem, error) {

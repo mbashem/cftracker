@@ -18,7 +18,6 @@ const listItemColumns = `list_items.problem_id, list_items.position, list_items.
 
 type ListItemRepository interface {
 	CollectionRepository
-	Delete(ctx context.Context, userId int64, item *ListItem) error
 	GetItems(ctx context.Context, userId int64, listId int64) ([]ListItem, error)
 	Update(ctx context.Context, userId int64, listId int64, problemId string, patch ItemPatch) (*ListItem, error)
 }
@@ -83,12 +82,6 @@ func (repository *Repository) Update(ctx context.Context, userId int64, listId i
 		return nil, err
 	}
 	return &item, nil
-}
-
-// Delete uses the locked removal path; absent items succeed without changing surviving positions.
-func (repository *Repository) Delete(ctx context.Context, userId int64, item *ListItem) error {
-	_, err := repository.BulkRemove(ctx, userId, item.ListId, []string{item.ProblemId})
-	return err
 }
 
 // Get all problems in a list
