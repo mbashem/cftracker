@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/mbashem/cftracker/backend/configs"
 	"github.com/mbashem/cftracker/backend/internal/limits"
 	"github.com/mbashem/cftracker/backend/internal/lists"
 	listitems "github.com/mbashem/cftracker/backend/internal/lists/items"
@@ -369,7 +370,7 @@ func newListFixture() lists.List {
 
 func newListItemFixture() listitems.ListItem {
 	return listitems.ListItem{
-		ListId: testListID, ProblemId: testProblemID, Position: listitems.PositionGap, CreatedAt: testItemCreatedAt(),
+		ListId: testListID, ProblemId: testProblemID, Position: configs.ListPositionGap, CreatedAt: testItemCreatedAt(),
 	}
 }
 

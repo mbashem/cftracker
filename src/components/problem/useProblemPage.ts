@@ -316,7 +316,7 @@ function useProblemPage() {
 		try {
    const result=await api.addProblemsToList(listId,[problemId]);
    if(generation!==listGeneration.current)return;
-   if(result.skippedProblemIds.includes(problemId)) {
+   if(result.duplicateProblemIds.includes(problemId)) {
     const saved=await api.getListWithItems(listId);
     if(generation!==listGeneration.current)return;
     setList(saved);

@@ -178,7 +178,7 @@ func databaseContextOperations(database *sql.DB, fixture databaseContextFixture,
 		{name: "item create", run: func(ctx context.Context) error {
 			item := fixture.item
 			item.ProblemId = "1900B"
-			_, err := itemRepository.BulkAdd(ctx, fixture.user.ID, item.ListId, []items.ListItem{item})
+			_, err := itemRepository.BulkAdd(ctx, fixture.user.ID, item.ListId, []items.ListItem{item}, nil)
 			return err
 		}},
 		{name: "item delete", run: func(ctx context.Context) error {
@@ -221,7 +221,7 @@ func newDatabaseContextFixture(t *testing.T, database *sql.DB) databaseContextFi
 		t.Fatal(err)
 	}
 	fixture.item.ListId = fixture.list.Id
-	result, err := items.NewRepository(database, configs.DefaultDatabaseTimeout).BulkAdd(t.Context(), fixture.user.ID, fixture.list.Id, []items.ListItem{fixture.item})
+	result, err := items.NewRepository(database, configs.DefaultDatabaseTimeout).BulkAdd(t.Context(), fixture.user.ID, fixture.list.Id, []items.ListItem{fixture.item}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

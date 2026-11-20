@@ -45,15 +45,15 @@ type workflowResponse struct {
 }
 
 type workflowResponseBody struct {
-	Message string               `json:"message"`
-	Token   string               `json:"token"`
-	User    users.User           `json:"user"`
-	List    lists.List           `json:"list"`
-	Lists   []lists.List         `json:"lists"`
-	Item    listitems.ListItem   `json:"item"`
-	Added   []listitems.ListItem `json:"added"`
-	Skipped []string             `json:"skipped_problem_ids"`
-	Items   []listitems.ListItem `json:"items"`
+	Message    string               `json:"message"`
+	Token      string               `json:"token"`
+	User       users.User           `json:"user"`
+	List       lists.List           `json:"list"`
+	Lists      []lists.List         `json:"lists"`
+	Item       listitems.ListItem   `json:"item"`
+	Added      []listitems.ListItem `json:"added"`
+	Duplicates []string             `json:"duplicate_problem_ids"`
+	Items      []listitems.ListItem `json:"items"`
 }
 
 type workflowErrorResponse struct {
@@ -135,7 +135,7 @@ func TestCompleteAPIWorkflow(t *testing.T) {
 	}
 	firstItem = practiceResponse.Item
 	duplicateResponse := decodeWorkflowJSON[workflowResponseBody](t, performWorkflowRequest(t, ownerClient, http.MethodPost, server.URL+listPath+"/items", ownerSession.Token, fmt.Sprintf(`{"items":[{"problem_id":%q,"status":"solved"}]}`, firstItem.ProblemId)), http.StatusOK)
-	if len(duplicateResponse.Added) != 0 || len(duplicateResponse.Skipped) != 1 {
+	if len(duplicateResponse.Added) != 0 || len(duplicateResponse.Duplicates) != 1 || duplicateResponse.Duplicates[0] != firstItem.ProblemId {
 		t.Fatalf("duplicate=%+v", duplicateResponse)
 	}
 	assertWorkflowListResponse(

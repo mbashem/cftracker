@@ -32,10 +32,10 @@ function useListApi() {
 		}
 	}
 
-	/** Append one or more problems through the sole bulk-add contract. */
- async function addProblemsToList(listId: number, problemIds: string[]) {
+	/** Insert a batch before one existing problem; omit the anchor to prepend. */
+ async function addProblemsToList(listId: number, problemIds: string[], beforeProblemId?: string) {
 		try {
-			return await addProblemToListMutation({ listId, problemIds }).unwrap();
+			return await addProblemToListMutation({ listId, problemIds, beforeProblemId }).unwrap();
 		} catch (err: any) {
 			console.log(err);
 			let errorMessage = err?.data?.error ?? "Failed to add to list!";

@@ -155,7 +155,7 @@ export function resetFrontendMocks() {
   frontend.deleteList.mockReset().mockResolvedValue(undefined);
   frontend.addProblemsToList.mockReset().mockImplementation(async (listId, problemIds) => {
     const added=problemIds.map((problemId,index)=>createListItem({listId,problemId,position:(index+1)*1073741824}));
-    return {added,skippedProblemIds:[],order:added.map(({problemId,position})=>({problemId,position})),rebalanced:false};
+    return {added,duplicateProblemIds:[],order:added.map(({problemId,position})=>({problemId,position})),rebalanced:false};
   });
   frontend.removeProblemsFromList.mockReset().mockImplementation(async (_id,problemIds)=>({removedProblemIds:problemIds,absentProblemIds:[],order:[],rebalanced:false}));
   frontend.changeThemeMod.mockReset();

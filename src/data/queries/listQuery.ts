@@ -83,11 +83,12 @@ export const listApi = createApi({
 			}),
 			invalidatesTags: [ListApiTags.Lists]
 		}),
-  // One append contract handles a single problem and larger batches.
-  addToList: builder.mutation<ListAddResult, { listId: number; problemIds: string[] }>({
-   query: ({listId,problemIds})=>({url:`/lists/${listId}/items`,method:'POST',body:{items:problemIds.map(problem_id=>({problem_id}))}}),
+  // One add contract inserts a batch before an existing anchor, or prepends it.
+  addToList: builder.mutation<ListAddResult, { listId: number; problemIds: string[]; beforeProblemId?: string }>({
+   query: ({listId,problemIds,beforeProblemId})=>({url:`/lists/${listId}/items`,method:'POST',body:{items:problemIds.map(problem_id=>({problem_id})),before_problem_id:beforeProblemId}}),
    transformResponse:(response:any):ListAddResult=>({
-    added:(response.added??[]).map(jsonToListItem),skippedProblemIds:response.skipped_problem_ids??[],
+    added:(response.added??[]).map(jsonToListItem),
+    duplicateProblemIds:response.duplicate_problem_ids??[],
     order:response.order.map((item:any)=>({problemId:item.problem_id,position:item.position})),rebalanced:response.rebalanced,
    }),
    invalidatesTags:(_result,_error,arg)=>IndividualPostTag(arg.listId),

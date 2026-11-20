@@ -40,10 +40,10 @@ export function jsonToListItem(json: any): ListItem {
 	};
 }
 
-/** Committed bulk append outcome; skipped IDs keep their existing practice data. */
+/** Committed addition with duplicate input occurrences reported separately. */
 export interface ListAddResult {
  added: ListItem[];
- skippedProblemIds: string[];
+ duplicateProblemIds: string[];
  order: { problemId: string; position: number }[];
  rebalanced: boolean;
 }

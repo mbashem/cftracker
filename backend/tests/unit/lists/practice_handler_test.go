@@ -33,7 +33,7 @@ func TestPracticeHandlersPreserveAndClearFields(t *testing.T) {
 	assertJSONBody(t, added, listitems.CollectionResult{Added: []listitems.ListItem{want}, Order: []listitems.OrderedItem{{ProblemID: testProblemID, Position: want.Position}}})
 	duplicate := performListRequest(t.Context(), router, http.MethodPost, itemCollectionPath(testListID), `{"items":[{"problem_id":"`+testProblemID+`","status":"not_started","notes":null}]}`)
 	assertResponseStatus(t, duplicate, http.StatusOK)
-	assertJSONBody(t, duplicate, listitems.CollectionResult{Skipped: []string{testProblemID}, Order: []listitems.OrderedItem{{ProblemID: testProblemID, Position: want.Position}}})
+	assertJSONBody(t, duplicate, listitems.CollectionResult{Duplicates: []string{testProblemID}, Order: []listitems.OrderedItem{}})
 	if !reflect.DeepEqual(repository.items[testListID][testProblemID], want) {
 		t.Fatal("duplicate add changed the saved item")
 	}

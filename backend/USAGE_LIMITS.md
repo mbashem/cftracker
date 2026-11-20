@@ -9,7 +9,7 @@ These controls complement the [rate limiter](RATE_LIMITING.md). Rate limits boun
 | Lists per account | 20 | Transactional repository creation | `409` with `maximum of 20 lists per account reached` |
 | Items per list | 1,000 | Transactional repository creation | `409` with `maximum of 1000 items per list reached` |
 
-The constants and domain errors live in [`internal/limits/limits.go`](internal/limits/limits.go). These are code settings; they are not environment variables. Existing problem-ID validation (100 characters), nonnegative positions, and Codeforces-handle validation (255 characters) remain in their respective handlers.
+The list capacity is configured in [`configs/lists.go`](configs/lists.go), alongside its position spacing policy. [`internal/limits/limits.go`](internal/limits/limits.go) exposes that capacity to validation and quota enforcement and defines the other limits and domain errors. These are code settings; they are not environment variables. Increasing the list capacity automatically increases the minimum position gap to the next power of two above it, subject to the configured floor; see [list operations](LIST_OPERATIONS.md). List-item additions enforce the existing 100-character problem-ID storage bound in the repository. Moves, removals, and anchors use opaque ID lookups without format validation. Codeforces-handle validation (255 characters) remains in its existing handler.
 
 ## Request bodies
 
@@ -27,7 +27,7 @@ The wrappers preserve the request body's `io.ReadCloser` interface: `http.MaxByt
 
 Names are trimmed before checking length. Unicode characters are counted as code points, not bytes or visual grapheme clusters. Both creation and renaming use the same normalization. Repository writes repeat validation so internal callers cannot bypass it.
 
-List creation locks the account's `users` row with `FOR UPDATE` and runs a separate bounded count before inserting. Bulk addition locks the owned `lists` row, reads existing items, and checks capacity using only new IDs. Both commit atomically under `READ COMMITTED`, so requests see inserts committed by earlier lock holders. All steps share the repository operation's existing request context and database timeout.
+List creation locks the account's `users` row with `FOR UPDATE` and runs a separate bounded count before inserting. List-item writes lock the owned `lists` row and receive its stored `item_count`. Before any bounds query or write, bulk addition checks that count plus the full input length against capacity, treating every input as new. An oversized projection rejects the entire request without processing a subset, regardless of duplicates. An admitted request uses primary-key `ON CONFLICT DO NOTHING` without an existence query, then increments the counter only by rows actually inserted. Removals decrement the counter by deleted rows. No-op requests and ordinary order/practice edits leave the counter unchanged. When rescaling occurs, it counts the complete ranked row set and corrects a mismatched counter in the same SQL statement. Position queries use indexed anchor/neighbor lookups independently of quota enforcement. Counter repair and item changes commit or roll back atomically under `READ COMMITTED`, so requests see changes committed by earlier lock holders. All steps share the repository operation's existing request context and database timeout.
 
 ```mermaid
 sequenceDiagram
@@ -47,9 +47,9 @@ sequenceDiagram
 
 Only creation is blocked by an exhausted quota. Deletion remains available and restores capacity. Renaming an existing list does not consume a slot. Another account has an independent list quota; each list has an independent item quota. Item ownership is checked before its quota, so another user's full list still appears as `404`.
 
-Bulk additions skip existing items with `200`, including at quota, and leave their saved data unchanged. Practice PATCH updates consume no list item capacity and remain available on full lists. See [practice records](PRACTICE_RECORDS.md).
+Bulk additions whose full input fits the projected quota return `200`, report `duplicate_problem_ids`, and retain successful new insertions. Duplicates do not reduce the up-front projection, so a full list rejects duplicate-only requests and a mixed request can be rejected even when its nonduplicate items would fit. Duplicate records retain their practice data. Projected quota overflow returns `409` before any insertion. Rebalancing may update existing positions and timestamps. The optional before anchor is resolved after the capacity check and before insertion. Practice PATCH updates consume no list item capacity and remain available on full lists. See [practice records](PRACTICE_RECORDS.md).
 
-These invariants cover application repository writes. Direct SQL/imports must respect the same rules or can create oversized data. No existing migration is edited, and no existing data is deleted automatically.
+These invariants cover application repository writes. Direct SQL/imports must respect the same rules and update `lists.item_count` in the same transaction as item additions/removals; there is no trigger. Rescaling verifies and repairs the counter, but quota checks before the next rescale rely on its current value. Otherwise counters can drift and quota enforcement becomes incorrect. No existing migration is edited, and no existing data is deleted automatically.
 
 ## Complete collection reads
 
@@ -61,7 +61,7 @@ Quota errors use `409` because the stored collection is at capacity. They do not
 
 ## Existing data and deployment
 
-List organization requires migration 6; see [list operations](LIST_OPERATIONS.md). Inspect existing data before deployment. The following read-only checks identify records requiring review:
+List organization requires migrations through version 7; see [list operations](LIST_OPERATIONS.md). Migration 7 backfills item counts, including oversized lists. Apply it with earlier item writers stopped so they cannot create counter drift. Inspect existing data before deployment. The following read-only checks identify records requiring review:
 
 ```sql
 SELECT user_id, COUNT(*) AS list_count
@@ -72,6 +72,11 @@ FROM list_items GROUP BY list_id HAVING COUNT(*) > 1000;
 
 SELECT id, user_id, char_length(name) AS name_length
 FROM lists WHERE char_length(name) > 100;
+
+SELECT lists.id, lists.item_count, COUNT(list_items.problem_id) AS actual_count
+FROM lists LEFT JOIN list_items ON list_items.list_id=lists.id
+GROUP BY lists.id
+HAVING lists.item_count<>COUNT(list_items.problem_id);
 ```
 
 If existing records exceed these bounds, reads still return them in full. New inserts are blocked while a collection is at or above quota, but deletion remains available; oversized names can be renamed by ID. Review and correct oversized existing data before deployment so read sizes satisfy the intended bounds. The API does not choose which existing data to discard.
@@ -86,4 +91,4 @@ If existing records exceed these bounds, reads still return them in full. New in
 
 Follow [TESTING.md](TESTING.md) for commands and disposable test-database requirements. The integration tests seed oversized records deliberately using SQL to verify that reads return stored data without enforcing write-time limits again. Application creation and rename paths enforce their respective invariants.
 
-Collection additions count only new list items; duplicate-only batches succeed at quota. Collection writes support at most 1,000 entries, receive an 8 MiB body cap, and use the existing authenticated write-rate budget. See [list operations](LIST_OPERATIONS.md).
+Collection addition checks capacity up front using the stored count plus every input occurrence. After an admitted batch, only successful insertions increase the stored count; duplicate occurrences are reported separately. Collection writes support at most 1,000 entries, receive an 8 MiB body cap, and use the existing authenticated write-rate budget. See [list operations](LIST_OPERATIONS.md).

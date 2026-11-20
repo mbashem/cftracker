@@ -63,13 +63,13 @@ func TestListItemRepositoryIntegration(t *testing.T) {
 		assertIntegrationListItems(t, storedItems, []listitems.ListItem{secondItem})
 	})
 
-	t.Run("duplicate problems return the unchanged item and remain independent across lists", func(t *testing.T) {
+	t.Run("duplicate problems are reported and remain independent across lists", func(t *testing.T) {
 		state := newListItemIntegrationState(t, database)
 		firstItem := createIntegrationListItem(t, state.repository, state.ownerID, state.ownerListID, "1845A", 0)
 		duplicateItem := listitems.ListItem{ListId: state.ownerListID, ProblemId: firstItem.ProblemId, Position: 1}
 
-		result, err := state.repository.BulkAdd(t.Context(), state.ownerID, duplicateItem.ListId, []listitems.ListItem{duplicateItem})
-		if err != nil || len(result.Added) != 0 || len(result.Skipped) != 1 {
+		result, err := state.repository.BulkAdd(t.Context(), state.ownerID, duplicateItem.ListId, []listitems.ListItem{duplicateItem}, nil)
+		if err != nil || len(result.Added) != 0 || !reflect.DeepEqual(result.Duplicates, []string{firstItem.ProblemId}) {
 			t.Fatalf("duplicate=%+v err=%v", result, err)
 		}
 		stored, err := state.repository.GetItems(t.Context(), state.ownerID, state.ownerListID)
@@ -115,7 +115,7 @@ func TestListItemRepositoryIntegration(t *testing.T) {
 		expectedItems := []listitems.ListItem{firstItem, secondItem}
 
 		foreignItem := listitems.ListItem{ListId: state.ownerListID, ProblemId: "1845C", Position: 9}
-		if _, err := state.repository.BulkAdd(t.Context(), state.otherUserID, foreignItem.ListId, []listitems.ListItem{foreignItem}); !errors.Is(err, listitems.ErrListNotFound) {
+		if _, err := state.repository.BulkAdd(t.Context(), state.otherUserID, foreignItem.ListId, []listitems.ListItem{foreignItem}, nil); !errors.Is(err, listitems.ErrListNotFound) {
 			t.Fatalf("Create(foreign list) error = %v, want %v", err, listitems.ErrListNotFound)
 		}
 		if _, err := state.repository.GetItems(t.Context(), state.otherUserID, state.ownerListID); !errors.Is(err, listitems.ErrListNotFound) {
@@ -148,7 +148,7 @@ func TestListItemRepositoryIntegration(t *testing.T) {
 		}{
 			{name: "create", run: func() error {
 				item := listitems.ListItem{ListId: integrationMissingItemListID, ProblemId: "1845A"}
-				_, err := state.repository.BulkAdd(t.Context(), state.ownerID, item.ListId, []listitems.ListItem{item})
+				_, err := state.repository.BulkAdd(t.Context(), state.ownerID, item.ListId, []listitems.ListItem{item}, nil)
 				return err
 			}},
 			{name: "read", run: func() error {
@@ -188,17 +188,15 @@ func TestListItemRepositoryIntegration(t *testing.T) {
 		); err != nil {
 			t.Fatalf("ReorderListItems(): %v", err)
 		}
-		thirdItem.Position = listitems.PositionGap / 2
-		storedThird, err := state.repository.GetItems(t.Context(), state.ownerID, state.ownerListID)
-		if err != nil {
-			t.Fatal(err)
-		}
-		thirdItem.UpdatedAt = storedThird[0].UpdatedAt
-
+		thirdItem.Position = 3 * configs.ListPositionGap / 4
 		storedItems, err := state.repository.GetItems(t.Context(), state.ownerID, state.ownerListID)
 		if err != nil {
 			t.Fatalf("GetItems(): %v", err)
 		}
+		if len(storedItems) != 3 || storedItems[1].ProblemId != thirdItem.ProblemId {
+			t.Fatalf("moved item was not placed between the other items: %+v", storedItems)
+		}
+		thirdItem.UpdatedAt = storedItems[1].UpdatedAt
 		assertIntegrationListItems(t, storedItems, []listitems.ListItem{firstItem, secondItem, thirdItem})
 	})
 
@@ -234,7 +232,7 @@ func TestPracticeRepositoryPersistence(t *testing.T) {
 	if err := json.Unmarshal([]byte(savedPracticeJSON), &original.Practice); err != nil {
 		t.Fatal(err)
 	}
-	added, err := state.repository.BulkAdd(t.Context(), state.ownerID, original.ListId, []listitems.ListItem{original})
+	added, err := state.repository.BulkAdd(t.Context(), state.ownerID, original.ListId, []listitems.ListItem{original}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -257,7 +255,7 @@ func TestPracticeRepositoryPersistence(t *testing.T) {
 	original.UpdatedAt = stored[0].UpdatedAt
 	assertIntegrationListItems(t, stored, []listitems.ListItem{original})
 	duplicate := listitems.ListItem{ListId: original.ListId, ProblemId: original.ProblemId, Position: 99}
-	if result, err := state.repository.BulkAdd(t.Context(), state.ownerID, duplicate.ListId, []listitems.ListItem{duplicate}); err != nil || len(result.Added) != 0 || len(result.Skipped) != 1 {
+	if result, err := state.repository.BulkAdd(t.Context(), state.ownerID, duplicate.ListId, []listitems.ListItem{duplicate}, nil); err != nil || len(result.Added) != 0 || !reflect.DeepEqual(result.Duplicates, []string{duplicate.ProblemId}) {
 		t.Fatalf("duplicate = %+v, error = %v; want unchanged %+v", duplicate, err, original)
 	}
 	reopened, err := state.repository.Update(t.Context(), state.ownerID, original.ListId, original.ProblemId, practicePatch(t, `{"status":"in_progress"}`))
@@ -350,7 +348,7 @@ func TestPracticeRepositoryOwnershipValidationAndQuota(t *testing.T) {
 		if !patch.Empty() {
 			invalid := original
 			invalid.Practice = patch.Values()
-			if _, err := state.repository.BulkAdd(t.Context(), state.ownerID, invalid.ListId, []listitems.ListItem{invalid}); !errors.Is(err, listitems.ErrInvalidPractice) {
+			if _, err := state.repository.BulkAdd(t.Context(), state.ownerID, invalid.ListId, []listitems.ListItem{invalid}, nil); !errors.Is(err, listitems.ErrInvalidPractice) {
 				t.Fatalf("Create(%s): %v", body, err)
 			}
 		}
@@ -360,20 +358,36 @@ func TestPracticeRepositoryOwnershipValidationAndQuota(t *testing.T) {
 		t.Fatal(err)
 	}
 	assertIntegrationListItems(t, stored, []listitems.ListItem{original})
-	if _, err := database.ExecContext(t.Context(), `INSERT INTO list_items(list_id, problem_id, position)
-		SELECT $1, 'quota-' || n, n FROM generate_series(1, $2::integer) AS n`, state.ownerListID, limits.ItemsPerList-1); err != nil {
+	if _, err := database.ExecContext(t.Context(), `WITH inserted AS (
+		INSERT INTO list_items(list_id, problem_id, position)
+		SELECT $1, 'quota-' || n, n FROM generate_series(1, $2::integer) AS n RETURNING list_id
+	) UPDATE lists SET item_count=item_count+(SELECT count(*) FROM inserted) WHERE id=$1`, state.ownerListID, limits.ItemsPerList-2); err != nil {
 		t.Fatal(err)
 	}
+	lastSlot, err := state.repository.BulkAdd(t.Context(), state.ownerID, state.ownerListID, []listitems.ListItem{original, {ProblemId: "last-slot"}}, nil)
+	if !errors.Is(err, limits.ErrItemQuota) || lastSlot != nil {
+		t.Fatalf("oversized mixed batch was not rejected: %+v, %v", lastSlot, err)
+	}
+	assertIntegrationItemCount(t, database, state.ownerListID, limits.ItemsPerList-1)
+	missingAnchor := "missing"
+	if _, err := state.repository.BulkAdd(t.Context(), state.ownerID, state.ownerListID, []listitems.ListItem{original, original}, &missingAnchor); !errors.Is(err, limits.ErrItemQuota) {
+		t.Fatalf("quota check did not precede anchor lookup: %v", err)
+	}
+	lastSlot, err = state.repository.BulkAdd(t.Context(), state.ownerID, state.ownerListID, []listitems.ListItem{{ProblemId: "last-slot"}}, nil)
+	if err != nil || len(lastSlot.Added) != 1 || lastSlot.Added[0].ProblemId != "last-slot" {
+		t.Fatalf("single item in final slot: %+v, %v", lastSlot, err)
+	}
 	duplicate := original
-	if result, err := state.repository.BulkAdd(t.Context(), state.ownerID, duplicate.ListId, []listitems.ListItem{duplicate}); err != nil || len(result.Added) != 0 || len(result.Skipped) != 1 {
+	if result, err := state.repository.BulkAdd(t.Context(), state.ownerID, duplicate.ListId, []listitems.ListItem{duplicate}, nil); !errors.Is(err, limits.ErrItemQuota) || result != nil {
 		t.Fatalf("duplicate at quota = %+v, error = %v", duplicate, err)
 	}
-	if _, err := state.repository.BulkAdd(t.Context(), state.ownerID, state.ownerListID, []listitems.ListItem{{ProblemId: "over-quota"}}); !errors.Is(err, limits.ErrItemQuota) {
+	if _, err := state.repository.BulkAdd(t.Context(), state.ownerID, state.ownerListID, []listitems.ListItem{{ProblemId: "over-quota"}}, nil); !errors.Is(err, limits.ErrItemQuota) {
 		t.Fatalf("new list contents at quota: %v", err)
 	}
 	if _, err := state.repository.Update(t.Context(), state.ownerID, state.ownerListID, original.ProblemId, practicePatch(t, `{"notes":"Allowed at quota"}`)); err != nil {
 		t.Fatal(err)
 	}
+	assertIntegrationItemCount(t, database, state.ownerListID, limits.ItemsPerList)
 }
 
 // Exercise PostgreSQL enum, date, time, and text constraints independently of application validation.
@@ -404,17 +418,17 @@ func TestPracticeDatabaseConstraints(t *testing.T) {
 	}
 }
 
-// Verify canonical order, batch failure preservation, duplicate skipping, rebalance, removal, and ownership.
+// Verify canonical order, partial duplicate handling, rebalance, removal, and ownership.
 // Generated by Codex and not thoroughly checked for correctness.
 func TestCollectionTransactions(t *testing.T) {
 	database := testutil.OpenTestDB(t)
 	state := newListItemIntegrationState(t, database)
-	result, err := state.repository.BulkAdd(t.Context(), state.ownerID, state.ownerListID, []listitems.ListItem{{ProblemId: "A"}, {ProblemId: "B"}, {ProblemId: "C"}})
-	if err != nil || len(result.Added) != 3 {
+	result, err := state.repository.BulkAdd(t.Context(), state.ownerID, state.ownerListID, []listitems.ListItem{{ProblemId: "A"}, {ProblemId: "B"}, {ProblemId: "C"}}, nil)
+	if err != nil || len(result.Added) != 3 || len(result.Order) != 3 {
 		t.Fatalf("add=%+v err=%v", result, err)
 	}
 	for index, item := range result.Order {
-		if item.Position != int64(index+1)*listitems.PositionGap {
+		if item.Position != int64(index+1)*configs.ListPositionGap {
 			t.Fatal(result.Order)
 		}
 	}
@@ -431,37 +445,63 @@ func TestCollectionTransactions(t *testing.T) {
 	if err != nil || !reflect.DeepEqual(before, after) {
 		t.Fatalf("failed batch changed records: %v", err)
 	}
-	result, err = state.repository.BulkAdd(t.Context(), state.ownerID, state.ownerListID, []listitems.ListItem{{ProblemId: "A"}, {ProblemId: "D"}})
-	if err != nil || len(result.Added) != 1 || len(result.Skipped) != 1 {
+	result, err = state.repository.BulkAdd(t.Context(), state.ownerID, state.ownerListID, []listitems.ListItem{{ProblemId: "A"}, {ProblemId: "D"}}, nil)
+	if err != nil || len(result.Added) != 1 || result.Added[0].ProblemId != "D" || result.Added[0].Position != 2*(configs.ListPositionGap/3) || !reflect.DeepEqual(result.Duplicates, []string{"A"}) {
 		t.Fatalf("duplicate batch=%+v %v", result, err)
 	}
 	after, err = state.repository.GetItems(t.Context(), state.ownerID, state.ownerListID)
-	if err != nil || !reflect.DeepEqual(before[0], after[0]) {
-		t.Fatal("duplicate overwritten")
+	if err != nil || len(after) != 4 || !reflect.DeepEqual(before, after[1:]) {
+		t.Fatal("duplicate batch overwrote existing items")
 	}
+	assertIntegrationItemCount(t, database, state.ownerListID, 4)
 	// Force an almost exhausted gap and verify the move and rebalance commit together.
 	if _, err := database.ExecContext(t.Context(), `UPDATE list_items SET position=CASE problem_id WHEN 'A' THEN 1024 WHEN 'B' THEN 2048 WHEN 'C' THEN 3072 ELSE 4096 END WHERE list_id=$1`, state.ownerListID); err != nil {
 		t.Fatal(err)
+	}
+	if _, err := database.ExecContext(t.Context(), `UPDATE lists SET item_count=7 WHERE id=$1`, state.ownerListID); err != nil {
+		t.Fatal(err)
+	}
+	beforeRescale, err := state.repository.GetItems(t.Context(), state.ownerID, state.ownerListID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = state.repository.MoveItems(t.Context(), state.ownerID, state.ownerListID, []listitems.Move{{ProblemID: "D", Before: &a}, {ProblemID: "missing"}})
+	if !errors.Is(err, listitems.ErrOrderConflict) {
+		t.Fatal(err)
+	}
+	afterFailedRescale, err := state.repository.GetItems(t.Context(), state.ownerID, state.ownerListID)
+	if err != nil || !reflect.DeepEqual(beforeRescale, afterFailedRescale) {
+		t.Fatal("failed batch retained rescaled positions")
+	}
+	var staleCount int
+	if err := database.QueryRowContext(t.Context(), `SELECT item_count FROM lists WHERE id=$1`, state.ownerListID).Scan(&staleCount); err != nil || staleCount != 7 {
+		t.Fatalf("failed batch retained count repair: count=%d error=%v", staleCount, err)
 	}
 	result, err = state.repository.MoveItems(t.Context(), state.ownerID, state.ownerListID, []listitems.Move{{ProblemID: "D", Before: &a}})
 	if err != nil || !result.Rebalanced || result.Order[0].ProblemID != "D" {
 		t.Fatalf("rebalance=%+v %v", result, err)
 	}
 	for index, item := range result.Order {
-		if item.Position != int64(index+1)*listitems.PositionGap {
+		if item.Position != int64(index+1)*configs.ListPositionGap {
 			t.Fatal(result.Order)
 		}
 	}
+	assertIntegrationItemCount(t, database, state.ownerListID, 4)
 	result, err = state.repository.BulkRemove(t.Context(), state.ownerID, state.ownerListID, []string{"A", "B", "missing"})
-	if err != nil || len(result.Removed) != 2 || len(result.Absent) != 1 || result.Order[1].Position != 4*listitems.PositionGap {
+	if err != nil || len(result.Removed) != 2 || len(result.Absent) != 1 || result.Order == nil || len(result.Order) != 0 {
 		t.Fatalf("remove=%+v %v", result, err)
 	}
+	survivors, err := state.repository.GetItems(t.Context(), state.ownerID, state.ownerListID)
+	if err != nil || len(survivors) != 2 || survivors[0].ProblemId != "D" || survivors[0].Position != configs.ListPositionGap || survivors[1].ProblemId != "C" || survivors[1].Position != 4*configs.ListPositionGap {
+		t.Fatalf("removal changed surviving positions: %+v, %v", survivors, err)
+	}
+	assertIntegrationItemCount(t, database, state.ownerListID, 2)
 	for _, userID := range []int64{state.otherUserID, state.ownerID} {
 		listID := state.ownerListID
 		if userID == state.ownerID {
 			listID = integrationMissingItemListID
 		}
-		if _, err := state.repository.BulkAdd(t.Context(), userID, listID, []listitems.ListItem{{ProblemId: "X"}}); !errors.Is(err, listitems.ErrListNotFound) {
+		if _, err := state.repository.BulkAdd(t.Context(), userID, listID, []listitems.ListItem{{ProblemId: "X"}}, nil); !errors.Is(err, listitems.ErrListNotFound) {
 			t.Fatal(err)
 		}
 		if _, err := state.repository.BulkRemove(t.Context(), userID, listID, []string{"B"}); !errors.Is(err, listitems.ErrListNotFound) {
@@ -476,7 +516,7 @@ func TestCollectionTransactions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = state.repository.BulkAdd(t.Context(), state.ownerID, state.ownerListID, []listitems.ListItem{{ProblemId: "valid"}, {ProblemId: "bad\x00"}})
+	_, err = state.repository.BulkAdd(t.Context(), state.ownerID, state.ownerListID, []listitems.ListItem{{ProblemId: "valid"}, {ProblemId: "bad\x00"}}, nil)
 	if err == nil {
 		t.Fatal("invalid batch succeeded")
 	}
@@ -492,13 +532,13 @@ func TestCollectionRollbackAfterInsert(t *testing.T) {
 	database := testutil.OpenTestDB(t)
 	state := newListItemIntegrationState(t, database)
 	original := createIntegrationListItem(t, state.repository, state.ownerID, state.ownerListID, "A", 0)
-	if _, err := database.ExecContext(t.Context(), `UPDATE list_items SET position=$1 WHERE list_id=$2`, listitems.MaxPosition-1, state.ownerListID); err != nil {
+	if _, err := database.ExecContext(t.Context(), `UPDATE list_items SET position=2 WHERE list_id=$1`, state.ownerListID); err != nil {
 		t.Fatal(err)
 	}
-	original.Position = listitems.MaxPosition - 1
-	// The new row inserts successfully, then redistribution of A fails. The transaction
+	original.Position = 2
+	// The new row inserts at position 1, then redistribution of B fails. The transaction
 	// must roll back both the insert and every position/timestamp change.
-	if _, err := database.ExecContext(t.Context(), fmt.Sprintf(`ALTER TABLE list_items ADD CONSTRAINT collection_rollback_probe CHECK (list_id<>%d OR problem_id<>'A' OR position<>1073741824)`, state.ownerListID)); err != nil {
+	if _, err := database.ExecContext(t.Context(), fmt.Sprintf(`ALTER TABLE list_items ADD CONSTRAINT collection_rollback_probe CHECK (list_id<>%d OR problem_id<>'B' OR position<>%d)`, state.ownerListID, configs.ListPositionGap)); err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() {
@@ -506,13 +546,14 @@ func TestCollectionRollbackAfterInsert(t *testing.T) {
 			t.Error(err)
 		}
 	})
-	_, err := state.repository.BulkAdd(t.Context(), state.ownerID, state.ownerListID, []listitems.ListItem{{ProblemId: "B"}})
+	_, err := state.repository.BulkAdd(t.Context(), state.ownerID, state.ownerListID, []listitems.ListItem{{ProblemId: "B"}}, nil)
 	testutil.AssertPostgresErrorCode(t, err, "23514")
 	stored, err := state.repository.GetItems(t.Context(), state.ownerID, state.ownerListID)
 	if err != nil {
 		t.Fatal(err)
 	}
 	assertIntegrationListItems(t, stored, []listitems.ListItem{original})
+	assertIntegrationItemCount(t, database, state.ownerListID, 1)
 }
 
 // Race two final-slot batches and verify exactly one commits without exceeding capacity.
@@ -520,7 +561,10 @@ func TestCollectionRollbackAfterInsert(t *testing.T) {
 func TestConcurrentBulkAddQuota(t *testing.T) {
 	database := testutil.OpenTestDB(t)
 	state := newListItemIntegrationState(t, database)
-	if _, err := database.ExecContext(t.Context(), `INSERT INTO list_items(list_id,problem_id,position) SELECT $1,'seed-'||n,n::bigint*1073741824 FROM generate_series(1,998) n`, state.ownerListID); err != nil {
+	if _, err := database.ExecContext(t.Context(), `WITH inserted AS (
+		INSERT INTO list_items(list_id,problem_id,position)
+		SELECT $1,'seed-'||n,n::bigint*1073741824 FROM generate_series(1,998) n RETURNING list_id
+	) UPDATE lists SET item_count=item_count+(SELECT count(*) FROM inserted) WHERE id=$1`, state.ownerListID); err != nil {
 		t.Fatal(err)
 	}
 	start := make(chan struct{})
@@ -528,7 +572,7 @@ func TestConcurrentBulkAddQuota(t *testing.T) {
 	for index := 0; index < 2; index++ {
 		go func(index int) {
 			<-start
-			_, err := state.repository.BulkAdd(t.Context(), state.ownerID, state.ownerListID, []listitems.ListItem{{ProblemId: fmt.Sprintf("batch-%d-A", index)}, {ProblemId: fmt.Sprintf("batch-%d-B", index)}})
+			_, err := state.repository.BulkAdd(t.Context(), state.ownerID, state.ownerListID, []listitems.ListItem{{ProblemId: fmt.Sprintf("batch-%d-A", index)}, {ProblemId: fmt.Sprintf("batch-%d-B", index)}}, nil)
 			errorsReceived <- err
 		}(index)
 	}
@@ -556,6 +600,89 @@ func TestConcurrentBulkAddQuota(t *testing.T) {
 			t.Fatal("nonunique order")
 		}
 	}
+	assertIntegrationItemCount(t, database, state.ownerListID, limits.ItemsPerList)
+}
+
+// Verify stored counts follow actual insertions/deletions and roll back with a failed removal.
+// Generated by Codex and not thoroughly checked for correctness.
+func TestListItemCountTracking(t *testing.T) {
+	database := testutil.OpenTestDB(t)
+	state := newListItemIntegrationState(t, database)
+	assertIntegrationItemCount(t, database, state.ownerListID, 0)
+	for _, testCase := range []struct {
+		input      []listitems.ListItem
+		want       int
+		duplicates []string
+	}{
+		{[]listitems.ListItem{{ProblemId: "A"}, {ProblemId: "B"}}, 2, []string{}},
+		{[]listitems.ListItem{{ProblemId: "A"}}, 2, []string{"A"}},
+		{[]listitems.ListItem{{ProblemId: "B"}, {ProblemId: "C"}}, 3, []string{"B"}},
+		{[]listitems.ListItem{{ProblemId: "C"}}, 3, []string{"C"}},
+		{[]listitems.ListItem{{ProblemId: "D"}, {ProblemId: "D"}}, 4, []string{"D"}},
+	} {
+		result, err := state.repository.BulkAdd(t.Context(), state.ownerID, state.ownerListID, testCase.input, nil)
+		if err != nil || !reflect.DeepEqual(result.Duplicates, testCase.duplicates) {
+			t.Fatalf("add %+v: result=%+v error=%v", testCase.input, result, err)
+		}
+		assertIntegrationItemCount(t, database, state.ownerListID, testCase.want)
+	}
+	anchor := "A"
+	if _, err := state.repository.MoveItems(t.Context(), state.ownerID, state.ownerListID, []listitems.Move{{ProblemID: "C", Before: &anchor}}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := state.repository.Update(t.Context(), state.ownerID, state.ownerListID, "A", practicePatch(t, `{"notes":"Count unchanged"}`)); err != nil {
+		t.Fatal(err)
+	}
+	assertIntegrationItemCount(t, database, state.ownerListID, 4)
+	assertIntegrationItemCount(t, database, state.otherListID, 0)
+	for _, testCase := range []struct {
+		ids  []string
+		want int
+	}{
+		{[]string{"A", "absent"}, 3},
+		{[]string{"A", "absent"}, 3},
+		{[]string{"B", "D"}, 1},
+	} {
+		if _, err := state.repository.BulkRemove(t.Context(), state.ownerID, state.ownerListID, testCase.ids); err != nil {
+			t.Fatal(err)
+		}
+		assertIntegrationItemCount(t, database, state.ownerListID, testCase.want)
+	}
+	// Reject the counter decrement after DELETE has run, forcing both changes to roll back.
+	if _, err := database.ExecContext(t.Context(), fmt.Sprintf(`ALTER TABLE lists ADD CONSTRAINT item_count_rollback_probe CHECK (id<>%d OR item_count>=1)`, state.ownerListID)); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if _, err := database.Exec(`ALTER TABLE lists DROP CONSTRAINT IF EXISTS item_count_rollback_probe`); err != nil {
+			t.Error(err)
+		}
+	})
+	_, err := state.repository.BulkRemove(t.Context(), state.ownerID, state.ownerListID, []string{"C"})
+	testutil.AssertPostgresErrorCode(t, err, "23514")
+	assertIntegrationItemCount(t, database, state.ownerListID, 1)
+	if _, err := database.ExecContext(t.Context(), `ALTER TABLE lists DROP CONSTRAINT item_count_rollback_probe`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := state.repository.BulkRemove(t.Context(), state.ownerID, state.ownerListID, []string{"C"}); err != nil {
+		t.Fatal(err)
+	}
+	assertIntegrationItemCount(t, database, state.ownerListID, 0)
+	_, err = database.ExecContext(t.Context(), `UPDATE lists SET item_count=-1 WHERE id=$1`, state.ownerListID)
+	testutil.AssertPostgresErrorCode(t, err, "23514")
+	assertIntegrationItemCount(t, database, state.ownerListID, 0)
+}
+
+// assertIntegrationItemCount checks the stored counter against both the expected count and saved rows.
+func assertIntegrationItemCount(t *testing.T, database *sql.DB, listID int64, want int) {
+	t.Helper()
+	var stored, actual int
+	if err := database.QueryRowContext(t.Context(), `SELECT item_count,
+		(SELECT count(*) FROM list_items WHERE list_id=$1) FROM lists WHERE id=$1`, listID).Scan(&stored, &actual); err != nil {
+		t.Fatal(err)
+	}
+	if stored != want || actual != want {
+		t.Fatalf("list %d: stored count=%d actual count=%d; want %d", listID, stored, actual, want)
+	}
 }
 
 // Verify sequential SQL moves in both directions, append, no-op timestamps, and rollback after a prior write.
@@ -563,16 +690,19 @@ func TestConcurrentBulkAddQuota(t *testing.T) {
 func TestRelativeMovesUseCurrentNeighbors(t *testing.T) {
 	database := testutil.OpenTestDB(t)
 	state := newListItemIntegrationState(t, database)
-	_, err := state.repository.BulkAdd(t.Context(), state.ownerID, state.ownerListID, []listitems.ListItem{{ProblemId: "A"}, {ProblemId: "B"}, {ProblemId: "C"}, {ProblemId: "D"}})
+	_, err := state.repository.BulkAdd(t.Context(), state.ownerID, state.ownerListID, []listitems.ListItem{{ProblemId: "A"}, {ProblemId: "B"}, {ProblemId: "C"}, {ProblemId: "D"}}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	a, c, d, missing := "A", "C", "D", "missing"
-	result, err := state.repository.MoveItems(t.Context(), state.ownerID, state.ownerListID, []listitems.Move{{ProblemID: a, Before: &d}, {ProblemID: c, After: &d}, {ProblemID: "B"}})
+	result, err := state.repository.MoveItems(t.Context(), state.ownerID, state.ownerListID, []listitems.Move{{ProblemID: a, Before: &d}, {ProblemID: c, After: &d}, {ProblemID: a, Before: &d}, {ProblemID: "B"}})
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := []string{"A", "D", "C", "B"}
+	want := []string{"A", "C", "B"}
+	if result.Rebalanced || len(result.Order) != len(want) {
+		t.Fatalf("ordinary moves returned unrelated positions: %+v", result)
+	}
 	for index, item := range result.Order {
 		if item.ProblemID != want[index] {
 			t.Fatal(result.Order)
@@ -581,6 +711,11 @@ func TestRelativeMovesUseCurrentNeighbors(t *testing.T) {
 	before, err := state.repository.GetItems(t.Context(), state.ownerID, state.ownerListID)
 	if err != nil {
 		t.Fatal(err)
+	}
+	for index, id := range []string{"A", "D", "C", "B"} {
+		if before[index].ProblemId != id {
+			t.Fatal(before)
+		}
 	}
 	_, err = state.repository.MoveItems(t.Context(), state.ownerID, state.ownerListID, []listitems.Move{{ProblemID: a, Before: &d}, {ProblemID: "B"}})
 	if err != nil {
@@ -598,6 +733,166 @@ func TestRelativeMovesUseCurrentNeighbors(t *testing.T) {
 	if err != nil || !reflect.DeepEqual(before, after) {
 		t.Fatal("failed batch retained earlier position update")
 	}
+}
+
+// Verify a nil anchor prepends in request order using zero and the first stored rank as bounds.
+// Generated by Codex and not thoroughly checked for correctness.
+func TestNilBeforePrependsBatch(t *testing.T) {
+	database := testutil.OpenTestDB(t)
+	state := newListItemIntegrationState(t, database)
+	original := createIntegrationListItem(t, state.repository, state.ownerID, state.ownerListID, "A", 0)
+	original.Position = configs.ListPositionGap + configs.ListPositionGap/2
+	if _, err := database.ExecContext(t.Context(), `UPDATE list_items SET position=$2 WHERE list_id=$1`, state.ownerListID, original.Position); err != nil {
+		t.Fatal(err)
+	}
+	result, err := state.repository.BulkAdd(t.Context(), state.ownerID, state.ownerListID, []listitems.ListItem{{ProblemId: "B"}, {ProblemId: "C"}}, nil)
+	if err != nil || result.Rebalanced || len(result.Added) != 2 || result.Added[0].Position != configs.ListPositionGap/2 || result.Added[1].Position != configs.ListPositionGap {
+		t.Fatalf("prepend=%+v error=%v", result, err)
+	}
+	stored, err := state.repository.GetItems(t.Context(), state.ownerID, state.ownerListID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(stored, []listitems.ListItem{result.Added[0], result.Added[1], original}) {
+		t.Fatalf("stored order=%+v", stored)
+	}
+	assertIntegrationItemCount(t, database, state.ownerListID, 3)
+}
+
+// Verify anchored batches maximize spacing, repair counters, and preserve atomic failure behavior.
+// Generated by Codex and not thoroughly checked for correctness.
+func TestAnchoredBulkAddition(t *testing.T) {
+	database := testutil.OpenTestDB(t)
+	for _, testCase := range []struct {
+		first, gap  int64
+		storedCount int
+	}{
+		{configs.ListPositionGap, configs.ListPositionGap, 2},
+		{1024, 1024, 0},
+		{3, 3, 9},
+		{configs.ListPositionGap, 3, 0},
+	} {
+		crowded := testCase.gap != configs.ListPositionGap
+		t.Run(fmt.Sprintf("first=%d gap=%d count=%d", testCase.first, testCase.gap, testCase.storedCount), func(t *testing.T) {
+			state := newListItemIntegrationState(t, database)
+			_, err := state.repository.BulkAdd(t.Context(), state.ownerID, state.ownerListID, []listitems.ListItem{{ProblemId: "A"}, {ProblemId: "B"}}, nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if crowded {
+				_, err = database.ExecContext(t.Context(), `UPDATE list_items SET position=CASE problem_id WHEN 'A' THEN $2::bigint ELSE $3::bigint END,updated_at='2000-01-01' WHERE list_id=$1`, state.ownerListID, testCase.first, testCase.first+testCase.gap)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if _, err := database.ExecContext(t.Context(), `UPDATE lists SET item_count=$2 WHERE id=$1`, state.ownerListID, testCase.storedCount); err != nil {
+					t.Fatal(err)
+				}
+			}
+			original, err := state.repository.GetItems(t.Context(), state.ownerID, state.ownerListID)
+			if err != nil {
+				t.Fatal(err)
+			}
+			anchor := "B"
+			result, err := state.repository.BulkAdd(t.Context(), state.ownerID, state.ownerListID, []listitems.ListItem{{ProblemId: "X"}, {ProblemId: "Y"}}, &anchor)
+			if err != nil || result.Rebalanced != crowded || len(result.Added) != 2 {
+				t.Fatalf("result=%+v err=%v", result, err)
+			}
+			want := []string{"A", "X", "Y", "B"}
+			if !crowded {
+				want = []string{"X", "Y"}
+			}
+			if len(result.Order) != len(want) {
+				t.Fatalf("unexpected returned positions: %+v", result.Order)
+			}
+			for index, item := range result.Order {
+				if item.ProblemID != want[index] {
+					t.Fatal(result.Order)
+				}
+				if crowded && item.Position != int64(index+1)*configs.ListPositionGap {
+					t.Fatalf("rescale did not space the complete final list: %+v", result.Order)
+				}
+			}
+			wantFirst, wantSecond := configs.ListPositionGap+configs.ListPositionGap/3, configs.ListPositionGap+2*(configs.ListPositionGap/3)
+			if crowded {
+				wantFirst, wantSecond = 2*configs.ListPositionGap, 3*configs.ListPositionGap
+			}
+			if result.Added[0].Position != wantFirst || result.Added[1].Position != wantSecond {
+				t.Fatal(result.Added)
+			}
+			stored, err := state.repository.GetItems(t.Context(), state.ownerID, state.ownerListID)
+			if err != nil {
+				t.Fatal(err)
+			}
+			positions := make(map[string]int64, len(stored))
+			for _, item := range stored {
+				positions[item.ProblemId] = item.Position
+			}
+			for _, item := range result.Order {
+				if positions[item.ProblemID] != item.Position {
+					t.Fatal("returned positions differ from saved positions")
+				}
+			}
+			if !crowded && (!reflect.DeepEqual(original[0], stored[0]) || !reflect.DeepEqual(original[1], stored[3])) {
+				t.Fatal("normal insert changed existing records")
+			}
+			if crowded {
+				if !stored[3].CreatedAt.Equal(original[1].CreatedAt) || original[0].Position != stored[0].Position && !stored[0].UpdatedAt.After(original[0].UpdatedAt) {
+					t.Fatal("rebalance timestamp contract changed")
+				}
+				if original[0].Position == stored[0].Position && !reflect.DeepEqual(original[0], stored[0]) {
+					t.Fatal("rescale changed an already correctly positioned item")
+				}
+			}
+			assertIntegrationItemCount(t, database, state.ownerListID, 4)
+			anchor = "A"
+			result, err = state.repository.BulkAdd(t.Context(), state.ownerID, state.ownerListID, []listitems.ListItem{{ProblemId: "P"}, {ProblemId: "Q"}}, &anchor)
+			if err != nil || len(result.Order) != 2 || result.Order[0].ProblemID != "P" || result.Order[1].ProblemID != "Q" || result.Rebalanced {
+				t.Fatalf("prepend=%+v err=%v", result, err)
+			}
+			if result.Added[0].Position != configs.ListPositionGap/3 || result.Added[1].Position != 2*(configs.ListPositionGap/3) {
+				t.Fatal(result.Added)
+			}
+			before, err := state.repository.GetItems(t.Context(), state.ownerID, state.ownerListID)
+			if err != nil {
+				t.Fatal(err)
+			}
+			anchor = "missing"
+			if _, err := state.repository.BulkAdd(t.Context(), state.ownerID, state.ownerListID, []listitems.ListItem{{ProblemId: "Z"}}, &anchor); !errors.Is(err, listitems.ErrItemNotFound) {
+				t.Fatal(err)
+			}
+			after, err := state.repository.GetItems(t.Context(), state.ownerID, state.ownerListID)
+			if err != nil || !reflect.DeepEqual(before, after) {
+				t.Fatal("missing anchor wrote records")
+			}
+		})
+	}
+}
+
+// Verify an exhausted interval from legacy/direct SQL data is repaired before inserting the batch.
+// Generated by Codex and not thoroughly checked for correctness.
+func TestAddRescalesBeforeInsertWhenNoPositionFits(t *testing.T) {
+	database := testutil.OpenTestDB(t)
+	state := newListItemIntegrationState(t, database)
+	_, err := state.repository.BulkAdd(t.Context(), state.ownerID, state.ownerListID, []listitems.ListItem{{ProblemId: "A"}, {ProblemId: "B"}}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := database.ExecContext(t.Context(), `UPDATE list_items SET position=CASE problem_id WHEN 'A' THEN 1 ELSE 2 END WHERE list_id=$1`, state.ownerListID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := database.ExecContext(t.Context(), `UPDATE lists SET item_count=0 WHERE id=$1`, state.ownerListID); err != nil {
+		t.Fatal(err)
+	}
+	anchor := "B"
+	result, err := state.repository.BulkAdd(t.Context(), state.ownerID, state.ownerListID, []listitems.ListItem{{ProblemId: "A"}, {ProblemId: "X"}}, &anchor)
+	if err != nil || !result.Rebalanced || len(result.Order) != 3 || len(result.Added) != 1 || !reflect.DeepEqual(result.Duplicates, []string{"A"}) {
+		t.Fatalf("result=%+v err=%v", result, err)
+	}
+	want := []listitems.OrderedItem{{ProblemID: "A", Position: configs.ListPositionGap}, {ProblemID: "X", Position: configs.ListPositionGap + 2*(configs.ListPositionGap/3)}, {ProblemID: "B", Position: 2 * configs.ListPositionGap}}
+	if !reflect.DeepEqual(result.Order, want) || result.Added[0].Position != want[1].Position {
+		t.Fatal(result)
+	}
+	assertIntegrationItemCount(t, database, state.ownerListID, 3)
 }
 
 // practicePatch decodes JSON into the presence-aware patch contract for integration fixtures.
@@ -656,7 +951,7 @@ func createIntegrationListItem(
 ) listitems.ListItem {
 	t.Helper()
 	item := listitems.ListItem{ListId: listID, ProblemId: problemID, Position: int64(position)}
-	result, err := repository.BulkAdd(t.Context(), userID, listID, []listitems.ListItem{item})
+	result, err := repository.BulkAdd(t.Context(), userID, listID, []listitems.ListItem{item}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

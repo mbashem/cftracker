@@ -185,7 +185,7 @@ make migrate-up MIGRATION_DATABASE_URL="$TEST_DATABASE_URL"
 make test-integration
 ```
 
-The integration helper requires migration version `6` with `dirty=false`. If migrations change, update the helper after the new migration is committed and applied to the test database. Practice unit tests live in `tests/unit/items` and `tests/unit/lists`; persistence and constraint tests live in `tests/integration/items`. The migration lifecycle script also checks the seeded version-4 practice upgrade and version-5 rollback/reapplication.
+The integration helper requires migration version `7` with `dirty=false`. Keep the helper's expected version aligned with the migrations required by the code under test, and apply them before authorized database testing. Practice unit tests live in `tests/unit/items` and `tests/unit/lists`; persistence and constraint tests live in `tests/integration/items`. Counter tests check duplicate/no-op handling, concurrent quota enforcement, and rollback after insert/delete changes. Direct-SQL item fixtures maintain `lists.item_count` explicitly. The migration lifecycle script also checks the seeded version-4 practice upgrade, sparse ordering rollback, and version-6 item-count backfill/rollback/reapplication.
 
 ## Reset Behavior
 

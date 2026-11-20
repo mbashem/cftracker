@@ -257,13 +257,13 @@ Every route requires a JWT. For list-specific operations, a missing list and a l
 | `GET /api/v1/lists/:listId` | List ID | `200 {"message":"List fetched successfully", "list": List, "items": ListItem[]}` |
 | `PUT /api/v1/lists/:listId` | `{"name":"Updated name"}` | `200 {"message":"List name updated"}` |
 | `DELETE /api/v1/lists/:listId` | List ID | `200 {"message":"List deleted"}` |
-| `POST /api/v1/lists/:listId/items` | `{"items":[{"problem_id":"1900A"}]}` | `200` with added records, skipped IDs, complete order, and rebalance flag |
+| `POST /api/v1/lists/:listId/items` | `{"items":[{"problem_id":"1900A"}]}` | `200` with added records, duplicate IDs, new positions (all positions after rebalance), and rebalance flag |
 | `PATCH /api/v1/lists/:listId/item/:itemId` | Supplied practice fields; `null` clears | `200 {"message":"Item updated", "item": ListItem}` |
-| `POST /api/v1/lists/:listId/items/remove` | `{"problem_ids":["1900A"]}` | `200` with removed/absent IDs and complete resulting order |
+| `POST /api/v1/lists/:listId/items/remove` | `{"problem_ids":["1900A"]}` | `200` with removed/absent IDs and empty `order` |
 
 Names are required and trimmed; empty names and names longer than 100 Unicode characters return `400 {"error":"Invalid format"}`. Adding items requires an array of 1–1,000 records with nonempty trimmed problem IDs (maximum 100 Unicode code points). The backend assigns positions; supplied position properties are rejected. Request bodies are capped at 16 KiB (8 MiB on the three collection-write routes) before JSON decoding; oversized bodies return `413`. URL-encode problem IDs when constructing item paths.
 
-Bulk addition inserts new items and skips existing items without changing them, including at quota. Duplicate list names still produce generic `500` failures below quota. New list items exceeding quota return `409`. Removing an absent item from an existing owned list succeeds. Accounts can hold at most 20 lists, each with at most 1,000 items, enforced by transactional parent-row locks and bounded counts. Names contain 1–100 Unicode characters after trimming. Reads return full names and complete collections without read-time limits. Collection sizes rely on write-time quotas; existing data and direct SQL/imports must satisfy those invariants. See [usage limits](USAGE_LIMITS.md). Relative move batches are supported; there is no pagination, problem metadata lookup, or Codeforces ownership requirement for using lists. List IDs are parsed as signed 64-bit integers; zero/negative IDs normally reach the repository and produce `404`.
+Bulk addition skips duplicate problems individually and retains successful insertions, returning duplicate occurrences in `duplicate_problem_ids`. It does not pre-query existing problems. Before any insertion, the locked stored item count plus the complete input length must fit capacity, without discounting duplicates. Otherwise the entire request returns `409`. Admitted batches increment the counter only by rows actually inserted; other failures still roll back the operation. Duplicate list names still produce generic `500` failures below quota. New list items exceeding quota return `409`. Removing an absent item from an existing owned list succeeds. Accounts can hold at most 20 lists, each with at most 1,000 items. Transactional parent-row locks serialize quota checks; account list creation uses a bounded count, while item creation reads the internal `lists.item_count` added by migration 7. Repository additions/removals update that counter in the same transaction as their actual item changes, without triggers. The counter is not part of the list JSON model. Names contain 1–100 Unicode characters after trimming. Reads return full names and complete collections without read-time limits. Collection sizes rely on write-time quotas; existing data and direct SQL/imports must satisfy those invariants and maintain the stored item count. See [usage limits](USAGE_LIMITS.md). Relative move batches are supported; there is no pagination, problem metadata lookup, or Codeforces ownership requirement for using lists. List IDs are parsed as signed 64-bit integers; zero/negative IDs normally reach the repository and produce `404`.
 
 Add-item accepts nullable `status`, `help_used`, `solved_on`, `time_spent` (active seconds), and `notes`. The general item PATCH currently accepts these practice fields; future editable fields can extend the same endpoint and repository `Update` method. It builds assignments and parameters only for supplied fields and explicitly sets `updated_at = CURRENT_TIMESTAMP`. List item and ordering changes remain outside this part. The backend performs no CF initialization or submission fetching. See [practice records](PRACTICE_RECORDS.md) for enum values, validation, clearing semantics, examples, and repository boundaries.
 
@@ -501,10 +501,12 @@ sequenceDiagram
     Auth->>API: Authenticated userId
     API->>API: Parse listId; validate records
     API->>Items: BulkAdd(userId, listId, items)
-    Items->>DB: Begin transaction; lock owned list
-    Items->>DB: Skip existing items; check quota; append new records
-    Items->>DB: Read resulting order; commit
-    Items-->>API: Added records, skipped IDs, order, rebalance flag
+    Items->>DB: Begin transaction; lock owned list and read stored item count
+    Items->>Items: Reject if stored count plus full input length exceeds quota
+    Items->>DB: Read optional anchor bounds
+    Items->>DB: Allocate ranks; insert with primary-key ON CONFLICT DO NOTHING
+    Items->>DB: Increase count by actual insertions; rescale if needed; commit
+    Items-->>API: Added records, duplicate IDs, order, rebalance flag
     API-->>Client: 200 bulk result
     Client->>Auth: GET /api/v1/lists/12
     Auth->>API: Authenticated userId
@@ -605,4 +607,4 @@ To trace a route, start in its `*_routes.go`, follow the handler, then its injec
 
 For changes, update the route contract and relevant sequence here, implementation tests alongside the affected package, and integration tests when SQL or ownership behavior changes. Unit suites mock repository/provider boundaries; integration suites exercise real PostgreSQL and complete routed workflows with controlled providers. Use [TESTING.md](TESTING.md) for commands and safety requirements. Documentation changes alone do not require starting the API, contacting external providers, or modifying any database.
 
-See [list operations](LIST_OPERATIONS.md) for sparse ordering, relative move batches, bulk addition/removal, response reconciliation, limits, and migration 6.
+See [list operations](LIST_OPERATIONS.md) for sparse ordering, relative move batches, bulk addition/removal, response reconciliation, limits, and migrations 6–7.

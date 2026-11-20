@@ -10,8 +10,9 @@ This document explains CFTracker's migration ordering, checksum protection, roll
 | `000002` | `create_users` | Creates `users`, its timestamp function, and its update trigger. |
 | `000003` | `create_lists` | Creates `lists`, including its user foreign key and uniqueness constraint. |
 | `000004` | `create_list_items` | Creates `list_items`, including its list foreign key and composite primary key. |
-| `000006` | `sparse_list_order` | BIGINT sparse positions, deterministic redistribution, and deferred uniqueness/range constraints. |
 | `000005` | `add_list_item_practice` | Adds nullable practice fields, status/help enum types, and date/time/text constraints. |
+| `000006` | `sparse_list_order` | BIGINT sparse positions, deterministic redistribution, and deferred uniqueness/range constraints. |
+| `000007` | `add_list_item_count` | Adds and backfills the internal list item counter maintained by application transactions. |
 
 Migration metadata comes first so every application-table migration can be registered and checksummed. Its down migration intentionally retains this metadata so integrity checks continue to work after a full rollback.
 
@@ -184,12 +185,13 @@ The names `cftracker_test` and `cftracker_test_reference` are reserved as dispos
 
 The test verifies:
 
-1. A fresh migration reaches version `6` with all application tables.
+1. A fresh migration reaches version `7` with all application tables.
 2. A full rollback removes every application table and can be reapplied.
 3. Named rollbacks stop at the registered `list_items`, `lists`, and `users` boundaries.
 4. Changing a copied applied migration fails with the expected checksum error.
 5. Adding a column directly to the target fails comparison with the clean reference schema.
 6. Upgrading seeded version-4 items leaves practice uninitialized and preserves timestamps; rolling version 5 back and reapplying preserves list items and removes prior practice data.
+7. Version 7 backfills populated and empty lists, preserves item data/timestamps, and restores correct counters after rollback/reapplication.
 
 ## Code review map
 
@@ -213,3 +215,5 @@ Review these invariants when changing migration code:
 - Local migration tests create and remove only their fixed disposable databases.
 
 Version 6 preserves practice and timestamps while redistributing positions; rollback renumbers to zero-based INTEGER positions. Coordinate deployment because the previous binary still accepts arbitrary positions. See [list operations](LIST_OPERATIONS.md).
+
+Version 7 adds `lists.item_count` with a zero default and a nonnegative constraint, then backfills actual counts. It adds no trigger and imposes no quota constraint on existing oversized lists. Application add/remove transactions maintain this internal value; direct SQL writers must do so explicitly. Rollback drops only the column and leaves all list items intact. Stop previous item writers for the coordinated migration/backend update because they do not maintain counters. Named table rollback targets remain unchanged.

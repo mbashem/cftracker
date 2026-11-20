@@ -333,7 +333,7 @@ Set-Cookie: cftracker_github_oauth_state=[challenge]; ...</code></pre>
         <article class="endpoint" id="item-add" data-method="POST" data-path="/api/v1/lists/:listId/items">
           <h3>POST /api/v1/lists/:listId/items</h3><span class="auth">Bearer token · JSON body</span>
           <pre><code>{"items":[{"problem_id":"1900A","status":"attempted"}]}</code></pre>
-          <p>The sole add API accepts 1–1,000 records. Existing items are skipped without overwriting practice or positions. Positions are backend-assigned; unknown fields are rejected. Optional fields follow the practice contract below. The frontend sends a one-item array for a single addition.</p>
+          <p>The sole add API accepts 1–1,000 records. Optional top-level <code>before_problem_id</code> places all new records before one existing item in request order; omitted or null prepends. No after-anchor input is accepted. Missing anchors return 404. Existing or repeated problems are skipped individually and reported in duplicate_problem_ids; other insertions succeed with 200. Before insertion, the stored count plus the full input length must fit quota, treating all inputs as new; otherwise the entire request returns 409. Only successful insertions increase the stored count. Other failures roll back all new rows. There is no existing-ID lookup. Positions are backend-assigned using maximum integer spacing between bounds or the configured initial gap for an empty list; unknown fields are rejected. Optional practice fields follow the contract below. The frontend sends a one-item array for a single addition.</p>
           <pre><code>HTTP 200
 {"added":[{"list_id":5,"problem_id":"1900A","position":1073741824,"status":"attempted"}],"order":[{"problem_id":"1900A","position":1073741824}],"rebalanced":false}</code></pre>
           <p>The example abbreviates the saved item; all practice fields and timestamps are returned. Errors: 400 invalid input, 404 inaccessible list, 409 quota exceeded, 413 body over 8 MiB, 500 unexpected failure. The old single-add PUT endpoint is removed. See <a href="LIST_OPERATIONS.md">List operations</a> for full contracts.</p>
@@ -378,7 +378,7 @@ Set-Cookie: cftracker_github_oauth_state=[challenge]; ...</code></pre>
             <tr><td>401</td><td>Missing, malformed, invalid, or expired bearer token: <code>Unauthorized</code></td><td>Clear the invalid session and private state; sign in again.</td></tr>
             <tr><td>403</td><td>A browser origin may be rejected by CORS middleware.</td><td>Check deployment origin configuration; this need not be JSON.</td></tr>
             <tr><td>404</td><td>User/list missing, list not owned, or route unregistered</td><td>Stop using stale resources; verify the versioned path.</td></tr>
-            <tr><td>409</td><td>Duplicate item, list/item quota, or concurrent Codeforces handle change</td><td>Use the existing item, free capacity, or refresh the profile as appropriate.</td></tr>
+            <tr><td>409</td><td>List/item quota or concurrent Codeforces handle change</td><td>Free capacity or refresh the profile as appropriate.</td></tr>
             <tr><td>413</td><td><code>Request body exceeds 16 KiB</code></td><td>Reduce the full body size, including trailing whitespace.</td></tr>
             <tr><td>429</td><td><code>Too many requests. Try again later.</code></td><td>Respect the integer seconds in <code>Retry-After</code>.</td></tr>
             <tr><td>500</td><td>Database, token-generation, or some provider failures</td><td>Show the failure; check current state before retrying a write.</td></tr>
@@ -429,6 +429,6 @@ Set-Cookie: cftracker_github_oauth_state=[challenge]; ...</code></pre>
       <footer>CFTracker backend · REST API v1 · documented from local source on 26 October 2026.</footer>
     </main>
   </div>
-<section><h2>List organization</h2><p>POST /api/v1/lists/:listId/items accepts items; /items/move accepts sequential moves with problem_id and before_problem_id or after_problem_id; /items/remove accepts problem_ids. Each operation is atomic and returns rebalanced and the complete lightweight order. Positions are assigned by the backend. See <a href="LIST_OPERATIONS.md">List operations</a> for contracts, examples, errors, and limits.</p></section>
+<section><h2>List organization</h2><p>POST /api/v1/lists/:listId/items accepts items; /items/move accepts sequential moves with problem_id and before_problem_id or after_problem_id; /items/remove accepts problem_ids. Each operation is atomic and returns rebalanced and order. Order contains new item positions for addition, requested item positions for moves, and an empty array for removal. After a rebalance it contains all list positions. Positions are assigned by the backend. See <a href="LIST_OPERATIONS.md">List operations</a> for contracts, examples, errors, and limits.</p></section>
 </body>
 </html>

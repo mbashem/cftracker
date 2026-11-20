@@ -31,14 +31,15 @@ func decodeCollection(context *gin.Context, value any) bool {
 	return true
 }
 
-// BulkAddHandler decodes practice records and returns an atomic append result for the authenticated owner.
+// BulkAddHandler inserts a validated batch before an existing anchor, or prepends when absent.
 func (api *API) BulkAddHandler(context *gin.Context) {
 	listID, valid := parseListId(context)
 	if !valid {
 		return
 	}
 	var request struct {
-		Items []bulkItemRequest `json:"items"`
+		Items  []bulkItemRequest `json:"items"`
+		Before *string           `json:"before_problem_id"`
 	}
 	if !decodeCollection(context, &request) {
 		return
@@ -51,7 +52,7 @@ func (api *API) BulkAddHandler(context *gin.Context) {
 		}
 		input[index] = items.ListItem{ProblemId: strings.TrimSpace(item.ProblemID), Practice: item.Values()}
 	}
-	result, err := api.listItemsRepository.BulkAdd(context.Request.Context(), context.GetInt64(middlewares.UserIdKey), listID, input)
+	result, err := api.listItemsRepository.BulkAdd(context.Request.Context(), context.GetInt64(middlewares.UserIdKey), listID, input, request.Before)
 	if err != nil {
 		writeListRepositoryError(context, err, failedToAddItemToList)
 		return
@@ -59,7 +60,7 @@ func (api *API) BulkAddHandler(context *gin.Context) {
 	context.JSON(http.StatusOK, result)
 }
 
-// MoveItemsHandler submits sequential relative moves and returns the committed order and rebalance flag.
+// MoveItemsHandler returns requested item positions, or all positions after a rebalance.
 func (api *API) MoveItemsHandler(context *gin.Context) {
 	listID, valid := parseListId(context)
 	if !valid {
@@ -83,7 +84,7 @@ func (api *API) MoveItemsHandler(context *gin.Context) {
 	context.JSON(http.StatusOK, result)
 }
 
-// BulkRemoveHandler submits selected IDs for atomic removal and returns removed/absent IDs with surviving order.
+// BulkRemoveHandler submits selected IDs for atomic removal and returns removed/absent IDs.
 func (api *API) BulkRemoveHandler(context *gin.Context) {
 	listID, valid := parseListId(context)
 	if !valid {

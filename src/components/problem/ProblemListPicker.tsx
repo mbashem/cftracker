@@ -49,7 +49,7 @@ export default function ProblemListPicker({ problemId }: { problemId?: string })
       let exists = list.items.some(item => item.problemId === problemId);
       if (!exists) {
         const result = await api.addProblemsToList(listId, [problemId]);
-        exists = result.skippedProblemIds.includes(problemId);
+        exists = result.duplicateProblemIds.includes(problemId);
       }
       if (generation.current !== currentGeneration) return;
       setAdded(current => new Set(current).add(listId));
