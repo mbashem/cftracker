@@ -228,6 +228,10 @@ logs/chat or run Compose config without `--quiet` (it can print environment data
 
 ## 6. Deploy or update
 
+On the first rollout with the 8 MiB list-write limit, update the existing
+NGINX HTTPS site and reload it using the [NGINX steps](#7-nginx-dns-ipv6-and-https)
+before verifying list operations through the public API.
+
 ### One-command updates from the build machine
 
 For an existing installation, the operator can run the entire update from the
@@ -272,7 +276,10 @@ Defaults are `$HOME/Builds/cftracker/<release>` for the bundle and
 `$HOME/Backups/cftracker/<release>.dump` for the backup. Override the parent
 directories with `CFTRACKER_BUILD_ROOT` and `CFTRACKER_BACKUP_DIR`. Keep backups
 outside the repository and cloud-synced folders; the script rejects a backup
-directory inside this repository. It refuses existing bundle, archive, partial,
+directory inside this repository. It creates new backup directories with mode
+`700` and requires an existing backup directory to have that mode and belong to
+the operator. Choose a private directory if you normally store backups in a
+shared folder. It refuses existing bundle, archive, partial,
 upload, and release destinations. Failed artifacts are retained for diagnosis;
 inspect the error rather than blindly retrying or deleting earlier backups.
 
@@ -314,15 +321,14 @@ back over SSH without saving it on the VPS. Choose a backup folder outside the
 repository and any iCloud, Dropbox, OneDrive, or other cloud-synced directory.
 Replace the release name and SSH placeholders consistently.
 
-**Mac/local terminal:**
+**Mac/local terminal, repository root:**
 
 ```sh
 (
   set -e
   set -C
   umask 077
-  mkdir -p "$HOME/Backups/cftracker"
-  chmod 700 "$HOME/Backups/cftracker"
+  python3 backend/deploy/vps/bundle_helpers.py prepare-backup-directory "$HOME/Backups/cftracker"
   backup="$HOME/Backups/cftracker/release-001.dump"
   test ! -e "$backup"
   ssh -T -o BatchMode=yes DEPLOY_USER@VPS_HOST \
@@ -423,11 +429,17 @@ bash server.sh nginx-config api.example.com
 sudo bash server.sh nginx api.example.com
 ```
 
-This installs both `listen 80` and `listen [::]:80`, validates, then reloads. It
-refuses to overwrite an existing site, especially one modified by Certbot.
-On an existing VPS, leave the working HTTPS site intact. Access logging is off
+This installs both `listen 80` and `listen [::]:80`, sets the proxy request body
+limit to 8 MiB, validates the configuration, and reloads NGINX. It refuses to
+overwrite an existing site, especially one modified by Certbot. Access logging is off
 to avoid OAuth codes/query strings in access logs. See `backend/LOGGING.md` before
 enabling logging; other logs still require access controls and retention.
+
+For an **existing** site, add or update `client_max_body_size 8m;` in the HTTPS
+server block that proxies the API in `/etc/nginx/sites-available/cftracker`.
+Keep the existing Certbot settings. Validate the edit and reload from the VPS
+with `sudo nginx -t && sudo systemctl reload nginx`. The Go backend still enforces
+16 KiB on ordinary routes and 8 MiB on list collection writes.
 
 The original temporary hostname was `cftracker.test`. Routing was tested before
 DNS using `curl -H 'Host: cftracker.test' http://127.0.0.1/health/ready`. A 502 was

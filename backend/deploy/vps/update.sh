@@ -124,6 +124,7 @@ main() {
   backup="$backup_directory/$release.dump"
   [[ ! -e $bundle && ! -L $bundle ]] || fail 'Bundle destination exists; choose a fresh release.'
   [[ ! -e $backup && ! -L $backup && ! -e $backup.partial && ! -L $backup.partial ]] || fail 'Backup destination exists; choose a fresh release.'
+  python3 "$root/backend/deploy/vps/bundle_helpers.py" prepare-backup-directory "$backup_directory"
   # Keep failed artifacts for diagnosis. Never delete prior releases or roll back
   # automatically after a migration or replacement failure.
   trap 'echo "Update stopped. Keep any local backup/partial file and inspect the failure before retrying." >&2' ERR
@@ -132,8 +133,7 @@ main() {
   postgres_id=$(remote_stage preflight)
   [[ $postgres_id =~ ^[a-f0-9]{12,64}$ ]] || fail 'Could not identify the existing PostgreSQL container.'
   echo "Preserving PostgreSQL container: $postgres_id"
-  mkdir -p "$build_root" "$backup_directory"
-  chmod 700 "$backup_directory"
+  mkdir -p "$build_root"
   build_bundle
   (
     cd "$bundle"
