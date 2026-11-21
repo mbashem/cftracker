@@ -1,6 +1,6 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
 import { createBaseQuery } from './baseQuery';
-import { jsonToList, jsonToListItem, List, ListItem, ListWithItem } from '../../types/list';
+import { jsonToList, jsonToListItem, List, ListItem, ListWithItem, ListAddResult, ListRemoveResult } from '../../types/list';
 import type { UserState } from '../reducers/userSlice';
 
 export enum ListApiTags {
@@ -83,22 +83,25 @@ export const listApi = createApi({
 			}),
 			invalidatesTags: [ListApiTags.Lists]
 		}),
-		addToList: builder.mutation<ListItem, { listId: number; problemId: string; position: number; }>({
-			query: ({ listId, problemId, position }) => ({
-				url: `/lists/${listId}/item`,
-				method: 'PUT',
-				body: { "problem_id": problemId, position },
-			}),
-			transformResponse: (response: any) => jsonToListItem(response.item),
-			invalidatesTags: (_result, _error, arg, _meta) => IndividualPostTag(arg.listId),
-		}),
-		deleteFromList: builder.mutation<void, { listId: number; problemId: string; }>({
-			query: ({ listId, problemId }) => ({
-				url: `/lists/${listId}/item/${problemId}`,
-				method: 'DELETE'
-			}),
-			invalidatesTags: (_result, _error, arg, _meta) => IndividualPostTag(arg.listId),
-		}),
+  // One add contract inserts a batch before an existing anchor, or prepends it.
+  addToList: builder.mutation<ListAddResult, { listId: number; problemIds: string[]; beforeProblemId?: string }>({
+   query: ({listId,problemIds,beforeProblemId})=>({url:`/lists/${listId}/items`,method:'POST',body:{items:problemIds.map(problem_id=>({problem_id})),before_problem_id:beforeProblemId}}),
+   transformResponse:(response:any):ListAddResult=>({
+    added:(response.added??[]).map(jsonToListItem),
+    duplicateProblemIds:response.duplicate_problem_ids??[],
+    order:response.order.map((item:any)=>({problemId:item.problem_id,position:item.position})),rebalanced:response.rebalanced,
+   }),
+   invalidatesTags:(_result,_error,arg)=>IndividualPostTag(arg.listId),
+  }),
+  // One removal contract handles single clicks and selected batches.
+  deleteFromList: builder.mutation<ListRemoveResult,{listId:number;problemIds:string[]}>({
+   query:({listId,problemIds})=>({url:`/lists/${listId}/items/remove`,method:'POST',body:{problem_ids:problemIds}}),
+   transformResponse:(response:any):ListRemoveResult=>({
+    removedProblemIds:response.removed_problem_ids??[],absentProblemIds:response.absent_problem_ids??[],
+    order:response.order.map((item:any)=>({problemId:item.problem_id,position:item.position})),rebalanced:response.rebalanced,
+   }),
+   invalidatesTags:(_result,_error,arg)=>IndividualPostTag(arg.listId),
+  }),
 	}),
 });
 

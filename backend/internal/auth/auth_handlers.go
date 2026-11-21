@@ -66,10 +66,18 @@ func NewAuthHandler(githubProvider GitHubProvider, userRepository users.AuthUser
 	return handler
 }
 
+// GitHubLogin validates the frontend origin, then either acknowledges validate_only or starts cookie-bound OAuth.
 func (handler *AuthHandler) GitHubLogin(context *gin.Context) {
+	context.Header("Cache-Control", "no-store")
 	redirectURL, valid := handler.frontendRedirectURL(context)
 	if !valid {
 		context.JSON(http.StatusBadRequest, gin.H{"error": "Invalid frontend origin"})
+		return
+	}
+	if context.Query("validate_only") == "true" {
+		// Let the frontend surface origin/CORS failures before navigating away.
+		// Keep state-cookie creation on the subsequent top-level browser request.
+		context.JSON(http.StatusOK, gin.H{"status": "ready"})
 		return
 	}
 	state, err := handler.generateState()

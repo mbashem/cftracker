@@ -138,3 +138,8 @@ export function mergeValue<T>(baseValue: T, value: unknown): T {
     ? { ...baseValue, ...value } as T
     : value as T;
 }
+
+/** Delegate external navigation to the supplied location object, allowing callers to validate first. */
+export function navigateToExternalURL(url: string, destination: Pick<Location, "assign">): void {
+  destination.assign(url);
+}

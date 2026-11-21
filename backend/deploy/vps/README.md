@@ -228,6 +228,70 @@ logs/chat or run Compose config without `--quiet` (it can print environment data
 
 ## 6. Deploy or update
 
+On the first rollout with the 8 MiB list-write limit, update the existing
+NGINX HTTPS site and reload it using the [NGINX steps](#7-nginx-dns-ipv6-and-https)
+before verifying list operations through the public API.
+
+### One-command updates from the build machine
+
+For an existing installation, the operator can run the entire update from the
+repository root on the **Mac/local terminal**:
+
+```sh
+bash backend/deploy/vps/update.sh \
+  DEPLOY_USER@VPS_HOST api.example.com release-NEW
+```
+
+Use a fresh release tag every time. Review the working tree and migrations first:
+the builder packages uncommitted code too, and migrations must remain compatible
+with the old API until its replacement. Run only one update at a time. This is
+not first-time setup or a maintenance plan for incompatible database changes.
+
+Start Docker Desktop before running it. The script requires Bash, Python 3,
+Git, `shasum`, Docker, SSH, and SCP on the build machine. It may download build
+dependencies and consume substantial disk space. Configure SSH key access and
+verify the host key beforehand. `sudo -n true` must succeed through a fresh
+noninteractive SSH connection: a password cached in an interactive VPS terminal
+does not establish that prerequisite. If sudo requires a password, this automatic
+path stops; arrange the appropriate administrative access before using it. The
+script never prompts for, sends, or stores a sudo password or disables host-key
+verification. Use an SSH alias for custom ports or IPv6 connection addresses.
+
+The script performs the following sequence:
+
+1. Check the existing installation, PostgreSQL health/identity, and unused remote
+   destinations without printing environment or secret contents.
+2. Build both images with `bundle.sh`, verify bundle checksums, and print `BUILD.txt`.
+3. Upload to a fresh home-directory folder and verify/install the new release at
+   `/srv/cftracker/releases/<release>` without replacing an older release.
+4. Export PostgreSQL directly into a protected local `.partial` archive and stream
+   it back into the container for `pg_restore --list` inspection. Complete the
+   local filename only after both operations succeed; no database dump is saved
+   on the VPS and local PostgreSQL tools are unnecessary.
+5. Invoke `server.sh deploy --local-backup-confirmed` only after local archive
+   validation, then verify the expected image, unchanged PostgreSQL identity,
+   NGINX configuration, HTTP redirect, and public IPv4 HTTPS readiness.
+
+Defaults are `$HOME/Builds/cftracker/<release>` for the bundle and
+`$HOME/Backups/cftracker/<release>.dump` for the backup. Override the parent
+directories with `CFTRACKER_BUILD_ROOT` and `CFTRACKER_BACKUP_DIR`. Keep backups
+outside the repository and cloud-synced folders; the script rejects a backup
+directory inside this repository. It creates new backup directories with mode
+`700` and requires an existing backup directory to have that mode and belong to
+the operator. Choose a private directory if you normally store backups in a
+shared folder. It refuses existing bundle, archive, partial,
+upload, and release destinations. Failed artifacts are retained for diagnosis;
+inspect the error rather than blindly retrying or deleting earlier backups.
+
+Launching this command authorizes the complete update. API replacement can briefly
+interrupt requests. It does not run `init`, rotate credentials, change DNS/TLS,
+delete previous images/releases, restore data, or roll back automatically. Archive
+listing is not a restore test. Browser login/list smoke tests, published IPv6,
+and renewal checks remain separate. Frontend/Netlify deployment and browser opt-in
+are not part of this backend command.
+
+### Guided or manual updates
+
 To have a coding agent guide you through the update workflow, ask:
 
 > Use $deploy-backend to guide me through deploying my backend changes. I will run the commands.
@@ -257,15 +321,14 @@ back over SSH without saving it on the VPS. Choose a backup folder outside the
 repository and any iCloud, Dropbox, OneDrive, or other cloud-synced directory.
 Replace the release name and SSH placeholders consistently.
 
-**Mac/local terminal:**
+**Mac/local terminal, repository root:**
 
 ```sh
 (
   set -e
   set -C
   umask 077
-  mkdir -p "$HOME/Backups/cftracker"
-  chmod 700 "$HOME/Backups/cftracker"
+  python3 backend/deploy/vps/bundle_helpers.py prepare-backup-directory "$HOME/Backups/cftracker"
   backup="$HOME/Backups/cftracker/release-001.dump"
   test ! -e "$backup"
   ssh -T -o BatchMode=yes DEPLOY_USER@VPS_HOST \
@@ -366,11 +429,17 @@ bash server.sh nginx-config api.example.com
 sudo bash server.sh nginx api.example.com
 ```
 
-This installs both `listen 80` and `listen [::]:80`, validates, then reloads. It
-refuses to overwrite an existing site, especially one modified by Certbot.
-On an existing VPS, leave the working HTTPS site intact. Access logging is off
+This installs both `listen 80` and `listen [::]:80`, sets the proxy request body
+limit to 8 MiB, validates the configuration, and reloads NGINX. It refuses to
+overwrite an existing site, especially one modified by Certbot. Access logging is off
 to avoid OAuth codes/query strings in access logs. See `backend/LOGGING.md` before
 enabling logging; other logs still require access controls and retention.
+
+For an **existing** site, add or update `client_max_body_size 8m;` in the HTTPS
+server block that proxies the API in `/etc/nginx/sites-available/cftracker`.
+Keep the existing Certbot settings. Validate the edit and reload from the VPS
+with `sudo nginx -t && sudo systemctl reload nginx`. The Go backend still enforces
+16 KiB on ordinary routes and 8 MiB on list collection writes.
 
 The original temporary hostname was `cftracker.test`. Routing was tested before
 DNS using `curl -H 'Host: cftracker.test' http://127.0.0.1/health/ready`. A 502 was

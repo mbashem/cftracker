@@ -178,11 +178,19 @@ func databaseContextOperations(database *sql.DB, fixture databaseContextFixture,
 		{name: "item create", run: func(ctx context.Context) error {
 			item := fixture.item
 			item.ProblemId = "1900B"
-			return itemRepository.Create(ctx, fixture.user.ID, &item)
+			_, err := itemRepository.BulkAdd(ctx, fixture.user.ID, item.ListId, []items.ListItem{item}, nil)
+			return err
 		}},
 		{name: "item delete", run: func(ctx context.Context) error {
 			item := fixture.item
-			return itemRepository.Delete(ctx, fixture.user.ID, &item)
+			_, err := itemRepository.BulkRemove(ctx, fixture.user.ID, item.ListId, []string{item.ProblemId})
+			return err
+		}},
+		{name: "item practice update", run: func(ctx context.Context) error {
+			status := items.StatusSolved
+			_, err := itemRepository.Update(ctx, fixture.user.ID, fixture.list.Id, fixture.item.ProblemId,
+				items.ItemPatch{Status: items.Field[items.PracticeStatus]{Set: true, Value: &status}})
+			return err
 		}},
 		{name: "item read", run: func(ctx context.Context) error {
 			_, err := itemRepository.GetItems(ctx, fixture.user.ID, fixture.list.Id)
@@ -193,7 +201,8 @@ func databaseContextOperations(database *sql.DB, fixture databaseContextFixture,
 			return err
 		}},
 		{name: "item reorder transaction", run: func(ctx context.Context) error {
-			return itemRepository.ReorderListItems(ctx, fixture.user.ID, fixture.list.Id, []string{fixture.item.ProblemId})
+			_, err := itemRepository.MoveItems(ctx, fixture.user.ID, fixture.list.Id, items.Move{ProblemIDs: []string{fixture.item.ProblemId}})
+			return err
 		}},
 	}
 }
@@ -212,9 +221,11 @@ func newDatabaseContextFixture(t *testing.T, database *sql.DB) databaseContextFi
 		t.Fatal(err)
 	}
 	fixture.item.ListId = fixture.list.Id
-	if err := items.NewRepository(database, configs.DefaultDatabaseTimeout).Create(t.Context(), fixture.user.ID, &fixture.item); err != nil {
+	result, err := items.NewRepository(database, configs.DefaultDatabaseTimeout).BulkAdd(t.Context(), fixture.user.ID, fixture.list.Id, []items.ListItem{fixture.item}, nil)
+	if err != nil {
 		t.Fatal(err)
 	}
+	fixture.item = result.Added[0]
 	return fixture
 }
 

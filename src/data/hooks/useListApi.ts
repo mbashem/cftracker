@@ -32,9 +32,10 @@ function useListApi() {
 		}
 	}
 
-	async function addProblemToList(listId: number, problemId: string, position: number) {
+	/** Insert a batch before one existing problem; omit the anchor to prepend. */
+ async function addProblemsToList(listId: number, problemIds: string[], beforeProblemId?: string) {
 		try {
-			return await addProblemToListMutation({ listId, problemId, position }).unwrap();
+			return await addProblemToListMutation({ listId, problemIds, beforeProblemId }).unwrap();
 		} catch (err: any) {
 			console.log(err);
 			let errorMessage = err?.data?.error ?? "Failed to add to list!";
@@ -42,10 +43,10 @@ function useListApi() {
 		}
 	}
 
-	async function deleteProblemFromList(listId: number, problemId: string) {
+	/** Remove one or more problems through the sole bulk-remove contract. */
+ async function removeProblemsFromList(listId: number, problemIds: string[]) {
 		try {
-			await deleteProblemFromListMutation({ listId, problemId }).unwrap();
-			return;
+			return await deleteProblemFromListMutation({ listId, problemIds }).unwrap();
 		} catch (err: any) {
 			console.log(err);
 			let errorMessage = err?.data?.error ?? "Failed to delete from list!";
@@ -85,7 +86,7 @@ function useListApi() {
 		return { ...query, data: user === undefined ? undefined : query.currentData };
 	}
 
-	return { getListWithItems, createList, addProblemToList, deleteProblemFromList, deleteList, updateListName, useGetAllListsQuery, useGetListQuery };
+	return { getListWithItems, createList, addProblemsToList, removeProblemsFromList, deleteList, updateListName, useGetAllListsQuery, useGetListQuery };
 }
 
 export default useListApi;

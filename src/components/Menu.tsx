@@ -12,7 +12,7 @@ import { Path } from "../util/route/path";
 import { ThemesType } from "../util/Theme";
 import siteLogo from "../util/assets/siteLogo.png";
 import useTheme from "../data/hooks/useTheme";
-import { BACKEND_API_URL } from "../util/env";
+import { navigateToExternalURL } from "../util/util";
 import { isBackendAccessEnabled } from "../util/backendAccess";
 import useToast from "../hooks/useToast";
 import useUser from "../hooks/useUser";
@@ -24,10 +24,20 @@ import MenuItem, { type MenuItemDefinition } from "./common/MenuItem";
 function Menu() {
   const { userList, updateUsers, syncUserSubmissions } = useUserStore();
   const { theme, changeThemeMod } = useTheme();
-  const { isAuthenticated, isCheckingAuthentication, logout } = useUser();
+  const { isAuthenticated, isCheckingAuthentication, logout, prepareGitHubLogin } = useUser();
   const backendEnabled = isBackendAccessEnabled();
 
-  const { showGeneralToast } = useToast();
+  const { showGeneralToast, showErrorToast } = useToast();
+
+  /** Start OAuth after access validation; surface rejected or unavailable backends in the current page. */
+  const signInWithGitHub = useCallback(async () => {
+    try {
+      const loginURL = await prepareGitHubLogin();
+      navigateToExternalURL(loginURL, window.location);
+    } catch (error: unknown) {
+      showErrorToast(error instanceof Error ? error.message : "Unable to start GitHub sign-in.");
+    }
+  }, [prepareGitHubLogin, showErrorToast]);
 
   const submitUser = useCallback((handle: string) => {
     showGeneralToast(`Handles entered: ${handle}`);
@@ -83,11 +93,11 @@ function Menu() {
       visible: backendEnabled && !isCheckingAuthentication && isAuthenticated,
     },
     {
-      id: "sign-in", kind: "link", label: "Sign in with GitHub", icon: faGithub,
-      href: `${BACKEND_API_URL}/auth/github/login`,
+      id: "sign-in", kind: "action", label: "Sign in with GitHub", icon: faGithub,
+      onSelect: () => { void signInWithGitHub(); },
       visible: backendEnabled && !isCheckingAuthentication && !isAuthenticated,
     },
-  ], [theme, backendEnabled, isAuthenticated, isCheckingAuthentication, changeThemeMod, syncUserSubmissions, userList.handles, submitUser, logout]);
+  ], [theme, backendEnabled, isAuthenticated, isCheckingAuthentication, changeThemeMod, syncUserSubmissions, userList.handles, submitUser, logout, signInWithGitHub]);
 
   return (
     <Navbar className={"navbar navbar-expand-lg p-2 ps-4 pe-4 " + theme.navbar} expand="md">

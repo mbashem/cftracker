@@ -39,3 +39,17 @@ export function jsonToListItem(json: any): ListItem {
 		createdAt: json.created_at
 	};
 }
+
+/** Committed addition with duplicate input occurrences reported separately. */
+export interface ListAddResult {
+ added: ListItem[];
+ duplicateProblemIds: string[];
+ order: { problemId: string; position: number }[];
+ rebalanced: boolean;
+}
+
+/** Committed removal outcome; absent IDs are successful no-ops. */
+export interface ListRemoveResult extends Pick<ListAddResult,"order"|"rebalanced"> {
+ removedProblemIds: string[];
+ absentProblemIds: string[];
+}

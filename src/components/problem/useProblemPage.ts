@@ -8,7 +8,7 @@ import useSearchParamState from "../../hooks/useSearchParamState";
 import useProblemsStore from "../../data/hooks/useProblemsStore";
 import useAppStateStore from "../../data/hooks/useAppStateStore";
 import useToast from "../../hooks/useToast";
-import { ListWithItem } from "../../types/list";
+import type { ListAddResult, ListItem, ListWithItem } from "../../types/list";
 import Problem from "../../types/CF/Problem";
 import { Verdict } from "../../types/CF/Submission";
 import { RATING_CONSTANTS } from "../../util/cf";
@@ -44,6 +44,18 @@ export interface ProblemRatingRange {
 type ProblemSortState = Omit<ProblemFilterState, "tags">;
 
 const SELECTABLE_VERDICT_STATUSES = [Verdict.SOLVED, Verdict.ATTEMPTED, Verdict.UNSOLVED];
+
+function mergeListItems(list: ListWithItem, added: ListItem[], order: ListAddResult["order"] = []): ListWithItem {
+	const byProblemId = new Map(list.items.map(item => [item.problemId, item]));
+	for (const item of added) byProblemId.set(item.problemId, item);
+	const positions = new Map(order.map(item => [item.problemId, item.position]));
+	const items = [...byProblemId.values()].map(item => {
+		const position = positions.get(item.problemId);
+		return position === undefined ? item : { ...item, position };
+	});
+	items.sort((a, b) => a.position - b.position);
+	return { ...list, items };
+}
 
 function getRatingRange(minRating: number, maxRating: number): ProblemRatingRange {
 	const { min, max, interval: step } = RATING_CONSTANTS;
@@ -88,7 +100,7 @@ function useProblemPage() {
 		};
 	}, [getSearchParam]);
 	const [list, setList] = useState<ListWithItem | undefined>(undefined);
-	const nextListPosition = useRef(0);
+	const problemsAddedToList = useMemo(() => new Set(list?.items.map(item => item.problemId)), [list]);
 	const pendingListAdditions = useRef(new Set<string>());
 	const listGeneration = useRef(0);
 	const { submissions } = useSubmissionsStore();
@@ -102,7 +114,6 @@ function useProblemPage() {
 		minContestId,
 		maxContestId,
 	} = appState;
-	const [problemsAddedToList, setProblemsAddedToList] = useState<Set<string>>(new Set());
 	const { contests } = useContestStore();
 	const { showErrorToast } = useToast();
 
@@ -253,9 +264,7 @@ function useProblemPage() {
 		let cancelled = false;
 		listGeneration.current += 1;
 		setList(undefined);
-		setProblemsAddedToList(new Set());
 		pendingListAdditions.current = new Set();
-		nextListPosition.current = 0;
 		setLoadedSession(undefined);
 		if (listId === undefined || session === undefined) return;
 
@@ -263,11 +272,6 @@ function useProblemPage() {
 			if (cancelled) return;
 			setLoadedSession(session);
 			setList(listWithItems);
-			nextListPosition.current = listWithItems.items.reduce(
-				(max, item) => Math.max(max, item.position),
-				-1
-			) + 1;
-			setProblemsAddedToList(new Set(listWithItems.items.map(listItem => listItem.problemId)));
 		}).catch(err => {
 			if (!cancelled) showErrorToast(err?.message ?? "Failed to find allready added problems");
 		});
@@ -319,16 +323,21 @@ function useProblemPage() {
 		pending.add(problemId);
 		const generation = listGeneration.current;
 		try {
-			const position = nextListPosition.current;
-			nextListPosition.current += 1;
-			const item = await api.addProblemToList(listId, problemId, position);
+			const result = await api.addProblemsToList(listId, [problemId]);
 			if (generation !== listGeneration.current) return;
-			setList((currentList) => currentList === undefined
-				? currentList
-				: { ...currentList, items: [...currentList.items, item] }
-			);
-			setProblemsAddedToList(current => new Set(current).add(problemId));
-			return;
+			if (result.added.length > 0 || result.order.length > 0) {
+				setList(current => current === undefined ? current : mergeListItems(current, result.added, result.order));
+			}
+			if (!result.duplicateProblemIds.includes(problemId)) return;
+			const saved = await api.getListWithItems(listId);
+			if (generation !== listGeneration.current) return;
+			// The snapshot can predate other mutations. Recover only the requested item.
+			const duplicate = saved.items.find(item => item.problemId === problemId);
+			if (duplicate === undefined) return;
+			setList(current => {
+				if (current === undefined || current.items.some(item => item.problemId === problemId)) return current;
+				return mergeListItems(current, [duplicate]);
+			});
 		} catch (error) {
 			if (generation === listGeneration.current) throw error;
 		} finally {
@@ -341,16 +350,11 @@ function useProblemPage() {
 		if (listId === undefined) throw new Error("ListId is undefined");
 		const generation = listGeneration.current;
 		try {
-			let res = await api.deleteProblemFromList(listId, problemId);
+			let res = await api.removeProblemsFromList(listId, [problemId]);
 			console.log(res);
 			if (generation !== listGeneration.current) return;
 			setList(current => current === undefined ? current : {
 				...current, items: current.items.filter(item => item.problemId !== problemId),
-			});
-			setProblemsAddedToList(current => {
-				const updated = new Set(current);
-				updated.delete(problemId);
-				return updated;
 			});
 			return;
 		} catch (err) {

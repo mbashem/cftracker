@@ -46,24 +46,25 @@ func TestUsageLimitsIntegration(t *testing.T) {
 		list := createIntegrationList(t, listRepository, ownerID, "owned")
 		seedQuotaItems(t, database, list.Id, limits.ItemsPerList-1)
 		assertConcurrentQuota(t, limits.ErrItemQuota, func(index int) error {
-			return itemRepository.Create(t.Context(), ownerID, &items.ListItem{ListId: list.Id, ProblemId: fmt.Sprintf("candidate-%d", index), Position: index})
+			_, err := itemRepository.BulkAdd(t.Context(), ownerID, list.Id, []items.ListItem{{ProblemId: fmt.Sprintf("candidate-%d", index)}}, nil)
+			return err
 		})
 		stored, err := itemRepository.GetItems(t.Context(), ownerID, list.Id)
 		if err != nil || len(stored) != limits.ItemsPerList {
 			t.Fatalf("stored items=%d error=%v", len(stored), err)
 		}
 		foreign := items.ListItem{ListId: list.Id, ProblemId: "foreign"}
-		if err := itemRepository.Create(t.Context(), otherID, &foreign); !errors.Is(err, items.ErrListNotFound) {
+		if _, err := itemRepository.BulkAdd(t.Context(), otherID, foreign.ListId, []items.ListItem{foreign}, nil); !errors.Is(err, items.ErrListNotFound) {
 			t.Fatalf("foreign insert error=%v", err)
 		}
 		otherList := createIntegrationList(t, listRepository, ownerID, "independent list")
-		if err := itemRepository.Create(t.Context(), ownerID, &items.ListItem{ListId: otherList.Id, ProblemId: "independent"}); err != nil {
+		if _, err := itemRepository.BulkAdd(t.Context(), ownerID, otherList.Id, []items.ListItem{{ProblemId: "independent"}}, nil); err != nil {
 			t.Fatal(err)
 		}
-		if err := itemRepository.Delete(t.Context(), ownerID, &stored[0]); err != nil {
+		if _, err := itemRepository.BulkRemove(t.Context(), ownerID, stored[0].ListId, []string{stored[0].ProblemId}); err != nil {
 			t.Fatal(err)
 		}
-		if err := itemRepository.Create(t.Context(), ownerID, &items.ListItem{ListId: list.Id, ProblemId: "after-deletion"}); err != nil {
+		if _, err := itemRepository.BulkAdd(t.Context(), ownerID, list.Id, []items.ListItem{{ProblemId: "after-deletion"}}, nil); err != nil {
 			t.Fatal(err)
 		}
 	})
@@ -93,7 +94,7 @@ func TestUsageLimitsIntegration(t *testing.T) {
 		if stored, err := itemRepository.GetItems(t.Context(), ownerID, list.Id); err != nil || len(stored) != limits.ItemsPerList+1 {
 			t.Fatalf("items=%d error=%v", len(stored), err)
 		}
-		if err := itemRepository.Delete(t.Context(), ownerID, &items.ListItem{ListId: list.Id, ProblemId: "seed-1"}); err != nil {
+		if _, err := itemRepository.BulkRemove(t.Context(), ownerID, list.Id, []string{"seed-1"}); err != nil {
 			t.Fatal(err)
 		}
 		if stored, err := itemRepository.GetItems(t.Context(), ownerID, list.Id); err != nil || len(stored) != limits.ItemsPerList {
@@ -144,8 +145,10 @@ func seedQuotaLists(t *testing.T, database *sql.DB, ownerID int64, count int) {
 
 func seedQuotaItems(t *testing.T, database *sql.DB, listID int64, count int) {
 	t.Helper()
-	if _, err := database.ExecContext(t.Context(), `INSERT INTO list_items(list_id, problem_id, position)
-		SELECT $1, 'seed-' || n, n FROM generate_series(1, $2::int) AS n`, listID, count); err != nil {
+	if _, err := database.ExecContext(t.Context(), `WITH inserted AS (
+		INSERT INTO list_items(list_id, problem_id, position)
+		SELECT $1, 'seed-' || n, n FROM generate_series(1, $2::int) AS n RETURNING list_id
+	) UPDATE lists SET item_count=item_count+(SELECT count(*) FROM inserted) WHERE id=$1`, listID, count); err != nil {
 		t.Fatal(err)
 	}
 }

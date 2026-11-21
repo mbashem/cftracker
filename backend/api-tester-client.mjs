@@ -12,8 +12,9 @@ export const ENDPOINTS = [
   { id: "list", group: "Lists", method: "GET", path: "/api/v1/lists/:listId", label: "Get list and items" },
   { id: "rename", group: "Lists", method: "PUT", path: "/api/v1/lists/:listId", label: "Rename a list", body: '{"name":"Updated practice"}' },
   { id: "delete", group: "Lists", method: "DELETE", path: "/api/v1/lists/:listId", label: "Delete a list" },
-  { id: "add", group: "Items", method: "PUT", path: "/api/v1/lists/:listId/item", label: "Add problem to list", body: '{"problem_id":"1900A","position":0}' },
-  { id: "remove", group: "Items", method: "DELETE", path: "/api/v1/lists/:listId/item/:itemId", label: "Remove problem from list" },
+  // Distinct preset IDs keep old single-item drafts from overriding the collection payloads.
+  { id: "add-items", group: "Items", method: "POST", path: "/api/v1/lists/:listId/items", label: "Add problems to list", body: '{"items":[{"problem_id":"1900A"}]}' },
+  { id: "remove-items", group: "Items", method: "POST", path: "/api/v1/lists/:listId/items/remove", label: "Remove problems from list", body: '{"problem_ids":["1900A"]}' },
 ];
 
 export function normalizeOrigin(value) {
