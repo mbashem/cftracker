@@ -39,15 +39,9 @@ func (repository *Repository) GetItems(ctx context.Context, userId int64, listId
 	return repository.GetListItems(ctx, userId, listId)
 }
 
-// Update validates and writes only supplied practice fields through an ownership-scoped statement.
+// Update writes validated practice fields through an ownership-scoped statement.
 // Explicit null clears a field; every successful update refreshes updated_at.
 func (repository *Repository) Update(ctx context.Context, userId int64, listId int64, problemId string, patch ItemPatch) (*ListItem, error) {
-	if err := patch.Normalize(); err != nil {
-		return nil, err
-	}
-	if patch.Empty() {
-		return nil, ErrInvalidPractice
-	}
 	ctx, cancel := context.WithTimeout(ctx, repository.timeout)
 	defer cancel()
 	arguments := []any{listId, userId, problemId}

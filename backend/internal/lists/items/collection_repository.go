@@ -5,9 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"slices"
 	"strings"
-	"unicode/utf8"
 
 	"github.com/lib/pq"
 	"github.com/mbashem/cftracker/backend/configs"
@@ -82,9 +80,6 @@ func rescaleList(ctx context.Context, tx *sql.Tx, listID int64) error {
 
 // MoveItems assigns destination ranks in request order and updates the selection in one statement.
 func (repository *Repository) MoveItems(ctx context.Context, userID, listID int64, move Move) (*CollectionResult, error) {
-	if err := move.Validate(); err != nil {
-		return nil, err
-	}
 	return repository.withLockedListTransaction(ctx, userID, listID, func(ctx context.Context, tx *sql.Tx, _ int) (*CollectionResult, error) {
 		left, right, err := moveBounds(ctx, tx, listID, move)
 		if err != nil {
@@ -195,23 +190,9 @@ func updatePositions(ctx context.Context, tx *sql.Tx, listID int64, ids []string
 	return order, absent, nil
 }
 
-// BulkAdd resolves bounds and inserts without existing-ID queries, reporting duplicate inputs separately.
+// BulkAdd inserts validated items without existing-ID queries and reports duplicate inputs separately.
 // Other failures roll back successful inserts, rescaling, and counter changes together.
 func (repository *Repository) BulkAdd(ctx context.Context, userID, listID int64, input []ListItem, before *string) (*CollectionResult, error) {
-	if len(input) == 0 || len(input) > limits.ItemsPerList {
-		return nil, ErrInvalidOperation
-	}
-	input = slices.Clone(input)
-	for index := range input {
-		id := strings.TrimSpace(input[index].ProblemId)
-		if id == "" || !utf8.ValidString(id) || strings.ContainsRune(id, 0) || utf8.RuneCountInString(id) > 100 {
-			return nil, ErrInvalidOperation
-		}
-		input[index].ProblemId = id
-		if err := input[index].Practice.Normalize(); err != nil {
-			return nil, err
-		}
-	}
 	return repository.withLockedListTransaction(ctx, userID, listID, func(ctx context.Context, tx *sql.Tx, itemCount int) (*CollectionResult, error) {
 		if itemCount+len(input) > limits.ItemsPerList {
 			return nil, limits.ErrItemQuota
@@ -342,22 +323,9 @@ func insertItems(ctx context.Context, tx *sql.Tx, listID int64, input []ListItem
 	return added, duplicates, nil
 }
 
-// BulkRemove deletes selected list items and practice summaries atomically, reporting absent IDs.
+// BulkRemove deletes selected items by validated IDs and reports absent IDs.
 // Surviving positions are preserved; missing or unowned lists are indistinguishable.
 func (repository *Repository) BulkRemove(ctx context.Context, userID, listID int64, ids []string) (*CollectionResult, error) {
-	if len(ids) == 0 || len(ids) > limits.ItemsPerList {
-		return nil, ErrInvalidOperation
-	}
-	ids = slices.Clone(ids)
-	selected := make(map[string]bool, len(ids))
-	for index, id := range ids {
-		id = strings.TrimSpace(id)
-		if id == "" || selected[id] {
-			return nil, ErrInvalidOperation
-		}
-		ids[index] = id
-		selected[id] = true
-	}
 	return repository.withLockedListTransaction(ctx, userID, listID, func(ctx context.Context, tx *sql.Tx, _ int) (*CollectionResult, error) {
 		rows, err := tx.QueryContext(ctx, `DELETE FROM list_items WHERE list_id=$1 AND problem_id=ANY($2::text[]) RETURNING problem_id`, listID, pq.Array(ids))
 		if err != nil {

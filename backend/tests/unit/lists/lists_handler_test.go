@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"reflect"
 	"slices"
 	"sort"
@@ -29,7 +30,8 @@ const (
 	testCreatedListID       = int64(8)
 	testListName            = "Contest preparation"
 	testProblemID           = "1845A"
-	testListsPath           = "/api/v1/lists"
+	testAPIPrefix           = "/api/v1"
+	testListsPath           = testAPIPrefix + "/lists"
 
 	testInvalidListIDMessage        = "Invalid list Id"
 	testInvalidFormatMessage        = "Invalid format"
@@ -275,20 +277,11 @@ func clearLists(repository *mockRepository) {
 func newListHandlerTestRouter(repository *mockRepository) *gin.Engine {
 	router := gin.New()
 	api := lists.NewAPI(repository, mockListItemRepository{repository})
-	listRoutes := router.Group(testListsPath)
-	listRoutes.Use(func(context *gin.Context) {
+	protected := router.Group(testAPIPrefix, func(context *gin.Context) {
 		context.Set(middlewares.UserIdKey, testAuthenticatedUserID)
 		context.Next()
 	})
-	listRoutes.GET("", api.GetAllLists)
-	listRoutes.POST("", api.CreateListHandler)
-	listRoutes.GET("/:listId", api.GetListHandler)
-	listRoutes.PUT("/:listId", api.UpdateListNameHandler)
-	listRoutes.DELETE("/:listId", api.DeleteListHandler)
-	listRoutes.PATCH("/:listId/item/:itemId", api.UpdateItemHandler)
-	listRoutes.POST("/:listId/items", api.BulkAddHandler)
-	listRoutes.POST("/:listId/items/move", api.MoveItemsHandler)
-	listRoutes.POST("/:listId/items/remove", api.BulkRemoveHandler)
+	lists.RegisterRoutes(protected, api)
 	return router
 }
 
@@ -359,7 +352,7 @@ func itemCollectionPath(listID any) string {
 }
 
 func itemPath(listID any, problemID string) string {
-	return fmt.Sprintf("%s/%v/item/%s", testListsPath, listID, problemID)
+	return fmt.Sprintf("%s/%v/item/%s", testListsPath, listID, url.PathEscape(problemID))
 }
 
 func newListFixture() lists.List {
@@ -391,6 +384,7 @@ const (
 	getListOperation        repositoryOperation = "get list"
 	getAllListsOperation    repositoryOperation = "get all lists"
 	createListItemOperation repositoryOperation = "create list item"
+	moveListItemsOperation  repositoryOperation = "move list items"
 	updateListItemOperation repositoryOperation = "update list item"
 	deleteListItemOperation repositoryOperation = "delete list item"
 	getListItemsOperation   repositoryOperation = "get list items"
@@ -412,6 +406,8 @@ type mockRepository struct {
 	calls           []repositoryCall
 	expectedContext context.Context
 	contextMismatch bool
+	addBefore       *string
+	moveRequest     listitems.Move
 }
 
 func newMockRepository() *mockRepository {
@@ -547,9 +543,6 @@ func (repository mockListItemRepository) Update(ctx context.Context, userID int6
 		return nil, listitems.ErrItemNotFound
 	}
 	practice := patch.Values()
-	if err := practice.Normalize(); err != nil {
-		return nil, err
-	}
 	if patch.Status.Set {
 		item.Status = practice.Status
 	}

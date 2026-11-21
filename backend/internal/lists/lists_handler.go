@@ -1,9 +1,7 @@
 package lists
 
 import (
-	"encoding/json"
 	"errors"
-	"io"
 	"log"
 	"net/http"
 	"strconv"
@@ -142,16 +140,7 @@ func (api *API) UpdateItemHandler(context *gin.Context) {
 		return
 	}
 	var patch items.ItemPatch
-	decoder := json.NewDecoder(context.Request.Body)
-	decoder.DisallowUnknownFields()
-	if err := decoder.Decode(&patch); err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{"error": invalidFormat})
-		return
-	}
-	// Exactly one JSON object is allowed; reject extra values or malformed trailing content.
-	var extraJSON any
-	if err := decoder.Decode(&extraJSON); err != io.EOF {
-		context.JSON(http.StatusBadRequest, gin.H{"error": invalidFormat})
+	if !decodeListJSON(context, &patch) {
 		return
 	}
 	if patch.Empty() {

@@ -34,7 +34,7 @@ The old single-add PUT route is removed. Deploy the matching frontend and backen
 
 ## Update an item
 
-`PATCH /api/v1/lists/:listId/item/:itemId` is the general item-update endpoint. Its currently editable fields are the five practice fields above; future editable fields can extend the same contract. `itemId` is the URL-encoded problem ID. Omitted fields retain their saved values; explicit `null` clears any practice field, including status. Empty notes also clear notes. This endpoint has no initialization mode or conditional status-write behavior.
+`PATCH /api/v1/lists/:listId/item/:itemId` is the general item-update endpoint. Its currently editable fields are the five practice fields above; future editable fields can extend the same contract. Problem IDs cannot contain `/`. Percent-encode the problem ID as one path component. Omitted fields retain their saved values; explicit `null` clears any practice field, including status. Empty notes also clear notes. This endpoint has no initialization mode or conditional status-write behavior.
 
 ```json
 {
@@ -52,7 +52,7 @@ Empty patches, unknown properties, list item/order/timestamp fields, and trailin
 `GET /api/v1/lists/:listId` retains its `message`, `list`, and `items` envelope and returns complete practice fields for every item. Empty lists remain `[]`. Items remain ordered by position, creation time, and problem ID.
 
 - `400 {"error":"Invalid format"}`: invalid JSON, field types, or PATCH shape.
-- `400 {"error":"invalid practice fields"}`: invalid enum/date/time/text values. Repository writes repeat validation; database constraints also enforce valid stored values.
+- `400 {"error":"invalid practice fields"}`: invalid enum/date/time/text values. HTTP handlers validate and normalize practice fields before calling the repository. PostgreSQL constraints protect stored data.
 - `401`: authentication required.
 - `404 {"error":"Item does not exist"}`: PATCH targets a missing item, missing list, or another user's item. These are intentionally indistinguishable. Other list operations retain their existing `List does not exist` response.
 - `409`: the stored item count plus complete input length exceeds capacity; nothing is inserted. For admitted requests, duplicate problems instead appear in the successful `200` response.
