@@ -210,4 +210,4 @@ Use unit tests for HTTP behavior, validation, auth branching, provider response 
 
 Use integration tests for concrete repository methods, schema constraints, migration behavior, transaction behavior, and complete workflows where PostgreSQL is part of the behavior being verified.
 
-Sparse ordering and collection tests cover midpoint moves, early rebalance, response order, duplicate preservation, failed batches, and ownership. PostgreSQL tests reside in the existing items repository suite. Compile them with `go test -tags=integration -run '^$' ./tests/integration/...`; real execution requires separately authorized disposable databases.
+Sparse ordering and collection tests cover group moves, early rebalance, response order, duplicate preservation, failed batches, and ownership. PostgreSQL tests reside in the existing items repository suite. Compile them with `go test -tags=integration -run '^$' ./tests/integration/...`; real execution requires separately authorized disposable databases.

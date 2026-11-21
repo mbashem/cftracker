@@ -60,23 +60,21 @@ func (api *API) BulkAddHandler(context *gin.Context) {
 	context.JSON(http.StatusOK, result)
 }
 
-// MoveItemsHandler returns requested item positions, or all positions after a rebalance.
+// MoveItemsHandler moves one selection to one destination and returns its final positions.
 func (api *API) MoveItemsHandler(context *gin.Context) {
 	listID, valid := parseListId(context)
 	if !valid {
 		return
 	}
-	var request struct {
-		Moves []items.Move `json:"moves"`
-	}
+	var request items.Move
 	if !decodeCollection(context, &request) {
 		return
 	}
-	if err := items.ValidateMoves(request.Moves); err != nil {
+	if err := request.Validate(); err != nil {
 		writeListRepositoryError(context, err, failedToUpdateItem)
 		return
 	}
-	result, err := api.listItemsRepository.MoveItems(context.Request.Context(), context.GetInt64(middlewares.UserIdKey), listID, request.Moves)
+	result, err := api.listItemsRepository.MoveItems(context.Request.Context(), context.GetInt64(middlewares.UserIdKey), listID, request)
 	if err != nil {
 		writeListRepositoryError(context, err, failedToUpdateItem)
 		return

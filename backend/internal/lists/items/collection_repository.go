@@ -16,7 +16,7 @@ import (
 
 type CollectionRepository interface {
 	BulkAdd(context.Context, int64, int64, []ListItem, *string) (*CollectionResult, error)
-	MoveItems(context.Context, int64, int64, []Move) (*CollectionResult, error)
+	MoveItems(context.Context, int64, int64, Move) (*CollectionResult, error)
 	BulkRemove(context.Context, int64, int64, []string) (*CollectionResult, error)
 }
 
@@ -43,15 +43,9 @@ func (repository *Repository) withLockedListTransaction(ctx context.Context, use
 	return result, nil
 }
 
-// readOrder returns final positions for selected IDs; nil selects the entire list after rescaling.
-func readOrder(ctx context.Context, tx *sql.Tx, listID int64, problemIDs []string) ([]OrderedItem, error) {
-	query := `SELECT problem_id,position FROM list_items WHERE list_id=$1`
-	arguments := []any{listID}
-	if problemIDs != nil {
-		query += ` AND problem_id=ANY($2::text[])`
-		arguments = append(arguments, pq.Array(problemIDs))
-	}
-	rows, err := tx.QueryContext(ctx, query+` ORDER BY position`, arguments...)
+// readOrder returns the whole list's final positions after rescaling.
+func readOrder(ctx context.Context, tx *sql.Tx, listID int64) ([]OrderedItem, error) {
+	rows, err := tx.QueryContext(ctx, `SELECT problem_id,position FROM list_items WHERE list_id=$1 ORDER BY position`, listID)
 	if err != nil {
 		return nil, err
 	}
@@ -86,92 +80,119 @@ func rescaleList(ctx context.Context, tx *sql.Tx, listID int64) error {
 	return err
 }
 
-// MoveItems validates first, then calculates each move from its current database neighbors.
-// Tight spacing triggers SQL rescaling after the move; exhausted space is repaired before retrying.
-func (repository *Repository) MoveItems(ctx context.Context, userID, listID int64, moves []Move) (*CollectionResult, error) {
-	if err := ValidateMoves(moves); err != nil {
+// MoveItems assigns destination ranks in request order and updates the selection in one statement.
+func (repository *Repository) MoveItems(ctx context.Context, userID, listID int64, move Move) (*CollectionResult, error) {
+	if err := move.Validate(); err != nil {
 		return nil, err
 	}
 	return repository.withLockedListTransaction(ctx, userID, listID, func(ctx context.Context, tx *sql.Tx, _ int) (*CollectionResult, error) {
-		result := &CollectionResult{}
-		movedIDs := make([]string, len(moves))
-		for index, move := range moves {
-			movedIDs[index] = move.ProblemID
+		left, right, err := moveBounds(ctx, tx, listID, move)
+		if err != nil {
+			return nil, err
 		}
-		for _, move := range moves {
-			for attempt := 0; attempt < 2; attempt++ {
-				var current int64
-				if err := tx.QueryRowContext(ctx, `SELECT position FROM list_items WHERE list_id=$1 AND problem_id=$2`, listID, move.ProblemID).Scan(&current); err != nil {
-					if errors.Is(err, sql.ErrNoRows) {
-						return nil, ErrOrderConflict
-					}
-					return nil, err
-				}
-				left, right := int64(0), MaxPosition
-				anchor := move.Before
-				if move.After != nil {
-					anchor = move.After
-				}
-				if anchor != nil {
-					var rank int64
-					if err := tx.QueryRowContext(ctx, `SELECT position FROM list_items WHERE list_id=$1 AND problem_id=$2`, listID, *anchor).Scan(&rank); err != nil {
-						if errors.Is(err, sql.ErrNoRows) {
-							return nil, ErrOrderConflict
-						}
-						return nil, err
-					}
-					if move.Before != nil {
-						right = rank
-						if err := tx.QueryRowContext(ctx, `SELECT COALESCE((SELECT position FROM list_items
-							WHERE list_id=$1 AND problem_id<>$2 AND position<$3 ORDER BY position DESC LIMIT 1),0)`, listID, move.ProblemID, rank).Scan(&left); err != nil {
-							return nil, err
-						}
-					} else {
-						left = rank
-						if err := tx.QueryRowContext(ctx, `SELECT COALESCE((SELECT position FROM list_items
-							WHERE list_id=$1 AND problem_id<>$2 AND position>$3 ORDER BY position ASC LIMIT 1),$4::bigint)`, listID, move.ProblemID, rank, MaxPosition).Scan(&right); err != nil {
-							return nil, err
-						}
-					}
-				} else {
-					if err := tx.QueryRowContext(ctx, `SELECT COALESCE((SELECT position FROM list_items
-						WHERE list_id=$1 AND problem_id<>$2 ORDER BY position DESC LIMIT 1),0)`, listID, move.ProblemID).Scan(&left); err != nil {
-						return nil, err
-					}
-				}
-				if current > left && current < right {
-					break
-				}
-				position, needsRescale := PositionBetween(left, right)
-				if position <= left || position >= right {
-					if attempt == 1 {
-						return nil, ErrInvalidOperation
-					}
-					if err := rescaleList(ctx, tx, listID); err != nil {
-						return nil, err
-					}
-					result.Rebalanced = true
-					continue
-				}
-				if _, err := tx.ExecContext(ctx, `UPDATE list_items SET position=$3,updated_at=CURRENT_TIMESTAMP WHERE list_id=$1 AND problem_id=$2`, listID, move.ProblemID, position); err != nil {
-					return nil, err
-				}
-				if needsRescale {
-					if err := rescaleList(ctx, tx, listID); err != nil {
-						return nil, err
-					}
-					result.Rebalanced = true
-				}
-				break
+		result := &CollectionResult{}
+		count := len(move.ProblemIDs)
+		gap, needsRescale := insertionGap(left, right, count)
+		if gap == 0 {
+			if err := rescaleList(ctx, tx, listID); err != nil {
+				return nil, err
+			}
+			result.Rebalanced = true
+			left, right, err = moveBounds(ctx, tx, listID, move)
+			if err != nil {
+				return nil, err
+			}
+			gap, needsRescale = insertionGap(left, right, count)
+			if gap == 0 {
+				return nil, ErrInvalidOperation
 			}
 		}
-		if result.Rebalanced {
-			movedIDs = nil
+		ranks := assignRanks(left, gap, count, right == nil)
+		result.Order, result.Absent, err = updatePositions(ctx, tx, listID, move.ProblemIDs, ranks)
+		if err != nil {
+			return nil, err
 		}
-		var err error
-		result.Order, err = readOrder(ctx, tx, listID, movedIDs)
-		return result, err
+		if needsRescale && len(result.Order) > 0 {
+			if err := rescaleList(ctx, tx, listID); err != nil {
+				return nil, err
+			}
+			result.Rebalanced = true
+		}
+		if result.Rebalanced {
+			result.Order, err = readOrder(ctx, tx, listID)
+			return result, err
+		}
+		return result, nil
 	})
+}
+
+// moveBounds finds the destination neighbors after excluding the selected items.
+func moveBounds(ctx context.Context, tx *sql.Tx, listID int64, move Move) (int64, *int64, error) {
+	var query string
+	args := []any{listID, pq.Array(move.ProblemIDs)}
+	switch {
+	case move.Before != nil:
+		query = `SELECT COALESCE((SELECT position FROM list_items
+			WHERE list_id=$1 AND problem_id<>ALL($2::text[]) AND position<anchor.position
+			ORDER BY position DESC LIMIT 1),0),anchor.position
+			FROM list_items AS anchor WHERE anchor.list_id=$1 AND anchor.problem_id=$3`
+		args = append(args, *move.Before)
+	case move.After != nil:
+		query = `SELECT anchor.position,(SELECT position FROM list_items
+			WHERE list_id=$1 AND problem_id<>ALL($2::text[]) AND position>anchor.position
+			ORDER BY position LIMIT 1)
+			FROM list_items AS anchor WHERE anchor.list_id=$1 AND anchor.problem_id=$3`
+		args = append(args, *move.After)
+	default:
+		query = `SELECT COALESCE((SELECT position FROM list_items
+			WHERE list_id=$1 AND problem_id<>ALL($2::text[]) ORDER BY position DESC LIMIT 1),0),NULL::bigint`
+	}
+	var left int64
+	var right sql.NullInt64
+	if err := tx.QueryRowContext(ctx, query, args...).Scan(&left, &right); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return 0, nil, ErrOrderConflict
+		}
+		return 0, nil, err
+	}
+	if !right.Valid {
+		return left, nil, nil
+	}
+	return left, &right.Int64, nil
+}
+
+// updatePositions writes matched ranks and reports absent IDs in request order.
+func updatePositions(ctx context.Context, tx *sql.Tx, listID int64, ids []string, ranks []int64) ([]OrderedItem, []string, error) {
+	rows, err := tx.QueryContext(ctx, `UPDATE list_items AS item
+		SET position=ranks.position,updated_at=CURRENT_TIMESTAMP
+		FROM unnest($2::text[], $3::bigint[]) AS ranks(problem_id,position)
+		WHERE item.list_id=$1 AND item.problem_id=ranks.problem_id
+		RETURNING item.problem_id`, listID, pq.Array(ids), pq.Array(ranks))
+	if err != nil {
+		return nil, nil, err
+	}
+	defer rows.Close()
+	updated := make(map[string]bool, len(ids))
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, nil, err
+		}
+		updated[id] = true
+	}
+	if err := rows.Err(); err != nil {
+		return nil, nil, err
+	}
+	order := make([]OrderedItem, 0, len(updated))
+	var absent []string
+	for i, id := range ids {
+		if updated[id] {
+			order = append(order, OrderedItem{ProblemID: id, Position: ranks[i]})
+		} else {
+			absent = append(absent, id)
+		}
+	}
+	return order, absent, nil
 }
 
 // BulkAdd resolves bounds and inserts without existing-ID queries, reporting duplicate inputs separately.
@@ -199,7 +220,7 @@ func (repository *Repository) BulkAdd(ctx context.Context, userID, listID int64,
 		if err != nil {
 			return nil, err
 		}
-		gap, needsRescale := InsertionGap(left, right, len(input))
+		gap, needsRescale := insertionGap(left, right, len(input))
 		rebalanced := false
 		if gap == 0 {
 			if err := rescaleList(ctx, tx, listID); err != nil {
@@ -210,12 +231,12 @@ func (repository *Repository) BulkAdd(ctx context.Context, userID, listID int64,
 			if err != nil {
 				return nil, err
 			}
-			gap, needsRescale = InsertionGap(left, right, len(input))
+			gap, needsRescale = insertionGap(left, right, len(input))
 			if gap == 0 {
 				return nil, ErrInvalidOperation
 			}
 		}
-		added, duplicates, err := insertItems(ctx, tx, listID, input, AssignRanks(left, gap, len(input), right == nil))
+		added, duplicates, err := insertItems(ctx, tx, listID, input, assignRanks(left, gap, len(input), right == nil))
 		if err != nil {
 			return nil, err
 		}
@@ -232,7 +253,7 @@ func (repository *Repository) BulkAdd(ctx context.Context, userID, listID int64,
 		}
 		result := &CollectionResult{Added: added, Duplicates: duplicates, Rebalanced: rebalanced}
 		if rebalanced {
-			result.Order, err = readOrder(ctx, tx, listID, nil)
+			result.Order, err = readOrder(ctx, tx, listID)
 			if err != nil {
 				return nil, err
 			}

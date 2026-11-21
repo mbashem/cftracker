@@ -429,6 +429,6 @@ Set-Cookie: cftracker_github_oauth_state=[challenge]; ...</code></pre>
       <footer>CFTracker backend · REST API v1 · documented from local source on 26 October 2026.</footer>
     </main>
   </div>
-<section><h2>List organization</h2><p>POST /api/v1/lists/:listId/items accepts items; /items/move accepts sequential moves with problem_id and before_problem_id or after_problem_id; /items/remove accepts problem_ids. Each operation is atomic and returns rebalanced and order. Order contains new item positions for addition, requested item positions for moves, and an empty array for removal. After a rebalance it contains all list positions. Positions are assigned by the backend. See <a href="LIST_OPERATIONS.md">List operations</a> for contracts, examples, errors, and limits.</p></section>
+<section><h2>List organization</h2><p>POST /api/v1/lists/:listId/items accepts items; /items/move accepts problem_ids and an optional shared before_problem_id or after_problem_id. The selection moves together in request order. Missing selected IDs are reported in absent_problem_ids. /items/remove accepts problem_ids. Each operation is atomic and returns rebalanced and order. Order contains new item positions for addition, updated item positions for moves, and an empty array for removal. After a rebalance it contains all list positions. Positions are assigned by the backend. See <a href="LIST_OPERATIONS.md">List operations</a> for contracts, examples, errors, and limits.</p></section>
 </body>
 </html>

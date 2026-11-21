@@ -201,7 +201,7 @@ func databaseContextOperations(database *sql.DB, fixture databaseContextFixture,
 			return err
 		}},
 		{name: "item reorder transaction", run: func(ctx context.Context) error {
-			_, err := itemRepository.MoveItems(ctx, fixture.user.ID, fixture.list.Id, []items.Move{{ProblemID: fixture.item.ProblemId}})
+			_, err := itemRepository.MoveItems(ctx, fixture.user.ID, fixture.list.Id, items.Move{ProblemIDs: []string{fixture.item.ProblemId}})
 			return err
 		}},
 	}

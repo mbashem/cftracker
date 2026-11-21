@@ -8,16 +8,16 @@ import (
 )
 
 // Keep JSON numbers exact for existing JavaScript clients, despite BIGINT storage.
-const MaxPosition int64 = 1<<53 - 1
+const maxPosition int64 = 1<<53 - 1
 
 var ErrInvalidOperation = errors.New("invalid list operation")
-var ErrOrderConflict = errors.New("move item or anchor no longer exists")
+var ErrOrderConflict = errors.New("move anchor no longer exists")
 
-// Move identifies an item and an optional relative anchor; no anchor means append.
+// Move selects items to place together at one destination, or at the end if unanchored.
 type Move struct {
-	ProblemID string  `json:"problem_id"`
-	Before    *string `json:"before_problem_id,omitempty"`
-	After     *string `json:"after_problem_id,omitempty"`
+	ProblemIDs []string `json:"problem_ids"`
+	Before     *string  `json:"before_problem_id,omitempty"`
+	After      *string  `json:"after_problem_id,omitempty"`
 }
 
 // OrderedItem pairs a stable problem key with its sparse rank, not an array index.
@@ -36,52 +36,42 @@ type CollectionResult struct {
 	Absent     []string      `json:"absent_problem_ids,omitempty"`
 }
 
-// ValidateMoves rejects malformed batches before list locking or position calculation.
-func ValidateMoves(moves []Move) error {
-	if len(moves) == 0 || len(moves) > limits.ItemsPerList {
+// Validate rejects empty or repeated IDs, multiple anchors, and anchors inside the selection.
+func (move Move) Validate() error {
+	if len(move.ProblemIDs) == 0 || len(move.ProblemIDs) > limits.ItemsPerList || move.Before != nil && move.After != nil {
 		return ErrInvalidOperation
 	}
-	for _, move := range moves {
-		if move.ProblemID == "" || move.Before != nil && move.After != nil {
+	anchor := move.Before
+	if move.After != nil {
+		anchor = move.After
+	}
+	seen := make(map[string]bool, len(move.ProblemIDs))
+	for _, id := range move.ProblemIDs {
+		if id == "" || seen[id] || anchor != nil && id == *anchor {
 			return ErrInvalidOperation
 		}
-		for _, anchor := range []*string{move.Before, move.After} {
-			if anchor != nil && *anchor == move.ProblemID {
-				return ErrInvalidOperation
-			}
-		}
+		seen[id] = true
 	}
 	return nil
 }
 
-// PositionBetween calculates a sparse destination and signals when its gaps need redistribution.
-// A missing right neighbor is represented by MaxPosition.
-func PositionBetween(left, right int64) (int64, bool) {
-	minimumGap := configs.MinimumListPositionGap()
-	position := left + (right-left)/2
-	if right == MaxPosition && left <= MaxPosition-configs.ListPositionGap {
-		position = left + configs.ListPositionGap
-	}
-	return position, position-left < minimumGap || right-position < minimumGap
-}
-
-// InsertionGap maximizes bounded spacing; append reserves aligned multiples of the configured gap.
+// insertionGap maximizes bounded spacing; append reserves aligned multiples of the configured gap.
 // Zero means rescale before insertion; a positive tight gap means insert first, then rescale.
-func InsertionGap(left int64, right *int64, count int) (int64, bool) {
-	if count < 1 || count > limits.ItemsPerList || left < 0 || left > MaxPosition {
+func insertionGap(left int64, right *int64, count int) (int64, bool) {
+	if count < 1 || count > limits.ItemsPerList || left < 0 || left > maxPosition {
 		return 0, true
 	}
 	var gap int64
 	if right == nil {
 		gap = configs.ListPositionGap
 		base := left - left%gap
-		if int64(count) > (MaxPosition-base)/gap {
+		if int64(count) > (maxPosition-base)/gap {
 			return 0, true
 		}
 		first, last := base+gap, base+int64(count)*gap
-		return gap, first-left < configs.MinimumListPositionGap() || MaxPosition-last < gap
+		return gap, first-left < configs.MinimumListPositionGap() || maxPosition-last < gap
 	} else {
-		if *right <= left || *right > MaxPosition {
+		if *right <= left || *right > maxPosition {
 			return 0, true
 		}
 		gap = (*right - left) / int64(count+1)
@@ -93,8 +83,8 @@ func InsertionGap(left int64, right *int64, count int) (int64, bool) {
 	return gap, gap < minimumGap
 }
 
-// AssignRanks applies a validated positive gap; append alignment starts at the next multiple above left.
-func AssignRanks(left, gap int64, count int, alignToGap bool) []int64 {
+// assignRanks applies a validated positive gap; append alignment starts at the next multiple above left.
+func assignRanks(left, gap int64, count int, alignToGap bool) []int64 {
 	if alignToGap {
 		left -= left % gap
 	}

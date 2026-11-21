@@ -37,6 +37,10 @@ func TestListPositionPolicy(t *testing.T) {
 	if minimumGap > configs.ListMinimumGapFloor && minimumGap/2 > int64(configs.MaxItemsPerList) {
 		t.Fatalf("minimum gap %d unnecessarily skips a power of two above capacity %d", minimumGap, configs.MaxItemsPerList)
 	}
+	const maxExactJSONInteger int64 = 1<<53 - 1
+	if configs.ListPositionGap > maxExactJSONInteger/int64(configs.MaxItemsPerList) {
+		t.Fatal("rescaling a full list would exceed the exact JSON integer range")
+	}
 }
 
 const (
