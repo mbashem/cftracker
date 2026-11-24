@@ -9,6 +9,8 @@ Keep at most one consecutive blank line in code files, including tests and scrip
 
 Apply this skill to the main CFTracker frontend, including files under `src/` and its root-level frontend configuration. Do not apply it to `backend/` or `manage-contests/`.
 
+Use four spaces per indentation level in new TypeScript files, including TSX and tests. Keep the existing indentation style when editing an existing file.
+
 ## Do Not Run The Application Without A Request
 
 - Do not start, serve, preview, open, or interact with the running application unless the user explicitly asks for real-app execution in the current request.
