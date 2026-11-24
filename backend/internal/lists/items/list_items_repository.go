@@ -14,7 +14,7 @@ var ErrItemNotFound = errors.New("item not found")
 
 const listItemColumns = `list_items.problem_id, list_items.position, list_items.created_at,
 	list_items.updated_at, list_items.status, list_items.help_used,
-	to_char(list_items.solved_on, 'YYYY-MM-DD'), list_items.time_spent, list_items.notes`
+	list_items.solved_on, list_items.time_spent, list_items.notes`
 
 type ListItemRepository interface {
 	CollectionRepository
@@ -54,7 +54,7 @@ func (repository *Repository) Update(ctx context.Context, userId int64, listId i
 	}{
 		{patch.Status.Set, "status", "practice_status", patch.Status.Value},
 		{patch.HelpUsed.Set, "help_used", "practice_help", patch.HelpUsed.Value},
-		{patch.SolvedOn.Set, "solved_on", "date", patch.SolvedOn.Value},
+		{patch.SolvedOn.Set, "solved_on", "timestamptz", patch.SolvedOn.Value},
 		{patch.TimeSpent.Set, "time_spent", "integer", patch.TimeSpent.Value},
 		{patch.Notes.Set, "notes", "text", patch.Notes.Value},
 	} {
@@ -123,13 +123,17 @@ func scanListItem(scanner interface{ Scan(...any) error }) (ListItem, bool, erro
 	var item ListItem
 	var problemId sql.NullString
 	var position sql.NullInt64
-	var createdAt, updatedAt sql.NullTime
+	var createdAt, updatedAt, solvedOn sql.NullTime
 	err := scanner.Scan(&item.ListId, &problemId, &position, &createdAt, &updatedAt,
-		&item.Status, &item.HelpUsed, &item.SolvedOn, &item.TimeSpent, &item.Notes)
+		&item.Status, &item.HelpUsed, &solvedOn, &item.TimeSpent, &item.Notes)
 	item.ProblemId = problemId.String
 	item.Position = position.Int64
 	item.CreatedAt = createdAt.Time
 	item.UpdatedAt = updatedAt.Time
+	if solvedOn.Valid {
+		utc := solvedOn.Time.UTC().Format(time.RFC3339Nano)
+		item.SolvedOn = &utc
+	}
 	return item, problemId.Valid, err
 }
 

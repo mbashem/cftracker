@@ -12,20 +12,20 @@ All five practice fields are nullable and appear explicitly in item responses, a
 | --- | --- |
 | `status` | `not_started`, `attempted`, `in_progress`, `solved`, or `null` |
 | `help_used` | `none`, `test_case`, `hint`, `editorial`, `solution`, or `null` |
-| `solved_on` | Calendar date exactly `YYYY-MM-DD`, years 0001–9999, or `null` |
+| `solved_on` | RFC 3339 date and time with a timezone, up to millisecond precision, or `null`. UTC years 0001–9999 are supported. Responses use UTC (`Z`). |
 | `time_spent` | Active seconds as a JSON integer from 0 through 2,147,483,647, or `null` |
 | `notes` | Plain text, at most 512 Unicode code points, or `null` |
 
 Status and help are PostgreSQL enums with matching Go types. Values are case-sensitive. Null status means uninitialized, distinct from `not_started`. Null help means not recorded, distinct from `none`. Help is a single summary value in the order None → Test Case → Hint → Editorial → Solution: record the highest level used. Explicit edits may correct it downward or clear it.
 
-All details are independent of status: notes and help can be recorded before solving, and solved items need no date, time, or help. Reopening preserves all omitted details. A solved status never supplies a historical solve date automatically. Future dates are accepted. Zero seconds records zero active time; it does not mean missing. Text whitespace and line breaks are preserved; the empty string is normalized to null. Invalid UTF-8, NUL text, invalid dates, fractional/negative time, and unknown enum values are rejected.
+All details are independent of status: notes and help can be recorded before solving, and solved items need no solve time, active time, or help. Reopening preserves all omitted details. A solved status never supplies a historical solve time automatically. Future timestamps are accepted. The database stores the instant as `timestamptz(3)`. Zero seconds records zero active time; it does not mean missing. Text whitespace and line breaks are preserved; the empty string is normalized to null. Invalid UTF-8, NUL text, invalid timestamps, fractional/negative active time, and unknown enum values are rejected.
 
 ## Add items
 
 `POST /api/v1/lists/:listId/items` is the sole add API, for both one problem and a batch. It requires authentication. The frontend wraps a single addition in an array; it never supplies positions. An optional top-level `before_problem_id` inserts all new items before one existing problem in request order; omitted or null means prepend. See [list operations](LIST_OPERATIONS.md) for rank allocation and anchor errors.
 
 ```json
-{"items":[{"problem_id":"1900A","status":"solved","help_used":"hint","solved_on":"2026-11-09","time_spent":2100,"notes":"Check the invariant first."}]}
+{"items":[{"problem_id":"1900A","status":"solved","help_used":"hint","solved_on":"2026-11-09T14:30:00Z","time_spent":2100,"notes":"Check the invariant first."}]}
 ```
 
 Success returns `200` with complete newly saved records in `added` and their positions in `order`. If `rebalanced` is true, `order` instead contains every list item's final position. A duplicate problem, whether already saved or repeated in the request, is skipped individually and reported in `duplicate_problem_ids`; other insertions succeed. Duplicate-only requests that pass the full-input quota check return `200` with no added records and an empty order unless rescaling occurred; a full list rejects them with `409`. Existing practice data is preserved. The backend does not pre-query existing IDs. Every request is validated before insertion, and capacity is checked up front using the locked stored count plus the complete input length, without discounting duplicates. Projected quota overflow rejects the whole request before any write. Admitted requests increment the stored counter only by rows actually inserted; other nonduplicate failures roll back the operation. See [list operations](LIST_OPERATIONS.md) for the full response contract.
@@ -43,7 +43,7 @@ The old single-add PUT route is removed. Deploy the matching frontend and backen
 }
 ```
 
-This reopens the item and clears notes while retaining its help, solve date, and active time. Success returns `200 {"message":"Item updated","item":...}` with the complete saved item. The update sets `updated_at = CURRENT_TIMESTAMP` in the same SQL statement; even unchanged supplied values refresh the timestamp. `created_at` is preserved. No item timestamp trigger is installed. Position changes also update this timestamp; unchanged positions and deleted neighbors do not. See [list operations](LIST_OPERATIONS.md).
+This reopens the item and clears notes while retaining its help, solve timestamp, and active time. Success returns `200 {"message":"Item updated","item":...}` with the complete saved item. The update sets `updated_at = CURRENT_TIMESTAMP` in the same SQL statement; even unchanged supplied values refresh the timestamp. `created_at` is preserved. No item timestamp trigger is installed. Position changes also update this timestamp; unchanged positions and deleted neighbors do not. See [list operations](LIST_OPERATIONS.md).
 
 Empty patches, unknown properties, list item/order/timestamp fields, and trailing JSON are rejected. Validation considers only fields marked as supplied. A successful update uses one ownership-scoped SQL statement built from a fixed allowlist: omitted fields have no assignment or value parameter. Values are bound through positional PostgreSQL parameters. There is no revision token or optimistic concurrency contract.
 

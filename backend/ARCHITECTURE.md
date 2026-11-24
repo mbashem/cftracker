@@ -560,7 +560,7 @@ classDiagram
         timestamp updated_at
         practice_status status
         practice_help help_used
-        date solved_on
+        timestamptz solved_on
         int time_spent
         text notes
     }

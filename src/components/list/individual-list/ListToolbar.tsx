@@ -1,0 +1,77 @@
+import { faFileExport, faFileImport, faPlus } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import type Theme from "../../../util/Theme";
+import ButtonPopover from "../../common/ButtonPopover";
+import CustomModal from "../../common/CustomModal";
+import LabeledButtonGroup from "../../common/LabeledButtonGroup";
+import SearchField from "../../common/SearchField";
+import type { ListDetails } from "../useListPage";
+import ListCsvImport from "./ListCsvImport";
+import { HELP_OPTIONS, STATUS_OPTIONS } from "./practiceFields";
+
+interface Props {
+    theme: Theme;
+    busy: boolean;
+    filters: ListDetails["filters"];
+    onFilterChange: ListDetails["changeFilters"];
+    onAddProblem: () => void;
+    csvImport: ListDetails["csvImport"];
+    onImportOpen: () => void;
+    onExport: () => void;
+}
+
+export default function ListToolbar({ theme, busy, filters, onFilterChange, onAddProblem, csvImport, onImportOpen, onExport }: Props) {
+    return (
+        <div className="d-flex flex-wrap align-items-end gap-2 mb-3" role="group" aria-label="List toolbar">
+            <div className="flex-grow-1">
+                <SearchField
+                    label="Search problems"
+                    name="list-search"
+                    placeholder="Problem Name or Id"
+                    value={filters.search}
+                    theme={theme}
+                    onSearch={search => onFilterChange({ search })}
+                />
+            </div>
+            <label>
+                Filter by status
+                <select className="form-select" value={filters.status} onChange={event => onFilterChange({ status: event.target.value })}>
+                    <option value="">All statuses</option>
+                    <option value="unset">Unset</option>
+                    {STATUS_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                </select>
+            </label>
+            <label>
+                Filter by help
+                <select className="form-select" value={filters.help} onChange={event => onFilterChange({ help: event.target.value })}>
+                    <option value="">All help levels</option>
+                    <option value="unset">Unrecorded</option>
+                    {HELP_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                </select>
+            </label>
+            <button type="button" className={theme.btn} onClick={onAddProblem}>
+                <FontAwesomeIcon icon={faPlus} /> Add Problem
+            </button>
+            <LabeledButtonGroup label="CSV" theme={theme}>
+                <CustomModal
+                    button={<FontAwesomeIcon icon={faFileImport} />}
+                    buttonLabel="Import CSV"
+                    buttonPopover="Import CSV"
+                    buttonDisabled={busy}
+                    buttonClassName="btn-outline-secondary"
+                    title="Import practice records"
+                    theme={theme}
+                    size="lg"
+                    onOpen={onImportOpen}
+                >
+                    <ListCsvImport state={csvImport} busy={busy} />
+                </CustomModal>
+                <ButtonPopover label="Export CSV" theme={theme}>
+                    <button type="button" className="btn btn-outline-secondary" aria-label="Export CSV" onClick={onExport}>
+                        <FontAwesomeIcon icon={faFileExport} />
+                    </button>
+                </ButtonPopover>
+            </LabeledButtonGroup>
+        </div>
+    );
+}

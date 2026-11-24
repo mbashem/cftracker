@@ -292,7 +292,7 @@ func insertItems(ctx context.Context, tx *sql.Tx, listID int64, input []ListItem
 	values := make([]string, len(input))
 	for index, item := range input {
 		n := len(arguments)
-		values[index] = fmt.Sprintf("($1,$%d,$%d,$%d::practice_status,$%d::practice_help,$%d::date,$%d::integer,$%d::text)", n+1, n+2, n+3, n+4, n+5, n+6, n+7)
+		values[index] = fmt.Sprintf("($1,$%d,$%d,$%d::practice_status,$%d::practice_help,$%d::timestamptz,$%d::integer,$%d::text)", n+1, n+2, n+3, n+4, n+5, n+6, n+7)
 		arguments = append(arguments, item.ProblemId, ranks[index], item.Status, item.HelpUsed, item.SolvedOn, item.TimeSpent, item.Notes)
 	}
 	rows, err := tx.QueryContext(ctx, `INSERT INTO list_items(list_id,problem_id,position,status,help_used,solved_on,time_spent,notes) VALUES `+strings.Join(values, ",")+` ON CONFLICT ON CONSTRAINT list_items_pkey DO NOTHING RETURNING list_id, `+listItemColumns, arguments...)

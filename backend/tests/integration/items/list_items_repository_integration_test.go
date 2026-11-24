@@ -26,7 +26,7 @@ const (
 	integrationMissingItemListID = int64(999999)
 )
 
-const savedPracticeJSON = `{"status":"solved","help_used":"editorial","solved_on":"2024-02-29","time_spent":2100,"notes":"  Invariant\n界  "}`
+const savedPracticeJSON = `{"status":"solved","help_used":"editorial","solved_on":"2024-02-29T20:30:01.234+06:00","time_spent":2100,"notes":"  Invariant\n界  "}`
 
 type listItemIntegrationState struct {
 	database       *sql.DB
@@ -237,6 +237,9 @@ func TestPracticeRepositoryPersistence(t *testing.T) {
 		t.Fatal(err)
 	}
 	original = added.Added[0]
+	if original.SolvedOn == nil || *original.SolvedOn != "2024-02-29T14:30:01.234Z" {
+		t.Fatalf("BulkAdd did not return the solve time in UTC: %+v", original.SolvedOn)
+	}
 	if original.CreatedAt.IsZero() || original.UpdatedAt.IsZero() {
 		t.Fatal("creation did not return timestamps")
 	}
@@ -392,15 +395,15 @@ func TestPracticeDatabaseConstraints(t *testing.T) {
 		{"negative time", "time_spent=$1", "23514", -1},
 		{"overflow time", "time_spent=$1", "22003", int64(2147483648)},
 		{"overlong notes", "notes=$1", "23514", strings.Repeat("界", 513)},
-		{"infinite date", "solved_on=$1", "23514", "infinity"},
-		{"out of API date range", "solved_on=$1", "23514", "10000-01-01"},
+		{"infinite timestamp", "solved_on=$1", "23514", "infinity"},
+		{"out of API UTC range", "solved_on=$1", "23514", "10000-01-01T00:00:00Z"},
 	} {
 		t.Run(testCase.name, func(t *testing.T) {
 			_, err := database.ExecContext(t.Context(), `UPDATE list_items SET `+testCase.assignment+` WHERE list_id=$2 AND problem_id=$3`, testCase.value, item.ListId, item.ProblemId)
 			testutil.AssertPostgresErrorCode(t, err, testCase.code)
 		})
 	}
-	if _, err := state.repository.Update(t.Context(), state.ownerID, item.ListId, item.ProblemId, practicePatch(t, `{"notes":"`+strings.Repeat("界", 512)+`","solved_on":"9999-12-31","time_spent":2147483647}`)); err != nil {
+	if _, err := state.repository.Update(t.Context(), state.ownerID, item.ListId, item.ProblemId, practicePatch(t, `{"notes":"`+strings.Repeat("界", 512)+`","solved_on":"9999-12-31T23:59:59.999Z","time_spent":2147483647}`)); err != nil {
 		t.Fatal(err)
 	}
 }

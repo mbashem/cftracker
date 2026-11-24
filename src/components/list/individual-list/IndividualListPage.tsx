@@ -1,51 +1,66 @@
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useRef } from "react";
+import type Theme from "../../../util/Theme";
 import Loading from "../../common/Loading";
-import useIndividualListPage from "./useIndividualListPage";
-import { faTrash } from "@fortawesome/free-solid-svg-icons";
+import type { ListDetails } from "../useListPage";
+import ListPracticeTable from "./ListPracticeTable";
+import ListSelectionActions from "./ListSelectionActions";
+import ListToolbar from "./ListToolbar";
 import "../../common/IconButton.css";
+import "./IndividualListPage.css";
 
 interface Props {
-  listId: number;
+  details: ListDetails;
+  theme: Theme;
+  onAddProblem: () => void;
 }
 
-function IndividualListPage({ listId }: Props) {
-  const { theme, lists, isLoading, error, problemsById, deleteButtonClicked } = useIndividualListPage({ listId });
+export default function IndividualListPage({ details, theme, onAddProblem }: Props) {
+  const { list, visible, problemsById, busy } = details;
+  const selectionControl = useRef<HTMLInputElement>(null);
+
+  if (details.isLoading) return <Loading />;
+  if (list === undefined) return details.error === undefined ? null : <p role="alert">Failed to load this list.</p>;
 
   return (
     <>
-      {isLoading && <Loading />}
-      {!isLoading && error !== undefined && <p role="alert">Failed to load this list.</p>}
-      {!isLoading && error === undefined && (
-        <table className={"table table-bordered m-0 " + theme.table}>
-          <thead className={theme.thead}>
-            <tr>
-              <th scope="col">ID</th>
-              <th scope="col">Name</th>
-              <th scope="col">Action</th>
-            </tr>
-          </thead>
-          <tbody className={theme.bg}>
-            {lists?.items.map((item) => (
-              <tr key={item.problemId}>
-                <td>{item.problemId}</td>
-                <td>{problemsById.get(item.problemId)?.name ?? ""}</td>
-                <td>
-                  <button
-                    type="button"
-                    aria-label={`Remove ${item.problemId} from list`}
-                    className="btn btn-ghost btn-ghost-danger"
-                    onClick={() => deleteButtonClicked(item.problemId)}
-                  >
-                    <FontAwesomeIcon icon={faTrash} />
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+      {details.error !== undefined && <p role="alert">Could not refresh the list. Reload to see the latest records.</p>}
+      <ListToolbar
+        theme={theme}
+        busy={busy}
+        filters={details.filters}
+        onFilterChange={details.changeFilters}
+        onAddProblem={onAddProblem}
+        csvImport={details.csvImport}
+        onImportOpen={details.resetCsvImport}
+        onExport={details.downloadCsv}
+      />
+      <ListSelectionActions
+        count={details.selectedCount}
+        copyLists={details.copyLists}
+        theme={theme}
+        busy={busy}
+        copyDestination={details.copyDestination}
+        onCopyDestinationChange={details.changeCopyDestination}
+        onCopy={details.copySelected}
+        onRemove={details.removeSelected}
+        onRemoved={() => selectionControl.current?.focus()}
+        onError={details.reportError}
+      />
+      <div role="status" aria-live="polite" className={details.announcement ? "mb-2" : "visually-hidden"}>{details.announcement}</div>
+      <ListPracticeTable
+        items={visible}
+        selection={details.selection}
+        problemsById={problemsById}
+        theme={theme}
+        busy={busy}
+        selectionControl={selectionControl}
+        effectiveStatus={details.effectiveStatus}
+        onSelectVisible={details.selectVisible}
+        onSelectItem={details.selectItem}
+        onSave={details.savePracticeField}
+        onError={details.reportError}
+      />
+      {visible.length === 0 && <p className="mt-2">{list.items.length === 0 ? "This list is empty." : "No problems match these filters."}</p>}
     </>
   );
 }
-
-export default IndividualListPage;

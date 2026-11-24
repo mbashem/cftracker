@@ -1,0 +1,51 @@
+.practice-table {
+    table-layout: fixed;
+    min-width: 63rem;
+}
+
+.practice-column-selection {
+    width: 2.25rem;
+}
+
+.practice-column-id {
+    width: 4.75rem;
+}
+
+.practice-column-status {
+    width: 10rem;
+}
+
+.practice-column-help,
+.practice-column-time {
+    width: 8.5rem;
+}
+
+.practice-column-date {
+    width: 9.25rem;
+}
+
+.practice-table th[scope="row"],
+.practice-table td > a {
+    overflow-wrap: anywhere;
+}
+
+.practice-date {
+    font-variant-numeric: tabular-nums;
+}
+
+.practice-date .btn {
+    white-space: nowrap;
+}
+
+.practice-date-picker-input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.practice-notes textarea {
+    resize: vertical;
+}

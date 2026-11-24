@@ -106,18 +106,21 @@ const combineSubmissions = createSelector(
   }
 );
 
-function useSubmissionsStore() {
-  const { sharedProblems } = useSharedProblemsStore();
+function useSubmissionsStore({ skip = false }: { skip?: boolean } = {}) {
+  const { sharedProblems } = useSharedProblemsStore({ skip });
   const userSubmissions = useAppSelector((state) => state.userSubmissions);
   const submissionData = combineSubmissions(userSubmissions.submissionsByHandle);
   const rawSubmissions = hydrateSubmissions(submissionData);
   const submissions = calculateSubmissions(rawSubmissions, sharedProblems.problems);
+  const hasCompleteHistory = Object.keys(userSubmissions.submissionsByHandle).length > 0
+    && userSubmissions.loading === 0 && userSubmissions.error === undefined;
 
   return {
     error: userSubmissions.error,
     loading: userSubmissions.loading,
     submissions,
     rawSubmissions,
+    hasCompleteHistory,
   };
 }
 

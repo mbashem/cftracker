@@ -2,6 +2,7 @@ package items
 
 import (
 	"errors"
+	"regexp"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -25,6 +26,7 @@ const (
 )
 
 var ErrInvalidPractice = errors.New("invalid practice fields")
+var solvedTimestampPattern = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,3})?(Z|[+-]([01]\d|2[0-3]):[0-5]\d)$`)
 
 type Practice struct {
 	Status    *PracticeStatus `json:"status"`
@@ -34,7 +36,7 @@ type Practice struct {
 	Notes     *string         `json:"notes"`
 }
 
-// Normalize enforces nullable practice-field constraints and converts empty notes to null.
+// Normalize enforces nullable practice-field constraints, converts solve times to UTC, and clears empty notes.
 // Status changes never derive or clear other fields; whitespace in nonempty notes is preserved.
 func (practice *Practice) Normalize() error {
 	if practice.Status != nil {
@@ -52,10 +54,15 @@ func (practice *Practice) Normalize() error {
 		}
 	}
 	if practice.SolvedOn != nil {
-		date, err := time.Parse(time.DateOnly, *practice.SolvedOn)
-		if err != nil || date.Year() < 1 || date.Format(time.DateOnly) != *practice.SolvedOn {
+		if !solvedTimestampPattern.MatchString(*practice.SolvedOn) {
 			return ErrInvalidPractice
 		}
+		solvedAt, err := time.Parse(time.RFC3339Nano, *practice.SolvedOn)
+		if err != nil || solvedAt.Year() < 1 || solvedAt.UTC().Year() < 1 || solvedAt.UTC().Year() > 9999 {
+			return ErrInvalidPractice
+		}
+		utc := solvedAt.UTC().Format(time.RFC3339Nano)
+		practice.SolvedOn = &utc
 	}
 	if practice.TimeSpent != nil && (*practice.TimeSpent < 0 || *practice.TimeSpent > MaxTimeSpent) {
 		return ErrInvalidPractice

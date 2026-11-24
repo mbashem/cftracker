@@ -1,5 +1,4 @@
 import { useEffect, useId, useRef, useState } from "react";
-import { Modal } from "react-bootstrap";
 import { Link } from "react-router";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faListUl, faPlus } from "@fortawesome/free-solid-svg-icons";
@@ -9,6 +8,7 @@ import useAppSearchParams from "../../hooks/useSearchParam";
 import useTheme from "../../data/hooks/useTheme";
 import { SearchKeys } from "../../util/constants";
 import { Path } from "../../util/route/path";
+import Dialog from "../common/Dialog";
 import "../common/IconButton.css";
 
 export default function ProblemListPicker({ problemId }: { problemId?: string }) {
@@ -92,10 +92,9 @@ export default function ProblemListPicker({ problemId }: { problemId?: string })
         {selectedId && <button type="button" className={`btn ${theme.btn}`} onClick={() => deleteSearchParam(SearchKeys.ListId)}>Stop adding to list</button>}
       </div>
       {problemId !== undefined ? (
-        <Modal show={open} onHide={() => setOpen(false)} contentClassName={theme.bgText}>
-          <Modal.Header closeButton><Modal.Title>Add {problemId} to a list</Modal.Title></Modal.Header>
-          <Modal.Body>{open && choices}</Modal.Body>
-        </Modal>
+        <Dialog title={`Add ${problemId} to a list`} theme={theme} open={open} onClose={() => setOpen(false)}>
+          {open && choices}
+        </Dialog>
       ) : open && <div className="border rounded p-3 mt-2">{choices}</div>}
     </div>
   );

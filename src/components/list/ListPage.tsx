@@ -1,15 +1,13 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import Loading from "../common/Loading";
-import CustomModal from "../common/CustomModal";
-import useListPage from "./useListPage";
-import { useEffect, useId, useState } from "react";
 import { faPlus, faTrash } from "@fortawesome/free-solid-svg-icons";
-import IndividualListPage from "./individual-list/IndividualListPage";
 import { faEdit } from "@fortawesome/free-regular-svg-icons";
+import Loading from "../common/Loading";
+import ConfirmationDialog from "../common/ConfirmationDialog";
+import TextPromptDialog from "../common/TextPromptDialog";
+import IndividualListPage from "./individual-list/IndividualListPage";
+import useListPage from "./useListPage";
 
 function ListPage() {
-  const createListNameId = useId();
-  const updateListNameId = useId();
   const {
     theme,
     activeList,
@@ -21,13 +19,11 @@ function ListPage() {
     addButtonClicked,
     updateListName,
     deleteListButtonClicked,
+    details,
   } = useListPage();
-  const [newListName, setNewListName] = useState("");
-  const [updateListNameValue, setUpdateListNameValue] = useState("");
-  useEffect(() => setUpdateListNameValue(activeList?.name ?? ""), [activeList]);
 
   return (
-    <div className="container pt-3">
+    <div className="container pt-3" data-bs-theme={theme.name}>
       {isLoading && <Loading />}
       {error !== undefined && <p role="alert">Failed to load lists.</p>}
       <div className="d-flex flex-wrap align-items-start justify-content-between gap-3 w-100">
@@ -42,106 +38,53 @@ function ListPage() {
         </div>
 
         <div className="flex-shrink-0">
-          <CustomModal buttonLabel="Create new list" buttonClassName="btn-ghost" title="Create New List" theme={theme} button={<FontAwesomeIcon icon={faPlus} />}>
-            {({ closeModal }) => (
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  createNewList(newListName).then((success) => {
-                    if (!success) return;
-                    setNewListName("");
-                    closeModal();
-                  });
-                }}
-              >
-                <div className="form-group">
-                  <label htmlFor={createListNameId}>List Name</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    id={createListNameId}
-                    placeholder="Enter list name"
-                    value={newListName}
-                    onChange={(e) => setNewListName(e.target.value)}
-                    required
-                  />
-                </div>
-                <button type="submit" className="btn btn-primary mt-2">
-                  Create List
-                </button>
-              </form>
-            )}
-          </CustomModal>
+          <TextPromptDialog
+            button={<FontAwesomeIcon icon={faPlus} />}
+            buttonLabel="Create new list"
+            buttonClassName="btn-ghost"
+            title="Create New List"
+            theme={theme}
+            label="List Name"
+            placeholder="Enter list name"
+            submitLabel="Create List"
+            onSubmit={createNewList}
+          />
         </div>
         {activeList && (
           <div className="d-flex flex-wrap justify-content-end gap-2">
-            <button type="button" className={"btn " + theme.btn} onClick={addButtonClicked}>
-              <FontAwesomeIcon icon={faPlus} /> Add Problem
-            </button>
-            <CustomModal buttonLabel="Edit list" buttonClassName="btn-ghost" title={`Update ${activeList?.name}:`} theme={theme} button={<FontAwesomeIcon icon={faEdit} />}>
-              {({ closeModal }) => (
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    updateListName(updateListNameValue).then((success) => {
-                      if (!success) return;
-                      closeModal();
-                    });
-                  }}
-                >
-                  <div className="form-group">
-                    <div className="d-flex align-items-center justify-content-between">
-                      <label htmlFor={updateListNameId}>Enter New Name</label>
-                      <CustomModal
-                        buttonLabel="Delete list"
-                        buttonClassName="btn-ghost btn-ghost-danger"
-                        title={`Do you want to delete ${activeList.name}?`}
-                        theme={theme}
-                        button={<FontAwesomeIcon className={theme.textDanger} icon={faTrash} />}
-                      >
-                        {({ closeModal: closeDeleteAlertModal }) => (
-                          <div className="d-flex justify-content-start">
-                            <button
-                              type="button"
-                              className={theme.btnDanger + " me-2 "}
-                              onClick={() => {
-                                deleteListButtonClicked().then((success) => {
-                                  if (!success) return;
-                                  closeDeleteAlertModal();
-                                  closeModal();
-                                });
-                              }}
-                            >
-                              Yes
-                            </button>
-
-                            <button type="button" className={theme.btnPrimary} onClick={() => closeDeleteAlertModal()}>
-                              No
-                            </button>
-                          </div>
-                        )}
-                      </CustomModal>
-                    </div>
-                    <input
-                      type="text"
-                      className="form-control mt-1"
-                      id={updateListNameId}
-                      placeholder="Enter list name"
-                      value={updateListNameValue}
-                      onChange={(e) => setUpdateListNameValue(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <button type="submit" className="btn btn-primary mt-2">
-                    Update List
-                  </button>
-                </form>
+            <TextPromptDialog
+              key={activeList.id}
+              button={<FontAwesomeIcon icon={faEdit} />}
+              buttonLabel="Edit list"
+              buttonClassName="btn-ghost"
+              title={`Update ${activeList.name}:`}
+              theme={theme}
+              label="Enter New Name"
+              placeholder="Enter list name"
+              initialValue={activeList.name}
+              submitLabel="Update List"
+              onSubmit={updateListName}
+              renderFieldAction={close => (
+                <ConfirmationDialog
+                  button={<FontAwesomeIcon icon={faTrash} />}
+                  buttonLabel="Delete list"
+                  buttonClassName="btn-ghost btn-ghost-danger"
+                  title={`Do you want to delete ${activeList.name}?`}
+                  theme={theme}
+                  confirmLabel="Yes"
+                  cancelLabel="No"
+                  cancelClassName={theme.btnPrimary}
+                  onConfirm={deleteListButtonClicked}
+                  onConfirmed={close}
+                />
               )}
-            </CustomModal>
+            />
           </div>
         )}
       </div>
-      <div className="pt-3">{activeList && <IndividualListPage listId={activeList.id} />}</div>
+      <div className="pt-3">
+        {activeList && <IndividualListPage key={activeList.id} details={details} theme={theme} onAddProblem={addButtonClicked} />}
+      </div>
     </div>
   );
 }

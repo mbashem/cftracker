@@ -347,7 +347,7 @@ Set-Cookie: cftracker_github_oauth_state=[challenge]; ...</code></pre>
           <ul>
             <li><code>status</code>: <code>not_started</code>, <code>attempted</code>, <code>in_progress</code>, <code>solved</code>, or null (uninitialized).</li>
             <li><code>help_used</code>: <code>none</code>, <code>test_case</code>, <code>hint</code>, <code>editorial</code>, <code>solution</code>, or null (not recorded). Record the highest level used; explicit corrections may lower it.</li>
-            <li><code>solved_on</code>: valid calendar date exactly <code>YYYY-MM-DD</code> within years 0001–9999, or null. Future dates are accepted.</li>
+            <li><code>solved_on</code>: RFC 3339 date and time with a timezone, up to millisecond precision, or null. Responses use UTC (<code>Z</code>). Future timestamps are accepted.</li>
             <li><code>time_spent</code>: integer active seconds from 0 through 2,147,483,647, or null.</li>
             <li><code>notes</code>: plain text, at most 512 Unicode code points, or null. Whitespace/line breaks are preserved; invalid UTF-8 and NUL are rejected.</li>
           </ul>

@@ -7,18 +7,18 @@
 .btn.btn-ghost:hover,
 .btn.btn-ghost:active {
   color: inherit;
-  background-color: var(--theme-accent-soft, rgba(13, 110, 253, 0.12));
+  background-color: var(--theme-accent-soft);
   border-color: transparent;
 }
 
 .btn.btn-ghost-danger {
-  color: var(--bs-danger, #dc3545);
+  color: var(--theme-danger-text);
 }
 
 .btn.btn-ghost-danger:hover,
 .btn.btn-ghost-danger:active {
-  color: var(--bs-danger, #dc3545);
-  background-color: var(--theme-danger-soft, rgba(220, 53, 69, 0.12));
+  color: var(--theme-danger-text);
+  background-color: var(--theme-danger-soft);
 }
 
 .btn.btn-ghost:disabled {
@@ -27,7 +27,7 @@
 }
 
 .btn.btn-ghost:focus-visible {
-  outline: 2px solid var(--theme-accent, #0d6efd);
+  outline: 2px solid var(--theme-accent);
   outline-offset: 2px;
   box-shadow: none;
 }

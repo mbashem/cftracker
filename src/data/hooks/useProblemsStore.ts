@@ -43,8 +43,8 @@ function getProblemErrorMessage(error: unknown): string | undefined {
 	return "Failed to fetch Problems list from CF API.";
 }
 
-function useProblemsStore() {
-	const { data, error, isLoading } = codeforcesApi.useGetProblemsQuery();
+function useProblemsStore({ skip = false }: { skip?: boolean } = {}) {
+	const { data, error, isLoading } = codeforcesApi.useGetProblemsQuery(undefined, { skip });
 	const { problems, problemsById, tags } = selectProblems(data);
 
 	const problemList = useMemo<HydratedProblemListState>(() => ({

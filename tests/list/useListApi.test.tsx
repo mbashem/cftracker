@@ -47,6 +47,8 @@ const operations = [
   { name: "rename", method: "PUT", path: "/api/v1/lists/5", body: { name: "Renamed" }, response: {}, invoke: (api: ReturnType<typeof useListApi>) => api.updateListName(5, "Renamed"), fallback: "Failed to update the list!" },
   { name: "delete", method: "DELETE", path: "/api/v1/lists/5", body: undefined, response: {}, invoke: (api: ReturnType<typeof useListApi>) => api.deleteList(5), fallback: "Failed to delete the list!" },
   { name: "add item", method: "POST", path: "/api/v1/lists/5/items", body: { items:[{problem_id:"100A"}] }, response: { added:[backendItem],order:[backendItem],rebalanced:false }, invoke: (api: ReturnType<typeof useListApi>) => api.addProblemsToList(5, ["100A"]), fallback: "Failed to add to list!" },
+  { name: "save practice details", method: "PATCH", path: "/api/v1/lists/5/item/100%3FA", body: { status: null, help_used: "none", solved_on: null, time_spent: 0, notes: "A note" }, response: { item: backendItem }, invoke: (api: ReturnType<typeof useListApi>) => api.updateListItem(5, "100?A", { status: null, helpUsed: "none", solvedOn: null, timeSpent: 0, notes: "A note" }), fallback: "Failed to save practice details." },
+  { name: "move selected items", method: "POST", path: "/api/v1/lists/5/items/move", body: { problem_ids: ["100A", "100B"], before_problem_id: "101A" }, response: { order: [backendItem], rebalanced: false, absent_problem_ids: ["100B"] }, invoke: (api: ReturnType<typeof useListApi>) => api.moveListItems(5, ["100A", "100B"], "101A"), fallback: "Failed to move list items." },
   { name: "remove item", method: "POST", path: "/api/v1/lists/5/items/remove", body: {problem_ids:["100A"]}, response: {removed_problem_ids:["100A"],order:[],rebalanced:false}, invoke: (api: ReturnType<typeof useListApi>) => api.removeProblemsFromList(5,["100A"]), fallback: "Failed to delete from list!" },
   { name: "read item list", method: "GET", path: "/api/v1/lists/5", body: undefined, response: { list: backendList, items: [] }, invoke: (api: ReturnType<typeof useListApi>) => api.getListWithItems(5), fallback: "Couldn't find the list" },
 ];
@@ -75,7 +77,9 @@ test.each([false, true])("bulk addition maps affected positions or all positions
   const second={...backendItem,problem_id:"100B",position:2147483648};
   const existing={...backendItem,problem_id:"101A",position:3221225472};
   backend.respond({added:[backendItem,second],order:rebalanced?[backendItem,second,existing]:[backendItem,second],rebalanced});
-  const result=await backend.store.dispatch(listApi.endpoints.addToList.initiate({listId:5,problemIds:["100A","100B"]})).unwrap();
+  const result=await backend.store.dispatch(listApi.endpoints.addToList.initiate({
+    listId: 5, items: [{ problemId: "100A" }, { problemId: "100B" }],
+  })).unwrap();
   expect(backend.requests[0].method).toBe("POST");
   expect(new URL(backend.requests[0].url).pathname).toBe("/api/v1/lists/5/items");
   expect(await backend.requests[0].json()).toEqual({items:[{problem_id:"100A"},{problem_id:"100B"}]});

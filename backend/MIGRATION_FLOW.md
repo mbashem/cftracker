@@ -10,7 +10,7 @@ This document explains CFTracker's migration ordering, checksum protection, roll
 | `000002` | `create_users` | Creates `users`, its timestamp function, and its update trigger. |
 | `000003` | `create_lists` | Creates `lists`, including its user foreign key and uniqueness constraint. |
 | `000004` | `create_list_items` | Creates `list_items`, including its list foreign key and composite primary key. |
-| `000005` | `add_list_item_practice` | Adds nullable practice fields, status/help enum types, and date/time/text constraints. |
+| `000005` | `add_list_item_practice` | Adds nullable practice fields, status/help enum types, and constraints for the solve timestamp, active time, and notes. |
 | `000006` | `sparse_list_order` | BIGINT sparse positions, deterministic redistribution, and deferred uniqueness/range constraints. |
 | `000007` | `add_list_item_count` | Adds and backfills the internal list item counter maintained by application transactions. |
 
