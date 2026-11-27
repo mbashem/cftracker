@@ -1,4 +1,5 @@
 import { skipToken } from "@reduxjs/toolkit/query";
+import { useCallback } from "react";
 import { listApi } from "../queries/listQuery";
 import useUser from "../../hooks/useUser";
 import type { ListItemInput, PracticeFields } from "../../types/list";
@@ -51,13 +52,13 @@ function useListApi() {
 		}
 	}
 
-	async function updateListItem(listId: number, problemId: string, patch: PracticeFields) {
+	const updateListItem = useCallback(async (listId: number, problemId: string, patch: PracticeFields) => {
 		try {
 			return await updateListItemMutation({ listId, problemId, patch }).unwrap();
 		} catch (error) {
 			throw new Error(listMutationError(error, "Failed to save practice details."));
 		}
-	}
+	}, [updateListItemMutation]);
 
 	async function moveListItems(listId: number, problemIds: string[], beforeProblemId?: string) {
 		try {

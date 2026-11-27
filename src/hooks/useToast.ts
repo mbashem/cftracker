@@ -15,7 +15,7 @@ function useToast() {
 		});
 	}, []);
 
-	function showErrorToast(message: string) {
+	const showErrorToast = useCallback((message: string) => {
 		toast.error(message, {
 			position: "top-right",
 			autoClose: 1000,
@@ -26,7 +26,7 @@ function useToast() {
 			progress: undefined,
 			theme: "dark",
 		});
-	}
+	}, []);
 
 	return {
 		showGeneralToast,

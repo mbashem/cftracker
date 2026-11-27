@@ -33,19 +33,6 @@
     font-variant-numeric: tabular-nums;
 }
 
-.practice-date .btn {
-    white-space: nowrap;
-}
-
-.practice-date-picker-input {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    opacity: 0;
-    pointer-events: none;
-}
-
-.practice-notes textarea {
+.practice-notes-input {
     resize: vertical;
 }

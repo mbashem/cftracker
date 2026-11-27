@@ -1,5 +1,8 @@
-import { useEffect, useId, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useId, useState, type ReactNode } from "react";
 import CustomModal, { type CustomModalProps } from "./CustomModal";
+import Button from "./Button";
+import Form from "./forms/Form";
+import Input from "./forms/Input/Input";
 
 interface Props extends Omit<CustomModalProps, "children"> {
     label: string;
@@ -19,8 +22,7 @@ export default function TextPromptDialog({
     const [error, setError] = useState<string>();
     useEffect(() => setValue(initialValue), [initialValue]);
 
-    async function submit(event: FormEvent<HTMLFormElement>, close: () => void) {
-        event.preventDefault();
+    async function submit(close: () => void) {
         if (pending) return;
         setPending(true);
         setError(undefined);
@@ -41,24 +43,23 @@ export default function TextPromptDialog({
             onOpen?.();
         }}>
             {({ closeModal }) => (
-                <form onSubmit={event => void submit(event, closeModal)}>
+                <Form onSubmit={() => submit(closeModal)}>
                     <div className="d-flex align-items-center justify-content-between">
                         <label htmlFor={inputId}>{label}</label>
                         {renderFieldAction?.(closeModal)}
                     </div>
-                    <input
-                        className="form-control"
+                    <Input
                         type="text"
                         id={inputId}
                         placeholder={placeholder}
                         value={value}
-                        onChange={event => setValue(event.target.value)}
+                        onValueChange={setValue}
                         readOnly={pending}
                         required
                     />
                     {error && <p role="alert" className="theme-text-danger mt-2 mb-0">{error}</p>}
-                    <button type="submit" className={modal.theme.btnPrimary + " mt-2"} disabled={pending}>{submitLabel}</button>
-                </form>
+                    <Button type="submit" variant="primary" className="mt-2" disabled={pending}>{submitLabel}</Button>
+                </Form>
             )}
         </CustomModal>
     );

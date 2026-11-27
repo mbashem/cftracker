@@ -1,9 +1,11 @@
 import { faCopy, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import type { List } from "../../../types/list";
-import type Theme from "../../../util/Theme";
-import ButtonPopover from "../../common/ButtonPopover";
-import ConfirmationDialog from "../../common/ConfirmationDialog";
+import type { List } from "../../../../types/list";
+import type Theme from "../../../../util/Theme";
+import ButtonPopover from "../../../common/ButtonPopover";
+import ConfirmationDialog from "../../../common/ConfirmationDialog";
+import Button from "../../../common/Button";
+import Select from "../../../common/forms/Input/Select";
 
 interface Props {
     count: number;
@@ -28,27 +30,24 @@ export default function ListSelectionActions({
             <span className="align-self-center me-2">{count} selected</span>
             {copyLists.length > 0 && (
                 <>
-                    <select
-                        className="form-select w-auto"
+                    <Select
+                        className="w-auto"
                         aria-label="Choose Copy Destination"
                         value={copyDestination ?? ""}
                         disabled={busy}
-                        onChange={event => onCopyDestinationChange(event.target.value)}
-                    >
-                        <option value="">Choose Copy Destination</option>
-                        {copyLists.map(candidate => <option key={candidate.id} value={candidate.id}>{candidate.name}</option>)}
-                    </select>
+                        onValueChange={onCopyDestinationChange}
+                        options={[["", "Choose Copy Destination"], ...copyLists.map(candidate => [candidate.id, candidate.name] as const)]}
+                    />
                     <ButtonPopover label="Copy selected" theme={theme}>
                         <span className="d-inline-flex">
-                            <button
-                                type="button"
-                                className="btn btn-outline-secondary"
+                            <Button
+                                variant="outline"
                                 aria-label="Copy selected"
                                 disabled={busy || copyDestination === undefined}
                                 onClick={() => void onCopy().catch(onError)}
                             >
                                 <FontAwesomeIcon icon={faCopy} />
-                            </button>
+                            </Button>
                         </span>
                     </ButtonPopover>
                 </>
@@ -57,7 +56,7 @@ export default function ListSelectionActions({
                 button={<FontAwesomeIcon icon={faTrash} />}
                 buttonLabel="Delete selected problems"
                 buttonDisabled={busy}
-                buttonClassName="btn-outline-danger"
+                buttonVariant="outlineDanger"
                 title="Delete selected problems"
                 theme={theme}
                 description={`Remove ${count === 1 ? "the selected problem and its practice record" : `all ${count} selected problems and their practice records`} from this list?`}

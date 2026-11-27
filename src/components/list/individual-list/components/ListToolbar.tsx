@@ -1,13 +1,15 @@
 import { faFileExport, faFileImport, faPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import type Theme from "../../../util/Theme";
-import ButtonPopover from "../../common/ButtonPopover";
-import CustomModal from "../../common/CustomModal";
-import LabeledButtonGroup from "../../common/LabeledButtonGroup";
-import SearchField from "../../common/SearchField";
-import type { ListDetails } from "../useListPage";
+import type Theme from "../../../../util/Theme";
+import ButtonPopover from "../../../common/ButtonPopover";
+import Button from "../../../common/Button";
+import Select from "../../../common/forms/Input/Select";
+import CustomModal from "../../../common/CustomModal";
+import LabeledButtonGroup from "../../../common/LabeledButtonGroup";
+import SearchField from "../../../common/SearchField";
+import type { ListDetails } from "../useIndividualListPage";
 import ListCsvImport from "./ListCsvImport";
-import { HELP_OPTIONS, STATUS_OPTIONS } from "./practiceFields";
+import { HELP_OPTIONS, STATUS_OPTIONS } from "../practiceFields";
 
 interface Props {
     theme: Theme;
@@ -35,41 +37,35 @@ export default function ListToolbar({ theme, busy, filters, onFilterChange, onAd
             </div>
             <label>
                 Filter by status
-                <select className="form-select" value={filters.status} onChange={event => onFilterChange({ status: event.target.value })}>
-                    <option value="">All statuses</option>
-                    <option value="unset">Unset</option>
-                    {STATUS_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-                </select>
+                <Select value={filters.status} onValueChange={status => onFilterChange({ status })}
+                    options={[["", "All statuses"], ["unset", "Unset"], ...STATUS_OPTIONS]} />
             </label>
             <label>
                 Filter by help
-                <select className="form-select" value={filters.help} onChange={event => onFilterChange({ help: event.target.value })}>
-                    <option value="">All help levels</option>
-                    <option value="unset">Unrecorded</option>
-                    {HELP_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-                </select>
+                <Select value={filters.help} onValueChange={help => onFilterChange({ help })}
+                    options={[["", "All help levels"], ["unset", "Unrecorded"], ...HELP_OPTIONS]} />
             </label>
-            <button type="button" className={theme.btn} onClick={onAddProblem}>
+            <Button theme={theme} onClick={onAddProblem}>
                 <FontAwesomeIcon icon={faPlus} /> Add Problem
-            </button>
+            </Button>
             <LabeledButtonGroup label="CSV" theme={theme}>
                 <CustomModal
                     button={<FontAwesomeIcon icon={faFileImport} />}
                     buttonLabel="Import CSV"
                     buttonPopover="Import CSV"
                     buttonDisabled={busy}
-                    buttonClassName="btn-outline-secondary"
+                    buttonVariant="outline"
                     title="Import practice records"
                     theme={theme}
                     size="lg"
                     onOpen={onImportOpen}
                 >
-                    <ListCsvImport state={csvImport} busy={busy} />
+                    <ListCsvImport state={csvImport} busy={busy} theme={theme} />
                 </CustomModal>
                 <ButtonPopover label="Export CSV" theme={theme}>
-                    <button type="button" className="btn btn-outline-secondary" aria-label="Export CSV" onClick={onExport}>
+                    <Button variant="outline" aria-label="Export CSV" onClick={onExport}>
                         <FontAwesomeIcon icon={faFileExport} />
-                    </button>
+                    </Button>
                 </ButtonPopover>
             </LabeledButtonGroup>
         </div>

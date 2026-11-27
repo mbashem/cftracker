@@ -1,11 +1,12 @@
 import { useState, type ReactNode } from "react";
 import CustomModal, { type CustomModalProps } from "./CustomModal";
+import Button, { type ButtonVariant } from "./Button";
 
 interface Props extends Omit<CustomModalProps, "children"> {
     description?: ReactNode;
     confirmLabel: string;
     cancelLabel?: string;
-    cancelClassName?: string;
+    cancelVariant?: ButtonVariant;
     confirmDisabled?: boolean;
     onConfirm: () => Promise<boolean | void>;
     onConfirmed?: () => void;
@@ -13,7 +14,7 @@ interface Props extends Omit<CustomModalProps, "children"> {
 }
 
 export default function ConfirmationDialog({
-    description, confirmLabel, cancelLabel = "Cancel", cancelClassName = "btn btn-secondary",
+    description, confirmLabel, cancelLabel = "Cancel", cancelVariant = "secondary",
     confirmDisabled, onConfirm, onConfirmed, onError, onOpen, ...modal
 }: Props) {
     const [pending, setPending] = useState(false);
@@ -45,10 +46,10 @@ export default function ConfirmationDialog({
                     {description && <p>{description}</p>}
                     {error && <p role="alert" className="theme-text-danger">{error}</p>}
                     <div className="d-flex gap-2">
-                        <button type="button" className={modal.theme.btnDanger} disabled={pending || confirmDisabled} onClick={() => void confirm(closeModal)}>
+                        <Button variant="danger" disabled={pending || confirmDisabled} onClick={() => void confirm(closeModal)}>
                             {confirmLabel}
-                        </button>
-                        <button type="button" className={cancelClassName} onClick={closeModal}>{cancelLabel}</button>
+                        </Button>
+                        <Button variant={cancelVariant} onClick={closeModal}>{cancelLabel}</Button>
                     </div>
                 </>
             )}

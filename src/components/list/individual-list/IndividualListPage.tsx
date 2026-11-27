@@ -1,20 +1,20 @@
 import { useRef } from "react";
 import type Theme from "../../../util/Theme";
 import Loading from "../../common/Loading";
-import type { ListDetails } from "../useListPage";
-import ListPracticeTable from "./ListPracticeTable";
-import ListSelectionActions from "./ListSelectionActions";
-import ListToolbar from "./ListToolbar";
-import "../../common/IconButton.css";
-import "./IndividualListPage.css";
+import type { List } from "../../../types/list";
+import ListPracticeTable from "./components/ListPracticeTable";
+import ListSelectionActions from "./components/ListSelectionActions";
+import ListToolbar from "./components/ListToolbar";
+import useIndividualListPage from "./useIndividualListPage";
 
 interface Props {
-  details: ListDetails;
+  listId: number;
+  lists: readonly List[];
   theme: Theme;
-  onAddProblem: () => void;
 }
 
-export default function IndividualListPage({ details, theme, onAddProblem }: Props) {
+export default function IndividualListPage({ listId, lists, theme }: Props) {
+  const details = useIndividualListPage(listId, lists);
   const { list, visible, problemsById, busy } = details;
   const selectionControl = useRef<HTMLInputElement>(null);
 
@@ -29,7 +29,7 @@ export default function IndividualListPage({ details, theme, onAddProblem }: Pro
         busy={busy}
         filters={details.filters}
         onFilterChange={details.changeFilters}
-        onAddProblem={onAddProblem}
+        onAddProblem={details.addProblem}
         csvImport={details.csvImport}
         onImportOpen={details.resetCsvImport}
         onExport={details.downloadCsv}

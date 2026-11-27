@@ -2,7 +2,6 @@ import {
     PRACTICE_STATUS_LABELS, PRACTICE_HELP_LABELS,
     type PracticeFields, type PracticeStatus, type PracticeHelp,
 } from "../../../types/list";
-import { Verdict, type default as Submission } from "../../../types/CF/Submission";
 
 export const LIST_CAPACITY = 1_000;
 export const MAX_ACTIVE_SECONDS = 2_147_483_647;
@@ -58,16 +57,6 @@ export function parseLocalSolvedOn(value: string) {
         throw new Error("Enter a valid local solve date and time.");
     }
     return utcTimestamp(date);
-}
-
-export function codeforcesStatuses(submissions: readonly Submission[]) {
-    const statuses = new Map<string, PracticeStatus>();
-    for (const submission of submissions) {
-        const id = submission.problem.id;
-        if (submission.verdict === Verdict.OK) statuses.set(id, "solved");
-        else if (!statuses.has(id)) statuses.set(id, "attempted");
-    }
-    return statuses;
 }
 
 export function practiceError({ solvedOn, timeSpent, notes }: PracticeFields) {

@@ -106,8 +106,8 @@ const combineSubmissions = createSelector(
   }
 );
 
-function useSubmissionsStore({ skip = false }: { skip?: boolean } = {}) {
-  const { sharedProblems } = useSharedProblemsStore({ skip });
+function useSubmissionsStore() {
+  const { sharedProblems } = useSharedProblemsStore();
   const userSubmissions = useAppSelector((state) => state.userSubmissions);
   const submissionData = combineSubmissions(userSubmissions.submissionsByHandle);
   const rawSubmissions = hydrateSubmissions(submissionData);

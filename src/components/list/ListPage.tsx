@@ -2,6 +2,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { faEdit } from "@fortawesome/free-regular-svg-icons";
 import Loading from "../common/Loading";
+import Button from "../common/Button";
 import ConfirmationDialog from "../common/ConfirmationDialog";
 import TextPromptDialog from "../common/TextPromptDialog";
 import IndividualListPage from "./individual-list/IndividualListPage";
@@ -16,10 +17,8 @@ function ListPage() {
     error,
     listClicked,
     createNewList,
-    addButtonClicked,
     updateListName,
     deleteListButtonClicked,
-    details,
   } = useListPage();
 
   return (
@@ -30,9 +29,9 @@ function ListPage() {
         <div className="flex-grow-1" style={{ minWidth: 0 }}>
           <div role="group" aria-label="Lists" className="d-flex flex-wrap align-items-start gap-2">
             {lists.map(list => (
-              <button key={list.id} type="button" className={`btn btn-secondary text-wrap text-break ${activeList?.id === list.id ? 'active' : ''}`} style={{ maxWidth: '100%' }} aria-pressed={activeList?.id === list.id} onClick={() => listClicked(list.name)}>
+              <Button key={list.id} variant="secondary" className={`text-wrap text-break ${activeList?.id === list.id ? 'active' : ''}`} style={{ maxWidth: '100%' }} aria-pressed={activeList?.id === list.id} onClick={() => listClicked(list.name)}>
                 {list.name}
-              </button>
+              </Button>
             ))}
           </div>
         </div>
@@ -41,7 +40,7 @@ function ListPage() {
           <TextPromptDialog
             button={<FontAwesomeIcon icon={faPlus} />}
             buttonLabel="Create new list"
-            buttonClassName="btn-ghost"
+            buttonVariant="ghost"
             title="Create New List"
             theme={theme}
             label="List Name"
@@ -56,7 +55,7 @@ function ListPage() {
               key={activeList.id}
               button={<FontAwesomeIcon icon={faEdit} />}
               buttonLabel="Edit list"
-              buttonClassName="btn-ghost"
+              buttonVariant="ghost"
               title={`Update ${activeList.name}:`}
               theme={theme}
               label="Enter New Name"
@@ -68,12 +67,12 @@ function ListPage() {
                 <ConfirmationDialog
                   button={<FontAwesomeIcon icon={faTrash} />}
                   buttonLabel="Delete list"
-                  buttonClassName="btn-ghost btn-ghost-danger"
+                  buttonVariant="ghostDanger"
                   title={`Do you want to delete ${activeList.name}?`}
                   theme={theme}
                   confirmLabel="Yes"
                   cancelLabel="No"
-                  cancelClassName={theme.btnPrimary}
+                  cancelVariant="primary"
                   onConfirm={deleteListButtonClicked}
                   onConfirmed={close}
                 />
@@ -83,7 +82,7 @@ function ListPage() {
         )}
       </div>
       <div className="pt-3">
-        {activeList && <IndividualListPage key={activeList.id} details={details} theme={theme} onAddProblem={addButtonClicked} />}
+        {activeList && <IndividualListPage key={activeList.id} listId={activeList.id} lists={lists} theme={theme} />}
       </div>
     </div>
   );

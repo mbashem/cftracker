@@ -1,11 +1,15 @@
-import type { Ref } from "react";
-import type Problem from "../../../types/CF/Problem";
-import { PRACTICE_STATUS_LABELS, type ListItem, type PracticeFields, type PracticeStatus } from "../../../types/list";
-import type Theme from "../../../util/Theme";
-import { getProblemUrl } from "../../../util/util";
-import Table, { type TableColumn } from "../../common/Table";
+import { useMemo, type Ref } from "react";
+import type Problem from "../../../../types/CF/Problem";
+import { PRACTICE_STATUS_LABELS, type ListItem, type PracticeFields, type PracticeStatus } from "../../../../types/list";
+import type Theme from "../../../../util/Theme";
+import { getProblemUrl } from "../../../../util/util";
+import ExternalLink from "../../../common/ExternalLink";
+import Table, { type TableColumn } from "../../../common/Table";
+import Checkbox from "../../../common/forms/Input/Checkbox";
+import Select from "../../../common/forms/Input/Select";
 import PracticeFieldCell from "./PracticeFieldCell";
-import { formatActiveMinutes, formatLocalSolvedOn, HELP_OPTIONS, STATUS_OPTIONS } from "./practiceFields";
+import { formatActiveMinutes, formatLocalSolvedOn, HELP_OPTIONS, STATUS_OPTIONS } from "../practiceFields";
+import "./ListPracticeTable.css";
 
 interface Props {
     items: readonly ListItem[];
@@ -21,38 +25,31 @@ interface Props {
     onError: (error: unknown) => void;
 }
 
+const getProblemKey = (item: ListItem) => item.problemId;
+
 export default function ListPracticeTable({
     items, selection, problemsById, theme, busy, selectionControl, effectiveStatus,
     onSelectVisible, onSelectItem, onSave, onError,
 }: Props) {
-    const statusBackgrounds = {
-        solved: theme.bgSuccess,
-        attempted: theme.bgDanger,
-        in_progress: theme.bgInProgress,
-        not_started: "",
-    };
-    const columns: TableColumn<ListItem>[] = [
+    const columns = useMemo<TableColumn<ListItem>[]>(() => [
         {
             id: "selection",
             columnClassName: "practice-column-selection",
             header: (
-                <input
+                <Checkbox
                     ref={selectionControl}
-                    type="checkbox"
-                    className="form-check-input m-0"
+                    className="m-0"
                     aria-label="Select visible problems"
                     disabled={items.length === 0}
                     checked={items.length > 0 && items.every(item => selection.has(item.problemId))}
-                    onChange={onSelectVisible}
+                    onCheckedChange={onSelectVisible}
                 />
             ),
             renderCell: ({ problemId }) => (
-                <input
-                    className="form-check-input"
-                    type="checkbox"
+                <Checkbox
                     aria-label={`Select ${problemId}`}
                     checked={selection.has(problemId)}
-                    onChange={event => onSelectItem(problemId, event.target.checked)}
+                    onCheckedChange={checked => onSelectItem(problemId, checked)}
                 />
             ),
         },
@@ -68,7 +65,7 @@ export default function ListPracticeTable({
             header: "Name",
             renderCell: ({ problemId }) => {
                 const problem = problemsById.get(problemId);
-                return problem && <a href={getProblemUrl(problem.contestId, problem.index)} target="_blank" rel="noreferrer">{problem.name}</a>;
+                return problem && <ExternalLink href={getProblemUrl(problem.contestId, problem.index)}>{problem.name}</ExternalLink>;
             },
         },
         {
@@ -78,17 +75,22 @@ export default function ListPracticeTable({
             renderCell: item => {
                 const status = effectiveStatus(item);
                 const statusLabel = status === undefined ? "Unset" : PRACTICE_STATUS_LABELS[status];
+                const statusBackground = {
+                    solved: theme.bgSuccess,
+                    attempted: theme.bgDanger,
+                    in_progress: theme.bgInProgress,
+                    not_started: "",
+                }[status ?? "not_started"];
                 return (
-                    <select
-                        className={`form-select form-select-sm ${statusBackgrounds[status ?? "not_started"]}`}
+                    <Select
+                        compact
+                        className={statusBackground}
                         aria-label={`Status for ${item.problemId}`}
                         value={item.status ?? ""}
                         disabled={busy}
-                        onChange={event => void onSave(item.problemId, "status", event.target.value).catch(onError)}
-                    >
-                        <option value="">{item.status == null ? `${statusLabel} (CF)` : "Use CF status"}</option>
-                        {STATUS_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-                    </select>
+                        onValueChange={value => void onSave(item.problemId, "status", value).catch(onError)}
+                        options={[["", item.status == null ? `${statusLabel} (CF)` : "Use CF status"], ...STATUS_OPTIONS]}
+                    />
                 );
             },
         },
@@ -97,16 +99,14 @@ export default function ListPracticeTable({
             header: "Help used",
             columnClassName: "practice-column-help",
             renderCell: ({ problemId, helpUsed }) => (
-                <select
-                    className="form-select form-select-sm"
+                <Select
+                    compact
                     aria-label={`Help used for ${problemId}`}
                     value={helpUsed ?? ""}
                     disabled={busy}
-                    onChange={event => void onSave(problemId, "helpUsed", event.target.value).catch(onError)}
-                >
-                    <option value="">Unrecorded</option>
-                    {HELP_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-                </select>
+                    onValueChange={value => void onSave(problemId, "helpUsed", value).catch(onError)}
+                    options={[["", "Unrecorded"], ...HELP_OPTIONS]}
+                />
             ),
         },
         {
@@ -147,7 +147,7 @@ export default function ListPracticeTable({
                 <PracticeFieldCell field="notes" problemId={problemId} value={notes} busy={busy} save={value => onSave(problemId, "notes", value)} />
             ),
         },
-    ];
+    ], [busy, effectiveStatus, items, onError, onSave, onSelectItem, onSelectVisible, problemsById, selection, selectionControl, theme]);
 
-    return <Table theme={theme} className="practice-table align-middle" columns={columns} rows={items} getRowKey={item => item.problemId} />;
+    return <Table theme={theme} className="practice-table align-middle" columns={columns} rows={items} getRowKey={getProblemKey} />;
 }

@@ -1,4 +1,4 @@
-import type { Key, ReactNode } from "react";
+import { memo, type Key, type ReactNode } from "react";
 import type Theme from "../../util/Theme";
 
 export interface TableColumn<Row> {
@@ -17,12 +17,13 @@ interface Props<Row> {
     getRowKey: (row: Row) => Key;
     theme: Theme;
     className?: string;
+    compact?: boolean;
 }
 
-export default function Table<Row>({ columns, rows, getRowKey, theme, className = "" }: Props<Row>) {
+function Table<Row>({ columns, rows, getRowKey, theme, className = "", compact }: Props<Row>) {
     return (
         <div className="table-responsive">
-            <table className={`table table-bordered m-0 ${theme.table} ${className}`}>
+            <table className={`table table-bordered m-0 ${theme.table}${compact ? " table-sm" : ""} ${className}`}>
                 <colgroup>
                     {columns.map(column => <col key={column.id} className={column.columnClassName} />)}
                 </colgroup>
@@ -48,3 +49,5 @@ export default function Table<Row>({ columns, rows, getRowKey, theme, className 
         </div>
     );
 }
+
+export default memo(Table) as typeof Table;

@@ -1,4 +1,5 @@
 import type Theme from "../../util/Theme";
+import Input from "./forms/Input/Input";
 
 interface Props {
     label: string;
@@ -11,15 +12,15 @@ interface Props {
 
 export default function SearchField({ label, name, placeholder, value, onSearch, theme }: Props) {
     return (
-        <input
-            className={`form-control mr-sm-2 ${theme.bgText}`}
+        <Input
+            className={`mr-sm-2 ${theme.bgText}`}
             type="search"
             aria-label={label}
             placeholder={placeholder}
             name={name}
             autoComplete="on"
             value={value}
-            onChange={event => onSearch(event.target.value)}
+            onValueChange={onSearch}
         />
     );
 }

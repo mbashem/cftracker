@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { SearchKeys } from "../../util/constants";
 import useSubmissionsStore from "../../data/hooks/useSubmissionsStore";
+import { selectProblemSubmissionStatuses } from "../../data/hooks/problemSubmissionStatuses";
 import useTheme from "../../data/hooks/useTheme";
 import useList from "../../data/hooks/useListApi";
 import useAppSearchParams from "../../hooks/useSearchParam";
@@ -168,22 +169,7 @@ function useProblemPage() {
 		return dates;
 	}, [contests]);
 
-	const { solved, attempted } = useMemo(() => {
-		const solved = new Set<string>();
-		const attempted = new Set<string>();
-		for (const submission of submissions) {
-			if (
-				(submittedAfter !== undefined && submission.creationTimeSeconds < submittedAfter)
-				|| (submittedBefore !== undefined && submission.creationTimeSeconds >= submittedBefore)
-			) continue;
-
-			const problemId = submission.contestId.toString() + submission.index;
-			if (submission.verdict === Verdict.OK) solved.add(problemId);
-			else attempted.add(problemId);
-		}
-
-		return { solved, attempted };
-	}, [submittedAfter, submittedBefore, submissions]);
+	const { solved, attempted } = selectProblemSubmissionStatuses(submissions, submittedAfter, submittedBefore);
 
 	const getProblemStatus = useCallback(
 		(problem: Problem) => {

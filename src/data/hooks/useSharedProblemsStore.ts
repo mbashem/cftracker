@@ -25,8 +25,8 @@ function getSharedProblemErrorMessage(error: unknown): string | undefined {
 	return "Error processing shared problems";
 }
 
-function useSharedProblemsStore({ skip = false }: { skip?: boolean } = {}) {
-	const { data, error, isLoading } = codeforcesApi.useGetSharedProblemsQuery(undefined, { skip });
+function useSharedProblemsStore() {
+	const { data, error, isLoading } = codeforcesApi.useGetSharedProblemsQuery();
 	const problems = hydrateSharedProblems(data);
 
 	const sharedProblems = useMemo<HydratedSharedProblemListState>(() => ({

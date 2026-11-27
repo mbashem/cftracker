@@ -9,7 +9,7 @@ import useTheme from "../../data/hooks/useTheme";
 import { SearchKeys } from "../../util/constants";
 import { Path } from "../../util/route/path";
 import Dialog from "../common/Dialog";
-import "../common/IconButton.css";
+import Button from "../common/Button";
 
 export default function ProblemListPicker({ problemId }: { problemId?: string }) {
   const { isAuthenticated, user } = useUser();
@@ -64,16 +64,16 @@ export default function ProblemListPicker({ problemId }: { problemId?: string })
   const choices = (
     <section id={panelId} aria-label="Choose a list" className={theme.bgText}>
       {isFetching && <p role="status">Loading your lists…</p>}
-      {error !== undefined && <div role="alert">Could not load your lists. <button type="button" className={`btn ${theme.btn}`} onClick={() => { void refetch(); }}>Retry</button></div>}
+      {error !== undefined && <div role="alert">Could not load your lists. <Button theme={theme} onClick={() => { void refetch(); }}>Retry</Button></div>}
       {message && <p role="status">{message}</p>}
       {addError && <p role="alert">{addError}</p>}
       {pending && <p role="status">Adding {problemId}…</p>}
       <div className="d-flex flex-wrap align-items-start gap-2">
         {lists?.map(list => (
-          <button key={list.id} type="button" aria-pressed={selectedId === String(list.id)}
+          <Button key={list.id} theme={theme} aria-pressed={selectedId === String(list.id)}
             aria-label={problemId === undefined ? undefined : `${added.has(list.id) ? "Added" : "Add"} ${problemId} to ${list.name}`}
-            disabled={pending || added.has(list.id)} className={`btn text-wrap text-break ${theme.btn}`} style={{ maxWidth: "100%" }}
-            onClick={() => { void selectList(list.id, list.name); }}>{list.name}{added.has(list.id) ? " ✓" : ""}</button>
+            disabled={pending || added.has(list.id)} className="text-wrap text-break" style={{ maxWidth: "100%" }}
+            onClick={() => { void selectList(list.id, list.name); }}>{list.name}{added.has(list.id) ? " ✓" : ""}</Button>
         ))}
       </div>
       {!isFetching && error === undefined && lists?.length === 0 && <p>You have no lists yet. <Link to={Path.Lists}>Create a list</Link> to start adding problems.</p>}
@@ -83,13 +83,13 @@ export default function ProblemListPicker({ problemId }: { problemId?: string })
   return (
     <div className={problemId === undefined ? "container p-0 pt-3" : "d-inline-block"}>
       <div className="d-flex align-items-start flex-wrap gap-2">
-        <button type="button" className={`btn ${problemId === undefined ? theme.btn : "btn-ghost"}`} aria-label={problemId === undefined ? undefined : `Add ${problemId} to a list`}
+        <Button theme={theme} variant={problemId === undefined ? undefined : "ghost"} aria-label={problemId === undefined ? undefined : `Add ${problemId} to a list`}
           title={problemId === undefined ? undefined : `Add ${problemId} to a list`}
           aria-expanded={open} aria-controls={panelId} onClick={() => setOpen(value => !value)}>
           <FontAwesomeIcon icon={problemId === undefined ? faListUl : faPlus} />
           {problemId === undefined && (selectedId ? " Change list" : " Add problems to a list")}
-        </button>
-        {selectedId && <button type="button" className={`btn ${theme.btn}`} onClick={() => deleteSearchParam(SearchKeys.ListId)}>Stop adding to list</button>}
+        </Button>
+        {selectedId && <Button theme={theme} onClick={() => deleteSearchParam(SearchKeys.ListId)}>Stop adding to list</Button>}
       </div>
       {problemId !== undefined ? (
         <Dialog title={`Add ${problemId} to a list`} theme={theme} open={open} onClose={() => setOpen(false)}>

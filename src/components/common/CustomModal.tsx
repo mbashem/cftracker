@@ -5,7 +5,7 @@ import Theme from "../../util/Theme";
 import React from "react";
 import ButtonPopover from "./ButtonPopover";
 import Dialog from "./Dialog";
-import "./IconButton.css";
+import Button, { type ButtonVariant } from "./Button";
 
 interface childrenProps {
   closeModal: () => void;
@@ -18,7 +18,7 @@ export interface CustomModalProps {
   button?: React.ReactNode;
   buttonLabel?: string;
   buttonPopover?: string;
-  buttonClassName?: string;
+  buttonVariant?: ButtonVariant;
   buttonDisabled?: boolean;
   onOpen?: () => void;
   size?: "sm" | "lg" | "xl";
@@ -38,9 +38,9 @@ function CustomModal(props: CustomModalProps) {
   }
 
   const button = (
-    <button type="button" aria-label={props.buttonLabel} aria-disabled={props.buttonDisabled || undefined} className={"btn " + (props.buttonClassName ?? props.theme.btn)} onClick={handleShow}>
+    <Button aria-label={props.buttonLabel} aria-disabled={props.buttonDisabled || undefined} variant={props.buttonVariant} theme={props.theme} onClick={handleShow}>
       {props.button === undefined ? <FontAwesomeIcon icon={faFilter} /> : props.button}
-    </button>
+    </Button>
   );
 
   return (
