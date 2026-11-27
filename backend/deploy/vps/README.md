@@ -141,8 +141,9 @@ install `python3` and `curl` if absent. No Go compiler is needed on the VPS.
 
 ## 4. Build and transfer a release
 
-**Mac, repository root:** Docker Desktop must be running, with buildx available;
-Python 3 is required. Review the code first. Builds contact image registries and
+**Mac, repository root:** Docker Desktop must be running with buildx available.
+The build also requires Python 3 and the [backend Go toolchain](../../go.mod).
+Review the code first. Builds contact image registries and
 Go dependency servers, consume disk, and may be slow under Apple Silicon emulation.
 Choose a new tag per release. The build uses working-tree content; `BUILD.txt`
 records its commit and dirty status, not a guarantee of a clean checkout.
@@ -154,7 +155,8 @@ scp -r /tmp/cftracker-release-001 DEPLOY_USER@VPS_HOST:~/
 
 The bundle renders `backend/compose.production.yml` into image-only `compose.yml`.
 It contains two amd64 images in `images.tar`, that generated manifest,
-initialization SQL, `server.sh`, its `server_helpers.py` companion, this runbook,
+initialization SQL, `server.sh`, its `server_helpers.py` companion, the generated
+`nginx-request-body.conf`, this runbook,
 build metadata, and SHA-256 checksums. Keep the server script and its Python
 companion together. Local preparation logic lives separately in
 `bundle_helpers.py`; neither Bash script embeds Python source.
@@ -228,9 +230,8 @@ logs/chat or run Compose config without `--quiet` (it can print environment data
 
 ## 6. Deploy or update
 
-On the first rollout with the 8 MiB list-write limit, update the existing
-NGINX HTTPS site and reload it using the [NGINX steps](#7-nginx-dns-ipv6-and-https)
-before verifying list operations through the public API.
+Ensure the existing NGINX HTTPS site can forward full list batches. Follow the
+[NGINX steps](#7-nginx-dns-ipv6-and-https) when the release changes the body cap.
 
 ### One-command updates from the build machine
 
@@ -430,16 +431,17 @@ sudo bash server.sh nginx api.example.com
 ```
 
 This installs both `listen 80` and `listen [::]:80`, sets the proxy request body
-limit to 8 MiB, validates the configuration, and reloads NGINX. It refuses to
-overwrite an existing site, especially one modified by Certbot. Access logging is off
-to avoid OAuth codes/query strings in access logs. See `backend/LOGGING.md` before
+limit from the same setting as the bundled API, validates the configuration,
+and reloads NGINX. It refuses to overwrite an existing site, especially one
+modified by Certbot. Access logging is off to avoid OAuth codes and query
+strings in access logs. See `backend/LOGGING.md` before
 enabling logging; other logs still require access controls and retention.
 
-For an **existing** site, add or update `client_max_body_size 8m;` in the HTTPS
-server block that proxies the API in `/etc/nginx/sites-available/cftracker`.
-Keep the existing Certbot settings. Validate the edit and reload from the VPS
-with `sudo nginx -t && sudo systemctl reload nginx`. The Go backend still enforces
-16 KiB on ordinary routes and 8 MiB on list collection writes.
+For an **existing** site, run the `nginx-config` preview above from the new
+release bundle. Apply its `client_max_body_size` directive to the HTTPS server
+block that proxies the API in `/etc/nginx/sites-available/cftracker`. Keep the
+existing Certbot settings. Validate the edit and reload from the VPS with
+`sudo nginx -t && sudo systemctl reload nginx`.
 
 The original temporary hostname was `cftracker.test`. Routing was tested before
 DNS using `curl -H 'Host: cftracker.test' http://127.0.0.1/health/ready`. A 502 was

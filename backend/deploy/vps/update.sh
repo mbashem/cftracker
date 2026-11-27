@@ -97,7 +97,7 @@ main() {
   if [[ ${1:-} == --help || ${1:-} == -h ]]; then
     echo 'Usage: bash backend/deploy/vps/update.sh SSH_TARGET API_HOSTNAME RELEASE'
     echo 'Runs build, upload, local database backup, migrations, replacement, and health checks.'
-    echo 'Requires an existing installation, Docker Desktop, SSH key access, and noninteractive sudo.'
+    echo 'Requires an existing installation, Docker Desktop, Go, SSH key access, and noninteractive sudo.'
     echo 'Optional: CFTRACKER_BUILD_ROOT and CFTRACKER_BACKUP_DIR (local, outside cloud sync).'
     return 0
   fi
@@ -110,7 +110,7 @@ main() {
   [[ $ssh_target =~ ^[a-zA-Z0-9_][a-zA-Z0-9_.-]*(@[a-zA-Z0-9_][a-zA-Z0-9_.-]*)?$ ]] || fail 'Use an SSH alias or USER@HOST without extra options.'
   [[ $hostname =~ ^[a-zA-Z0-9]([a-zA-Z0-9.-]*[a-zA-Z0-9])?$ && $hostname == *.* ]] || fail 'Use a DNS hostname without URL, port, or path.'
   [[ $release =~ ^[a-zA-Z0-9_][a-zA-Z0-9_.-]{0,127}$ && $release != latest ]] || fail 'Use a specific Docker tag, not latest.'
-  for dependency in bash docker python3 ssh scp shasum git; do
+  for dependency in bash docker python3 go ssh scp shasum git; do
     command -v "$dependency" >/dev/null || fail "Missing dependency: $dependency"
   done
   # Defaults match the manual workflow. Local backups must stay outside cloud sync.

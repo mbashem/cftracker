@@ -16,6 +16,10 @@ import (
 )
 
 func main() {
+	if len(os.Args) == 2 && os.Args[1] == "--print-list-collection-body-mib" {
+		fmt.Println(configs.ListCollectionBodyMiB)
+		return
+	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	err := run(ctx)
 	stop()

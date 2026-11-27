@@ -2,11 +2,12 @@ package configs
 
 import "math/bits"
 
-// List storage policy is configured together so capacity and rank spacing cannot drift apart.
+// List capacity, rank spacing, and collection request size policy.
 const (
-	MaxItemsPerList           = 1000
-	ListPositionGap     int64 = 1 << 30
-	ListMinimumGapFloor int64 = 1 << 10
+	MaxItemsPerList             = 1000
+	ListPositionGap       int64 = 1 << 30
+	ListMinimumGapFloor   int64 = 1 << 10
+	ListCollectionBodyMiB       = 4
 )
 
 // MinimumListPositionGap reserves enough integer positions for a maximum-sized incoming batch.

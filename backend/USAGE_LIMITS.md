@@ -4,7 +4,7 @@ These controls complement the [rate limiter](RATE_LIMITING.md). Rate limits boun
 
 | Resource | Limit | Enforcement | Failure response |
 | --- | --- | --- | --- |
-| Incoming request body | 16 KiB; 8 MiB for the three collection-write routes | Central middleware before route handlers | `413` with `Request body exceeds 16 KiB` |
+| Incoming request body | [Ordinary and list collection caps](#request-bodies) | Central middleware before route handlers | `413` with the applicable size limit |
 | List name | 1–100 Unicode characters after trimming whitespace | Creation/rename handlers and repository writes | `400`; HTTP input validation uses `Invalid format` |
 | Lists per account | 20 | Transactional repository creation | `409` with `maximum of 20 lists per account reached` |
 | Items per list | 1,000 | Transactional repository creation | `409` with `maximum of 1000 items per list reached` |
@@ -13,13 +13,15 @@ The list capacity is configured in [`configs/lists.go`](configs/lists.go), along
 
 ## Request bodies
 
-[`LimitRequestBody`](internal/middlewares/body_limit.go) is installed once by the central route registrar, before registering health, authentication, or protected API routes. It applies regardless of whether rate limiting is supplied. The matched collection bulk/move/remove POST routes select an 8 MiB cap before reading the body. Ordinary health requests have no body and pass normally.
+[`LimitRequestBody`](internal/middlewares/body_limit.go) is installed once by the central route registrar, before registering health, authentication, or protected API routes. It applies regardless of whether rate limiting is supplied. The collection add, move, and removal POST routes use `ListCollectionBodyMiB` from [`configs/lists.go`](configs/lists.go). The release bundle generates the NGINX directive from that same constant. Other routes use `RequestBodyBytes` from the [limits package](internal/limits/limits.go).
 
-The middleware reads the bounded body through `http.MaxBytesReader` before any JSON decoder runs, then supplies the buffered bytes to the handler. It does not rely on `Content-Length`: oversized chunked bodies and excessive whitespace after an otherwise valid JSON value also receive `413`. Exactly 16,384 bytes is allowed on ordinary routes; the three collection-write routes allow exactly 8 MiB. Other body-read failures return `400` without exposing transport details. Bulk add also checks the item count while decoding records and rejects an oversized array with `400` before decoding the first item over the limit.
+The middleware reads the bounded body through `http.MaxBytesReader` before any JSON decoder runs, then supplies the buffered bytes to the handler. A request at the exact cap passes the body check. Oversized bodies, including chunked requests and valid JSON padded with whitespace, receive `413` with the applicable cap in the message. Other body-read failures return `400` without exposing transport details. Bulk add also checks the item count while decoding records and rejects an oversized array with `400` before decoding the first item over the limit.
+
+For 1,000 records with 100 code points per problem ID and 512 per note, four-byte UTF-8 characters use about 2.47 MiB including the other practice fields and JSON structure. The frontend sends compact JSON with `JSON.stringify`. Its longest single-character escapes can take six bytes per code point, bringing the conservative estimate to about 3.64 MiB. API clients must fit their encoded request within the collection cap.
 
 The cap limits bytes, not request duration or concurrent connections. The [HTTP server's read deadlines](README.md#http-server-lifecycle) separately bound slow headers and bodies; hosting proxy protections remain a deployment concern.
 
-For a body of `n` bytes and cap `B`, the middleware's read takes `O(min(n, B + 1))` CPU work and `O(min(n, B + 1))` buffer space, allowing for allocation overhead. With the fixed 16 KiB cap, oversized inputs have bounded work and memory. Network waiting time is separate from this computational complexity. The handler's subsequent JSON decoding makes another pass over the bounded buffer.
+For a body of `n` bytes and cap `B`, the middleware's read takes `O(min(n, B + 1))` CPU work and `O(min(n, B + 1))` buffer space, allowing for allocation overhead. Network waiting time is separate from this computational complexity. The handler's subsequent JSON decoding makes another pass over the bounded buffer.
 
 The wrappers preserve the request body's `io.ReadCloser` interface: `http.MaxBytesReader` enforces the byte cap; `io.ReadAll` produces a byte slice; `bytes.NewReader` reads that slice without copying it; `io.NopCloser` adds the `Close` method required by `Request.Body`. Creating the last two wrappers takes constant time and space.
 
@@ -91,4 +93,4 @@ If existing records exceed these bounds, reads still return them in full. New in
 
 Follow [TESTING.md](TESTING.md) for commands and disposable test-database requirements. The integration tests seed oversized records deliberately using SQL to verify that reads return stored data without enforcing write-time limits again. Application creation and rename paths enforce their respective invariants.
 
-Collection addition checks capacity up front using the stored count plus every input occurrence. After an admitted batch, only successful insertions increase the stored count; duplicate occurrences are reported separately. Collection writes support at most 1,000 entries, receive an 8 MiB body cap, and use the existing authenticated write-rate budget. See [list operations](LIST_OPERATIONS.md).
+Collection addition checks capacity up front using the stored count plus every input occurrence. After an admitted batch, only successful insertions increase the stored count; duplicate occurrences are reported separately. Collection writes support at most 1,000 entries within the [body cap](#request-bodies) and use the existing authenticated write-rate budget. See [list operations](LIST_OPERATIONS.md).

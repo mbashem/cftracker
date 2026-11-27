@@ -416,4 +416,4 @@ When PostgreSQL runs on the host during local Docker development, use `host.dock
 DATABASE_URL=postgres://postgres:postgrespw@host.docker.internal:5432/cftracker?sslmode=disable
 ```
 
-List ordering and atomic bulk operations are documented in [LIST_OPERATIONS.md](LIST_OPERATIONS.md). Apply migrations through version 7 during a coordinated backend update with earlier item writers stopped. Version 7 backfills an item counter maintained by repository add/remove transactions. Collection-write routes have an 8 MiB body cap; other routes retain 16 KiB.
+List ordering and atomic bulk operations are documented in [LIST_OPERATIONS.md](LIST_OPERATIONS.md). Apply migrations through version 7 during a coordinated backend update with earlier item writers stopped. Version 7 backfills an item counter maintained by repository add/remove transactions. See [request body limits](USAGE_LIMITS.md#request-bodies) for ordinary and collection-write routes.

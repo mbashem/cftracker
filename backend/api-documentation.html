@@ -336,7 +336,7 @@ Set-Cookie: cftracker_github_oauth_state=[challenge]; ...</code></pre>
           <p>The sole add API accepts 1–1,000 records. Optional top-level <code>before_problem_id</code> places all new records before one existing item in request order; omitted or null prepends. No after-anchor input is accepted. Missing anchors return 404. Existing or repeated problems are skipped individually and reported in duplicate_problem_ids; other insertions succeed with 200. Before insertion, the stored count plus the full input length must fit quota, treating all inputs as new; otherwise the entire request returns 409. Only successful insertions increase the stored count. Other failures roll back all new rows. There is no existing-ID lookup. Positions are backend-assigned using maximum integer spacing between bounds or the configured initial gap for an empty list; unknown fields are rejected. Optional practice fields follow the contract below. The frontend sends a one-item array for a single addition.</p>
           <pre><code>HTTP 200
 {"added":[{"list_id":5,"problem_id":"1900A","position":1073741824,"status":"attempted"}],"order":[{"problem_id":"1900A","position":1073741824}],"rebalanced":false}</code></pre>
-          <p>The example abbreviates the saved item; all practice fields and timestamps are returned. Errors: 400 invalid input, 404 inaccessible list, 409 quota exceeded, 413 body over 8 MiB, 500 unexpected failure. The old single-add PUT endpoint is removed. See <a href="LIST_OPERATIONS.md">List operations</a> for full contracts.</p>
+          <p>The example abbreviates the saved item; all practice fields and timestamps are returned. Errors: 400 invalid input, 404 inaccessible list, 409 quota exceeded, 413 body over the configured cap, 500 unexpected failure. The old single-add PUT endpoint is removed. See <a href="LIST_OPERATIONS.md">List operations</a> for full contracts.</p>
         </article>
         <article class="endpoint" id="item-practice" data-method="PATCH" data-path="/api/v1/lists/:listId/item/:itemId">
           <h3>PATCH /api/v1/lists/:listId/item/:itemId</h3><span class="auth">Bearer token · JSON body</span>
@@ -379,14 +379,14 @@ Set-Cookie: cftracker_github_oauth_state=[challenge]; ...</code></pre>
             <tr><td>403</td><td>A browser origin may be rejected by CORS middleware.</td><td>Check deployment origin configuration; this need not be JSON.</td></tr>
             <tr><td>404</td><td>User/list missing, list not owned, or route unregistered</td><td>Stop using stale resources; verify the versioned path.</td></tr>
             <tr><td>409</td><td>List/item quota or concurrent Codeforces handle change</td><td>Free capacity or refresh the profile as appropriate.</td></tr>
-            <tr><td>413</td><td><code>Request body exceeds 16 KiB</code></td><td>Reduce the full body size, including trailing whitespace.</td></tr>
+            <tr><td>413</td><td>The request body exceeds the applicable size limit.</td><td>Reduce the full body size, including trailing whitespace.</td></tr>
             <tr><td>429</td><td><code>Too many requests. Try again later.</code></td><td>Respect the integer seconds in <code>Retry-After</code>.</td></tr>
             <tr><td>500</td><td>Database, token-generation, or some provider failures</td><td>Show the failure; check current state before retrying a write.</td></tr>
             <tr><td>502</td><td>Rejected or malformed upstream response</td><td>Report provider failure and allow a later retry.</td></tr>
             <tr><td>503</td><td>Readiness check failed</td><td>Wait for database connectivity; do not interpret this as schema verification.</td></tr>
           </tbody>
         </table></div>
-        <p>All request bodies are capped at 16 KiB before decoding. Failure to read a body returns <code>400 {"error":"Failed to read request body"}</code>. Handler validation rejects malformed and missing required fields; unknown JSON fields are not a documented strict-schema guarantee.</p>
+        <p>The API enforces <a href="USAGE_LIMITS.md#request-bodies">request body caps</a> before decoding, with a larger cap for list collection add, move, and removal. Failure to read a body returns <code>400 {"error":"Failed to read request body"}</code>. Handler validation rejects malformed and missing required fields; unknown JSON fields are not a documented strict-schema guarantee.</p>
         <h3 id="rate-limits">Rate limits</h3>
         <div class="table-wrap"><table>
           <caption>Default token-bucket refill rates, not fixed-window request counts. Operators can override them.</caption>

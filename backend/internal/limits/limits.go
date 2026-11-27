@@ -10,10 +10,11 @@ import (
 )
 
 const (
-	RequestBodyBytes   = 16 * 1024
-	ListNameCharacters = 100
-	ListsPerUser       = 20
-	ItemsPerList       = configs.MaxItemsPerList
+	RequestBodyBytes               = 16 * 1024
+	ListCollectionRequestBodyBytes = configs.ListCollectionBodyMiB * 1024 * 1024
+	ListNameCharacters             = 100
+	ListsPerUser                   = 20
+	ItemsPerList                   = configs.MaxItemsPerList
 )
 
 var (
