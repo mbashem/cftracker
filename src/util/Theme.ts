@@ -49,6 +49,7 @@ export default class Theme {
   bg: string;
   bgSuccess: string;
   bgDanger: string;
+  bgInProgress: string;
   btnPrimary: string;
 
   btn: string;
@@ -69,6 +70,7 @@ export default class Theme {
         this.bg = "bg-dark";
         this.bgSuccess = "bg-success";
         this.bgDanger = "bg-danger";
+        this.bgInProgress = "bg-inprogress";
 
         this.btn = "btn btn-dark";
         this.btnClose = "btn-close btn-close-white";
@@ -85,6 +87,7 @@ export default class Theme {
         this.bg = "bg-light";
         this.bgSuccess = "bg-success-light";
         this.bgDanger = "bg-danger-light";
+        this.bgInProgress = "bg-inprogress-light";
 
         this.btn = "btn btn-light";
         this.btnClose = "btn-close";

@@ -17,6 +17,7 @@ import {
 
 export const codeforcesApi = createApi({
 	reducerPath: 'codeforcesApi',
+	keepUnusedDataFor: Infinity,
 	baseQuery: fetchBaseQuery({ baseUrl: "https://codeforces.com/api/" }),
 	endpoints: (builder) => ({
 		getProblems: builder.query<ProblemData[], void>({

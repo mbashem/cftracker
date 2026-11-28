@@ -210,10 +210,16 @@ Neither route requires authentication. Both disable caching with `Cache-Control:
 
 | Method and path | Input | Success | Failure |
 | --- | --- | --- | --- |
-| `GET /api/v1/auth/github/login` | Origin/Referer supplies the frontend origin; exact origin must be allowlisted. | `307` redirect to GitHub; sets the OAuth state cookie. | `400` invalid/missing frontend origin; `500` if state generation fails. |
+| `GET /api/v1/auth/github/login` | Origin/Referer supplies the frontend origin; exact origin must be allowlisted. Optional `validate_only=true` checks it without starting OAuth. | Validation: `200 {"status":"ready"}`, no cookie/redirect. Normal navigation: `307` to GitHub and sets the OAuth state cookie. | `400` invalid/missing frontend origin; `500` if state generation fails on normal navigation. |
 | `GET /api/v1/auth/github/callback` | Query `code` and `state`; matching state cookie. | `200 {"user": User, "token": "JWT"}` | `400` invalid/missing state; `500` token exchange, user fetch/decode, persistence, or JWT generation failure; `502` rejected GitHub user response. |
 
 Aliases: `GET /v1/auth/github/login` and `GET /v1/auth/github/callback` have identical behavior.
+
+The frontend validates login before leaving the page, surfacing API failures or
+a fallback for unreadable CORS/network failures. It then navigates to the normal
+login URL so cookie creation remains a top-level browser operation. Both requests
+use the login rate-limit budget. Login responses disable caching. See the
+[login configuration](README.md#configuration) for deployment ordering.
 
 ### Protected user routes
 
@@ -242,7 +248,7 @@ These mappings describe backend behavior; a nonexistent account may produce a di
 
 ### Protected list routes
 
-Every route requires a JWT. For list-specific operations, a missing list and a list owned by someone else both return `404 {"error":"List does not exist"}`. Database failures return `500` with an operation-specific message. Invalid numeric `listId` parameters return `400 {"error":"Invalid list Id"}`.
+Every route requires a JWT. For list-specific operations, a missing list and a list owned by someone else both return `404 {"error":"List does not exist"}`. Practice PATCH instead uses `404 {"error":"Item does not exist"}` for all missing/inaccessible item or list cases. Database failures return `500` with an operation-specific message. Invalid numeric `listId` parameters return `400 {"error":"Invalid list Id"}`.
 
 | Method and path | Input | Success |
 | --- | --- | --- |
@@ -251,12 +257,15 @@ Every route requires a JWT. For list-specific operations, a missing list and a l
 | `GET /api/v1/lists/:listId` | List ID | `200 {"message":"List fetched successfully", "list": List, "items": ListItem[]}` |
 | `PUT /api/v1/lists/:listId` | `{"name":"Updated name"}` | `200 {"message":"List name updated"}` |
 | `DELETE /api/v1/lists/:listId` | List ID | `200 {"message":"List deleted"}` |
-| `PUT /api/v1/lists/:listId/item` | `{"problem_id":"1900A", "position":0}` | `201 {"message":"Successfully added item to list", "item": ListItem}` |
-| `DELETE /api/v1/lists/:listId/item/:itemId` | `itemId` is the problem ID string, **not** a numeric row ID. | `200 {"message":"Item deleted from list"}` |
+| `POST /api/v1/lists/:listId/items` | `{"items":[{"problem_id":"1900A"}]}` | `200` with added records, duplicate IDs, new positions (all positions after rebalance), and rebalance flag |
+| `PATCH /api/v1/lists/:listId/item/:itemId` | Supplied practice fields; `null` clears | `200 {"message":"Item updated", "item": ListItem}` |
+| `POST /api/v1/lists/:listId/items/remove` | `{"problem_ids":["1900A"]}` | `200` with removed/absent IDs and empty `order` |
 
-Names are required and trimmed; empty names and names longer than 100 Unicode characters return `400 {"error":"Invalid format"}`. Adding an item requires a nonempty trimmed `problem_id` (binding maximum 100 characters) and an explicitly supplied integer `position >= 0`; invalid bodies return the same `400`. All request bodies are capped at 16 KiB before JSON decoding; oversized bodies return `413`. URL-encode problem IDs when constructing item paths.
+Names are required and trimmed; empty names and names longer than 100 Unicode characters return `400 {"error":"Invalid format"}`. Adding items requires an array of 1–1,000 records with nonempty trimmed problem IDs (maximum 100 Unicode code points). The backend assigns positions; supplied position properties are rejected. The middleware enforces [request body caps](USAGE_LIMITS.md#request-bodies) before JSON decoding and returns `413` for oversized bodies. URL-encode problem IDs when constructing item paths.
 
-An item PUT inserts a row; it is not an upsert. Duplicate `(list_id, problem_id)` or duplicate `(user_id, name)` constraints currently become generic `500` operation failures when below quota. Quota failures return `409` and take precedence when capacity is exhausted. Removing an absent item from an existing owned list succeeds. Accounts can hold at most 20 lists, each with at most 1,000 items, enforced by transactional parent-row locks and bounded counts. Names contain 1–100 Unicode characters after trimming. Reads return full names and complete collections without read-time limits. Collection sizes rely on write-time quotas; existing data and direct SQL/imports must satisfy those invariants. See [usage limits](USAGE_LIMITS.md). There is no registered reorder route, pagination, problem metadata lookup, or Codeforces ownership requirement for using lists. List IDs are parsed as signed 64-bit integers; zero/negative IDs normally reach the repository and produce `404`.
+Bulk addition skips duplicate problems individually and retains successful insertions, returning duplicate occurrences in `duplicate_problem_ids`. It does not pre-query existing problems. Before any insertion, the locked stored item count plus the complete input length must fit capacity, without discounting duplicates. Otherwise the entire request returns `409`. Admitted batches increment the counter only by rows actually inserted; other failures still roll back the operation. Duplicate list names still produce generic `500` failures below quota. New list items exceeding quota return `409`. Removing an absent item from an existing owned list succeeds. Accounts can hold at most 20 lists, each with at most 1,000 items. Transactional parent-row locks serialize quota checks; account list creation uses a bounded count, while item creation reads the internal `lists.item_count` added by migration 7. Repository additions/removals update that counter in the same transaction as their actual item changes, without triggers. The counter is not part of the list JSON model. Names contain 1–100 Unicode characters after trimming. Reads return full names and complete collections without read-time limits. Collection sizes rely on write-time quotas; existing data and direct SQL/imports must satisfy those invariants and maintain the stored item count. See [usage limits](USAGE_LIMITS.md). Group moves to a shared destination are supported; there is no pagination, problem metadata lookup, or Codeforces ownership requirement for using lists. List IDs are parsed as signed 64-bit integers; zero/negative IDs normally reach the repository and produce `404`.
+
+Add-item accepts nullable `status`, `help_used`, `solved_on`, `time_spent` (active seconds), and `notes`. The general item PATCH currently accepts these practice fields; future editable fields can extend the same endpoint and repository `Update` method. It builds assignments and parameters only for supplied fields and explicitly sets `updated_at = CURRENT_TIMESTAMP`. List item and ordering changes remain outside this part. The backend performs no CF initialization or submission fetching. See [practice records](PRACTICE_RECORDS.md) for enum values, validation, clearing semantics, examples, and repository boundaries.
 
 ### JSON models
 
@@ -282,11 +291,11 @@ There is no `cf_verified` field. A new account has empty Codeforces handles. The
 ```json
 {
   "list": {"id": 12, "user_id": 7, "name": "Practice", "created_at": "2026-10-09T12:00:00Z"},
-  "item": {"list_id": 12, "problem_id": "1900A", "position": 0, "created_at": "2026-10-09T12:01:00Z"}
+  "item": {"list_id": 12, "problem_id": "1900A", "position": 0, "created_at": "2026-10-09T12:01:00Z", "updated_at": "2026-10-09T12:01:00Z", "status": null, "help_used": null, "solved_on": null, "time_spent": null, "notes": null}
 }
 ```
 
-This example shows the two model shapes together, not a single endpoint response. Empty collections are `[]`. The API SQL does not guarantee list/item ordering. The frontend sorts items by position, then creation timestamp, then problem ID.
+This example shows the two model shapes together, not a single endpoint response. Empty collections are `[]`. List collections are ordered by ID; item collections by position, creation timestamp, then problem ID. The current frontend also sorts items by those item fields and ignores additive practice fields.
 
 ## GitHub authentication flow
 
@@ -488,20 +497,17 @@ sequenceDiagram
     participant Lists as Lists repository
     participant Items as Items repository
     participant DB as PostgreSQL
-    Client->>Auth: PUT /api/v1/lists/12/item with problem_id and position
+    Client->>Auth: POST /api/v1/lists/12/items with items array
     Auth->>API: Authenticated userId
-    API->>API: Parse listId; validate item JSON
-    API->>Items: Create(userId, item)
-    Items->>DB: INSERT SELECT FROM lists WHERE id=12 AND user_id=userId
-    alt List absent or belongs to someone else
-        DB-->>Items: No inserted row
-        Items-->>API: ErrListNotFound
-        API-->>Client: 404 List does not exist
-    else Owned list
-        DB-->>Items: Inserted item timestamp
-        Items-->>API: Item
-        API-->>Client: 201 item and message
-    end
+    API->>API: Parse listId; validate records
+    API->>Items: BulkAdd(userId, listId, items)
+    Items->>DB: Begin transaction; lock owned list and read stored item count
+    Items->>Items: Reject if stored count plus full input length exceeds quota
+    Items->>DB: Read optional anchor bounds
+    Items->>DB: Allocate ranks; insert with primary-key ON CONFLICT DO NOTHING
+    Items->>DB: Increase count by actual insertions; rescale if needed; commit
+    Items-->>API: Added records, duplicate IDs, order, rebalance flag
+    API-->>Client: 200 bulk result
     Client->>Auth: GET /api/v1/lists/12
     Auth->>API: Authenticated userId
     API->>Lists: GetById(userId, 12)
@@ -515,9 +521,9 @@ sequenceDiagram
     API-->>Client: 200 list, items, and message
 ```
 
-List rename/delete/read predicates include both `id` and `user_id`; fetching all lists filters by `user_id`. Item insertion selects from an owned list; item deletion joins the owning list; item reads use an owner-scoped left join so an empty owned list returns `[]` while an inaccessible list returns `404`. Deleting a list cascades to its items in PostgreSQL.
+List rename/delete/read predicates include both `id` and `user_id`; fetching all lists filters by `user_id`. Item insertion/deletion locks the owned list; practice updates join the owning list; item reads use an owner-scoped left join so an empty owned list returns `[]` while an inaccessible list returns `404`. Deleting a list cascades to its items and practice summaries in PostgreSQL.
 
-The list-with-items response uses two separate reads, not a transaction or a guaranteed consistent snapshot. Item positions are supplied by the client and are not unique. Inserting/deleting an item does not shift other positions. The internal `ReorderListItems` method uses a transaction and locks the owned list, but no HTTP handler exposes it. Frontend mutations invalidate the relevant RTK Query cache tags, causing active queries to refresh.
+The list-with-items response uses two separate reads, not a transaction or a guaranteed consistent snapshot. Item positions are backend-assigned sparse BIGINT values with a deferred per-list unique constraint. List item/order mutations lock the owned list and execute atomically. Group moves and bulk add/removal are exposed through collection routes; see [list operations](LIST_OPERATIONS.md). Frontend mutations invalidate the relevant RTK Query cache tags, causing active queries to refresh.
 
 ## Database model
 
@@ -549,9 +555,14 @@ classDiagram
     class ListItems {
         int list_id PK_FK
         varchar problem_id PK
-        int position
+        bigint position
         timestamp created_at
         timestamp updated_at
+        practice_status status
+        practice_help help_used
+        timestamptz solved_on
+        int time_spent
+        text notes
     }
     Users "1" --> "0..*" Lists : owns
     Lists "1" --> "0..*" ListItems : contains
@@ -563,8 +574,9 @@ classDiagram
 | `000002_create_users` | Users, unique GitHub ID, verified-handle default `''`, and automatic user `updated_at` trigger. |
 | `000003_create_lists` | User-owned lists; unique `(user_id, name)`; cascading user foreign key. |
 | `000004_create_list_items` | Composite primary key `(list_id, problem_id)`; cascading list foreign key. |
+| `000005_add_list_item_practice` | Nullable practice fields, status/help enums, and date/time/text constraints; existing entries remain uninitialized. |
 
-The expected current application migration version is `4`. Migration state is tracked in `schema_migrations`; table rollback targets and file checksums are in `migration_meta`. List and item timestamps have defaults but no automatic update trigger; user updates do have that trigger. There is no problems table, stored provider access token, persisted challenge token, or persisted verification boolean.
+The expected current application migration version is `5`. Migration state is tracked in `schema_migrations`; table rollback targets and file checksums are in `migration_meta`. List and item timestamps have defaults but no automatic update trigger; practice updates explicitly maintain the item's `updated_at` in SQL. User updates do have a timestamp trigger. There is no problems table, stored provider access token, persisted challenge token, or persisted verification boolean.
 
 The verified-handle schema is folded into migration 2 for the explicitly disposable backend database. A database created from the previous migration history needs the separately agreed recreation procedure; do not apply that assumption to the main application database or to future production data. Once this history is deployed/shared, follow the immutable migration workflow described in [MIGRATION_FLOW.md](MIGRATION_FLOW.md).
 
@@ -594,3 +606,5 @@ The service currently has no refresh/revocation API or background worker. This g
 To trace a route, start in its `*_routes.go`, follow the handler, then its injected repository/provider interface. Repository implementations contain the SQL and domain errors; handler helpers map those errors to HTTP responses. Providers contain external URLs, response decoding, and timeout handling. `cmd/api/main.go` shows which concrete implementations are wired together.
 
 For changes, update the route contract and relevant sequence here, implementation tests alongside the affected package, and integration tests when SQL or ownership behavior changes. Unit suites mock repository/provider boundaries; integration suites exercise real PostgreSQL and complete routed workflows with controlled providers. Use [TESTING.md](TESTING.md) for commands and safety requirements. Documentation changes alone do not require starting the API, contacting external providers, or modifying any database.
+
+See [list operations](LIST_OPERATIONS.md) for sparse ordering, group moves, bulk addition/removal, response reconciliation, limits, and migrations 6–7.

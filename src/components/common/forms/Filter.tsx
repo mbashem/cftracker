@@ -1,7 +1,8 @@
 import { faRandom, faRedo } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import Theme from "../../util/Theme";
-import { getRandomInteger } from "../../util/util";
+import Theme from "../../../util/Theme";
+import { getRandomInteger } from "../../../util/util";
+import SearchField from "./Input/SearchField";
 
 interface PropsType {
   children: React.ReactNode;
@@ -29,16 +30,13 @@ function Filter(props: PropsType) {
     <div className="menu">
       <ul className="navbar w-100 pt-3 mb-0 p-0 container d-flex justify-content-between list-unstyled">
         <li className="nav-item col-6">
-          <input
-            className={"form-control mr-sm-2 " + props.theme.bgText}
-            type="text"
+          <SearchField
+            label={props.searchPlaceHolder}
             placeholder={props.searchPlaceHolder}
             name={props.searchName}
-            autoComplete="on"
             value={props.search}
-            onChange={(e) => {
-              props.onSearch(e.target.value);
-            }}
+            onSearch={props.onSearch}
+            theme={props.theme}
           />
         </li>
         <li className="nav-item text-secondary">

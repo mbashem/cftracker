@@ -20,6 +20,13 @@ export const userApi = createApi({
 	reducerPath: 'userApi',
 	baseQuery: createBaseQuery(),
 	endpoints: (builder) => ({
+		/** Check frontend eligibility without creating OAuth state or following provider redirects. */
+		prepareGitHubLogin: builder.query<{ status: "ready" }, void>({
+			query: () => ({
+				url: "/auth/github/login", params: { validate_only: "true" }, method: "GET",
+				cache: "no-store", redirect: "error",
+			}),
+		}),
 		getProfile: builder.query<User, string>({
 			query: () => ({ url: "/user/profile", method: "GET" }),
 			transformResponse: (response: Pick<AuthenticationResponse, 'user'>, _meta, token): User => mapUser(response.user, token),
@@ -37,7 +44,7 @@ export const userApi = createApi({
 	}),
 });
 
-export const { useLazyAuthenticateQuery } = userApi
+export const { useLazyAuthenticateQuery, useLazyPrepareGitHubLoginQuery } = userApi
 
 function mapUser(user: AuthenticationResponse['user'], token: string): User {
 	return {

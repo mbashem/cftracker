@@ -1,7 +1,7 @@
 import { useEffect, useId, useMemo } from "react";
-import Theme from "../../util/Theme";
-import { clampNumber } from "../../util/util";
-import InputNumber from "./forms/Input/InputNumber";
+import Theme from "../../../util/Theme";
+import { clampNumber } from "../../../util/util";
+import InputNumber from "../forms/Input/InputNumber";
 
 interface PaginationProps {
   perPage: number;

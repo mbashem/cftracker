@@ -1,5 +1,4 @@
 import { useEffect, useId, useRef, useState } from "react";
-import { Modal } from "react-bootstrap";
 import { Link } from "react-router";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faListUl, faPlus } from "@fortawesome/free-solid-svg-icons";
@@ -9,7 +8,8 @@ import useAppSearchParams from "../../hooks/useSearchParam";
 import useTheme from "../../data/hooks/useTheme";
 import { SearchKeys } from "../../util/constants";
 import { Path } from "../../util/route/path";
-import "../common/IconButton.css";
+import Dialog from "../common/dialogs/Dialog";
+import Button from "../common/buttons/Button";
 
 export default function ProblemListPicker({ problemId }: { problemId?: string }) {
   const { isAuthenticated, user } = useUser();
@@ -46,10 +46,10 @@ export default function ProblemListPicker({ problemId }: { problemId?: string })
     try {
       const list = await api.getListWithItems(listId);
       if (generation.current !== currentGeneration) return;
-      const exists = list.items.some(item => item.problemId === problemId);
+      let exists = list.items.some(item => item.problemId === problemId);
       if (!exists) {
-        const position = list.items.reduce((max, item) => Math.max(max, item.position), -1) + 1;
-        await api.addProblemToList(listId, problemId, position);
+        const result = await api.addProblemsToList(listId, [problemId]);
+        exists = result.duplicateProblemIds.includes(problemId);
       }
       if (generation.current !== currentGeneration) return;
       setAdded(current => new Set(current).add(listId));
@@ -64,16 +64,16 @@ export default function ProblemListPicker({ problemId }: { problemId?: string })
   const choices = (
     <section id={panelId} aria-label="Choose a list" className={theme.bgText}>
       {isFetching && <p role="status">Loading your lists…</p>}
-      {error !== undefined && <div role="alert">Could not load your lists. <button type="button" className={`btn ${theme.btn}`} onClick={() => { void refetch(); }}>Retry</button></div>}
+      {error !== undefined && <div role="alert">Could not load your lists. <Button theme={theme} onClick={() => { void refetch(); }}>Retry</Button></div>}
       {message && <p role="status">{message}</p>}
       {addError && <p role="alert">{addError}</p>}
       {pending && <p role="status">Adding {problemId}…</p>}
       <div className="d-flex flex-wrap align-items-start gap-2">
         {lists?.map(list => (
-          <button key={list.id} type="button" aria-pressed={selectedId === String(list.id)}
+          <Button key={list.id} theme={theme} aria-pressed={selectedId === String(list.id)}
             aria-label={problemId === undefined ? undefined : `${added.has(list.id) ? "Added" : "Add"} ${problemId} to ${list.name}`}
-            disabled={pending || added.has(list.id)} className={`btn text-wrap text-break ${theme.btn}`} style={{ maxWidth: "100%" }}
-            onClick={() => { void selectList(list.id, list.name); }}>{list.name}{added.has(list.id) ? " ✓" : ""}</button>
+            disabled={pending || added.has(list.id)} className="text-wrap text-break" style={{ maxWidth: "100%" }}
+            onClick={() => { void selectList(list.id, list.name); }}>{list.name}{added.has(list.id) ? " ✓" : ""}</Button>
         ))}
       </div>
       {!isFetching && error === undefined && lists?.length === 0 && <p>You have no lists yet. <Link to={Path.Lists}>Create a list</Link> to start adding problems.</p>}
@@ -83,19 +83,18 @@ export default function ProblemListPicker({ problemId }: { problemId?: string })
   return (
     <div className={problemId === undefined ? "container p-0 pt-3" : "d-inline-block"}>
       <div className="d-flex align-items-start flex-wrap gap-2">
-        <button type="button" className={`btn ${problemId === undefined ? theme.btn : "btn-ghost"}`} aria-label={problemId === undefined ? undefined : `Add ${problemId} to a list`}
+        <Button theme={theme} variant={problemId === undefined ? undefined : "ghost"} aria-label={problemId === undefined ? undefined : `Add ${problemId} to a list`}
           title={problemId === undefined ? undefined : `Add ${problemId} to a list`}
           aria-expanded={open} aria-controls={panelId} onClick={() => setOpen(value => !value)}>
           <FontAwesomeIcon icon={problemId === undefined ? faListUl : faPlus} />
           {problemId === undefined && (selectedId ? " Change list" : " Add problems to a list")}
-        </button>
-        {selectedId && <button type="button" className={`btn ${theme.btn}`} onClick={() => deleteSearchParam(SearchKeys.ListId)}>Stop adding to list</button>}
+        </Button>
+        {selectedId && <Button theme={theme} onClick={() => deleteSearchParam(SearchKeys.ListId)}>Stop adding to list</Button>}
       </div>
       {problemId !== undefined ? (
-        <Modal show={open} onHide={() => setOpen(false)} contentClassName={theme.bgText}>
-          <Modal.Header closeButton><Modal.Title>Add {problemId} to a list</Modal.Title></Modal.Header>
-          <Modal.Body>{open && choices}</Modal.Body>
-        </Modal>
+        <Dialog title={`Add ${problemId} to a list`} theme={theme} open={open} onClose={() => setOpen(false)}>
+          {open && choices}
+        </Dialog>
       ) : open && <div className="border rounded p-3 mt-2">{choices}</div>}
     </div>
   );

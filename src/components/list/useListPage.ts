@@ -1,12 +1,9 @@
 import useTheme from "../../data/hooks/useTheme";
 import useToast from "../../hooks/useToast";
-import { SearchKeys } from "../../util/constants";
+import { EMPTY_ARRAY, SearchKeys } from "../../util/constants";
 import useAppSearchParams from "../../hooks/useSearchParam";
-import { Path } from "../../util/route/path";
 import useListApi from "../../data/hooks/useListApi";
 import { isDefined } from "../../util/util";
-import { EMPTY_ARRAY } from "../../util/constants";
-import useAppNavigation from "../../hooks/useAppNavigation";
 
 function useListPage() {
 	const { theme } = useTheme();
@@ -14,7 +11,6 @@ function useListPage() {
 	const api = useListApi();
 	const { data: lists, error, isLoading } = api.useGetAllListsQuery();
 	const { getSearchParam, updateSearchParam, deleteSearchParam } = useAppSearchParams();
-	const { navigateTo } = useAppNavigation();
 	const listId = getSearchParam(SearchKeys.ListId);
 	const activeList = lists?.find(list => list.id.toString() === listId);
 
@@ -56,14 +52,6 @@ function useListPage() {
 		}
 	}
 
-	function addButtonClicked() {
-		if (activeList === undefined) return;
-		navigateTo(Path.PROBLEMS, {
-			[SearchKeys.ListId]: activeList.id,
-			[SearchKeys.UseFilterStorage]: false,
-		});
-	}
-
 	async function deleteListButtonClicked() {
 		if (activeList === undefined) return false;
 		try {
@@ -86,7 +74,6 @@ function useListPage() {
 		createNewList,
 		error,
 		isLoading,
-		addButtonClicked,
 		updateListName,
 		deleteListButtonClicked,
 	};

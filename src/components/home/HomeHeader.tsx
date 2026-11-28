@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { faFlask } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { AddButton, CloseButton } from "../common/IconButton";
-import TextInputForm from "../common/TextInputForm";
+import { AddButton, CloseButton } from "../common/buttons/IconButton";
+import TextInputForm from "../common/forms/TextInputForm";
 
 interface HomeHeaderProps {
   handles: readonly string[];

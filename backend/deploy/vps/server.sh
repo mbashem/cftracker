@@ -26,8 +26,24 @@ check_http_redirect() {
   [[ $response == "301 https://$1/health/ready" || $response == "308 https://$1/health/ready" ]] || \
     fail 'HTTP must permanently redirect to the configured HTTPS readiness URL.'
 }
+nginx_body_limit() {
+  local snippet="$directory/nginx-request-body.conf"
+  local directive size
+  if [[ -f $directory/../../cmd/api/main.go ]]; then
+    size=$(cd "$directory/../.." && go run ./cmd/api --print-list-collection-body-mib) || return
+    directive="client_max_body_size ${size}m;"
+  elif [[ -r $snippet ]]; then
+    directive=$(< "$snippet")
+  else
+    fail 'Missing nginx-request-body.conf. Use the complete release bundle.'
+  fi
+  [[ $directive =~ ^client_max_body_size\ [1-9][0-9]*m\;$ ]] || fail 'Invalid NGINX request body limit.'
+  printf '%s\n' "$directive"
+}
 nginx_config() {
   hostname_valid "${1:-}"
+  local body_limit
+  body_limit=$(nginx_body_limit) || return
   # Prepare an HTTP proxy site for the supplied hostname and the local API.
   # IPv4 and IPv6 listeners must route the same hostname, including ACME challenges.
   # Forward only the host proxy's client-IP value, not a client-supplied header.
@@ -37,6 +53,7 @@ server {
     listen [::]:80;
     server_name $1;
     access_log off;
+    $body_limit
     location / {
         proxy_pass http://127.0.0.1:8080;
         proxy_http_version 1.1;
@@ -118,9 +135,10 @@ main() {
   # Allow help and NGINX configuration preview without administrative privileges.
   case "$command" in
     help|--help|-h)
-      echo 'Commands: init | deploy --local-backup-confirmed | check HOST | nginx-config HOST | nginx HOST | https HOST'
+      echo 'Commands: init | deploy --local-backup-confirmed | check HOST | nginx-body-limit | nginx-config HOST | nginx HOST | https HOST'
       echo 'init prompts for OAuth settings; never use it to rotate existing credentials.'
       exit 0 ;;
+    nginx-body-limit) nginx_body_limit; exit 0 ;;
     nginx-config) nginx_config "${1:-}"; exit 0 ;;
     init|deploy|check|nginx|https) ;;
     *) fail 'Unknown command; run help.' ;;
@@ -158,7 +176,9 @@ main() {
       hostname_valid "${1:-}"
       site=/etc/nginx/sites-available/cftracker
       [[ ! -e $site && ! -L $site && ! -e /etc/nginx/sites-enabled/cftracker && ! -L /etc/nginx/sites-enabled/cftracker ]] || fail 'Site exists; edit manually to preserve existing HTTPS configuration.'
-      nginx_config "$1" > "$site"
+      local rendered_site
+      rendered_site=$(nginx_config "$1")
+      printf '%s\n' "$rendered_site" > "$site"
       # NGINX configuration contains no secrets and needs to be readable by the service.
       chmod 644 "$site"
       ln -s "$site" /etc/nginx/sites-enabled/cftracker

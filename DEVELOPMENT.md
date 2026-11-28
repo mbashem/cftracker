@@ -166,6 +166,13 @@ disabled. After changing the flag manually, reload the page. A future rollout
 selector can save the same boolean once; access checks never reset it, and no
 random rollout is currently enabled.
 
+GitHub sign-in validates the calling frontend through an uncached
+`/auth/github/login?validate_only=true` request before navigating away. Rejected
+origins and network/CORS failures show a frontend message instead of opening a
+raw API error page. Successful validation keeps the existing top-level login
+navigation and cookie behavior. Deploy backend validation support before this
+frontend behavior; the check does not replace the backend's origin allowlist.
+
 Root frontend envs currently read by the app:
 
 | Variable | Required | Used for |

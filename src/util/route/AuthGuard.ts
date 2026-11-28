@@ -2,7 +2,7 @@ import React from 'react';
 import useUser from '../../hooks/useUser';
 import { Navigate } from 'react-router';
 import { Path } from './path';
-import Loading from '../../components/common/Loading';
+import Loading from '../../components/common/display/Loading';
 
 interface AuthGuardProps {
 	children: React.ReactNode;

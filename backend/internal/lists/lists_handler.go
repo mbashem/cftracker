@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/mbashem/cftracker/backend/internal/limits"
@@ -24,17 +23,13 @@ type listNameRequest struct {
 	Name string `json:"name" binding:"required"`
 }
 
-type addListItemRequest struct {
-	ProblemId string `json:"problem_id" binding:"required,max=100"`
-	Position  *int   `json:"position" binding:"required,gte=0"`
-}
-
 const (
 	failedToCreateList    API_MESSAGE = "Failed to create list"
 	failedToUpdateList    API_MESSAGE = "Failed to update list"
 	failedToFindList      API_MESSAGE = "Failed to find the list"
 	failedToDeleteList    API_MESSAGE = "Failed to delete list"
 	failedToAddItemToList API_MESSAGE = "Failed to add item to list"
+	failedToUpdateItem    API_MESSAGE = "Failed to update item"
 	failedToDeleteItem    API_MESSAGE = "Failed to delete item from list"
 	failedToGetListItems  API_MESSAGE = "Failed to get list items"
 
@@ -43,15 +38,15 @@ const (
 	invalidFormat   API_MESSAGE = "Invalid format"
 
 	listDoesNotExist API_MESSAGE = "List does not exist"
+	itemDoesNotExist API_MESSAGE = "Item does not exist"
 
 	listDeleted     API_MESSAGE = "List deleted"
-	itemDeleted     API_MESSAGE = "Item deleted from list"
 	listReordered   API_MESSAGE = "List reordered"
 	listCreated     API_MESSAGE = "List created"
 	listFound       API_MESSAGE = "List fetched successfully"
 	listsFound      API_MESSAGE = "Lists fetched successfully"
 	listNameUpdated API_MESSAGE = "List name updated"
-	itemAdded       API_MESSAGE = "Successfully added item to list"
+	itemUpdated     API_MESSAGE = "Item updated"
 )
 
 func NewAPI(listRepository ListRepository, listItemsRepository items.ListItemRepository) *API {
@@ -138,60 +133,31 @@ func (api *API) GetAllLists(context *gin.Context) {
 	context.JSON(http.StatusOK, gin.H{"message": listsFound, "lists": lists})
 }
 
-// Add a problem to a list
-func (api *API) AddToListHandler(context *gin.Context) {
-	userId := context.GetInt64(middlewares.UserIdKey)
-
+// UpdateItemHandler accepts a nonempty strict PATCH, preserving omitted fields and clearing explicit nulls.
+func (api *API) UpdateItemHandler(context *gin.Context) {
 	listId, valid := parseListId(context)
 	if !valid {
 		return
 	}
-
-	var request addListItemRequest
-	if err := context.ShouldBindJSON(&request); err != nil {
+	var patch items.ItemPatch
+	if !decodeListJSON(context, &patch) {
+		return
+	}
+	if patch.Empty() {
 		context.JSON(http.StatusBadRequest, gin.H{"error": invalidFormat})
 		return
 	}
-	request.ProblemId = strings.TrimSpace(request.ProblemId)
-	if request.ProblemId == "" {
-		context.JSON(http.StatusBadRequest, gin.H{"error": invalidFormat})
+	if err := patch.Normalize(); err != nil {
+		writeListRepositoryError(context, err, failedToUpdateItem)
 		return
 	}
-
-	item := items.ListItem{
-		ListId:    listId,
-		ProblemId: request.ProblemId,
-		Position:  *request.Position,
-	}
-	if err := api.listItemsRepository.Create(context.Request.Context(), userId, &item); err != nil {
-		writeListRepositoryError(context, err, failedToAddItemToList)
+	item, err := api.listItemsRepository.Update(context.Request.Context(),
+		context.GetInt64(middlewares.UserIdKey), listId, context.Param("itemId"), patch)
+	if err != nil {
+		writeListRepositoryError(context, err, failedToUpdateItem)
 		return
 	}
-
-	context.JSON(http.StatusCreated, gin.H{"message": itemAdded, "item": item})
-}
-
-// Delete a problem from a list
-func (api *API) DeleteFromListHandler(context *gin.Context) {
-	userId := context.GetInt64(middlewares.UserIdKey)
-
-	listId, valid := parseListId(context)
-	if !valid {
-		return
-	}
-
-	itemId := context.Param("itemId")
-
-	var item items.ListItem
-	item.ListId = listId
-	item.ProblemId = itemId
-
-	if err := api.listItemsRepository.Delete(context.Request.Context(), userId, &item); err != nil {
-		writeListRepositoryError(context, err, failedToDeleteItem)
-		return
-	}
-
-	context.JSON(http.StatusOK, gin.H{"message": itemDeleted})
+	context.JSON(http.StatusOK, gin.H{"message": itemUpdated, "item": item})
 }
 
 // Get list with items
@@ -227,6 +193,22 @@ func parseListId(context *gin.Context) (int64, bool) {
 }
 
 func writeListRepositoryError(context *gin.Context, err error, clientMessage API_MESSAGE) {
+	if errors.Is(err, items.ErrInvalidOperation) {
+		context.JSON(http.StatusBadRequest, gin.H{"error": items.ErrInvalidOperation.Error()})
+		return
+	}
+	if errors.Is(err, items.ErrOrderConflict) {
+		context.JSON(http.StatusConflict, gin.H{"error": items.ErrOrderConflict.Error()})
+		return
+	}
+	if errors.Is(err, items.ErrInvalidPractice) {
+		context.JSON(http.StatusBadRequest, gin.H{"error": items.ErrInvalidPractice.Error()})
+		return
+	}
+	if errors.Is(err, items.ErrItemNotFound) {
+		context.JSON(http.StatusNotFound, gin.H{"error": itemDoesNotExist})
+		return
+	}
 	if errors.Is(err, limits.ErrInvalidListName) {
 		context.JSON(http.StatusBadRequest, gin.H{"error": limits.ErrInvalidListName.Error()})
 		return
@@ -251,18 +233,3 @@ func writeListRepositoryError(context *gin.Context, err error, clientMessage API
 	)
 	context.JSON(http.StatusInternalServerError, gin.H{"error": clientMessage})
 }
-
-// Reorder problems in a list
-// func reorderListItemsHandler(c *gin.Context) {
-// 	listId, _ := strconv.ParseInt(c.Param("id"), 10, 64)
-// 	var newOrder []string
-// 	if err := c.ShouldBindJSON(&newOrder); err != nil {
-// 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-// 		return
-// 	}
-// 	if err := reorderListItems(listId, newOrder); err != nil {
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to reorder items"})
-// 		return
-// 	}
-// 	c.JSON(http.StatusOK, gin.H{"message": "List items reordered"})
-// }

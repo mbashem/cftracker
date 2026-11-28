@@ -34,12 +34,16 @@ func TestRouterAssemblyPreservesRoutesAndCORS(t *testing.T) {
 		{"allowed browser origin receives CORS headers", http.MethodGet, "/health/live", testFrontendOrigin, http.StatusOK},
 		{"unlisted browser origin is rejected", http.MethodGet, "/health/live", "https://unlisted.example.test", http.StatusForbidden},
 		{"authorization preflight is accepted", http.MethodOptions, "/api/v1/user/profile", testFrontendOrigin, http.StatusNoContent},
+		{"practice PATCH preflight is accepted", http.MethodOptions, "/api/v1/lists/1/item/1900A", testFrontendOrigin, http.StatusNoContent},
 	} {
 		t.Run(testCase.name, func(t *testing.T) {
 			request := httptest.NewRequest(testCase.method, testCase.path, nil)
 			request.Header.Set("Origin", testCase.origin)
 			if testCase.method == http.MethodOptions {
 				request.Header.Set("Access-Control-Request-Method", http.MethodGet)
+				if strings.Contains(testCase.path, "/item/") {
+					request.Header.Set("Access-Control-Request-Method", http.MethodPatch)
+				}
 				request.Header.Set("Access-Control-Request-Headers", "Authorization, Content-Type")
 			}
 			response := httptest.NewRecorder()
@@ -53,6 +57,9 @@ func TestRouterAssemblyPreservesRoutesAndCORS(t *testing.T) {
 				}
 				if testCase.method != http.MethodOptions && response.Header().Get("Access-Control-Expose-Headers") != "Retry-After" {
 					t.Fatal("router did not expose rate-limit retry headers")
+				}
+				if strings.Contains(testCase.path, "/item/") && !strings.Contains(response.Header().Get("Access-Control-Allow-Methods"), http.MethodPatch) {
+					t.Fatal("CORS preflight did not allow PATCH")
 				}
 			}
 		})

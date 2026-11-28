@@ -112,12 +112,15 @@ function useSubmissionsStore() {
   const submissionData = combineSubmissions(userSubmissions.submissionsByHandle);
   const rawSubmissions = hydrateSubmissions(submissionData);
   const submissions = calculateSubmissions(rawSubmissions, sharedProblems.problems);
+  const hasCompleteHistory = Object.keys(userSubmissions.submissionsByHandle).length > 0
+    && userSubmissions.loading === 0 && userSubmissions.error === undefined;
 
   return {
     error: userSubmissions.error,
     loading: userSubmissions.loading,
     submissions,
     rawSubmissions,
+    hasCompleteHistory,
   };
 }
 

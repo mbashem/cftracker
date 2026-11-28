@@ -3,7 +3,7 @@ import Theme, { ThemesType } from "../../src/util/Theme";
 import type Problem from "../../src/types/CF/Problem";
 import type Contest from "../../src/types/CF/Contest";
 import type Submission from "../../src/types/CF/Submission";
-import type { List, ListItem, ListWithItem } from "../../src/types/list";
+import type { List, ListWithItem, ListAddResult, ListRemoveResult } from "../../src/types/list";
 import { createList, createListItem } from "./listFixtures";
 
 interface FrontendMocks {
@@ -28,11 +28,12 @@ interface FrontendMocks {
   individualListLoading: boolean;
   individualListError: unknown;
   handleGithubCallback: Mock<(code: string, state: string) => Promise<void>>;
+  prepareGitHubLogin: Mock<() => Promise<string>>;
   createList: Mock<(name: string) => Promise<List>>;
   updateListName: Mock<(id: number, name: string) => Promise<void>>;
   deleteList: Mock<(id: number) => Promise<void>>;
-  addProblemToList: Mock<(id: number, problemId: string, position: number) => Promise<ListItem>>;
-  deleteProblemFromList: Mock<(id: number, problemId: string) => Promise<void>>;
+  addProblemsToList: Mock<(id: number, problemIds: string[]) => Promise<ListAddResult>>;
+  removeProblemsFromList: Mock<(id: number, problemIds: string[]) => Promise<ListRemoveResult>>;
   changeThemeMod: Mock<(theme: ThemesType) => void>;
   updateUsers: Mock<(handles: string) => void>;
   syncUserSubmissions: Mock<(wait?: boolean) => void>;
@@ -70,8 +71,9 @@ const createFrontendState = vi.hoisted(() => () => ({
 const frontend: FrontendMocks = vi.hoisted(() => ({
   ...createFrontendState(),
   handleGithubCallback: vi.fn(),
+  prepareGitHubLogin: vi.fn(),
   createList: vi.fn(), updateListName: vi.fn(), deleteList: vi.fn(),
-  addProblemToList: vi.fn(), deleteProblemFromList: vi.fn(),
+  addProblemsToList: vi.fn(), removeProblemsFromList: vi.fn(),
   changeThemeMod: vi.fn(),
   updateUsers: vi.fn(),
   syncUserSubmissions: vi.fn(),
@@ -117,7 +119,7 @@ vi.mock("../../src/data/hooks/useListApi", () => ({
     useGetAllListsQuery: () => ({ data: frontend.lists, isLoading: frontend.listsLoading, error: frontend.listsError }),
     useGetListQuery: () => ({ data: frontend.individualList, isLoading: frontend.individualListLoading, error: frontend.individualListError }),
     createList: frontend.createList, updateListName: frontend.updateListName, deleteList: frontend.deleteList,
-    addProblemToList: frontend.addProblemToList, deleteProblemFromList: frontend.deleteProblemFromList,
+    addProblemsToList: frontend.addProblemsToList, removeProblemsFromList: frontend.removeProblemsFromList,
     getListWithItems: frontend.getListWithItems,
   }),
 }));
@@ -135,7 +137,7 @@ vi.mock("../../src/data/hooks/useUserStore", () => ({
   }),
 }));
 vi.mock("../../src/hooks/useUser", () => ({
-  default: () => ({ isAuthenticated: frontend.authenticated, logout: frontend.logout, handleGithubCallback: frontend.handleGithubCallback }),
+  default: () => ({ isAuthenticated: frontend.authenticated, logout: frontend.logout, handleGithubCallback: frontend.handleGithubCallback, prepareGitHubLogin: frontend.prepareGitHubLogin }),
 }));
 vi.mock("../../src/util/env", () => ({
   get IS_BACKEND_AVAILABLE() { return frontend.backendAvailable; },
@@ -147,11 +149,15 @@ export function resetFrontendMocks() {
   Object.assign(frontend, createFrontendState());
   frontend.theme = new Theme(ThemesType.LIGHT);
   frontend.handleGithubCallback.mockReset().mockResolvedValue(undefined);
+  frontend.prepareGitHubLogin.mockReset().mockResolvedValue("https://backend.example.test/api/v1/auth/github/login");
   frontend.createList.mockReset().mockImplementation(async name => createList({ name }));
   frontend.updateListName.mockReset().mockResolvedValue(undefined);
   frontend.deleteList.mockReset().mockResolvedValue(undefined);
-  frontend.addProblemToList.mockReset().mockImplementation(async (listId, problemId, position) => createListItem({ listId, problemId, position }));
-  frontend.deleteProblemFromList.mockReset().mockResolvedValue(undefined);
+  frontend.addProblemsToList.mockReset().mockImplementation(async (listId, problemIds) => {
+    const added=problemIds.map((problemId,index)=>createListItem({listId,problemId,position:(index+1)*1073741824}));
+    return {added,duplicateProblemIds:[],order:added.map(({problemId,position})=>({problemId,position})),rebalanced:false};
+  });
+  frontend.removeProblemsFromList.mockReset().mockImplementation(async (_id,problemIds)=>({removedProblemIds:problemIds,absentProblemIds:[],order:[],rebalanced:false}));
   frontend.changeThemeMod.mockReset();
   frontend.updateUsers.mockReset();
   frontend.syncUserSubmissions.mockReset();

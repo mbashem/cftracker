@@ -87,7 +87,8 @@ function preview() {
     verify: "Updates ownership state. Set your Codeforces first name to the challenge before sending.",
     challenge: "The returned challenge is not a bearer token. It expires after one hour.",
     delete: "Deletes the selected list and all its items.",
-    add: "Inserts a new item; this is not an upsert. Duplicates may return HTTP 500.",
+    "add-items": "Adds the listed problems and reports duplicates in the response.",
+    "remove-items": "Removes the listed problems and their practice records.",
   };
   element("request-note").textContent = notes[endpoint.id] || (endpoint.public ? "Public endpoint · no bearer token sent." : "Protected endpoint · sign in or save a token before sending.");
 }

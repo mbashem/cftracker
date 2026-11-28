@@ -1,5 +1,8 @@
+import { skipToken } from "@reduxjs/toolkit/query";
+import { useCallback } from "react";
 import { listApi } from "../queries/listQuery";
 import useUser from "../../hooks/useUser";
+import type { ListItemInput, PracticeFields } from "../../types/list";
 
 function useListApi() {
 	const { user } = useUser();
@@ -9,6 +12,8 @@ function useListApi() {
 	const [updateListMutation] = listApi.useUpdateListNameMutation();
 	const [fetchIndividualListQuery] = listApi.useLazyGetListQuery();
 	const [deleteProblemFromListMutation] = listApi.useDeleteFromListMutation();
+	const [updateListItemMutation] = listApi.useUpdateListItemMutation();
+	const [moveListItemsMutation] = listApi.useMoveListItemsMutation();
 
 	async function getListWithItems(listId: number) {
 		try {
@@ -32,9 +37,14 @@ function useListApi() {
 		}
 	}
 
-	async function addProblemToList(listId: number, problemId: string, position: number) {
+	/** Insert a batch before one existing problem; omit the anchor to prepend. */
+	function addProblemsToList(listId: number, problemIds: string[], beforeProblemId?: string) {
+		return addListItems(listId, problemIds.map(problemId => ({ problemId })), beforeProblemId);
+	}
+
+	async function addListItems(listId: number, items: ListItemInput[], beforeProblemId?: string) {
 		try {
-			return await addProblemToListMutation({ listId, problemId, position }).unwrap();
+			return await addProblemToListMutation({ listId, items, beforeProblemId }).unwrap();
 		} catch (err: any) {
 			console.log(err);
 			let errorMessage = err?.data?.error ?? "Failed to add to list!";
@@ -42,10 +52,26 @@ function useListApi() {
 		}
 	}
 
-	async function deleteProblemFromList(listId: number, problemId: string) {
+	const updateListItem = useCallback(async (listId: number, problemId: string, patch: PracticeFields) => {
 		try {
-			await deleteProblemFromListMutation({ listId, problemId }).unwrap();
-			return;
+			return await updateListItemMutation({ listId, problemId, patch }).unwrap();
+		} catch (error) {
+			throw new Error(listMutationError(error, "Failed to save practice details."));
+		}
+	}, [updateListItemMutation]);
+
+	async function moveListItems(listId: number, problemIds: string[], beforeProblemId?: string) {
+		try {
+			return await moveListItemsMutation({ listId, problemIds, beforeProblemId }).unwrap();
+		} catch (error) {
+			throw new Error(listMutationError(error, "Failed to move list items."));
+		}
+	}
+
+	/** Remove one or more problems through the sole bulk-remove contract. */
+ async function removeProblemsFromList(listId: number, problemIds: string[]) {
+		try {
+			return await deleteProblemFromListMutation({ listId, problemIds }).unwrap();
 		} catch (err: any) {
 			console.log(err);
 			let errorMessage = err?.data?.error ?? "Failed to delete from list!";
@@ -80,12 +106,19 @@ function useListApi() {
 		return { ...query, data: user === undefined ? undefined : query.currentData };
 	}
 
-	function useGetListQuery(listId: number) {
-		const query = listApi.useGetListQuery(listId, { skip: user === undefined });
-		return { ...query, data: user === undefined ? undefined : query.currentData };
+	function useGetListQuery(listId: number | undefined) {
+		const query = listApi.useGetListQuery(user === undefined ? skipToken : listId ?? skipToken);
+		return { ...query, data: listId === undefined || user === undefined ? undefined : query.currentData };
 	}
 
-	return { getListWithItems, createList, addProblemToList, deleteProblemFromList, deleteList, updateListName, useGetAllListsQuery, useGetListQuery };
+	return {
+		getListWithItems, createList, addProblemsToList, addListItems, removeProblemsFromList,
+		updateListItem, moveListItems, deleteList, updateListName, useGetAllListsQuery, useGetListQuery,
+	};
 }
 
+function listMutationError(error: unknown, fallback: string) {
+	const message = (error as { data?: { error?: unknown } } | undefined)?.data?.error;
+	return typeof message === "string" ? message : fallback;
+}
 export default useListApi;

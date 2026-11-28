@@ -1,9 +1,9 @@
 import { faCalendarDays } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Card from "../common/cards/Card";
-import Filter from "../common/Filter";
-import Loading from "../common/Loading";
-import Pagination from "../common/Pagination";
+import Filter from "../common/forms/Filter";
+import Loading from "../common/display/Loading";
+import Pagination from "../common/navigation/Pagination";
 import ProblemFilterModal from "./ProblemFilterModal";
 import ProblemTable from "./problem-list/ProblemTable";
 import useProblemPage from "./useProblemPage";

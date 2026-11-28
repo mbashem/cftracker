@@ -3,7 +3,7 @@ import { faInfo } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { memo } from "react";
 import { OverlayTrigger, Popover } from "react-bootstrap";
-import type Theme from "../../util/Theme";
+import type Theme from "../../../util/Theme";
 
 interface AboutMenuItemProps {
   theme: Theme;

@@ -24,8 +24,10 @@ case "$output/" in
 esac
 # Preserve existing bundles; each build needs a fresh output directory.
 [[ ! -e $output ]] || { echo 'Output already exists; choose a new directory.' >&2; exit 1; }
-# Verify that Docker and Python are installed before preparing the bundle.
-for dependency in docker python3; do command -v "$dependency" >/dev/null; done
+for dependency in docker python3 go; do
+  command -v "$dependency" >/dev/null || { echo "Missing dependency: $dependency" >&2; exit 1; }
+done
+nginx_body_limit=$(bash "$root/backend/deploy/vps/server.sh" nginx-body-limit)
 # Keep the bundle directory accessible only to its owner on the build machine.
 mkdir -m 700 "$output"
 # Derive the image-only manifest from the authoritative production manifest.
@@ -36,6 +38,7 @@ python3 "$root/backend/deploy/vps/bundle_helpers.py" render-compose "$root" "$ou
 cp "$root/backend/deploy/init-app-role.sql" "$output/"
 cp "$root/backend/deploy/vps/server.sh" "$output/"
 cp "$root/backend/deploy/vps/server_helpers.py" "$output/"
+printf '%s\n' "$nginx_body_limit" > "$output/nginx-request-body.conf"
 cp "$root/backend/deploy/vps/README.md" "$output/RUNBOOK.md"
 # This records the checked-out commit and any uncommitted filenames for review.
 # It does not force a clean checkout: Docker builds the current working tree.

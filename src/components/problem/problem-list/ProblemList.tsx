@@ -6,7 +6,7 @@ import { ATTEMPTED_PROBLEMS, SOLVED_PROBLEMS } from "../../../util/constants";
 import Problem from "../../../types/CF/Problem";
 import Theme from "../../../util/Theme";
 import ProblemListPicker from "../ProblemListPicker";
-import "../../common/IconButton.css";
+import "../../common/buttons/IconButton.css";
 
 interface ProblemListProps {
   problems: Problem[];
