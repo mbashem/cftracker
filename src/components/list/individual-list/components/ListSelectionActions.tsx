@@ -2,9 +2,9 @@ import { faCopy, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import type { List } from "../../../../types/list";
 import type Theme from "../../../../util/Theme";
-import ButtonPopover from "../../../common/ButtonPopover";
-import ConfirmationDialog from "../../../common/ConfirmationDialog";
-import Button from "../../../common/Button";
+import ButtonPopover from "../../../common/buttons/ButtonPopover";
+import ConfirmationDialog from "../../../common/dialogs/ConfirmationDialog";
+import Button from "../../../common/buttons/Button";
 import Select from "../../../common/forms/Input/Select";
 
 interface Props {

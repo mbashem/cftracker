@@ -1,5 +1,5 @@
 import { useRef, type ComponentProps } from "react";
-import Button from "../../Button";
+import Button from "../../buttons/Button";
 import Input from "./Input";
 import "./DateTimeInput.css";
 

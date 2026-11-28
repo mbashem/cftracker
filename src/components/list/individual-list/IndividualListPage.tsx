@@ -1,6 +1,6 @@
 import { useRef } from "react";
 import type Theme from "../../../util/Theme";
-import Loading from "../../common/Loading";
+import Loading from "../../common/display/Loading";
 import type { List } from "../../../types/list";
 import ListPracticeTable from "./components/ListPracticeTable";
 import ListSelectionActions from "./components/ListSelectionActions";

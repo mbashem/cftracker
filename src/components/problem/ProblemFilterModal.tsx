@@ -1,6 +1,6 @@
 import { Verdict } from "../../types/CF/Submission";
 import Theme from "../../util/Theme";
-import CustomModal from "../common/CustomModal";
+import CustomModal from "../common/dialogs/CustomModal";
 import CheckList from "../common/forms/CheckList";
 import InputChecked from "../common/forms/Input/InputChecked";
 import InputDateRange from "../common/forms/Input/InputDateRange";

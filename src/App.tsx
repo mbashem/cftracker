@@ -10,7 +10,7 @@ import ContestPage from "./components/contest/ContestPage";
 import useTheme from "./data/hooks/useTheme";
 import AuthGuard from "./util/route/AuthGuard";
 import useAppBootstrap from "./hooks/useAppBootstrap";
-import Loading from "./components/common/Loading";
+import Loading from "./components/common/display/Loading";
 
 // Temporary development-only hold to inspect the startup animation.
 const INITIAL_LOADING_DEBUG_DELAY_MS = 3000;

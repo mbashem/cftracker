@@ -1,7 +1,7 @@
 import { useId, type ReactNode } from "react";
 import { Modal } from "react-bootstrap";
-import type Theme from "../../util/Theme";
-import Button from "./Button";
+import type Theme from "../../../util/Theme";
+import Button from "../buttons/Button";
 
 interface Props {
     title: string;

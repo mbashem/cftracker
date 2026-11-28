@@ -1,5 +1,5 @@
-import type Theme from "../../util/Theme";
-import Input from "./forms/Input/Input";
+import type Theme from "../../../../util/Theme";
+import Input from "./Input";
 
 interface Props {
     label: string;

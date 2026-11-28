@@ -1,8 +1,8 @@
 import { faRandom, faRedo } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import Theme from "../../util/Theme";
-import { getRandomInteger } from "../../util/util";
-import SearchField from "./SearchField";
+import Theme from "../../../util/Theme";
+import { getRandomInteger } from "../../../util/util";
+import SearchField from "./Input/SearchField";
 
 interface PropsType {
   children: React.ReactNode;

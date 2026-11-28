@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import TextInputForm from "./TextInputForm";
-import TextView from "./TextView";
+import TextView from "../display/TextView";
 
 interface EditableTextProps {
   value: string;

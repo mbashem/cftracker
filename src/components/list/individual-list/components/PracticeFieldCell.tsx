@@ -1,7 +1,7 @@
 import { useId, useState } from "react";
 import { faCheck, faXmark } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import Button from "../../../common/Button";
+import Button from "../../../common/buttons/Button";
 import Form from "../../../common/forms/Form";
 import DateTimeInput from "../../../common/forms/Input/DateTimeInput";
 import Input from "../../../common/forms/Input/Input";

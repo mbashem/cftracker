@@ -1,5 +1,5 @@
 import type { ComponentPropsWithRef } from "react";
-import type Theme from "../../util/Theme";
+import type Theme from "../../../util/Theme";
 import "./IconButton.css";
 
 const variants = {

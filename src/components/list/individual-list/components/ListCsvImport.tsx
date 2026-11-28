@@ -1,9 +1,9 @@
 import type Theme from "../../../../util/Theme";
-import Button from "../../../common/Button";
+import Button from "../../../common/buttons/Button";
 import Form from "../../../common/forms/Form";
 import Input from "../../../common/forms/Input/Input";
 import Select from "../../../common/forms/Input/Select";
-import Table, { type TableColumn } from "../../../common/Table";
+import Table, { type TableColumn } from "../../../common/display/Table";
 import type { ListDetails } from "../useIndividualListPage";
 import { CSV_FIELDS } from "../listCsv";
 import { LIST_CAPACITY } from "../practiceFields";

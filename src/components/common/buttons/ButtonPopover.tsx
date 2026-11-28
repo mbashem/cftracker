@@ -1,6 +1,6 @@
 import { useId, type ReactElement } from "react";
 import { OverlayTrigger, Popover } from "react-bootstrap";
-import type Theme from "../../util/Theme";
+import type Theme from "../../../util/Theme";
 
 interface Props {
     label: string;

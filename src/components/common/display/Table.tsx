@@ -1,5 +1,5 @@
 import { memo, type Key, type ReactNode } from "react";
-import type Theme from "../../util/Theme";
+import type Theme from "../../../util/Theme";
 
 export interface TableColumn<Row> {
     id: string;

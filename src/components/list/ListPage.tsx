@@ -1,10 +1,10 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { faEdit } from "@fortawesome/free-regular-svg-icons";
-import Loading from "../common/Loading";
-import Button from "../common/Button";
-import ConfirmationDialog from "../common/ConfirmationDialog";
-import TextPromptDialog from "../common/TextPromptDialog";
+import Loading from "../common/display/Loading";
+import Button from "../common/buttons/Button";
+import ConfirmationDialog from "../common/dialogs/ConfirmationDialog";
+import TextPromptDialog from "../common/dialogs/TextPromptDialog";
 import IndividualListPage from "./individual-list/IndividualListPage";
 import useListPage from "./useListPage";
 

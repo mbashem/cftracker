@@ -1,11 +1,11 @@
 import { faFilter } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useState } from "react";
-import Theme from "../../util/Theme";
+import Theme from "../../../util/Theme";
 import React from "react";
-import ButtonPopover from "./ButtonPopover";
+import ButtonPopover from "../buttons/ButtonPopover";
 import Dialog from "./Dialog";
-import Button, { type ButtonVariant } from "./Button";
+import Button, { type ButtonVariant } from "../buttons/Button";
 
 interface childrenProps {
   closeModal: () => void;

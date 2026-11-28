@@ -1,8 +1,8 @@
 import { useEffect, useId, useState, type ReactNode } from "react";
 import CustomModal, { type CustomModalProps } from "./CustomModal";
-import Button from "./Button";
-import Form from "./forms/Form";
-import Input from "./forms/Input/Input";
+import Button from "../buttons/Button";
+import Form from "../forms/Form";
+import Input from "../forms/Input/Input";
 
 interface Props extends Omit<CustomModalProps, "children"> {
     label: string;

@@ -8,8 +8,8 @@ import useAppSearchParams from "../../hooks/useSearchParam";
 import useTheme from "../../data/hooks/useTheme";
 import { SearchKeys } from "../../util/constants";
 import { Path } from "../../util/route/path";
-import Dialog from "../common/Dialog";
-import Button from "../common/Button";
+import Dialog from "../common/dialogs/Dialog";
+import Button from "../common/buttons/Button";
 
 export default function ProblemListPicker({ problemId }: { problemId?: string }) {
   const { isAuthenticated, user } = useUser();

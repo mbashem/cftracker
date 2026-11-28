@@ -1,12 +1,12 @@
 import { faFileExport, faFileImport, faPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import type Theme from "../../../../util/Theme";
-import ButtonPopover from "../../../common/ButtonPopover";
-import Button from "../../../common/Button";
+import ButtonPopover from "../../../common/buttons/ButtonPopover";
+import Button from "../../../common/buttons/Button";
 import Select from "../../../common/forms/Input/Select";
-import CustomModal from "../../../common/CustomModal";
-import LabeledButtonGroup from "../../../common/LabeledButtonGroup";
-import SearchField from "../../../common/SearchField";
+import CustomModal from "../../../common/dialogs/CustomModal";
+import LabeledButtonGroup from "../../../common/buttons/LabeledButtonGroup";
+import SearchField from "../../../common/forms/Input/SearchField";
 import type { ListDetails } from "../useIndividualListPage";
 import ListCsvImport from "./ListCsvImport";
 import { HELP_OPTIONS, STATUS_OPTIONS } from "../practiceFields";

@@ -17,9 +17,9 @@ import { isBackendAccessEnabled } from "../util/backendAccess";
 import useToast from "../hooks/useToast";
 import useUser from "../hooks/useUser";
 import useUserStore from "../data/hooks/useUserStore";
-import AboutMenuItem from "./common/AboutMenuItem";
-import EditableText from "./common/EditableText";
-import MenuItem, { type MenuItemDefinition } from "./common/MenuItem";
+import AboutMenuItem from "./common/navigation/AboutMenuItem";
+import EditableText from "./common/forms/EditableText";
+import MenuItem, { type MenuItemDefinition } from "./common/navigation/MenuItem";
 
 function Menu() {
   const { userList, updateUsers, syncUserSubmissions } = useUserStore();

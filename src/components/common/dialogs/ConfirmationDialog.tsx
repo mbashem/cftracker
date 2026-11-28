@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import CustomModal, { type CustomModalProps } from "./CustomModal";
-import Button, { type ButtonVariant } from "./Button";
+import Button, { type ButtonVariant } from "../buttons/Button";
 
 interface Props extends Omit<CustomModalProps, "children"> {
     description?: ReactNode;

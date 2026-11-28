@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type Theme from "../../util/Theme";
+import type Theme from "../../../util/Theme";
 
 interface Props {
     label: string;
